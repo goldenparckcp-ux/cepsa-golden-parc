@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { restaurantCategories, MenuItem } from "@/lib/types/menu";
+import { restaurantCategories, MenuItem, COMPLETE_MENU } from "@/lib/types/menu";
 import { FoodCard } from "@/components/restaurant/FoodCard";
 import { DarkSheet } from "@/components/ui/DarkSheet";
 import { ProductCustomizer } from "@/components/restaurant/ProductCustomizer";
@@ -9,13 +9,20 @@ import { Toast } from "@/components/ui/Toast";
 import { useCart } from "@/lib/state/CartContext";
 
 export default function LaMachinePage() {
-    const [active, setActive] = useState(restaurantCategories[0].key);
+    const [active, setActive] = useState(restaurantCategories[0].id);
     const [customizeItem, setCustomizeItem] = useState<MenuItem | null>(null);
     const [toast, setToast] = useState<string | null>(null);
 
     const { addItem } = useCart();
 
-    const category = useMemo(() => restaurantCategories.find((c) => c.key === active), [active]);
+    const filteredItems = useMemo(() => {
+        if (active === 'all') return COMPLETE_MENU;
+        // Map category IDs to Menu Item Categories if needed, or precise match
+        // In data.ts: 'Ftour', 'Snacks', 'Plats', 'Boissons', 'Desserts'
+        // In Items: 'Ftour', 'Snacks', 'Plats', 'Boissons', 'Desserts'
+        // They seem to match perfectly.
+        return COMPLETE_MENU.filter(item => item.category === active);
+    }, [active]);
 
     // Toast auto-dismiss
     React.useEffect(() => {
@@ -82,13 +89,17 @@ export default function LaMachinePage() {
                 <div className="overflow-x-auto scrollbar-hide touch-pan-x">
                     <div className="flex gap-3 pb-2 min-w-max px-1">
                         {restaurantCategories.map((c) => {
-                            const isActive = c.key === active;
-                            const itemCount = c.items.length;
+                            const isActive = c.id === active;
+                            // Precalculate count
+                            const itemCount = c.id === 'all'
+                                ? COMPLETE_MENU.length
+                                : COMPLETE_MENU.filter(i => i.category === c.id).length;
+
                             return (
                                 <button
-                                    key={c.key}
+                                    key={c.id}
                                     type="button"
-                                    onClick={() => setActive(c.key)}
+                                    onClick={() => setActive(c.id)}
                                     className={[
                                         "flex-shrink-0 whitespace-nowrap rounded-xl border px-5 py-2.5 text-sm font-extrabold transition-all duration-200",
                                         isActive
@@ -102,7 +113,7 @@ export default function LaMachinePage() {
                                     aria-pressed={isActive}
                                 >
                                     <span className="flex items-center gap-2">
-                                        {c.title}
+                                        {c.label}
                                         <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs">
                                             {itemCount}
                                         </span>
@@ -116,13 +127,13 @@ export default function LaMachinePage() {
 
             {/* Food Grid with enhanced spacing */}
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 animate-fade-in">
-                {category?.items.map((item) => (
+                {filteredItems.map((item) => (
                     <FoodCard key={item.id} item={item} onSelect={handleItemSelect} />
                 ))}
             </div>
 
             {/* Empty state for categories */}
-            {category?.items.length === 0 && (
+            {filteredItems.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-20 text-center rounded-3xl border border-white/5 bg-white/5">
                     <div className="text-4xl mb-4 opacity-50">🍽️</div>
                     <div className="text-xl font-extrabold text-white mb-2">

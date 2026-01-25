@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Smartphone, Check, User, ChevronRight, Loader2, ArrowRight, LogOut, Clock, Calendar, MapPin, Package, AlertCircle, Wifi, Copy, Phone, Crown, QrCode, X } from 'lucide-react';
 import { COLORS } from '@/lib/theme';
 
-export default function ProfilePage() {
+function ProfileContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const redirectTo = searchParams.get('redirect') || '/restaurant';
@@ -90,13 +90,7 @@ export default function ProfilePage() {
 
         // --- UNIVERSAL BYPASS (NO SMS NEEDED) ---
         if (otp === '111111' || (phone === '0600000000' && otp === '123456')) {
-            // Check if user exists first to get real name if possible, otherwise Mock
             const cleanPhone = phone.startsWith('+') ? phone : `+212${phone.replace(/^0/, '')}`;
-
-            // Try to fetch profile by phone (This requires RLS policy to allow reading profiles by phone, which might be restricted)
-            // For Safety/Demo: We proceed as Mock User.
-            // Ideally: We would create a Supabase Session manually but we can't client-side without a real token.
-            // So this is strictly for UI FLOW TESTING.
 
             setFullName("Utilisateur Test");
             setUserId("test-user-id");
@@ -130,7 +124,6 @@ export default function ProfilePage() {
 
         // --- DEMO BYPASS: Don't save to DB, just Local State ---
         if (userId === 'test-user-id' || phone === '0600000000') {
-            // Save to localStorage to persist demo session slightly if needed, or just proceed
             localStorage.setItem('demo_user', JSON.stringify({ fullName, phone }));
             setStep('dashboard');
             fetchUserOrders(phone);
@@ -139,7 +132,6 @@ export default function ProfilePage() {
         // -------------------------------------------------------
 
         setIsLoading(true);
-        // Ensure we are using the Real User ID from Auth
         const { error } = await supabase.from('profiles').insert({
             id: userId,
             full_name: fullName,
@@ -150,7 +142,6 @@ export default function ProfilePage() {
         setIsLoading(false);
         if (error) {
             console.error("Supabase Error:", error);
-            // If error is duplicate key, it means profile exists, just proceed
             if (error.code === '23505') {
                 setStep('dashboard');
                 fetchUserOrders(phone);
@@ -462,5 +453,13 @@ export default function ProfilePage() {
                 </div>
             )}
         </div>
+    );
+}
+
+export default function ProfilePage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen bg-[#0F172A] flex items-center justify-center"><Loader2 className="w-8 h-8 text-red-600 animate-spin" /></div>}>
+            <ProfileContent />
+        </Suspense>
     );
 }

@@ -135,16 +135,19 @@ function DarkSheet({ open, title, children, onClose }: { open: boolean; title?: 
 
 
 
-export default function MenuPage() {
+// ... (keeping imports and helpers as is, just invalidating this block for rename)
+
+function MenuContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
 
-    // Default to 'featured' or map existing query params
+    // Map legacy params or default to 'all'
     const initialCategory =
-        searchParams.get('tab') === 'drinks' ? 'cafe' :
-            (searchParams.get('tab') === 'food' ? 'restaurant' : 'featured');
+        searchParams.get('tab') === 'drinks' ? 'Boissons' :
+            searchParams.get('tab') === 'food' ? 'Snacks' :
+                'all';
 
-    const [activeKey, setActiveKey] = useState(initialCategory || "featured");
+    const [activeKey, setActiveKey] = useState(initialCategory);
     const [toast, setToast] = useState<string | null>(null);
 
     const { items: cart, addItem, removeItem, setQuantity, total, itemCount } = useCart();
@@ -156,8 +159,7 @@ export default function MenuPage() {
     // Update active key if tab param changes
     React.useEffect(() => {
         const tab = searchParams.get('tab');
-        if (tab === 'drinks' && activeKey !== 'cafe' && activeKey !== 'drinks') setActiveKey('cafe');
-        if (tab === 'food' && activeKey !== 'restaurant' && activeKey !== 'snacks' && activeKey !== 'grills') setActiveKey('restaurant');
+        if (tab === 'drinks' && activeKey !== 'Boissons') setActiveKey('Boissons');
     }, [searchParams]);
 
     React.useEffect(() => {
@@ -166,20 +168,15 @@ export default function MenuPage() {
         return () => window.clearTimeout(t);
     }, [toast]);
 
-    const activeCategoryConfig = useMemo(() =>
-        restaurantCategories.find(c => c.key === activeKey) || restaurantCategories[0]
-        , [activeKey]);
-
     const featured = useMemo(() => COMPLETE_MENU.find((m) => m.isFeatured), []);
 
-    // Filter list based on the active category configuration
+    // Filter list based on the active category
     const list = useMemo(() => {
-        if (!activeCategoryConfig) return [];
-        return activeCategoryConfig.items.filter(item => !item.isFeatured); // Filter out featured from list view if any
-    }, [activeCategoryConfig]);
+        if (activeKey === 'all') return COMPLETE_MENU.filter(item => !item.isFeatured);
+        return COMPLETE_MENU.filter(item => item.category === activeKey);
+    }, [activeKey]);
 
     const handleItemClick = (item: MenuItem) => {
-        // ... (keep existing handleItemClick logic)
         if (!item.available) return;
 
         if (item.customizable) {
@@ -213,12 +210,16 @@ export default function MenuPage() {
                 <div className="mx-auto w-full max-w-5xl overflow-x-auto scrollbar-hide touch-pan-x">
                     <div className="flex items-center gap-3 py-2 min-w-max px-1">
                         {restaurantCategories.map((c) => {
-                            const active = c.key === activeKey;
+                            const active = c.id === activeKey;
+                            const count = c.id === 'all'
+                                ? COMPLETE_MENU.length
+                                : COMPLETE_MENU.filter(i => i.category === c.id).length;
+
                             return (
                                 <button
-                                    key={c.key}
+                                    key={c.id}
                                     type="button"
-                                    onClick={() => setActiveKey(c.key)}
+                                    onClick={() => setActiveKey(c.id)}
                                     className={classNames(
                                         "flex-shrink-0 whitespace-nowrap rounded-xl border px-4 py-2 text-sm font-extrabold transition-all duration-200",
                                         active
@@ -233,9 +234,9 @@ export default function MenuPage() {
                                     aria-pressed={active}
                                 >
                                     <span className="flex items-center gap-2">
-                                        {c.title}
+                                        {c.label}
                                         <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/50">
-                                            {c.items.length}
+                                            {count}
                                         </span>
                                     </span>
                                 </button>
@@ -246,7 +247,7 @@ export default function MenuPage() {
             </div>
 
             <main className="mx-auto w-full max-w-5xl px-0 mt-4">
-                {featured && activeKey === 'featured' ? (
+                {featured && activeKey === 'all' ? (
 
                     <section className="px-0 pt-2 mb-6">
                         <button
@@ -587,5 +588,13 @@ export default function MenuPage() {
                 ) : null}
             </DarkSheet>
         </div>
+    );
+}
+
+export default function MenuPage() {
+    return (
+        <React.Suspense fallback={<div className="min-h-screen bg-[#0F172A] flex items-center justify-center text-white">Loading Menu...</div>}>
+            <MenuContent />
+        </React.Suspense>
     );
 }

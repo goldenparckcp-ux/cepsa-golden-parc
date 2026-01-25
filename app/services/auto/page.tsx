@@ -33,7 +33,9 @@ const SERVICES_CONFIG = [
     }
 ];
 
-export default function AutoServicePage() {
+// ... (keeping imports and helpers as is)
+
+function AutoServiceContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const initialTab = searchParams.get('tab') === 'mechanic' ? 'mechanic' : 'lavage';
@@ -296,5 +298,13 @@ export default function AutoServicePage() {
             )}
 
         </div>
+    );
+}
+
+export default function AutoServicePage() {
+    return (
+        <React.Suspense fallback={<div className="min-h-screen bg-[#0F172A] flex items-center justify-center text-white">Loading Service...</div>}>
+            <AutoServiceContent />
+        </React.Suspense>
     );
 }

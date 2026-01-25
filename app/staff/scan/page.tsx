@@ -60,7 +60,7 @@ export default function StaffScanner() {
         if (error) {
             alert("Erreur maj status");
         } else {
-            setResult(prev => ({ ...prev, status: 'completed' }));
+            setResult((prev: any) => prev ? ({ ...prev, status: 'completed' }) : null);
         }
         setLoading(false);
     };
