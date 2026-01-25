@@ -577,7 +577,7 @@ export default function RestaurantPage() {
 
             {/* Floating Cart Button */}
             {itemCount > 0 && !isCartOpen && !customizeItem && (
-                <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 animate-slide-up w-full max-w-sm px-4">
+                <div className="fixed bottom-[110px] left-1/2 -translate-x-1/2 z-40 animate-slide-up w-full max-w-sm px-4">
                     <button
                         onClick={() => setIsCartOpen(true)}
                         className="w-full bg-[#1E293B] border border-white/20 p-4 rounded-2xl shadow-2xl flex items-center justify-between backdrop-blur-xl"
