@@ -21,15 +21,15 @@ export default function LoginPage() {
             // Simple mock logic for demonstration
             if (pin === "0000") {
                 if (phone.endsWith("00")) {
-                    router.push("/dashboard/admin");
+                    router.push("/admin");
                 } else if (phone.endsWith("01")) {
-                    router.push("/dashboard/kitchen");
+                    router.push("/admin/kitchen");
                 } else if (phone.endsWith("02")) {
-                    router.push("/dashboard/services");
+                    router.push("/admin/services");
                 } else if (phone.endsWith("03")) {
-                    router.push("/dashboard/hotel");
+                    router.push("/admin/hotel");
                 } else {
-                    router.push("/dashboard/admin"); // Default fallback for testing
+                    router.push("/admin"); // Default fallback for testing
                 }
             } else {
                 setError("Code PIN incorrect. Réessayez.");

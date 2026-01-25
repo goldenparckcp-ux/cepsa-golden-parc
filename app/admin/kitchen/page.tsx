@@ -1,101 +1,213 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Clock, CheckCircle2, ChefHat, Timer } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { COLORS } from '@/lib/theme';
+import { Clock, Check, Flame, Archive, Phone, AlertTriangle } from 'lucide-react';
 
-const MOCK_ORDERS = [
-    { id: 101, table: 'T-12', items: ['Tacos Viande Hachée', 'Frites', 'Coca Cola'], time: '10:30', status: 'pending' },
-    { id: 102, table: 'T-04', items: ['Pizza Margharita', 'Eau Minérale'], time: '10:32', status: 'cooking' },
-    { id: 103, table: 'Emporter', items: ['Panini Poulet', 'Jus d\'Orange'], time: '10:35', status: 'pending' },
-];
+export default function KitchenDashboard() {
+    const [orders, setOrders] = useState<any[]>([]);
+    const [filter, setFilter] = useState('all'); // all, pending, preparing
 
-export default function KitchenDisplay() {
-    const [orders, setOrders] = useState(MOCK_ORDERS);
+    const fetchOrders = async () => {
+        const { data, error } = await supabase
+            .from('restaurant_orders')
+            .select('*')
+            .in('status', ['pending', 'preparing', 'ready'])
+            .order('created_at', { ascending: true });
 
-    const markAsCooking = (id: number) => {
-        setOrders(orders.map(o => o.id === id ? { ...o, status: 'cooking' } : o));
+        if (data) setOrders(data);
     };
 
-    const markAsReady = (id: number) => {
-        setOrders(orders.filter(o => o.id !== id)); // Remove from screen when ready
-        // In real app, this would update DB to 'ready'
+    useEffect(() => {
+        fetchOrders();
+
+        // Real-time subscription
+        const subscription = supabase
+            .channel('kitchen_orders')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'restaurant_orders' }, () => {
+                fetchOrders();
+            })
+            .subscribe();
+
+        return () => { subscription.unsubscribe(); };
+    }, []);
+
+    const updateStatus = async (id: string, status: string) => {
+        await supabase.from('restaurant_orders').update({ status }).eq('id', id);
+        // Optimistic update
+        setOrders(orders.map(o => o.id === id ? { ...o, status } : o));
     };
+
+    const filteredOrders = orders.filter(o =>
+        filter === 'all' ? true : o.status === filter
+    );
+
+    const pendingCount = orders.filter(o => o.status === 'pending').length;
+    const preparingCount = orders.filter(o => o.status === 'preparing').length;
+    const readyCount = orders.filter(o => o.status === 'ready').length;
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-black text-white flex items-center gap-3">
-                    <ChefHat className="text-amber-500 w-8 h-8" /> Cuisine (KDS)
-                </h1>
-                <div className="flex items-center gap-2">
-                    <span className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></span>
-                    <span className="text-green-500 font-mono font-bold text-sm">LIVE</span>
-                </div>
-            </div>
+        <div className="min-h-screen bg-gray-900 text-white p-6">
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                {orders.map(order => (
-                    <div
-                        key={order.id}
-                        className={`border rounded-xl p-4 flex flex-col h-full bg-[#1E293B] ${order.status === 'cooking'
-                                ? 'border-amber-500 ring-1 ring-amber-500/50'
-                                : 'border-white/10 animate-fade-in'
+            {/* Header */}
+            <header className="flex items-center justify-between mb-8 bg-gray-800 p-4 rounded-2xl border border-gray-700">
+                <div className="flex items-center gap-3">
+                    <span className="text-4xl">🍽️</span>
+                    <div>
+                        <h1 className="text-2xl font-bold">Cuisine Dashboard</h1>
+                        <p className="text-gray-400 text-sm">Gestion des commandes en temps réel</p>
+                    </div>
+                </div>
+
+                <div className="flex gap-4">
+                    <div className="bg-yellow-500/20 border border-yellow-500/50 px-6 py-2 rounded-xl text-center">
+                        <div className="text-2xl font-bold text-yellow-500">{pendingCount}</div>
+                        <div className="text-xs uppercase font-bold text-yellow-500/80">En Attente</div>
+                    </div>
+                    <div className="bg-blue-500/20 border border-blue-500/50 px-6 py-2 rounded-xl text-center">
+                        <div className="text-2xl font-bold text-blue-500">{preparingCount}</div>
+                        <div className="text-xs uppercase font-bold text-blue-500/80">En Cours</div>
+                    </div>
+                    <div className="bg-green-500/20 border border-green-500/50 px-6 py-2 rounded-xl text-center">
+                        <div className="text-2xl font-bold text-green-500">{readyCount}</div>
+                        <div className="text-xs uppercase font-bold text-green-500/80">Prêtes</div>
+                    </div>
+                </div>
+            </header>
+
+            {/* Filters */}
+            <div className="flex gap-4 mb-8">
+                {['all', 'pending', 'preparing'].map(f => (
+                    <button
+                        key={f}
+                        onClick={() => setFilter(f)}
+                        className={`px-6 py-3 rounded-xl font-bold uppercase transition-all ${filter === f
+                                ? 'bg-white text-gray-900'
+                                : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
                             }`}
                     >
-                        {/* Header */}
-                        <div className="flex justify-between items-start mb-4 pb-4 border-b border-white/5">
+                        {f === 'all' ? 'Toutes' : f === 'pending' ? 'En Attente' : 'En Préparation'}
+                    </button>
+                ))}
+            </div>
+
+            {/* Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {filteredOrders.map(order => (
+                    <div
+                        key={order.id}
+                        className={`bg-gray-800 rounded-3xl border-2 overflow-hidden flex flex-col ${order.status === 'pending' ? 'border-yellow-500/50' :
+                                order.status === 'preparing' ? 'border-blue-500/50' : 'border-green-500/50'
+                            }`}
+                    >
+                        {/* Order Header */}
+                        <div className="p-4 bg-gray-900/50 flex justify-between items-start border-b border-gray-700">
                             <div>
-                                <div className="text-2xl font-black text-white">#{order.id}</div>
-                                <div className="text-amber-400 font-bold text-sm">{order.table}</div>
+                                <h3 className="font-mono text-xl font-bold text-white">#{order.order_number}</h3>
+                                <div className="flex items-center gap-2 text-gray-400 text-xs mt-1">
+                                    <Clock className="w-3 h-3" />
+                                    {new Date(order.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </div>
                             </div>
                             <div className="text-right">
-                                <div className="flex items-center gap-1 text-gray-400 text-xs font-mono bg-white/5 px-2 py-1 rounded">
-                                    <Clock className="w-3 h-3" /> {order.time}
+                                <div className={`inline-block px-3 py-1 rounded-full text-xs font-black uppercase mb-1 ${order.status === 'pending' ? 'bg-yellow-500 text-black' :
+                                        order.status === 'preparing' ? 'bg-blue-500 text-white' : 'bg-green-500 text-white'
+                                    }`}>
+                                    {order.status}
                                 </div>
-                                <div className="text-xs text-slate-500 mt-1">
-                                    {(Date.now() - new Date().setHours(10, 30)) / 60000 > 10 ? 'Retard' : 'À l\'heure'}
+                                <div className="flex items-center gap-1 text-gray-400 text-xs justify-end">
+                                    <Phone className="w-3 h-3" /> {order.customer_phone}
                                 </div>
                             </div>
                         </div>
 
                         {/* Items */}
-                        <ul className="flex-1 space-y-3 mb-6">
-                            {order.items.map((item, idx) => (
-                                <li key={idx} className="flex items-start gap-2 text-gray-200 font-medium text-sm">
-                                    <span className="text-amber-500 mt-1">•</span> {item}
-                                </li>
+                        <div className="p-4 space-y-4 flex-1">
+                            {order.items.map((item: any, idx: number) => (
+                                <div key={idx} className="flex gap-4">
+                                    {/* Item Image */}
+                                    <div className="w-16 h-16 rounded-xl bg-gray-700 shrink-0 overflow-hidden">
+                                        <img src={item.image} className="w-full h-full object-cover" />
+                                    </div>
+
+                                    <div className="flex-1">
+                                        <div className="flex justify-between items-start">
+                                            <h4 className="font-bold text-lg">{item.name}</h4>
+                                            <span className="bg-gray-700 w-8 h-8 flex items-center justify-center rounded-lg font-mono font-bold">
+                                                x{item.quantity}
+                                            </span>
+                                        </div>
+
+                                        {/* Customizations */}
+                                        {item.customizations && (
+                                            <div className="mt-2 text-sm space-y-1">
+                                                {/* Meta String (Pre-formatted) */}
+                                                {item.meta && (
+                                                    <div className="text-gray-300 bg-gray-700/50 p-2 rounded-lg text-xs leading-relaxed">
+                                                        {item.meta.split(' · ').map((part: string, i: number) => (
+                                                            <div key={i} className="mb-1">
+                                                                • {part}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
+
+                                                {/* Special Instructions */}
+                                                {item.customizations.special_instructions && (
+                                                    <div className="flex gap-2 bg-yellow-900/30 border border-yellow-700/50 p-2 rounded-lg mt-2">
+                                                        <AlertTriangle className="w-4 h-4 text-yellow-500 shrink-0" />
+                                                        <span className="text-yellow-200 font-bold text-xs italic">
+                                                            "{item.customizations.special_instructions}"
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             ))}
-                        </ul>
+                        </div>
 
                         {/* Actions */}
-                        <div className="mt-auto pt-4 border-t border-white/5">
-                            {order.status === 'pending' ? (
+                        <div className="p-4 bg-gray-900/50 border-t border-gray-700">
+                            {order.status === 'pending' && (
                                 <button
-                                    onClick={() => markAsCooking(order.id)}
-                                    className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
+                                    onClick={() => updateStatus(order.id, 'preparing')}
+                                    className="w-full py-4 bg-blue-600 hover:bg-blue-500 rounded-xl font-bold text-lg transition shadow-lg shadow-blue-900/20 flex items-center justify-center gap-2"
                                 >
-                                    <Timer className="w-4 h-4" /> Lancer
+                                    <Flame className="w-5 h-5 animate-pulse" /> TO CUISINE (Start)
                                 </button>
-                            ) : (
+                            )}
+
+                            {order.status === 'preparing' && (
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => updateStatus(order.id, 'pending')}
+                                        className="px-4 bg-gray-700 hover:bg-gray-600 rounded-xl font-bold transition text-gray-300"
+                                    >
+                                        Back
+                                    </button>
+                                    <button
+                                        onClick={() => updateStatus(order.id, 'ready')}
+                                        className="flex-1 py-4 bg-green-600 hover:bg-green-500 rounded-xl font-bold text-lg transition shadow-lg shadow-green-900/20 flex items-center justify-center gap-2"
+                                    >
+                                        <Check className="w-5 h-5" /> READY
+                                    </button>
+                                </div>
+                            )}
+
+                            {order.status === 'ready' && (
                                 <button
-                                    onClick={() => markAsReady(order.id)}
-                                    className="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg transition-colors flex items-center justify-center gap-2 animate-pulse-green"
+                                    onClick={() => updateStatus(order.id, 'completed')}
+                                    className="w-full py-4 bg-gray-700 hover:bg-gray-600 text-gray-400 hover:text-white rounded-xl font-bold text-lg transition flex items-center justify-center gap-2"
                                 >
-                                    <CheckCircle2 className="w-4 h-4" /> Terminer
+                                    <Archive className="w-5 h-5" /> Archive (Completed)
                                 </button>
                             )}
                         </div>
                     </div>
                 ))}
-
-                {orders.length === 0 && (
-                    <div className="col-span-full py-20 text-center text-gray-500">
-                        <div className="w-16 h-16 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <ChefHat className="w-8 h-8 opacity-50" />
-                        </div>
-                        <p>Aucune commande en cours. Pause café ? ☕</p>
-                    </div>
-                )}
             </div>
         </div>
     );

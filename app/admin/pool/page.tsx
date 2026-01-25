@@ -1,91 +1,102 @@
 "use client";
 
-import React, { useState } from 'react';
-import { Waves, QrCode, Ticket, Users, Check } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Waves, CheckCircle, Clock } from 'lucide-react';
 
-const MOCK_TICKETS = [
-    { id: 'POOL-8821', name: 'Sara Bennani', type: 'Famille', guests: '2 Adultes, 2 Enfants', time: '14:30', status: 'valid' },
-    { id: 'POOL-8822', name: 'Omar Kabbaj', type: 'Mixte', guests: '2 Adultes', time: '14:35', status: 'valid' },
-];
+export default function PoolStaffDashboard() {
+    const [bookings, setBookings] = useState<any[]>([]);
 
-export default function PoolAdmin() {
-    const [tickets, setTickets] = useState(MOCK_TICKETS);
-    const [scanResult, setScanResult] = useState<string | null>(null);
+    const fetchBookings = async () => {
+        const { data } = await supabase
+            .from('pool_bookings')
+            .select('*')
+            .order('booking_date', { ascending: true });
+        if (data) setBookings(data);
+    };
 
-    const handleScan = () => {
-        // Simulation of QR Scan
-        setScanResult('Scan Réussi ! Ticket #POOL-9999 Validé.');
-        setTimeout(() => setScanResult(null), 3000);
+    useEffect(() => {
+        fetchBookings();
+        const sub = supabase.channel('pool_dash').on('postgres_changes', { event: '*', schema: 'public', table: 'pool_bookings' }, fetchBookings).subscribe();
+        return () => { sub.unsubscribe(); };
+    }, []);
+
+    const updateStatus = async (id: string, status: string) => {
+        const update: any = { status };
+        if (status === 'checked_in') update.checked_in_at = new Date().toISOString();
+        if (status === 'completed') update.completed_at = new Date().toISOString();
+
+        await supabase.from('pool_bookings').update(update).eq('id', id);
+        fetchBookings();
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex items-center justify-between">
-                <h1 className="text-3xl font-black text-white flex items-center gap-3">
-                    <Waves className="text-cyan-400 w-8 h-8" /> Entrées Piscine
-                </h1>
-                <button
-                    onClick={handleScan}
-                    className="flex items-center gap-2 bg-cyan-500 hover:bg-cyan-400 text-black font-black px-6 py-3 rounded-xl shadow-lg shadow-cyan-500/20 transition-all active:scale-95"
-                >
-                    <QrCode className="w-5 h-5" /> SCAN TICKET
-                </button>
-            </div>
-
-            {/* Scan Feedback */}
-            {scanResult && (
-                <div className="bg-green-500/20 border border-green-500 text-green-400 p-4 rounded-xl font-bold text-center animate-in zoom-in">
-                    {scanResult}
-                </div>
-            )}
-
-            {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="bg-[#1E293B] border border-white/10 p-6 rounded-2xl">
-                    <h3 className="text-gray-400 text-xs font-bold uppercase">Personnes Sur Place</h3>
-                    <div className="text-3xl font-black text-white mt-1">42 <span className="text-sm font-medium text-gray-500">/ 100</span></div>
-                    <div className="w-full bg-white/10 h-2 rounded-full mt-3 overflow-hidden">
-                        <div className="bg-cyan-500 h-full w-[42%]"></div>
+        <div className="min-h-screen bg-gray-900 text-white p-6">
+            <header className="flex items-center justify-between mb-8 bg-gray-800 p-4 rounded-2xl border border-gray-700">
+                <div className="flex items-center gap-3">
+                    <span className="text-4xl">🏊</span>
+                    <div>
+                        <h1 className="text-2xl font-bold">Piscine Dashboard</h1>
+                        <p className="text-gray-400 text-sm">Contrôle d'accès</p>
                     </div>
                 </div>
-                <div className="bg-[#1E293B] border border-white/10 p-6 rounded-2xl">
-                    <h3 className="text-gray-400 text-xs font-bold uppercase">Chiffre Journée</h3>
-                    <div className="text-3xl font-black text-white mt-1">3,450 DH</div>
-                </div>
-                <div className="bg-[#1E293B] border border-white/10 p-6 rounded-2xl">
-                    <h3 className="text-gray-400 text-xs font-bold uppercase">Créneau Actuel</h3>
-                    <div className="text-xl font-black text-white mt-1">Après-Midi</div>
-                    <div className="text-cyan-400 text-xs font-bold">14:00 - 19:00</div>
-                </div>
-            </div>
+            </header>
 
-            {/* Recent Entries */}
-            <div className="bg-[#1E293B] border border-white/10 rounded-2xl overflow-hidden">
-                <div className="p-4 border-b border-white/10 font-bold text-white">Dernières Entrées</div>
-                <div className="divide-y divide-white/5">
-                    {tickets.map(ticket => (
-                        <div key={ticket.id} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors">
-                            <div className="flex items-center gap-4">
-                                <div className="w-10 h-10 rounded-full bg-cyan-500/20 flex items-center justify-center">
-                                    <Ticket className="w-5 h-5 text-cyan-400" />
-                                </div>
-                                <div>
-                                    <div className="text-white font-bold">{ticket.name}</div>
-                                    <div className="text-gray-500 text-xs flex items-center gap-2">
-                                        <span className="bg-white/10 px-1.5 rounded text-gray-300">{ticket.id}</span>
-                                        • {ticket.guests}
-                                    </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {bookings.map(b => (
+                    <div key={b.id} className={`bg-gray-800 rounded-3xl p-6 border-2 transition-all ${b.status === 'checked_in' ? 'border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.15)]' :
+                            b.status === 'completed' ? 'border-gray-700 opacity-60' : 'border-blue-500'
+                        }`}>
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 className="font-mono font-bold text-lg">#{b.booking_number}</h3>
+                                <div className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                                    <Clock className="w-3 h-3" /> {b.booking_date} · {b.time_slot}
                                 </div>
                             </div>
-                            <div className="text-right">
-                                <div className="text-white font-mono font-bold">{ticket.time}</div>
-                                <div className="text-green-500 text-xs font-bold flex items-center justify-end gap-1">
-                                    <Check className="w-3 h-3" /> Validé
+                            <span className={`px-3 py-1 rounded-full text-xs font-black uppercase ${b.status === 'checked_in' ? 'bg-cyan-500 text-white' :
+                                    b.status === 'completed' ? 'bg-gray-600 text-gray-300' : 'bg-blue-500 text-white'
+                                }`}>
+                                {b.status}
+                            </span>
+                        </div>
+
+                        <div className="space-y-3 mb-6">
+                            <div className="bg-gray-900 border border-gray-700 p-3 rounded-xl">
+                                <div className="text-xs text-gray-500 uppercase font-bold mb-2">Invités</div>
+                                <div className="flex justify-between font-mono text-sm">
+                                    <span>Adultes: {b.adults}</span>
+                                    <span>Enfants: {b.children}</span>
                                 </div>
+                            </div>
+                            <div className="bg-gray-900 border border-gray-700 p-3 rounded-xl flex justify-between items-center">
+                                <span className="text-xs text-gray-500 uppercase font-bold">Total</span>
+                                <span className="text-cyan-400 font-bold">{b.total_price} DH</span>
+                            </div>
+                            <div className="text-sm font-bold text-center border border-gray-700 rounded-xl p-2 bg-gray-900/50">
+                                📱 {b.customer_phone}
                             </div>
                         </div>
-                    ))}
-                </div>
+
+                        {b.status === 'active' && (
+                            <button
+                                onClick={() => updateStatus(b.id, 'checked_in')}
+                                className="w-full py-4 bg-cyan-600 hover:bg-cyan-500 rounded-xl font-bold shadow-lg transition"
+                            >
+                                Valider Entrée
+                            </button>
+                        )}
+
+                        {b.status === 'checked_in' && (
+                            <button
+                                onClick={() => updateStatus(b.id, 'completed')}
+                                className="w-full py-4 bg-gray-700 hover:bg-gray-600 rounded-xl font-bold transition"
+                            >
+                                Sortie / Terminé
+                            </button>
+                        )}
+                    </div>
+                ))}
             </div>
         </div>
     );
