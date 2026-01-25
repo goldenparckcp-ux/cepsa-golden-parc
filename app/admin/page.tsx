@@ -20,6 +20,7 @@ export default function AdminDashboard() {
         pool: 0,
         revenue: 0
     });
+    const [currentTime, setCurrentTime] = useState("");
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -38,6 +39,11 @@ export default function AdminDashboard() {
             });
         };
         fetchStats();
+
+        // Clock logic to prevent hydration mismatch
+        setCurrentTime(new Date().toLocaleTimeString());
+        const timer = setInterval(() => setCurrentTime(new Date().toLocaleTimeString()), 1000);
+        return () => clearInterval(timer);
     }, []);
 
     return (
@@ -60,7 +66,7 @@ export default function AdminDashboard() {
                         <div className="flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" /> System Online
                         </div>
-                        <div>{new Date().toLocaleTimeString()}</div>
+                        <div>{currentTime}</div>
                     </div>
                     <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center font-bold text-xs">
                         AD

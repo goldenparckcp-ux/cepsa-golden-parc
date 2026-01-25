@@ -84,6 +84,9 @@ export default function KitchenDashboard() {
         filter === 'all' ? true : o.status === filter
     );
 
+    const [currentDate, setCurrentDate] = useState("");
+    useEffect(() => { setCurrentDate(new Date().toLocaleDateString()); }, []);
+
     return (
         <div className="min-h-screen bg-[#0F172A] p-6 text-white font-sans">
 
@@ -91,7 +94,7 @@ export default function KitchenDashboard() {
             <div className="flex justify-between items-center mb-10">
                 <div>
                     <h1 className="text-3xl font-black text-white tracking-tight">KITCHEN DISPLAY</h1>
-                    <p className="text-gray-400 font-medium">Gestion des commandes • {new Date().toLocaleDateString()}</p>
+                    <p className="text-gray-400 font-medium">Gestion des commandes • {currentDate}</p>
                 </div>
                 <div className="flex gap-2">
                     {['all', 'pending', 'preparing'].map(f => (
