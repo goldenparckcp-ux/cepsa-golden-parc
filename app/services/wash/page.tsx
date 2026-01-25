@@ -150,7 +150,7 @@ export default function CarWashPage() {
 
             if (error) throw error;
 
-            router.push('/dashboard/services'); // Redirect to Services Dashboard instead of generic orders
+            router.push('/profile'); // Redirect to Profile to see bookings
         } catch (err) {
             console.error('Error creating booking:', err);
             alert('Failed to create booking. Please try again.');
