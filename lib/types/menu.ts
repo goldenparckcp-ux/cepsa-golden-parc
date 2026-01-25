@@ -41,15 +41,100 @@ export interface MenuItem {
 
 export const COMPLETE_MENU: MenuItem[] = [
     // ==========================================
-    // 🌮 FAST FOOD & SNACKS (Grouped)
+    // 🍳 FTOUR MAROCAIN (Breakfast)
     // ==========================================
     {
-        id: 301,
+        id: 101,
+        category: "Ftour",
+        name: "Omelette",
+        description: "Œufs frais préparés à votre goût.",
+        basePrice: 15,
+        image: "/image/Omelette.jpeg",
+        prepTime: "10 min",
+        available: true,
+        customizable: true,
+        customization: {
+            variant: {
+                label: "Type d'Omelette",
+                type: "radio",
+                options: [
+                    { id: "nature", label: "Omelette Nature", price: 0 },
+                    { id: "fromage", label: "Omelette Fromage (+3 DH)", price: 3 },
+                    { id: "khlii", label: "Omelette Khliaa (+7 DH)", price: 7 }
+                ],
+                default: "nature"
+            }
+        }
+    },
+    {
+        id: 102,
+        category: "Ftour",
+        name: "Ftour Complet",
+        description: "Petit déjeuner complet traditionnel.",
+        basePrice: 20,
+        image: "/image/ftor complet.jpeg",
+        prepTime: "15 min",
+        available: true
+    },
+    {
+        id: 103,
+        category: "Ftour",
+        name: "Crêpes & Galettes (Msamen/Harcha)",
+        description: "Spécialités marocaines chaudes.",
+        basePrice: 2,
+        image: "/image/msmn o 7rcha.jpeg",
+        prepTime: "5 min",
+        available: true,
+        customizable: true,
+        customization: {
+            variant: {
+                label: "Choix",
+                type: "radio",
+                options: [
+                    { id: "baghrir", label: "Baghrir", price: 0 },
+                    { id: "msamen", label: "Msamen", price: 0 },
+                    { id: "harcha", label: "Harcha", price: 0 },
+                    { id: "toast", label: "Toast Grillé (+13 DH)", price: 13 }
+                ],
+                default: "msamen"
+            }
+        }
+    },
+    {
+        id: 104,
+        category: "Ftour",
+        name: "Raib / Mhalabia / Flan",
+        description: "Desserts lactés frais.",
+        basePrice: 6,
+        image: "/image/flo.jpeg",
+        prepTime: "0 min",
+        available: true,
+        customizable: true,
+        customization: {
+            variant: {
+                label: "Choix",
+                type: "radio",
+                options: [
+                    { id: "mhalabia", label: "Mhalabia", price: 0 },
+                    { id: "flan", label: "Flan Royal (+4 DH)", price: 4 },
+                    { id: "panna", label: "Panna Cotta (+9 DH)", price: 9 },
+                    { id: "raib", label: "Raib (+9 DH)", price: 9 }
+                ],
+                default: "mhalabia"
+            }
+        }
+    },
+
+    // ==========================================
+    // 🌮 SNACKS (Tacos, Panini)
+    // ==========================================
+    {
+        id: 201,
         category: "Snacks",
         name: "Tacos",
-        description: "Lye Tacos avec sauce fromagère maison.",
+        description: "Le fameux Tacos servi avec frites.",
         basePrice: 30,
-        image: "https://images.unsplash.com/photo-1625937286074-98e98ce99dd6?w=800",
+        image: "/image/taxos.jpeg",
         prepTime: "15 min",
         available: true,
         customizable: true,
@@ -59,8 +144,8 @@ export const COMPLETE_MENU: MenuItem[] = [
                 type: "radio",
                 options: [
                     { id: "poulet", label: "Poulet / Dinde", price: 0 },
-                    { id: "hachee", label: "Viande Hachée", price: 5 },
-                    { id: "mixte", label: "Mixte (Poulet + Viande)", price: 10 },
+                    { id: "hachee", label: "Viande Hachée (+5 DH)", price: 5 },
+                    { id: "mix", label: "Mixte (Poulet + Viande) (+10 DH)", price: 10 },
                     { id: "nuggets", label: "Tacos Nuggets", price: 0 }
                 ],
                 default: "poulet"
@@ -69,24 +154,26 @@ export const COMPLETE_MENU: MenuItem[] = [
                 label: "Sauces (Max 2)",
                 type: "checkbox",
                 freeCount: 2,
-                extraPrice: 5,
+                extraPrice: 0,
                 options: [
                     { id: "alg", label: "Algérienne" },
                     { id: "biggy", label: "Biggy" },
                     { id: "samurai", label: "Samurai" },
                     { id: "andalouse", label: "Andalouse" },
-                    { id: "blanche", label: "Blanche" }
+                    { id: "blanche", label: "Blanche" },
+                    { id: "ketchup", label: "Ketchup" },
+                    { id: "mayo", label: "Mayonnaise" }
                 ]
             }
         }
     },
     {
-        id: 302,
+        id: 202,
         category: "Snacks",
         name: "Panini",
         description: "Pain croustillant servi chaud.",
         basePrice: 20,
-        image: "https://images.unsplash.com/photo-1550547660-d9450f859349?w=800",
+        image: "/image/panini.jpeg",
         prepTime: "10 min",
         available: true,
         customizable: true,
@@ -96,19 +183,73 @@ export const COMPLETE_MENU: MenuItem[] = [
                 type: "radio",
                 options: [
                     { id: "fromage", label: "Fromage", price: 0 },
-                    { id: "poulet", label: "Poulet", price: 5 },
-                    { id: "viande", label: "Viande Hachée", price: 5 },
-                    { id: "thon", label: "Thon", price: 5 }
+                    { id: "poulet", label: "Poulet (+5 DH)", price: 5 },
+                    { id: "viande", label: "Viande Hachée (+5 DH)", price: 5 },
+                    { id: "thon", label: "Thon (+5 DH)", price: 5 }
                 ],
                 default: "fromage"
             }
         }
     },
+
+    // ==========================================
+    // 🍝 PLATS (Couscous, Pâtes)
+    // ==========================================
     {
-        id: 303,
+        id: 301,
+        category: "Plats",
+        name: "Couscous (Vendredi)",
+        description: "Plat traditionnel marocain, servi uniquement le vendredi.",
+        basePrice: 30,
+        image: "/image/couscous.jpeg",
+        prepTime: "30 min",
+        available: true,
+        customizable: true,
+        customization: {
+            variant: {
+                label: "Type",
+                type: "radio",
+                options: [
+                    { id: "poulet", label: "Couscous Poulet", price: 0 },
+                    { id: "viande", label: "Couscous Viande (+15 DH)", price: 15 }
+                ],
+                default: "poulet"
+            }
+        }
+    },
+    {
+        id: 302,
+        category: "Plats",
+        name: "Pâtes",
+        description: "Pâtes italiennes fraîches, sauce maison.",
+        basePrice: 20,
+        image: "/image/les pate.jpeg",
+        prepTime: "20 min",
+        available: true,
+        customizable: true,
+        customization: {
+            variant: {
+                label: "Sauce",
+                type: "radio",
+                options: [
+                    { id: "tomate", label: "Sauce Tomate (25 DH)", price: 5 },
+                    { id: "bolo", label: "Bolognaise (30 DH)", price: 10 },
+                    { id: "poulet", label: "Poulet Champignon (35 DH)", price: 15 },
+                    { id: "carbo", label: "Carbonara (25 DH)", price: 5 }
+                ],
+                default: "tomate"
+            }
+        }
+    },
+
+    // ==========================================
+    // 🍕 PIZZA
+    // ==========================================
+    {
+        id: 401,
         category: "Snacks",
         name: "Pizza",
-        description: "Pâte maison et mozzarella fraîche.",
+        description: "Pâte fine maison et mozzarella.",
         basePrice: 20,
         image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800",
         prepTime: "20 min",
@@ -116,16 +257,16 @@ export const COMPLETE_MENU: MenuItem[] = [
         customizable: true,
         customization: {
             variant: {
-                label: "Choix Pizza",
+                label: "Choix",
                 type: "radio",
                 options: [
-                    { id: "marg", label: "Margherita", price: 0 },
-                    { id: "veg", label: "Végétarienne", price: 5 },
-                    { id: "thon", label: "Thon", price: 5 },
-                    { id: "poulet", label: "Poulet", price: 10 },
-                    { id: "bolo", label: "Bolognaise", price: 15 },
-                    { id: "mix", label: "Mixte", price: 15 },
-                    { id: "mer", label: "Fruits de Mer", price: 30 }
+                    { id: "marg", label: "Margherita (20 DH)", price: 0 },
+                    { id: "veg", label: "Végétarienne (25 DH)", price: 5 },
+                    { id: "thon", label: "Thon (25 DH)", price: 5 },
+                    { id: "poulet", label: "Poulet (30 DH)", price: 10 },
+                    { id: "bolo", label: "Bolognaise (35 DH)", price: 15 },
+                    { id: "mix", label: "Mixte (35 DH)", price: 15 },
+                    { id: "mer", label: "Fruits de Mer (35 DH)", price: 15 }
                 ],
                 default: "marg"
             },
@@ -134,7 +275,7 @@ export const COMPLETE_MENU: MenuItem[] = [
                 type: "radio",
                 options: [
                     { id: "s", label: "Individuelle", price: 0 },
-                    { id: "l", label: "Familiale (+30 DH)", price: 30 }
+                    { id: "l", label: "Familiale (Grand Format)", price: 30 }
                 ],
                 default: "s"
             }
@@ -142,184 +283,116 @@ export const COMPLETE_MENU: MenuItem[] = [
     },
 
     // ==========================================
-    // ☕ MACHINE À CAFÉ & BOISSONS CHAUDES
+    // 🥘 BELDI & PLATS TRADITIONNELS
     // ==========================================
     {
-        id: 401,
-        category: "Café",
-        name: "Expresso (Grain)",
-        description: "Café en grains fraîchement moulu.",
-        basePrice: 10,
-        image: "https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?w=800",
-        prepTime: "2 min",
-        available: true,
-        customizable: true,
-        customization: {
-            intensity: {
-                label: "Intensité",
-                type: "radio",
-                options: [
-                    { id: "court", label: "Court (Serré)" },
-                    { id: "long", label: "Long (Allongé)" }
-                ],
-                default: "court"
-            },
-            sugar: { label: "Sucre", type: "stepper", min: 0, max: 4, default: 0 }
-        }
-    },
-    {
-        id: 402,
-        category: "Café",
-        name: "Macchiato / Noisette",
-        description: "Expresso avec une tache de lait.",
-        basePrice: 12,
-        image: "https://images.unsplash.com/photo-1485808191679-5f8c7c860695?w=800",
-        prepTime: "3 min",
-        available: true,
-        customizable: true,
-        customization: {
-            sugar: { label: "Sucre", type: "stepper", min: 0, max: 4, default: 1 }
-        }
-    },
-    {
-        id: 403,
-        category: "Café",
-        name: "Cappuccino / Moccaccino",
-        description: "Au lait mousseux ou chocolaté.",
-        basePrice: 15,
-        image: "https://images.unsplash.com/photo-1572442388796-11668a67e53d?w=800",
-        prepTime: "4 min",
+        id: 303,
+        category: "Plats",
+        name: "Tajine Marocain",
+        description: "Cuit lentement sur charbon (Fekhar).",
+        basePrice: 35,
+        image: "/image/tajin.jpeg",
+        prepTime: "40 min",
         available: true,
         customizable: true,
         customization: {
             variant: {
-                label: "Type",
+                label: "Type de Tajine",
                 type: "radio",
                 options: [
-                    { id: "cap", label: "Cappuccino" },
-                    { id: "moca", label: "Moccaccino (Choco)" }
+                    { id: "poulet_citron", label: "Poulet Citron / Dghmira", price: 0 },
+                    { id: "kefta", label: "Kefta Oeufs (Sauce Tomate)", price: 0 },
+                    { id: "legume", label: "Légumes (Végétarien) -5 DH", price: -5 },
+                    { id: "viande_pruneau", label: "Viande Pruneaux (Barkouk) +15 DH", price: 15 }
                 ],
-                default: "cap"
-            },
-            sugar: { label: "Sucre", type: "stepper", min: 0, max: 4, default: 1 }
+                default: "poulet_citron"
+            }
         }
     },
     {
-        id: 404,
-        category: "Café",
-        name: "Chocolat Chaud",
-        description: "Boisson lactée cacaotée.",
-        basePrice: 12,
-        image: "https://images.unsplash.com/photo-1542488246-ad86db6346b6?w=800",
+        id: 304,
+        category: "Plats",
+        name: "Poulet Rôti (Djaj Mhamer)",
+        description: "Poulet rôti à la marocaine avec frites et olives.",
+        basePrice: 40,
+        image: "/image/djaj m7amar.jpeg",
+        prepTime: "20 min",
+        available: true,
+        customizable: true,
+        customization: {
+            portion: {
+                label: "Portion",
+                type: "radio",
+                options: [
+                    { id: "quart", label: "1/4 Poulet (Individuel)", price: 0 },
+                    { id: "demi", label: "1/2 Poulet (+30 DH)", price: 30 },
+                    { id: "entier", label: "Poulet Entier (Famille) (+80 DH)", price: 80 }
+                ],
+                default: "quart"
+            },
+            sides: {
+                label: "Accompagnement",
+                type: "checkbox",
+                freeCount: 1,
+                extraPrice: 10,
+                options: [
+                    { id: "frites", label: "Frites Maison" },
+                    { id: "riz", label: "Riz" },
+                    { id: "salade", label: "Petite Salade" },
+                    { id: "zaalouk", label: "Zaalouk / Taktouka" }
+                ]
+            }
+        }
+    },
+
+    // ==========================================
+    // 🍹 JUS & DESSERTS
+    // ==========================================
+    {
+        id: 501,
+        category: "Boissons",
+        name: "Jus Frais",
+        description: "Fruits frais pressés minute.",
+        basePrice: 10, // Lowest price (Orange)
+        image: "https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=800",
         prepTime: "5 min",
         available: true,
         customizable: true,
         customization: {
             variant: {
-                label: "Type",
+                label: "Saveur",
                 type: "radio",
                 options: [
-                    { id: "noir", label: "Chocolat Noir" },
-                    { id: "lait", label: "Chocolat au Lait" }
+                    { id: "orange", label: "Orange (13 DH)", price: 3 },
+                    { id: "banane", label: "Jus de Banane (13 DH)", price: 3 },
+                    { id: "pomme", label: "Jus de Pomme (13 DH)", price: 3 },
+                    { id: "citron", label: "Jus de Citron (13 DH)", price: 3 },
+                    { id: "fraise", label: "Jus de Fraise (15 DH)", price: 5 },
+                    { id: "avocat", label: "Jus d'Avocat (17 DH)", price: 7 },
+                    { id: "avocat_sec", label: "Avocat + Fruits Secs (20 DH)", price: 10 },
+                    { id: "panache", label: "Panaché (15 DH)", price: 5 },
+                    { id: "dragon", label: "Jus de Dragon (30 DH)", price: 20 },
+                    { id: "peche", label: "Jus de Pêche (15 DH)", price: 5 }
                 ],
-                default: "lait"
-            }
-        }
-    },
-    {
-        id: 405,
-        category: "Café",
-        name: "Thé (Machine)",
-        description: "Infusion chaude.",
-        basePrice: 10,
-        image: "https://images.unsplash.com/photo-1576092768241-dec231847233?w=800",
-        prepTime: "3 min",
-        available: true,
-        customizable: true,
-        customization: {
-            flavor: {
-                label: "Parfum",
-                type: "radio",
-                options: [{ id: "menthe", label: "Menthe" }, { id: "citron", label: "Citron" }],
-                default: "menthe"
+                default: "orange"
             },
-            sugar: { label: "Sucre", type: "stepper", min: 0, max: 4, default: 1 }
-        }
-    },
-    {
-        id: 406,
-        category: "Snacks",
-        name: "Potage (Soupe)",
-        description: "Soupe chaude du jour (Machine).",
-        basePrice: 10,
-        image: "https://images.unsplash.com/photo-1547592166-23acbe346499?w=800",
-        prepTime: "2 min",
-        available: true
-    },
-
-    // ==========================================
-    // 🥘 BELDI & TRADITIONAL (Grouped)
-    // ==========================================
-    {
-        id: 101,
-        category: "Beldi",
-        name: "Couscous",
-        description: "Traditionnel du Vendredi.",
-        basePrice: 30,
-        image: "https://images.unsplash.com/photo-1582576163090-09d3b6f8a969?w=800",
-        prepTime: "30 min",
-        available: true,
-        customizable: true,
-        customization: {
-            variant: {
-                label: "Viande",
+            sugar: {
+                label: "Préférence Sucre",
                 type: "radio",
                 options: [
-                    { id: "poulet", label: "Poulet", price: 0 },
-                    { id: "viande", label: "Viande Rouge (+15 DH)", price: 15 }
+                    { id: "avec", label: "Avec Sucre (Normal)" },
+                    { id: "sans", label: "Sans Sucre (Naturel)" },
+                    { id: "peu", label: "Un peu de sucre" }
                 ],
-                default: "poulet"
-            },
-            lben: {
-                label: "Boisson",
-                type: "checkbox",
-                options: [{ id: "lben", label: "Verre de Lben (+5 DH)", price: 5 }]
+                default: "avec"
             }
         }
     },
     {
-        id: 102,
-        category: "Beldi",
-        name: "Omelette",
-        description: "Œufs frais préparés minute.",
-        basePrice: 15,
-        image: "https://images.unsplash.com/photo-1510693206972-df098062cb71?w=800",
-        prepTime: "10 min",
-        available: true,
-        customizable: true,
-        customization: {
-            variant: {
-                label: "Garniture",
-                type: "radio",
-                options: [
-                    { id: "nature", label: "Nature", price: 0 },
-                    { id: "fromage", label: "Fromage", price: 5 },
-                    { id: "khlii", label: "Khlii (+10 DH)", price: 10 },
-                    { id: "champignon", label: "Champignons", price: 5 }
-                ],
-                default: "nature"
-            }
-        }
-    },
-
-    // ==========================================
-    // 🍰 DESSERTS (Grouped)
-    // ==========================================
-    {
-        id: 501,
+        id: 502,
         category: "Desserts",
-        name: "Crêpe Sucrée",
-        description: "Faite maison à la commande.",
+        name: "Les Crêpes Sucrées",
+        description: "Gourmandise faite maison.",
         basePrice: 10,
         image: "https://images.unsplash.com/photo-1519676867240-f03562e64548?w=800",
         prepTime: "10 min",
@@ -330,12 +403,87 @@ export const COMPLETE_MENU: MenuItem[] = [
                 label: "Garniture",
                 type: "radio",
                 options: [
-                    { id: "sucre", label: "Sucre / Miel", price: 0 },
-                    { id: "amlou", label: "Amlou", price: 5 },
-                    { id: "nutella", label: "Nutella", price: 10 },
-                    { id: "banane", label: "Nutella Banane", price: 15 }
+                    { id: "sucre", label: "Sucre (10 DH)", price: 0 },
+                    { id: "miel", label: "Miel (10 DH)", price: 0 },
+                    { id: "amlou", label: "Amlou (12 DH)", price: 2 },
+                    { id: "nutella", label: "Nutella (15 DH)", price: 5 },
+                    { id: "nutella_banane", label: "Nutella Banane (20 DH)", price: 10 }
                 ],
                 default: "sucre"
+            }
+        }
+    },
+
+    // ==========================================
+    // ☕ BOISSONS CHAUDES
+    // ==========================================
+    {
+        id: 601,
+        category: "Boissons",
+        name: "Cafétéria",
+        description: "Boissons chaudes premium.",
+        basePrice: 9,
+        image: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=800",
+        prepTime: "5 min",
+        available: true,
+        customizable: true,
+        customization: {
+            variant: {
+                label: "Choix",
+                type: "radio",
+                options: [
+                    { id: "cafe", label: "Café (9 DH)", price: 0 },
+                    { id: "lait", label: "Lait Chaud (9 DH)", price: 0 },
+                    { id: "nousnous", label: "Nouss Nouss (9 DH)", price: 0 }
+                ],
+                default: "cafe"
+            },
+            sugar: {
+                label: "Sucre",
+                type: "radio",
+                options: [
+                    { id: "normal", label: "Sucre Normal" },
+                    { id: "sans", label: "Sans Sucre" },
+                    { id: "apart", label: "Sucre à part" }
+                ],
+                default: "normal"
+            }
+        }
+    },
+    {
+        id: 602,
+        category: "Boissons",
+        name: "Thé Marocain (Barrad)",
+        description: "Thé traditionnel servi avec herbes fraîches.",
+        basePrice: 15,
+        image: "/image/Tea.jpeg",
+        prepTime: "5 min",
+        available: true,
+        customizable: true,
+        customization: {
+            flavor: {
+                label: "Nessma (Choix)",
+                type: "radio",
+                options: [
+                    { id: "menthe", label: "Na3na3 (Menthe)" },
+                    { id: "chiba", label: "Chiba (Absinthe)" },
+                    { id: "fliyo", label: "Fliyo" },
+                    { id: "lwiza", label: "Lwiza (Verveine)" },
+                    { id: "mansour", label: "Ssalmia" },
+                    { id: "mkhallat", label: "Mkhallat (Mélange)" }
+                ],
+                default: "menthe"
+            },
+            sugar: {
+                label: "Hlawa (Sucre)",
+                type: "radio",
+                options: [
+                    { id: "normal", label: "Hlou (Normal)" },
+                    { id: "medium", label: "N9ess (Moins sucré)" },
+                    { id: "messous", label: "Messous (Sans Sucre)" },
+                    { id: "apart", label: "Sucre à part" }
+                ],
+                default: "normal"
             }
         }
     }
@@ -343,8 +491,9 @@ export const COMPLETE_MENU: MenuItem[] = [
 
 export const restaurantCategories = [
     { id: "all", label: "Tout" },
-    { id: "Beldi", label: "Beldi & Plats" },
-    { id: "Snacks", label: "Snacks/Pizza" },
-    { id: "Café", label: "Cafétéria" },
+    { id: "Ftour", label: "Ftour (Ptit Déj)" },
+    { id: "Snacks", label: "Snacks & Pizza" },
+    { id: "Plats", label: "Plats & Beldi" },
+    { id: "Boissons", label: "Jus & Café" },
     { id: "Desserts", label: "Desserts" }
 ];

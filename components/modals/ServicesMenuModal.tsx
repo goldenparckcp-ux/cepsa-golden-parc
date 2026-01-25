@@ -36,7 +36,7 @@ export function ServicesMenuModal({ isOpen, onClose }: ServicesMenuModalProps) {
             icon: '⛽',
             description: 'Gasoil • Sans Plomb',
             gradient: 'from-green-500 to-emerald-500',
-            route: '/services/fuel'
+            route: '#' // Placeholder
         },
         {
             id: 'pool',
