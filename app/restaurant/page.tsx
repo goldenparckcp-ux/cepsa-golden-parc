@@ -575,28 +575,26 @@ export default function RestaurantPage() {
                 </div>
             </DarkSheet>
 
-            {/* Floating Cart Button */}
+            {/* Fixed Cart Bar (Mobile) - "Like the others" */}
             {itemCount > 0 && !isCartOpen && !customizeItem && (
-                <div className="fixed bottom-[110px] left-1/2 -translate-x-1/2 z-40 animate-slide-up w-full max-w-sm px-4">
-                    <button
-                        onClick={() => setIsCartOpen(true)}
-                        className="w-full bg-[#1E293B] border border-white/20 p-4 rounded-2xl shadow-2xl flex items-center justify-between backdrop-blur-xl"
-                        style={{ boxShadow: "0 20px 40px rgba(0,0,0,0.5)" }}
-                    >
-                        <div className="flex items-center gap-3">
-                            <div className="bg-blue-600 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold shadow-lg">
-                                {itemCount}
+                <div className="fixed bottom-[70px] left-0 right-0 z-50 animate-slide-up md:bottom-6 md:right-6 md:left-auto md:w-96">
+                    <div className="bg-[#0F172A] border-t border-white/10 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] md:rounded-2xl md:border md:bg-[#1E293B]">
+                        <button
+                            onClick={() => setIsCartOpen(true)}
+                            className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 rounded-xl font-bold text-white shadow-lg shadow-blue-900/20 active:scale-[0.98] transition-all flex items-center justify-between"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
+                                    {itemCount}
+                                </div>
+                                <span className="text-sm font-bold uppercase tracking-wide">Voir Panier</span>
                             </div>
-                            <div className="text-left">
-                                <div className="text-sm font-bold text-white">Voir Panier</div>
-                                <div className="text-xs text-gray-400">{itemCount} Articles</div>
+                            <div className="flex items-center gap-2">
+                                <span className="font-black text-lg">{formatDh(total)}</span>
+                                <ChevronRight className="w-5 h-5 text-white/50" />
                             </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                            <span className="text-xl font-black text-white">{formatDh(total)}</span>
-                            <ChevronRight className="w-5 h-5 text-gray-400" />
-                        </div>
-                    </button>
+                        </button>
+                    </div>
                 </div>
             )}
 
