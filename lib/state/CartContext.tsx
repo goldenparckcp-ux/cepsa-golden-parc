@@ -72,7 +72,25 @@ function reducer(state: CartState, action: CartAction): CartState {
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
-    const [state, dispatch] = useReducer(reducer, { items: [] });
+    // Initialize from LocalStorage
+    const [state, dispatch] = useReducer(reducer, { items: [] }, (initial) => {
+        if (typeof window !== 'undefined') {
+            const saved = localStorage.getItem('golden_cart');
+            if (saved) {
+                try {
+                    return { items: JSON.parse(saved) };
+                } catch (e) { console.error("Failed to parse cart", e); }
+            }
+        }
+        return initial;
+    });
+
+    // Save to LocalStorage on change
+    React.useEffect(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('golden_cart', JSON.stringify(state.items));
+        }
+    }, [state.items]);
 
     const totals = useMemo(() => calcTotals(state.items), [state.items]);
 

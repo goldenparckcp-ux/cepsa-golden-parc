@@ -1,54 +1,88 @@
--- Enable Row Level Security (RLS)
-alter table auth.users enable row level security;
+-- Enable UUID extension
+create extension if not exists "uuid-ossp";
 
--- MENU ITEMS TABLE
-create table if not exists public.menu_items (
-  id uuid default gen_random_uuid() primary key,
-  name text not null,
-  description text,
-  price decimal not null,
-  category text, -- 'beldi', 'tagine', 'grill', 'italian', 'soup', 'drink_hot', 'drink_cold', 'breakfast'
-  prepTime integer, -- minutes
-  image_url text,
-  options jsonb, -- Generic parameters
-  available boolean default true
-);
-
--- ORDERS TABLE
-create table if not exists public.orders (
-  id uuid default gen_random_uuid() primary key,
-  user_id uuid, -- Can be null for guest checkout if allowed, or strictly auth.users
-  order_number text,
-  table_number text, -- '5' for table 5, null for takeaway
-  service_type text, -- 'dine-in' | 'takeaway'
-  items jsonb, -- Array of { name, quantity, price, options }
-  total decimal,
-  status text default 'pending', -- 'pending', 'preparing', 'ready', 'completed'
+-- 1. PROFILES (Users)
+create table if not exists public.profiles (
+  id uuid references auth.users on delete cascade primary key,
+  full_name text,
+  phone text unique,
+  role text default 'user', -- 'user', 'admin', 'kitchen', 'staff'
   created_at timestamp with time zone default timezone('utc'::text, now())
 );
 
--- Enable Realtime
-alter publication supabase_realtime add table public.orders;
+-- 2. RESTAURANT ORDERS
+create table if not exists public.restaurant_orders (
+  id uuid default uuid_generate_v4() primary key,
+  order_number text not null,
+  user_id uuid references public.profiles(id),
+  customer_phone text,
+  items jsonb not null, -- Stores array of items + meta (table number, takeout details)
+  status text default 'pending', -- 'pending', 'preparing', 'ready', 'completed'
+  subtotal numeric,
+  total_price numeric,
+  payment_method text default 'cash',
+  created_at timestamp with time zone default timezone('utc'::text, now())
+);
 
--- RLS POLICIES (Simple version for MVP)
-alter table public.orders enable row level security;
+-- 3. SERVICE BOOKINGS (Lavage / Mecanique)
+create table if not exists public.service_bookings (
+  id uuid default uuid_generate_v4() primary key,
+  booking_number text,
+  user_id uuid references public.profiles(id),
+  customer_phone text,
+  service_type text, -- 'lavage', 'mecanique'
+  service_name text,
+  vehicle_info text,
+  scheduled_at timestamp with time zone,
+  status text default 'scheduled', -- 'scheduled', 'in_progress', 'completed'
+  notes text,
+  time_slot text, -- For timelines e.g. "10:00"
+  created_at timestamp with time zone default timezone('utc'::text, now())
+);
 
--- Allow users to see their own orders
-create policy "Users can view their own orders" 
-on public.orders for select 
-using (auth.uid() = user_id);
+-- 4. POOL BOOKINGS
+create table if not exists public.pool_bookings (
+  id uuid default uuid_generate_v4() primary key,
+  booking_number text,
+  user_id uuid references public.profiles(id),
+  customer_phone text,
+  booking_date date,
+  time_slot text,
+  adults int default 1,
+  children int default 0,
+  total_price numeric,
+  status text default 'active', -- 'active', 'checked_in', 'completed'
+  checked_in_at timestamp with time zone,
+  created_at timestamp with time zone default timezone('utc'::text, now())
+);
 
--- Allow authenticated users to create orders
-create policy "Users can create orders" 
-on public.orders for insert 
-with check (auth.uid() = user_id);
+-- 5. HOTEL RESERVATIONS
+create table if not exists public.hotel_reservations (
+  id uuid default uuid_generate_v4() primary key,
+  booking_number text,
+  user_id uuid references public.profiles(id),
+  customer_phone text,
+  check_in_time timestamp with time zone,
+  duration text, -- 'full_night', 'nap'
+  room_type text,
+  room_number text,
+  status text default 'reserved', -- 'reserved', 'checked_in', 'checked_out'
+  total_price numeric,
+  checked_in_at timestamp with time zone,
+  checked_out_at timestamp with time zone,
+  created_at timestamp with time zone default timezone('utc'::text, now())
+);
 
--- Allow staff (or anyone for this MVP) to update orders (Kitchen Display)
--- In a real app, check for role = 'staff'
-create policy "Staff can view all orders" 
-on public.orders for select 
-using (true);
+-- ENABLE ROW LEVEL SECURITY (Optional - Allow public access for easy demo, secure later)
+alter table public.profiles enable row level security;
+alter table public.restaurant_orders enable row level security;
+alter table public.service_bookings enable row level security;
+alter table public.pool_bookings enable row level security;
+alter table public.hotel_reservations enable row level security;
 
-create policy "Staff can update orders" 
-on public.orders for update 
-using (true);
+-- POLICIES (Allow All for now to avoid permission errors during demo)
+create policy "Public Usage" on public.profiles for all using (true);
+create policy "Public Usage" on public.restaurant_orders for all using (true);
+create policy "Public Usage" on public.service_bookings for all using (true);
+create policy "Public Usage" on public.pool_bookings for all using (true);
+create policy "Public Usage" on public.hotel_reservations for all using (true);

@@ -4,6 +4,7 @@ import BottomTabs from "@/components/BottomTabs";
 import DesktopNav from "@/components/DesktopNav";
 import { CartProvider } from "@/lib/state/CartContext";
 import { UIProvider } from "@/lib/state/UIContext";
+import { AuthProvider } from "@/lib/state/AuthProvider";
 import type { Metadata } from "next";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -23,13 +24,15 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} ${outfit.variable} bg-[#0F172A]`}>
-        <UIProvider>
-          <CartProvider>
-            <DesktopNav />
-            {children}
-            <BottomTabs />
-          </CartProvider>
-        </UIProvider>
+        <AuthProvider>
+          <UIProvider>
+            <CartProvider>
+              <DesktopNav />
+              {children}
+              <BottomTabs />
+            </CartProvider>
+          </UIProvider>
+        </AuthProvider>
       </body>
     </html>
   );
