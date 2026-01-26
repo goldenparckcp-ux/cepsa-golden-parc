@@ -166,7 +166,8 @@ export default function RestaurantPage() {
 
         const { error } = await supabase.from('restaurant_orders').insert({
             order_number: orderNum,
-            customer_phone: profile.phone,
+            user_id: user.id,
+            customer_phone: profile.phone || profile.email,
             items: finalItems,
             status: 'pending',
             subtotal: total,

@@ -119,20 +119,65 @@ function ProfileContent() {
         return () => { isMounted = false; };
     }, [authUser, authLoading]);
 
-    // Fetch Orders
-    const fetchUserOrders = async (userPhone: string) => {
-        if (!userPhone) return;
+    // Fetch Orders - Updated to work with both phone and Google users
+    const fetchUserOrders = async (identifier: string) => {
+        if (!identifier || !userId) return;
         setLoadingOrders(true);
-        const { data: serv } = await supabase.from('service_bookings').select('*').eq('customer_phone', userPhone);
-        const { data: hotel } = await supabase.from('hotel_reservations').select('*').eq('customer_phone', userPhone);
-        // Note: hotel uses 'hotel_reservations' table created in schema, checking use in page... 
-        // Original code used 'hotel_bookings', I should conform to SCHEMA 'hotel_reservations' or fix schema? 
-        // My schema created 'hotel_reservations'. The code used 'hotel_bookings'.
-        // I should fix the query table name here too while I am at it.
+
+        // Search by user_id (best) OR customer_phone/email (fallback)
+        const { data: serv } = await supabase
+            .from('service_bookings')
+            .select('*')
+            .or(`user_id.eq.${userId},customer_phone.eq.${identifier}`);
+
+        const { data: hotel } = await supabase
+            .from('hotel_reservations')
+            .select('*')
+            .or(`user_id.eq.${userId},customer_phone.eq.${identifier}`);
+
+        const { data: pool } = await supabase
+            .from('pool_bookings')
+            .select('*')
+            .or(`user_id.eq.${userId},customer_phone.eq.${identifier}`);
+
+        const { data: resto } = await supabase
+            .from('restaurant_orders')
+            .select('*')
+            .or(`user_id.eq.${userId},customer_phone.eq.${identifier}`);
 
         const all = [
-            ...(serv || []).map(x => ({ ...x, type: x.service_type || 'Service', date: x.created_at, status: x.status, title: x.service_name, code: x.booking_number })),
-            ...(hotel || []).map(x => ({ ...x, type: 'Hotel', date: x.created_at, status: x.status, title: `${x.room_type} (${x.duration_label || 'Séjour'})`, code: x.booking_number })),
+            ...(serv || []).map(x => ({
+                ...x,
+                type: x.service_type || 'Service',
+                date: x.created_at,
+                status: x.status,
+                title: x.service_name,
+                code: x.booking_number
+            })),
+            ...(hotel || []).map(x => ({
+                ...x,
+                type: 'Hôtel',
+                date: x.created_at,
+                status: x.status,
+                title: `${x.room_type} (${x.duration})`,
+                code: x.booking_number
+            })),
+            ...(pool || []).map(x => ({
+                ...x,
+                type: 'Piscine',
+                date: x.created_at,
+                status: x.status,
+                title: `${x.adults} adulte(s), ${x.children} enfant(s)`,
+                code: x.booking_number
+            })),
+            ...(resto || []).map(x => ({
+                ...x,
+                type: 'Restaurant',
+                date: x.created_at,
+                status: x.status,
+                title: `Commande ${x.order_number}`,
+                code: x.order_number
+            })),
         ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
         setOrders(all);
