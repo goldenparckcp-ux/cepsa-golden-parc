@@ -452,7 +452,7 @@ export default function RestaurantPage() {
 
             {/* Cart & Checkout Sheet - Redesigned: Items First, Then Parameters */}
             <DarkSheet open={isCartOpen} onClose={() => setIsCartOpen(false)} title="Votre Panier">
-                <div className="p-5 pb-40 flex flex-col h-full min-h-[80vh]">
+                <div className="p-5 pb-[200px] flex flex-col h-full min-h-[80vh]">
 
                     {/* 1. CART ITEMS LIST - NOW FIRST! */}
                     <div className="space-y-4 mb-6">
@@ -487,11 +487,31 @@ export default function RestaurantPage() {
 
                     {/* Total Prep Time Warning */}
                     {items.length > 0 && (() => {
-                        // Calculate total prep time
+                        // Calculate total prep time with improved parsing
                         const totalMinutes = items.reduce((sum, item) => {
                             const menuItem = COMPLETE_MENU.find(m => m.name === item.name);
                             const prepTime = menuItem?.prepTime || "15 min";
-                            const minutes = parseInt(prepTime.replace(/\D/g, '')) || 15;
+
+                            // Parse time: handle "15 min", "1h", "1h30", "30min", etc.
+                            let minutes = 0;
+
+                            // Check for hours (e.g., "1h", "2h")
+                            const hourMatch = prepTime.match(/(\d+)\s*h/i);
+                            if (hourMatch) {
+                                minutes += parseInt(hourMatch[1]) * 60;
+                            }
+
+                            // Check for minutes (e.g., "30 min", "15min")
+                            const minMatch = prepTime.match(/(\d+)\s*min/i);
+                            if (minMatch) {
+                                minutes += parseInt(minMatch[1]);
+                            }
+
+                            // If no match found, default to 15 min
+                            if (minutes === 0) {
+                                minutes = 15;
+                            }
+
                             return sum + minutes;
                         }, 0);
 
@@ -502,8 +522,8 @@ export default function RestaurantPage() {
 
                         return (
                             <div className={`mb-6 p-3 rounded-xl border flex items-start gap-2 ${isLong
-                                    ? 'bg-orange-500/10 border-orange-500/30'
-                                    : 'bg-green-500/10 border-green-500/30'
+                                ? 'bg-orange-500/10 border-orange-500/30'
+                                : 'bg-green-500/10 border-green-500/30'
                                 }`}>
                                 <Clock className={`w-4 h-4 mt-0.5 shrink-0 ${isLong ? 'text-orange-400' : 'text-green-400'}`} />
                                 <div>
