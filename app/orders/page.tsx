@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Phone, UtensilsCrossed, Droplets, Hotel, Headphones, Car, Waves, LogIn } from "lucide-react";
+import { Phone, UtensilsCrossed, Droplets, Hotel, Headphones, Car, Waves, LogIn, ArrowLeft, LayoutDashboard } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { COLORS } from "@/lib/theme";
 import { supabase } from "@/lib/supabase";
@@ -39,25 +39,31 @@ export default function OrdersPage() {
         const { data: { user } } = await supabase.auth.getUser();
 
         if (user) {
-            // Get phone from profile
-            const { data: profile } = await supabase.from('profiles').select('phone').eq('id', user.id).single();
-            if (profile && profile.phone) {
-                setVerifiedPhone(profile.phone);
-                await fetchOrders(profile.phone);
-            }
+            // Get profile data
+            const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+
+            // Determine best display identifier
+            const displayId = profile?.phone || profile?.email || user.email || 'Client';
+            setVerifiedPhone(displayId);
+
+            // Fetch orders using BOTH user_id and contact info (phone/email)
+            await fetchOrders(user.id, displayId);
         }
         setIsLoading(false);
     };
 
-    const fetchOrders = async (p: string) => {
+    const fetchOrders = async (userId: string, contactInfo: string) => {
+        // Construct OR query: user_id matches OR contact info matches
+        const query = `user_id.eq.${userId},customer_phone.eq.${contactInfo}`;
+
         // 1. Restaurant
-        const { data: rest } = await supabase.from('restaurant_orders').select('*').eq('customer_phone', p);
+        const { data: rest } = await supabase.from('restaurant_orders').select('*').or(query);
         // 2. Services
-        const { data: serv } = await supabase.from('service_bookings').select('*').eq('customer_phone', p);
+        const { data: serv } = await supabase.from('service_bookings').select('*').or(query);
         // 3. Hotel
-        const { data: hotel } = await supabase.from('hotel_reservations').select('*').eq('customer_phone', p);
+        const { data: hotel } = await supabase.from('hotel_reservations').select('*').or(query);
         // 4. Pool
-        const { data: pool } = await supabase.from('pool_bookings').select('*').eq('customer_phone', p);
+        const { data: pool } = await supabase.from('pool_bookings').select('*').or(query);
 
         const all = [
             ...(rest || []).map(x => ({ ...x, type: 'restaurant', summary: `#${x.order_number} · ${x.items.length} items`, date: x.created_at })),
@@ -71,9 +77,22 @@ export default function OrdersPage() {
 
     return (
         <div className="grid gap-4 p-4 pb-24 min-h-screen" style={{ backgroundColor: COLORS.bgDark }}>
-            <div className="rounded-2xl border border-white/10 p-4 shadow-2xl" style={{ backgroundColor: COLORS.bgCard }}>
-                <div className="text-lg font-extrabold text-white">Mes Commandes</div>
-                <div className="mt-1 text-sm text-gray-400">Suivi en temps réel</div>
+            <div className="flex items-center gap-3 mb-6">
+                <button
+                    onClick={() => router.push('/profile')}
+                    className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition-all active:scale-95"
+                >
+                    <ArrowLeft className="w-6 h-6" />
+                </button>
+                <div className="flex-1 rounded-2xl border border-white/10 p-4 shadow-2xl bg-gradient-to-r from-[#1E293B] to-[#0F172A]">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <div className="text-lg font-extrabold text-white leading-none">Mes Commandes</div>
+                            <div className="mt-1 text-sm text-gray-400">Suivi en temps réel</div>
+                        </div>
+                        <LayoutDashboard className="w-6 h-6 text-white/20" />
+                    </div>
+                </div>
             </div>
 
             {isLoading ? (
