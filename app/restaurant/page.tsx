@@ -450,10 +450,77 @@ export default function RestaurantPage() {
                 )}
             </DarkSheet>
 
-            {/* Cart & Checkout Sheet - Redesigned to Match Image 2 */}
+            {/* Cart & Checkout Sheet - Redesigned: Items First, Then Parameters */}
             <DarkSheet open={isCartOpen} onClose={() => setIsCartOpen(false)} title="Votre Panier">
                 <div className="p-5 pb-40 flex flex-col h-full min-h-[80vh]">
 
+                    {/* 1. CART ITEMS LIST - NOW FIRST! */}
+                    <div className="space-y-4 mb-6">
+                        {items.map((item, idx) => {
+                            // Find original menu item to get prepTime
+                            const menuItem = COMPLETE_MENU.find(m => m.name === item.name);
+                            const prepTime = menuItem?.prepTime || "15 min";
+
+                            return (
+                                <div key={idx} className="flex gap-4 bg-[#1E293B] p-3 rounded-2xl border border-white/5 relative">
+                                    <div className="w-16 h-16 rounded-xl bg-black/40 overflow-hidden shrink-0">
+                                        <img src={item.image} className="w-full h-full object-cover" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <div className="font-bold text-white truncate">{item.name}</div>
+                                        <p className="text-xs text-gray-400 line-clamp-2 my-1">{item.meta}</p>
+                                        <div className="flex items-center gap-2 mt-1">
+                                            <div className="text-amber-500 font-bold">{formatDh(item.price! * 1)}</div>
+                                            <div className="bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded text-[10px] text-blue-400 font-bold flex items-center gap-1">
+                                                <Clock className="w-3 h-3" />
+                                                {prepTime}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => removeItem(item.id!)} className="absolute top-3 right-3 text-red-500 opacity-50 hover:opacity-100">
+                                        <Trash2 className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            );
+                        })}
+                    </div>
+
+                    {/* Total Prep Time Warning */}
+                    {items.length > 0 && (() => {
+                        // Calculate total prep time
+                        const totalMinutes = items.reduce((sum, item) => {
+                            const menuItem = COMPLETE_MENU.find(m => m.name === item.name);
+                            const prepTime = menuItem?.prepTime || "15 min";
+                            const minutes = parseInt(prepTime.replace(/\D/g, '')) || 15;
+                            return sum + minutes;
+                        }, 0);
+
+                        const hours = Math.floor(totalMinutes / 60);
+                        const mins = totalMinutes % 60;
+                        const timeDisplay = hours > 0 ? `${hours}h${mins > 0 ? mins : ''}` : `${mins} min`;
+                        const isLong = totalMinutes > 60;
+
+                        return (
+                            <div className={`mb-6 p-3 rounded-xl border flex items-start gap-2 ${isLong
+                                    ? 'bg-orange-500/10 border-orange-500/30'
+                                    : 'bg-green-500/10 border-green-500/30'
+                                }`}>
+                                <Clock className={`w-4 h-4 mt-0.5 shrink-0 ${isLong ? 'text-orange-400' : 'text-green-400'}`} />
+                                <div>
+                                    <div className={`text-xs font-bold ${isLong ? 'text-orange-200' : 'text-green-200'}`}>
+                                        Temps de préparation estimé: {timeDisplay}
+                                    </div>
+                                    {isLong && (
+                                        <div className="text-[10px] text-gray-400 mt-1">
+                                            ⚠️ Commande importante - Merci de votre patience
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        );
+                    })()}
+
+                    {/* 2. PARAMETERS - NOW SECOND */}
                     {items.length > 0 && (
                         <>
                             {/* Toggle: On The Way vs Dine In */}
@@ -539,25 +606,6 @@ export default function RestaurantPage() {
                             </div>
                         </>
                     )}
-
-                    {/* Cart Items List */}
-                    <div className="space-y-4 mb-8">
-                        {items.map((item, idx) => (
-                            <div key={idx} className="flex gap-4 bg-[#1E293B] p-3 rounded-2xl border border-white/5 relative">
-                                <div className="w-16 h-16 rounded-xl bg-black/40 overflow-hidden shrink-0">
-                                    <img src={item.image} className="w-full h-full object-cover" />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="font-bold text-white truncate">{item.name}</div>
-                                    <p className="text-xs text-gray-400 line-clamp-2 my-1">{item.meta}</p>
-                                    <div className="text-amber-500 font-bold">{formatDh(item.price! * 1)}</div>
-                                </div>
-                                <button onClick={() => removeItem(item.id!)} className="absolute top-3 right-3 text-red-500 opacity-50 hover:opacity-100">
-                                    <Trash2 className="w-4 h-4" />
-                                </button>
-                            </div>
-                        ))}
-                    </div>
 
                     {/* Blue Confirm Button */}
                     <div className="fixed bottom-0 left-0 right-0 bg-[#0F172A] p-4 border-t border-white/10 z-50 safe-area-bottom">
