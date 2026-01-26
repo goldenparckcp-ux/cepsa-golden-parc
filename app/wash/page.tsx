@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Droplets, Car, Clock, CheckCircle2, Sparkles, Star } from "lucide-react";
-import { useCart } from "@/lib/state/CartContext";
+import { Droplets, Car, Clock, CheckCircle2, Sparkles, Star, Loader2 } from "lucide-react";
+// import { useCart } from "@/lib/state/CartContext"; // Direct booking now
 import { useUI } from "@/lib/state/UIContext";
+import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
 
 const THEME = {
     bg: "#0f172a",
@@ -50,8 +52,9 @@ function priceDh(n: number) {
 }
 
 export default function WashPage() {
-    const { addItem } = useCart();
+    const router = useRouter();
     const { requirePhone } = useUI();
+    const [loading, setLoading] = useState(false);
 
     const vehicleTypes = useMemo(
         () => [
@@ -127,6 +130,60 @@ export default function WashPage() {
             durationLabel: `${wash?.durationMin || 0} min`
         };
     }, [slot, requiredSlots, wash, vehicle]);
+
+    const handleBooking = async () => {
+        if (!slot) return;
+
+        requirePhone({
+            reason: "reservation",
+            onVerified: async () => {
+                setLoading(true);
+
+                // Get fresh user/profile after verification
+                const { data: { user } } = await supabase.auth.getUser();
+                let customerPhone = null;
+
+                if (user) {
+                    const { data: profile } = await supabase.from('profiles').select('phone').eq('id', user.id).single();
+                    customerPhone = profile?.phone;
+                }
+
+                if (!user || !customerPhone) {
+                    alert("User identification failed. Please try again.");
+                    setLoading(false);
+                    return;
+                }
+
+                const bookingNum = `WASH-${Date.now().toString().slice(-6)}`;
+
+                // Construct Date: Assuming "Today" if no date picker. 
+                // Or we can add a simple date picker logic later. For now, defaulting to today.
+                const today = new Date().toISOString().split('T')[0];
+
+                const { error } = await supabase.from('service_bookings').insert({
+                    booking_number: bookingNum, // If table supports it
+                    user_id: user.id,
+                    customer_phone: customerPhone,
+                    service_type: 'lavage',
+                    service_name: summary.title,
+                    booking_date: today,
+                    time_slot: slot,    // Using time_slot similar to pool
+                    total_price: price,
+                    status: 'pending',
+                    notes: summary.detail
+                });
+
+                if (error) {
+                    console.error("Booking Error:", error);
+                    alert("Erreur lors de la réservation: " + error.message);
+                } else {
+                    // Success
+                    router.push('/profile?redirect=/wash');
+                }
+                setLoading(false);
+            }
+        });
+    };
 
     return (
         <div className="grid gap-6 pb-20" style={{ color: "#fff" }}>
@@ -377,30 +434,11 @@ export default function WashPage() {
 
                     <button
                         type="button"
-                        disabled={!slot}
-                        onClick={() => {
-                            if (!slot) return;
-                            requirePhone({
-                                reason: "reservation",
-                                onVerified: () => {
-                                    addItem({
-                                        id: `wash-${Date.now()}`, // Added an ID
-                                        price: price, // Added price
-                                        quantity: 1, // Added quantity
-                                        type: "wash", // extra field
-                                        name: summary.title,
-                                        detail: summary.detail, // extra field
-                                        prepTime: `⏱️ ${summary.durationLabel}`, // extra field, mapped to CartItem interface?
-                                        totalPrice: price,
-                                        image: "/image/cepsa-station.jpg", // Added dummy image
-                                        meta: summary.detail // mapped to meta
-                                    });
-                                }
-                            });
-                        }}
+                        disabled={!slot || loading}
+                        onClick={handleBooking}
                         className={classNames(
                             "mt-6 w-full rounded-2xl px-6 py-4 text-sm font-extrabold text-white transition-all duration-200",
-                            slot ? "hover:scale-[1.02] hover:shadow-3xl hover:brightness-110" : "opacity-60 cursor-not-allowed"
+                            (slot && !loading) ? "hover:scale-[1.02] hover:shadow-3xl hover:brightness-110" : "opacity-60 cursor-not-allowed"
                         )}
                         style={{
                             background: slot
@@ -409,9 +447,13 @@ export default function WashPage() {
                             boxShadow: slot ? "0 4px 20px rgba(220, 38, 38, 0.4)" : "none"
                         }}
                     >
-                        <span className="inline-flex items-center justify-center gap-2">
-                            <CheckCircle2 className="h-5 w-5" /> Verify Phone · Book Slot
-                        </span>
+                        {loading ? (
+                            <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                        ) : (
+                            <span className="inline-flex items-center justify-center gap-2">
+                                <CheckCircle2 className="h-5 w-5" /> Verify Phone · Book Slot
+                            </span>
+                        )}
                     </button>
                 </div>
             </div>

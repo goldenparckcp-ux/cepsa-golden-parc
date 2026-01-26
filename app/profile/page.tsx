@@ -31,127 +31,26 @@ function ProfileContent() {
     // QR Modal State
     const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
 
-    // Helper to load profile data
-    const loadUserProfile = async (uid: string) => {
-        setIsLoading(true);
-        let { data: profile } = await supabase.from('profiles').select('*').eq('id', uid).single();
-
-        // If no profile exists, create one automatically (especially for Google users)
-        if (!profile && authUser) {
-            const newProfile = {
-                id: uid,
-                email: authUser.email || '',
-                full_name: authUser.user_metadata?.full_name || authUser.user_metadata?.name || 'User',
-                avatar_url: authUser.user_metadata?.avatar_url || '',
-                phone: authUser.phone || '',
-                created_at: new Date().toISOString()
-            };
-
-            const { data: created, error } = await supabase
-                .from('profiles')
-                .insert(newProfile)
-                .select()
-                .single();
-
-            if (!error && created) {
-                profile = created;
-            }
-        }
-
-        if (profile) {
-            setFullName(profile.full_name || 'Client');
-            setPhone(profile.phone || '');
-            setEmail(profile.email || '');
-            setUserId(uid);
-
-            // Check if there's a redirect parameter
-            if (redirectTo && redirectTo !== '/restaurant' && redirectTo !== '/profile') {
-                // Redirect to the requested page
-                router.push(redirectTo);
-            } else {
-                // Stay on profile dashboard
-                setStep('dashboard');
-                fetchUserOrders(profile.phone || profile.email);
-            }
-        } else {
-            // Fallback: show profile creation form
-            console.log("Could not create profile automatically, showing form");
-            if (authUser?.email) {
-                setEmail(authUser.email);
-                setFullName(authUser.user_metadata?.full_name || '');
-            }
-            setUserId(uid);
-            setStep('profile');
-        }
-        setIsLoading(false);
-    };
-
-    // React to Auth Changes
-    // React to Auth Changes
-    useEffect(() => {
-        let isMounted = true;
-
-        const handleAuth = async () => {
-            const hasAuthParams = window.location.hash.includes('access_token') ||
-                window.location.search.includes('code') ||
-                window.location.search.includes('error');
-
-            // 1. If we have a user, load their profile immediately
-            if (authUser) {
-                await loadUserProfile(authUser.id);
-                return;
-            }
-
-            // 2. If we are still loading global auth, just wait (UI shows spinner)
-            if (authLoading) {
-                return;
-            }
-
-            // 3. If global auth is done, but no user found:
-            if (!authUser) {
-                // If we see redirect params, Supabase might still be processing the exchange
-                // We give it a short grace period, then force stop content loading
-                if (hasAuthParams) {
-                    console.log("Auth params present but no user yet. Waiting brief moment...");
-                    setTimeout(() => {
-                        if (isMounted) setIsLoading(false);
-                    }, 3000); // 3s safety timeout to stop infinite spinner
-                } else {
-                    // No params, no user -> Show login form
-                    setIsLoading(false);
-                }
-            }
-        };
-
-        handleAuth();
-        return () => { isMounted = false; };
-    }, [authUser, authLoading]);
-
     // Fetch Orders - Updated to work with both phone and Google users
-    const fetchUserOrders = async (identifier: string) => {
-        if (!identifier || !userId) return;
+    const fetchUserOrders = async (userId: string | null, contactInfo: string) => {
+        // We need at least one identifier
+        if (!userId && !contactInfo) return;
         setLoadingOrders(true);
 
-        // Search by user_id (best) OR customer_phone/email (fallback)
-        const { data: serv } = await supabase
-            .from('service_bookings')
-            .select('*')
-            .or(`user_id.eq.${userId},customer_phone.eq.${identifier}`);
+        // Construct OR query: user_id matches OR contact info matches
+        let query = '';
+        if (userId && contactInfo) {
+            query = `user_id.eq.${userId},customer_phone.eq.${contactInfo}`;
+        } else if (userId) {
+            query = `user_id.eq.${userId}`;
+        } else {
+            query = `customer_phone.eq.${contactInfo}`;
+        }
 
-        const { data: hotel } = await supabase
-            .from('hotel_reservations')
-            .select('*')
-            .or(`user_id.eq.${userId},customer_phone.eq.${identifier}`);
-
-        const { data: pool } = await supabase
-            .from('pool_bookings')
-            .select('*')
-            .or(`user_id.eq.${userId},customer_phone.eq.${identifier}`);
-
-        const { data: resto } = await supabase
-            .from('restaurant_orders')
-            .select('*')
-            .or(`user_id.eq.${userId},customer_phone.eq.${identifier}`);
+        const { data: serv } = await supabase.from('service_bookings').select('*').or(query);
+        const { data: hotel } = await supabase.from('hotel_reservations').select('*').or(query);
+        const { data: pool } = await supabase.from('pool_bookings').select('*').or(query);
+        const { data: resto } = await supabase.from('restaurant_orders').select('*').or(query);
 
         const all = [
             ...(serv || []).map(x => ({
@@ -192,6 +91,101 @@ function ProfileContent() {
         setLoadingOrders(false);
         setIsLoading(false);
     };
+
+    // Helper to load profile data
+    const loadUserProfile = async (uid: string) => {
+        setIsLoading(true);
+        let { data: profile } = await supabase.from('profiles').select('*').eq('id', uid).single();
+
+        // If no profile exists, create one automatically (especially for Google users)
+        if (!profile && authUser) {
+            const newProfile = {
+                id: uid,
+                email: authUser.email || '',
+                full_name: authUser.user_metadata?.full_name || authUser.user_metadata?.name || 'User',
+                avatar_url: authUser.user_metadata?.avatar_url || '',
+                phone: authUser.phone || '',
+                created_at: new Date().toISOString()
+            };
+
+            const { data: created, error } = await supabase
+                .from('profiles')
+                .insert(newProfile)
+                .select()
+                .single();
+
+            if (!error && created) {
+                profile = created;
+            }
+        }
+
+        if (profile) {
+            setFullName(profile.full_name || 'Client');
+            setPhone(profile.phone || '');
+            setEmail(profile.email || '');
+            setUserId(uid);
+
+            // Check if there's a redirect parameter
+            if (redirectTo && redirectTo !== '/restaurant' && redirectTo !== '/profile') {
+                // Redirect to the requested page
+                router.push(redirectTo);
+            } else {
+                // Stay on profile dashboard
+                setStep('dashboard');
+                fetchUserOrders(uid, profile.phone || profile.email);
+            }
+        } else {
+            // Fallback: show profile creation form
+            console.log("Could not create profile automatically, showing form");
+            if (authUser?.email) {
+                setEmail(authUser.email);
+                setFullName(authUser.user_metadata?.full_name || '');
+            }
+            setUserId(uid);
+            setStep('profile');
+        }
+        setIsLoading(false);
+    };
+
+    // React to Auth Changes
+    useEffect(() => {
+        let isMounted = true;
+
+        const handleAuth = async () => {
+            const hasAuthParams = window.location.hash.includes('access_token') ||
+                window.location.search.includes('code') ||
+                window.location.search.includes('error');
+
+            // 1. If we have a user, load their profile immediately
+            if (authUser) {
+                await loadUserProfile(authUser.id);
+                return;
+            }
+
+            // 2. If we are still loading global auth, just wait (UI shows spinner)
+            if (authLoading) {
+                return;
+            }
+
+            // 3. If global auth is done, but no user found:
+            if (!authUser) {
+                // If we see redirect params, Supabase might still be processing the exchange
+                // We give it a short grace period, then force stop content loading
+                if (hasAuthParams) {
+                    console.log("Auth params present but no user yet. Waiting brief moment...");
+                    setTimeout(() => {
+                        if (isMounted) setIsLoading(false);
+                    }, 3000); // 3s safety timeout to stop infinite spinner
+                } else {
+                    // No params, no user -> Show login form
+                    setIsLoading(false);
+                }
+            }
+        };
+
+        handleAuth();
+        return () => { isMounted = false; };
+    }, [authUser, authLoading]);
 
     const handleCopyWifi = () => {
         navigator.clipboard.writeText("GoldenPark2024");
@@ -243,7 +237,7 @@ function ProfileContent() {
                 router.push(redirectTo);
             } else {
                 setStep('dashboard');
-                fetchUserOrders(profile.phone);
+                fetchUserOrders(data.user.id, profile.phone);
             }
         } else {
             setUserId(data.user.id);
@@ -258,7 +252,7 @@ function ProfileContent() {
         if (userId === 'test-user-id' || phone === '0600000000') {
             localStorage.setItem('demo_user', JSON.stringify({ fullName, phone }));
             setStep('dashboard');
-            fetchUserOrders(phone);
+            fetchUserOrders(userId, phone);
             return;
         }
         // -------------------------------------------------------
@@ -281,7 +275,7 @@ function ProfileContent() {
                     router.push(redirectTo);
                 } else {
                     setStep('dashboard');
-                    fetchUserOrders(phone);
+                    fetchUserOrders(userId, phone);
                 }
             } else {
                 alert("Erreur: Database error saving new user");
@@ -292,7 +286,7 @@ function ProfileContent() {
                 router.push(redirectTo);
             } else {
                 setStep('dashboard');
-                fetchUserOrders(phone);
+                fetchUserOrders(userId, phone);
             }
         }
     };

@@ -95,21 +95,31 @@ export default function RoomsPage() {
                 ? new Date()
                 : new Date(Date.now() + 24 * 60 * 60 * 1000);
 
-            // TODO: Save to Supabase hotel_bookings table
-            // const { data, error } = await supabase
-            //   .from('hotel_bookings')
-            //   .insert({
-            //     user_id: userId,
-            //     room_id: room.id,
-            //     room_name: room.name,
-            //     check_in_date: checkInDate.toISOString(),
-            //     nights: 1,
-            //     total_amount: room.price,
-            //     status: 'confirmed',
-            //   });
+            // Fetch profile for phone
+            const { data: profile } = await supabase.from('profiles').select('phone').eq('id', userId).single();
+            const customerPhone = profile?.phone || '';
 
-            // For now, redirect to orders page
-            router.push('/orders');
+            const bookingNumber = `HOTEL-${Math.floor(100000 + Math.random() * 900000)}`;
+
+            const { error } = await supabase
+                .from('hotel_reservations')
+                .insert({
+                    booking_number: bookingNumber,
+                    user_id: userId,
+                    customer_phone: customerPhone,
+                    room_type: room.name,
+                    // room_number: 'TBD', // Assigned by admin
+                    check_in_time: checkInDate.toISOString(),
+                    duration: 'full_night', // Default
+                    status: 'reserved',
+                    // Additional fields if supported:
+                    // total_amount: room.price
+                });
+
+            if (error) throw error;
+
+            // Success redirect
+            router.push('/profile?redirect=/orders');
         } catch (err) {
             console.error('Error creating booking:', err);
             alert('Failed to create booking. Please try again.');
@@ -163,8 +173,8 @@ export default function RoomsPage() {
                         <button
                             onClick={() => setCheckInTime('tonight')}
                             className={`flex-1 p-4 rounded-xl border-2 transition-all ${checkInTime === 'tonight'
-                                    ? 'border-premium-gold bg-premium-gold/10 shadow-lg shadow-premium-gold/20'
-                                    : 'border-white/10 bg-surface-dark hover:border-premium-gold/50'
+                                ? 'border-premium-gold bg-premium-gold/10 shadow-lg shadow-premium-gold/20'
+                                : 'border-white/10 bg-surface-dark hover:border-premium-gold/50'
                                 }`}
                         >
                             <Moon className={`w-8 h-8 mx-auto mb-2 ${checkInTime === 'tonight' ? 'text-premium-gold' : 'text-text-muted'
@@ -176,8 +186,8 @@ export default function RoomsPage() {
                         <button
                             onClick={() => setCheckInTime('tomorrow')}
                             className={`flex-1 p-4 rounded-xl border-2 transition-all ${checkInTime === 'tomorrow'
-                                    ? 'border-premium-gold bg-premium-gold/10 shadow-lg shadow-premium-gold/20'
-                                    : 'border-white/10 bg-surface-dark hover:border-premium-gold/50'
+                                ? 'border-premium-gold bg-premium-gold/10 shadow-lg shadow-premium-gold/20'
+                                : 'border-white/10 bg-surface-dark hover:border-premium-gold/50'
                                 }`}
                         >
                             <Sun className={`w-8 h-8 mx-auto mb-2 ${checkInTime === 'tomorrow' ? 'text-premium-gold' : 'text-text-muted'

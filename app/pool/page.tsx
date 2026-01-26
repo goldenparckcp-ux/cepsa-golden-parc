@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { ChevronLeft, Info, Calendar, Clock, Minus, Plus, Users, CheckCircle } from 'lucide-react';
@@ -52,6 +52,20 @@ export default function PoolBookingPage() {
         return adultsPrice + childrenPrice + infantsPrice;
     };
 
+    const [user, setUser] = useState<any>(null);
+
+    useEffect(() => {
+        const checkUser = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                setUser(user);
+                const { data: profile } = await supabase.from('profiles').select('phone').eq('id', user.id).single();
+                if (profile?.phone) setCustomerPhone(profile.phone);
+            }
+        };
+        checkUser();
+    }, []);
+
     const handleBooking = async () => {
         if (!customerPhone) {
             alert("Veuillez entrer votre numéro de téléphone.");
@@ -71,7 +85,8 @@ export default function PoolBookingPage() {
             infants,
             total_price: calculateTotal(),
             status: 'active',
-            notes: notes || undefined
+            notes: notes || undefined,
+            user_id: user?.id // Link to user
         });
 
         if (error) {
@@ -79,7 +94,7 @@ export default function PoolBookingPage() {
             alert("Erreur lors de la réservation. Veuillez réessayer.");
         } else {
             alert("Réservation confirmée via WhatsApp !"); // Mock
-            router.push('/');
+            router.push('/profile?redirect=/pool'); // Redirect to profile to see order
         }
         setLoading(false);
     };
@@ -159,8 +174,8 @@ export default function PoolBookingPage() {
                                     key={slot.id}
                                     onClick={() => setSelectedSlot(slot.id)}
                                     className={`p-4 rounded-xl border-2 flex items-center gap-4 transition text-left ${selectedSlot === slot.id
-                                            ? 'border-cyan-500 bg-cyan-50 shadow-md ring-1 ring-cyan-500'
-                                            : 'border-gray-200 hover:border-cyan-300'
+                                        ? 'border-cyan-500 bg-cyan-50 shadow-md ring-1 ring-cyan-500'
+                                        : 'border-gray-200 hover:border-cyan-300'
                                         }`}
                                 >
                                     <span className="text-3xl">{slot.icon}</span>

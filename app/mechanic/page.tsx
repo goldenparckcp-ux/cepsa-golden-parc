@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Wrench, Droplets, Snowflake, Search, AlertTriangle, CalendarDays, Clock, CheckCircle2 } from "lucide-react";
-import { useCart } from "@/lib/state/CartContext";
+import { Wrench, Droplets, Snowflake, Search, AlertTriangle, CalendarDays, Clock, CheckCircle2, Loader2 } from "lucide-react";
+// import { useCart } from "@/lib/state/CartContext";
 import { useUI } from "@/lib/state/UIContext";
+import { supabase } from "@/lib/supabase";
+import { useRouter } from "next/navigation";
 
 const THEME = {
     bg: "#0f172a",
@@ -35,8 +37,10 @@ const HOURS = [
 ];
 
 export default function MechanicPage() {
-    const { addItem } = useCart();
+    // const { addItem } = useCart();
     const { requirePhone } = useUI();
+    const router = useRouter();
+    const [loading, setLoading] = useState(false);
 
     const services = useMemo(
         () => [
@@ -84,6 +88,64 @@ export default function MechanicPage() {
     }, [brandModel, plate, selectedServices, date, time]);
 
     const canBook = !urgent && brandModel.trim() && selectedServices.length > 0 && date && time;
+
+    const handleBooking = async () => {
+        if (!canBook) return;
+
+        requirePhone({
+            reason: "reservation",
+            onVerified: async () => {
+                setLoading(true);
+
+                // Get fresh user/profile
+                const { data: { user } } = await supabase.auth.getUser();
+                let customerPhone = null;
+
+                if (user) {
+                    const { data: profile } = await supabase.from('profiles').select('phone').eq('id', user.id).single();
+                    customerPhone = profile?.phone;
+                }
+
+                if (!user || !customerPhone) {
+                    alert("Authentication failed. Please try again.");
+                    setLoading(false);
+                    return;
+                }
+
+                const bookingNum = `MECH-${Date.now().toString().slice(-6)}`;
+
+                // Construct detailed notes
+                const detailedNotes = `
+                    Car: ${brandModel} (${plate})
+                    Services: ${selectedServices.map(s => s.label).join(', ')}
+                    Target Date: ${date} ${time}
+                    User Notes: ${notes}
+                `.trim();
+
+                const { error } = await supabase.from('service_bookings').insert({
+                    booking_number: bookingNum,
+                    user_id: user.id,
+                    customer_phone: customerPhone,
+                    service_type: 'mechanic', // or 'mecanique'
+                    service_name: summary.title,
+                    booking_date: date,
+                    booking_time: time,
+                    status: 'pending',
+                    total_price: total,
+                    notes: detailedNotes
+                });
+
+                if (error) {
+                    console.error("Booking Error:", error);
+                    alert("Erreur: " + error.message);
+                } else {
+                    // Success
+                    router.push('/profile?redirect=/mechanic');
+                }
+                setLoading(false);
+            }
+        });
+    };
 
     return (
         <div className="grid gap-6 pb-20" style={{ color: "#fff" }}>
@@ -305,37 +367,24 @@ export default function MechanicPage() {
 
                 <button
                     type="button"
-                    disabled={!canBook}
-                    onClick={() => {
-                        if (!canBook) return;
-                        requirePhone({
-                            reason: "reservation",
-                            onVerified: () => {
-                                addItem({
-                                    id: `mechanic-${Date.now()}`,
-                                    name: summary.title,
-                                    type: "mechanic",
-                                    price: total,
-                                    quantity: 1,
-                                    totalPrice: total,
-                                    image: "/image/mechanic.jpg", // Dummy image
-                                    meta: summary.detail + (notes.trim() ? ` · Notes: ${notes.trim()}` : "")
-                                });
-                            }
-                        });
-                    }}
+                    disabled={!canBook || loading}
+                    onClick={handleBooking}
                     className={classNames(
                         "mt-6 w-full rounded-2xl px-6 py-5 text-base font-extrabold text-white transition-all duration-300",
-                        canBook ? "hover:scale-[1.01] hover:shadow-2xl hover:brightness-110" : "opacity-50 cursor-not-allowed grayscale"
+                        (canBook && !loading) ? "hover:scale-[1.01] hover:shadow-2xl hover:brightness-110" : "opacity-50 cursor-not-allowed grayscale"
                     )}
                     style={{
                         background: "linear-gradient(135deg, #DC2626 0%, #B91C1C 100%)",
                         boxShadow: canBook ? "0 4px 25px rgba(220, 38, 38, 0.4)" : "none"
                     }}
                 >
-                    <span className="inline-flex items-center justify-center gap-2">
-                        <CheckCircle2 className="h-6 w-6" /> Verify Phone · Book Appointment
-                    </span>
+                    {loading ? (
+                        <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                    ) : (
+                        <span className="inline-flex items-center justify-center gap-2">
+                            <CheckCircle2 className="h-6 w-6" /> Verify Phone · Book Appointment
+                        </span>
+                    )}
                 </button>
             </div>
         </div>
