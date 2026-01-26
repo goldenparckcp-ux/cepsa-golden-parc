@@ -6,6 +6,8 @@ create table if not exists public.profiles (
   id uuid references auth.users on delete cascade primary key,
   full_name text,
   phone text unique,
+  email text, -- For Google Auth users
+  avatar_url text,
   role text default 'user', -- 'user', 'admin', 'kitchen', 'staff'
   created_at timestamp with time zone default timezone('utc'::text, now())
 );

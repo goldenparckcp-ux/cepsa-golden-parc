@@ -17,6 +17,7 @@ function ProfileContent() {
     // Auth States
     const [step, setStep] = useState<'phone' | 'otp' | 'profile' | 'dashboard'>('phone');
     const [phone, setPhone] = useState('');
+    const [email, setEmail] = useState('');
     const [otp, setOtp] = useState('');
     const [fullName, setFullName] = useState('');
     const [isLoading, setIsLoading] = useState(true);
@@ -34,14 +35,21 @@ function ProfileContent() {
     const loadUserProfile = async (uid: string) => {
         setIsLoading(true);
         const { data: profile } = await supabase.from('profiles').select('*').eq('id', uid).single();
+
         if (profile) {
             setFullName(profile.full_name || 'Client');
             setPhone(profile.phone || '');
+            setEmail(profile.email || '');
             setUserId(uid);
             setStep('dashboard');
             fetchUserOrders(profile.phone);
         } else {
             console.log("No profile found, moving to creation step");
+            // If new user from Google, pre-fill data
+            if (authUser?.email) {
+                setEmail(authUser.email);
+                setFullName(authUser.user_metadata?.full_name || '');
+            }
             setUserId(uid);
             setStep('profile');
         }
@@ -179,6 +187,7 @@ function ProfileContent() {
             id: userId,
             full_name: fullName,
             phone: phone,
+            email: email, // Save email if present
             created_at: new Date().toISOString()
         });
 
