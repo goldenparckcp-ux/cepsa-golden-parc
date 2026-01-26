@@ -63,8 +63,16 @@ function ProfileContent() {
             setPhone(profile.phone || '');
             setEmail(profile.email || '');
             setUserId(uid);
-            setStep('dashboard');
-            fetchUserOrders(profile.phone || profile.email);
+
+            // Check if there's a redirect parameter
+            if (redirectTo && redirectTo !== '/restaurant' && redirectTo !== '/profile') {
+                // Redirect to the requested page
+                router.push(redirectTo);
+            } else {
+                // Stay on profile dashboard
+                setStep('dashboard');
+                fetchUserOrders(profile.phone || profile.email);
+            }
         } else {
             // Fallback: show profile creation form
             console.log("Could not create profile automatically, showing form");
@@ -229,8 +237,14 @@ function ProfileContent() {
         if (profile) {
             setFullName(profile.full_name);
             setUserId(data.user.id);
-            setStep('dashboard');
-            fetchUserOrders(profile.phone);
+
+            // Check if there's a redirect parameter
+            if (redirectTo && redirectTo !== '/restaurant' && redirectTo !== '/profile') {
+                router.push(redirectTo);
+            } else {
+                setStep('dashboard');
+                fetchUserOrders(profile.phone);
+            }
         } else {
             setUserId(data.user.id);
             setStep('profile');
@@ -262,14 +276,24 @@ function ProfileContent() {
         if (error) {
             console.error("Supabase Error:", error);
             if (error.code === '23505') {
-                setStep('dashboard');
-                fetchUserOrders(phone);
+                // Profile already exists, redirect or show dashboard
+                if (redirectTo && redirectTo !== '/restaurant' && redirectTo !== '/profile') {
+                    router.push(redirectTo);
+                } else {
+                    setStep('dashboard');
+                    fetchUserOrders(phone);
+                }
             } else {
                 alert("Erreur: Database error saving new user");
             }
         } else {
-            setStep('dashboard');
-            fetchUserOrders(phone);
+            // Profile created successfully, redirect or show dashboard
+            if (redirectTo && redirectTo !== '/restaurant' && redirectTo !== '/profile') {
+                router.push(redirectTo);
+            } else {
+                setStep('dashboard');
+                fetchUserOrders(phone);
+            }
         }
     };
 

@@ -3,7 +3,7 @@ ALTER TABLE hotel_reservations
 ADD COLUMN IF NOT EXISTS check_in_time TIMESTAMP,
 ADD COLUMN IF NOT EXISTS room_number INTEGER,
 ADD COLUMN IF NOT EXISTS room_type VARCHAR(50),
-ADD COLUMN IF NOT EXISTS access_code VARCHAR(20),
+ADD COLUMN IF NOT EXISTS access_code VARCHAR(100),
 ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES auth.users(id);
 
 -- Ensure policies allow authenticated users to insert
