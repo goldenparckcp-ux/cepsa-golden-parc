@@ -454,7 +454,7 @@ function ProfileContent() {
                                 <button
                                     onClick={() => {
                                         setIsLoading(true);
-                                        const callbackUrl = new URL('/auth/callback', window.location.origin);
+                                        const callbackUrl = new URL('/api/auth/callback', window.location.origin);
                                         callbackUrl.searchParams.set('next', '/profile');
 
                                         supabase.auth.signInWithOAuth({
