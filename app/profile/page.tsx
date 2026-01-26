@@ -49,30 +49,44 @@ function ProfileContent() {
     };
 
     // React to Auth Changes
+    // React to Auth Changes
     useEffect(() => {
+        let isMounted = true;
+
         const handleAuth = async () => {
-            // Check if we have a hash or query params indicating an OAuth redirect
             const hasAuthParams = window.location.hash.includes('access_token') ||
                 window.location.search.includes('code') ||
                 window.location.search.includes('error');
 
-            if (hasAuthParams) {
-                console.log("Auth params detected, waiting for Supabase...");
-                setIsLoading(true);
+            // 1. If we have a user, load their profile immediately
+            if (authUser) {
+                await loadUserProfile(authUser.id);
+                return;
             }
 
-            if (!authLoading) {
-                if (authUser) {
-                    await loadUserProfile(authUser.id);
-                } else if (!hasAuthParams) {
+            // 2. If we are still loading global auth, just wait (UI shows spinner)
+            if (authLoading) {
+                return;
+            }
+
+            // 3. If global auth is done, but no user found:
+            if (!authUser) {
+                // If we see redirect params, Supabase might still be processing the exchange
+                // We give it a short grace period, then force stop content loading
+                if (hasAuthParams) {
+                    console.log("Auth params present but no user yet. Waiting brief moment...");
+                    setTimeout(() => {
+                        if (isMounted) setIsLoading(false);
+                    }, 3000); // 3s safety timeout to stop infinite spinner
+                } else {
+                    // No params, no user -> Show login form
                     setIsLoading(false);
                 }
             }
         };
 
         handleAuth();
-
-        handleAuth();
+        return () => { isMounted = false; };
     }, [authUser, authLoading]);
 
     // Fetch Orders
