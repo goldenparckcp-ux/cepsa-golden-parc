@@ -81,6 +81,13 @@ alter table public.pool_bookings enable row level security;
 alter table public.hotel_reservations enable row level security;
 
 -- POLICIES (Allow All for now to avoid permission errors during demo)
+-- Drop existing policies to avoid errors
+drop policy if exists "Public Usage" on public.profiles;
+drop policy if exists "Public Usage" on public.restaurant_orders;
+drop policy if exists "Public Usage" on public.service_bookings;
+drop policy if exists "Public Usage" on public.pool_bookings;
+drop policy if exists "Public Usage" on public.hotel_reservations;
+
 create policy "Public Usage" on public.profiles for all using (true) with check (true);
 create policy "Public Usage" on public.restaurant_orders for all using (true) with check (true);
 create policy "Public Usage" on public.service_bookings for all using (true) with check (true);
