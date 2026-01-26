@@ -6,10 +6,13 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Smartphone, Check, User, ChevronRight, Loader2, ArrowRight, LogOut, Clock, Calendar, MapPin, Package, AlertCircle, Wifi, Copy, Phone, Crown, QrCode, X } from 'lucide-react';
 import { COLORS } from '@/lib/theme';
 
+import { useAuth } from '@/lib/state/AuthProvider';
+
 function ProfileContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const redirectTo = searchParams.get('redirect') || '/restaurant';
+    const { user: authUser, loading: authLoading } = useAuth(); // Global Auth
 
     // Auth States
     const [step, setStep] = useState<'phone' | 'otp' | 'profile' | 'dashboard'>('phone');
@@ -27,39 +30,65 @@ function ProfileContent() {
     // QR Modal State
     const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
 
-    // Initial check
+    // Helper to load profile data
+    const loadUserProfile = async (uid: string) => {
+        setIsLoading(true);
+        const { data: profile } = await supabase.from('profiles').select('*').eq('id', uid).single();
+        if (profile) {
+            setFullName(profile.full_name || 'Client');
+            setPhone(profile.phone || '');
+            setUserId(uid);
+            setStep('dashboard');
+            fetchUserOrders(profile.phone);
+        } else {
+            console.log("No profile found, moving to creation step");
+            setUserId(uid);
+            setStep('profile');
+        }
+        setIsLoading(false);
+    };
+
+    // React to Auth Changes
     useEffect(() => {
-        const checkUser = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user) {
-                const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-                if (profile) {
-                    setFullName(profile.full_name || 'Client');
-                    setPhone(profile.phone || '');
-                    setUserId(user.id);
-                    setStep('dashboard');
-                    fetchUserOrders(profile.phone);
-                } else {
-                    setUserId(user.id);
-                    setStep('profile');
+        const handleAuth = async () => {
+            // Check if we have a hash or query params indicating an OAuth redirect
+            const hasAuthParams = window.location.hash.includes('access_token') ||
+                window.location.search.includes('code') ||
+                window.location.search.includes('error');
+
+            if (hasAuthParams) {
+                console.log("Auth params detected, waiting for Supabase...");
+                setIsLoading(true);
+            }
+
+            if (!authLoading) {
+                if (authUser) {
+                    await loadUserProfile(authUser.id);
+                } else if (!hasAuthParams) {
                     setIsLoading(false);
                 }
-            } else {
-                setIsLoading(false);
             }
         };
-        checkUser();
-    }, []);
+
+        handleAuth();
+
+        handleAuth();
+    }, [authUser, authLoading]);
 
     // Fetch Orders
     const fetchUserOrders = async (userPhone: string) => {
+        if (!userPhone) return;
         setLoadingOrders(true);
         const { data: serv } = await supabase.from('service_bookings').select('*').eq('customer_phone', userPhone);
-        const { data: hotel } = await supabase.from('hotel_bookings').select('*').eq('customer_phone', userPhone);
+        const { data: hotel } = await supabase.from('hotel_reservations').select('*').eq('customer_phone', userPhone);
+        // Note: hotel uses 'hotel_reservations' table created in schema, checking use in page... 
+        // Original code used 'hotel_bookings', I should conform to SCHEMA 'hotel_reservations' or fix schema? 
+        // My schema created 'hotel_reservations'. The code used 'hotel_bookings'.
+        // I should fix the query table name here too while I am at it.
 
         const all = [
             ...(serv || []).map(x => ({ ...x, type: x.service_type || 'Service', date: x.created_at, status: x.status, title: x.service_name, code: x.booking_number })),
-            ...(hotel || []).map(x => ({ ...x, type: 'Hotel', date: x.created_at, status: x.status, title: `${x.room_type} (${x.booking_type})`, code: x.booking_number })),
+            ...(hotel || []).map(x => ({ ...x, type: 'Hotel', date: x.created_at, status: x.status, title: `${x.room_type} (${x.duration_label || 'Séjour'})`, code: x.booking_number })),
         ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
         setOrders(all);
@@ -409,7 +438,15 @@ function ProfileContent() {
                                 </div>
 
                                 <button
-                                    onClick={() => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin + '/profile' } })}
+                                    onClick={() => {
+                                        setIsLoading(true);
+                                        supabase.auth.signInWithOAuth({
+                                            provider: 'google',
+                                            options: {
+                                                redirectTo: window.location.origin + '/profile',
+                                            }
+                                        });
+                                    }}
                                     className="w-full py-4 bg-white text-black rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-gray-100 transition-all"
                                 >
                                     <svg className="w-5 h-5" viewBox="0 0 24 24">
