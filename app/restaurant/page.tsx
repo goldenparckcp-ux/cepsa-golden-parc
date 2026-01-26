@@ -518,23 +518,55 @@ export default function RestaurantPage() {
                         const hours = Math.floor(totalMinutes / 60);
                         const mins = totalMinutes % 60;
                         const timeDisplay = hours > 0 ? `${hours}h${mins > 0 ? mins : ''}` : `${mins} min`;
-                        const isLong = totalMinutes > 60;
+
+                        // Parse customer arrival time
+                        const parseArrivalTime = (time: string) => {
+                            const hourMatch = time.match(/(\d+)\s*h/i);
+                            const minMatch = time.match(/(\d+)\s*min/i);
+                            let mins = 0;
+                            if (hourMatch) mins += parseInt(hourMatch[1]) * 60;
+                            if (minMatch) mins += parseInt(minMatch[1]);
+                            return mins || parseInt(time.replace(/\D/g, '')) || 15;
+                        };
+
+                        const arrivalMinutes = parseArrivalTime(arrivalTime);
+                        const timeDiff = arrivalMinutes - totalMinutes;
+
+                        // Determine status
+                        let status: 'good' | 'warning' | 'critical' = 'good';
+                        let statusMessage = '';
+
+                        if (timeDiff < 0) {
+                            status = 'critical';
+                            statusMessage = `⚠️ Votre commande sera prête ${Math.abs(timeDiff)} min après votre arrivée`;
+                        } else if (timeDiff < 5) {
+                            status = 'warning';
+                            statusMessage = '⏱️ Timing serré - Commande prête à votre arrivée';
+                        } else {
+                            status = 'good';
+                            statusMessage = `✅ Commande prête ${timeDiff} min avant votre arrivée`;
+                        }
+
+                        const bgColor = status === 'critical' ? 'bg-red-500/10 border-red-500/30' :
+                            status === 'warning' ? 'bg-orange-500/10 border-orange-500/30' :
+                                'bg-green-500/10 border-green-500/30';
+                        const textColor = status === 'critical' ? 'text-red-200' :
+                            status === 'warning' ? 'text-orange-200' :
+                                'text-green-200';
+                        const iconColor = status === 'critical' ? 'text-red-400' :
+                            status === 'warning' ? 'text-orange-400' :
+                                'text-green-400';
 
                         return (
-                            <div className={`mb-6 p-3 rounded-xl border flex items-start gap-2 ${isLong
-                                ? 'bg-orange-500/10 border-orange-500/30'
-                                : 'bg-green-500/10 border-green-500/30'
-                                }`}>
-                                <Clock className={`w-4 h-4 mt-0.5 shrink-0 ${isLong ? 'text-orange-400' : 'text-green-400'}`} />
-                                <div>
-                                    <div className={`text-xs font-bold ${isLong ? 'text-orange-200' : 'text-green-200'}`}>
-                                        Temps de préparation estimé: {timeDisplay}
+                            <div className={`mb-6 p-3 rounded-xl border flex items-start gap-2 ${bgColor}`}>
+                                <Clock className={`w-4 h-4 mt-0.5 shrink-0 ${iconColor}`} />
+                                <div className="flex-1">
+                                    <div className={`text-xs font-bold ${textColor}`}>
+                                        Temps de préparation: {timeDisplay}
                                     </div>
-                                    {isLong && (
-                                        <div className="text-[10px] text-gray-400 mt-1">
-                                            ⚠️ Commande importante - Merci de votre patience
-                                        </div>
-                                    )}
+                                    <div className="text-[10px] text-gray-400 mt-0.5">
+                                        {statusMessage}
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -603,19 +635,6 @@ export default function RestaurantPage() {
                                         />
                                     </>
                                 )}
-                            </div>
-
-                            {/* Notes Section */}
-                            <div className="bg-[#1E293B] rounded-2xl p-5 mb-6 border border-white/10">
-                                <h3 className="text-white font-bold mb-2 text-sm flex items-center gap-2">
-                                    Notes / Observations
-                                </h3>
-                                <textarea
-                                    value={notes}
-                                    onChange={(e) => setNotes(e.target.value)}
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-blue-500 h-24 resize-none text-sm"
-                                    placeholder="Ex: No onions, Extra spicy..."
-                                />
                             </div>
 
                             {/* Removed Manual Phone Input - Will use Profile */}
