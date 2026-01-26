@@ -34,7 +34,29 @@ function ProfileContent() {
     // Helper to load profile data
     const loadUserProfile = async (uid: string) => {
         setIsLoading(true);
-        const { data: profile } = await supabase.from('profiles').select('*').eq('id', uid).single();
+        let { data: profile } = await supabase.from('profiles').select('*').eq('id', uid).single();
+
+        // If no profile exists, create one automatically (especially for Google users)
+        if (!profile && authUser) {
+            const newProfile = {
+                id: uid,
+                email: authUser.email || '',
+                full_name: authUser.user_metadata?.full_name || authUser.user_metadata?.name || 'User',
+                avatar_url: authUser.user_metadata?.avatar_url || '',
+                phone: authUser.phone || '',
+                created_at: new Date().toISOString()
+            };
+
+            const { data: created, error } = await supabase
+                .from('profiles')
+                .insert(newProfile)
+                .select()
+                .single();
+
+            if (!error && created) {
+                profile = created;
+            }
+        }
 
         if (profile) {
             setFullName(profile.full_name || 'Client');
@@ -42,10 +64,10 @@ function ProfileContent() {
             setEmail(profile.email || '');
             setUserId(uid);
             setStep('dashboard');
-            fetchUserOrders(profile.phone);
+            fetchUserOrders(profile.phone || profile.email);
         } else {
-            console.log("No profile found, moving to creation step");
-            // If new user from Google, pre-fill data
+            // Fallback: show profile creation form
+            console.log("Could not create profile automatically, showing form");
             if (authUser?.email) {
                 setEmail(authUser.email);
                 setFullName(authUser.user_metadata?.full_name || '');
