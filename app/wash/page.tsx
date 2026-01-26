@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import { Droplets, Car, Clock, CheckCircle2, Sparkles, Star, Loader2 } from "lucide-react";
-// import { useCart } from "@/lib/state/CartContext"; // Direct booking now
+import { DarkSheet } from "@/components/ui/DarkSheet";
 import { useUI } from "@/lib/state/UIContext";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
@@ -55,6 +55,7 @@ export default function WashPage() {
     const router = useRouter();
     const { requirePhone } = useUI();
     const [loading, setLoading] = useState(false);
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
 
     const vehicleTypes = useMemo(
         () => [
@@ -131,7 +132,7 @@ export default function WashPage() {
         };
     }, [slot, requiredSlots, wash, vehicle]);
 
-    const handleBooking = async () => {
+    const handleConfirmBooking = async () => {
         if (!slot) return;
 
         requirePhone({
@@ -155,19 +156,16 @@ export default function WashPage() {
                 }
 
                 const bookingNum = `WASH-${Date.now().toString().slice(-6)}`;
-
-                // Construct Date: Assuming "Today" if no date picker. 
-                // Or we can add a simple date picker logic later. For now, defaulting to today.
                 const today = new Date().toISOString().split('T')[0];
 
                 const { error } = await supabase.from('service_bookings').insert({
-                    booking_number: bookingNum, // If table supports it
+                    booking_number: bookingNum,
                     user_id: user.id,
                     customer_phone: customerPhone,
                     service_type: 'lavage',
                     service_name: summary.title,
                     booking_date: today,
-                    time_slot: slot,    // Using time_slot similar to pool
+                    time_slot: slot,
                     total_price: price,
                     status: 'pending',
                     notes: summary.detail
@@ -177,7 +175,7 @@ export default function WashPage() {
                     console.error("Booking Error:", error);
                     alert("Erreur lors de la réservation: " + error.message);
                 } else {
-                    // Success
+                    setIsConfirmOpen(false);
                     router.push('/profile?redirect=/wash');
                 }
                 setLoading(false);
@@ -186,7 +184,7 @@ export default function WashPage() {
     };
 
     return (
-        <div className="grid gap-6 pb-20" style={{ color: "#fff" }}>
+        <div className="grid gap-6 pb-32" style={{ color: "#fff" }}>
             {/* Background decoration */}
             <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-transparent to-purple-900/20 pointer-events-none"></div>
 
@@ -200,7 +198,6 @@ export default function WashPage() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
 
-                {/* Animated particles */}
                 <div className="absolute inset-0 pointer-events-none">
                     <div className="absolute top-10 left-10 w-2 h-2 bg-amber-400 rounded-full opacity-60 animate-pulse"></div>
                     <div className="absolute top-20 right-16 w-3 h-3 bg-red-400 rounded-full opacity-40 animate-pulse animation-delay-1000"></div>
@@ -226,17 +223,7 @@ export default function WashPage() {
                                 <div className="h-1 w-8 rounded-full bg-gradient-to-r from-red-500 to-amber-400"></div>
                             </div>
                             <div className="text-base text-white/90 leading-relaxed font-medium">
-                                Smart booking · 30-min slots · Duration auto-blocking · Eco-friendly products
-                            </div>
-                            <div className="mt-3 flex items-center gap-2 flex-wrap">
-                                <span className="inline-flex items-center rounded-2xl bg-gradient-to-r from-green-500/20 to-emerald-500/20 px-3 py-1 text-xs font-extrabold text-white border border-green-400/30">
-                                    <Sparkles className="h-3.5 w-3.5 mr-1" />
-                                    Professional Service
-                                </span>
-                                <span className="inline-flex items-center rounded-2xl bg-gradient-to-r from-amber-500/20 to-amber-600/20 px-3 py-1 text-xs font-extrabold text-white border border-amber-400/30">
-                                    <Star className="h-3.5 w-3.5 mr-1" />
-                                    Quality Guaranteed
-                                </span>
+                                Smart booking · 30-min slots · Duration auto-blocking
                             </div>
                         </div>
                     </div>
@@ -244,6 +231,7 @@ export default function WashPage() {
             </div>
 
             <div className="grid gap-6 animate-fade-in">
+                {/* 1) Vehicle Profile */}
                 <div className="rounded-3xl border border-white/10 p-6 backdrop-blur-sm" style={{
                     background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)",
                     boxShadow: "0 4px 20px rgba(30, 41, 59, 0.3)"
@@ -262,9 +250,7 @@ export default function WashPage() {
                                     onClick={() => setVehicleId(v.id)}
                                     className={classNames(
                                         "relative overflow-hidden rounded-2xl border p-4 transition-all duration-300 hover:scale-[1.02]",
-                                        active
-                                            ? "border-white/30 shadow-2xl scale-[1.02]"
-                                            : "border-white/10 hover:border-white/20"
+                                        active ? "border-white/30 shadow-2xl scale-[1.02]" : "border-white/10 hover:border-white/20"
                                     )}
                                     style={{
                                         background: active
@@ -293,6 +279,7 @@ export default function WashPage() {
                     </div>
                 </div>
 
+                {/* 2) Wash Type */}
                 <div className="rounded-3xl border border-white/10 p-6 backdrop-blur-sm" style={{
                     background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)",
                     boxShadow: "0 4px 20px rgba(30, 41, 59, 0.3)"
@@ -315,9 +302,7 @@ export default function WashPage() {
                                     }}
                                     className={classNames(
                                         "relative overflow-hidden rounded-2xl border p-4 text-left transition-all duration-300 hover:scale-[1.02]",
-                                        active
-                                            ? "border-white/30 shadow-2xl scale-[1.02]"
-                                            : "border-white/10 hover:border-white/20"
+                                        active ? "border-white/30 shadow-2xl scale-[1.02]" : "border-white/10 hover:border-white/20"
                                     )}
                                     style={{
                                         background: active
@@ -348,6 +333,7 @@ export default function WashPage() {
                     </div>
                 </div>
 
+                {/* 3) Smart Time Slots */}
                 <div className="rounded-3xl border border-white/10 p-6 backdrop-blur-sm" style={{
                     background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)",
                     boxShadow: "0 4px 20px rgba(30, 41, 59, 0.3)"
@@ -407,56 +393,95 @@ export default function WashPage() {
                             })}
                         </div>
                     </div>
+                </div>
+            </div>
 
-                    <div className="mt-6 rounded-3xl border border-white/10 p-5 backdrop-blur-sm" style={{
-                        background: "linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)",
-                        boxShadow: "0 4px 15px rgba(255,255,255,0.1)"
-                    }}>
-                        <div className="flex items-center gap-3 mb-3">
-                            <div className="h-1 w-4 rounded-full bg-gradient-to-r from-amber-400 to-red-500"></div>
-                            <div className="text-sm font-extrabold text-white">Booking Summary</div>
-                            <div className="h-1 w-4 rounded-full bg-gradient-to-r from-red-500 to-amber-400"></div>
-                        </div>
-                        <div className="text-sm font-extrabold text-white">{summary.title}</div>
-                        <div className="mt-2 text-xs text-white/70 font-medium">{summary.detail}</div>
-                        <div className="mt-4 flex items-center justify-between">
-                            <div className="text-xs text-white/60 font-semibold">Estimated Price</div>
-                            <div className="text-lg font-extrabold" style={{
-                                background: "linear-gradient(135deg, #EAB308 0%, #F59E0B 100%)",
-                                WebkitBackgroundClip: "text",
-                                WebkitTextFillColor: "transparent",
-                                backgroundClip: "text"
-                            }}>
-                                {priceDh(price)}
+            {/* Bottom Bar: Replaces "Verify Phone & Book Slot" with "Open Sheet" */}
+            <div className="fixed bottom-0 left-0 right-0 p-4 bg-[#0f172a]/95 backdrop-blur-md border-t border-white/10 z-40 safe-area-bottom">
+                <button
+                    type="button"
+                    disabled={!slot}
+                    onClick={() => setIsConfirmOpen(true)}
+                    className={classNames(
+                        "w-full rounded-2xl px-6 py-4 text-base font-extrabold text-white transition-all duration-200 shadow-xl",
+                        slot ? "hover:scale-[1.01] hover:shadow-2xl hover:brightness-110" : "opacity-60 cursor-not-allowed"
+                    )}
+                    style={{
+                        background: slot
+                            ? "linear-gradient(135deg, #DC2626 0%, #EF4444 100%)"
+                            : "linear-gradient(135deg, #334155 0%, #1e293b 100%)",
+                        boxShadow: slot ? "0 4px 20px rgba(220, 38, 38, 0.4)" : "none"
+                    }}
+                >
+                    <span className="inline-flex items-center justify-center gap-2">
+                        {slot ? (
+                            <>Réserver à <span className="text-amber-300">{slot}</span> · {priceDh(price)}</>
+                        ) : 'Sélectionnez un créneau'}
+                    </span>
+                </button>
+            </div>
+
+            {/* Confirmation Sheet */}
+            <DarkSheet open={isConfirmOpen} onClose={() => setIsConfirmOpen(false)} title="Confirmer la réservation">
+                <div className="p-6 flex flex-col h-full overflow-y-auto pb-40">
+                    <div className="flex-1 space-y-6">
+                        {/* Summary Card */}
+                        <div className="bg-[#1E293B] p-5 rounded-2xl border border-white/10">
+                            <h3 className="text-gray-400 text-xs font-bold uppercase tracking-wider mb-4 border-b border-white/10 pb-2">Récapitulatif</h3>
+
+                            <div className="space-y-4 text-sm">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-300">Service</span>
+                                    <span className="font-bold text-white text-right">{wash?.name}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-300">Véhicule</span>
+                                    <span className="font-bold text-white text-right">{vehicle?.label}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-300">Date</span>
+                                    <span className="font-bold text-white text-right">Aujourd'hui</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-gray-300">Horaire</span>
+                                    <span className="font-bold text-amber-500 text-lg">{slot}</span>
+                                </div>
+
+                                <div className="bg-white/5 p-3 rounded-xl mt-2">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-gray-300 font-bold">Total à payer</span>
+                                        <span className="font-black text-2xl text-green-400">{priceDh(price)}</span>
+                                    </div>
+                                    <div className="text-[10px] text-gray-500 mt-1 text-right">Paiement sur place</div>
+                                </div>
                             </div>
+                        </div>
+
+                        <div className="bg-blue-500/10 p-4 rounded-xl border border-blue-500/20 flex gap-3">
+                            <CheckCircle2 className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
+                            <p className="text-xs text-blue-200 leading-relaxed">
+                                En confirmant, votre créneau sera réservé instantanément. Vous recevrez une notification de confirmation.
+                            </p>
                         </div>
                     </div>
 
-                    <button
-                        type="button"
-                        disabled={!slot || loading}
-                        onClick={handleBooking}
-                        className={classNames(
-                            "mt-6 w-full rounded-2xl px-6 py-4 text-sm font-extrabold text-white transition-all duration-200",
-                            (slot && !loading) ? "hover:scale-[1.02] hover:shadow-3xl hover:brightness-110" : "opacity-60 cursor-not-allowed"
-                        )}
-                        style={{
-                            background: slot
-                                ? "linear-gradient(135deg, #DC2626 0%, #EF4444 100%)"
-                                : "linear-gradient(135deg, #64748b 0%, #475569 100%)",
-                            boxShadow: slot ? "0 4px 20px rgba(220, 38, 38, 0.4)" : "none"
-                        }}
-                    >
-                        {loading ? (
-                            <Loader2 className="w-5 h-5 animate-spin mx-auto" />
-                        ) : (
-                            <span className="inline-flex items-center justify-center gap-2">
-                                <CheckCircle2 className="h-5 w-5" /> Verify Phone · Book Slot
-                            </span>
-                        )}
-                    </button>
+                    <div className="mt-8">
+                        <button
+                            onClick={handleConfirmBooking}
+                            disabled={loading}
+                            className="w-full py-4 bg-gradient-to-r from-green-600 to-green-500 hover:from-green-500 hover:to-green-400 rounded-xl font-black text-white text-lg shadow-lg shadow-green-900/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                        >
+                            {loading ? <Loader2 className="animate-spin w-6 h-6" /> : "Confirmer la Réservation"}
+                        </button>
+                        <button
+                            onClick={() => setIsConfirmOpen(false)}
+                            className="w-full mt-3 py-3 text-sm font-bold text-gray-400 hover:text-white transition-colors"
+                        >
+                            Annuler
+                        </button>
+                    </div>
                 </div>
-            </div>
+            </DarkSheet>
         </div>
     );
 }
