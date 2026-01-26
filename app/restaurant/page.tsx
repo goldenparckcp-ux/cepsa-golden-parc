@@ -136,7 +136,7 @@ export default function RestaurantPage() {
             if (!user) return;
 
             const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-            if (!profile?.phone) return;
+            if (!profile?.phone && !profile?.email) return;
 
             // Execute Order
             await processOrder(user, profile);
@@ -203,8 +203,8 @@ export default function RestaurantPage() {
             profile = data;
         }
 
-        // REDIRECT IF MISSING
-        if (!user || !profile?.phone) {
+        // REDIRECT IF MISSING - Allow Google users (email) or Phone users
+        if (!user || (!profile?.phone && !profile?.email)) {
             localStorage.setItem('pendingRestaurantOrder', 'true');
             router.push('/profile?redirect=/restaurant');
             return;
