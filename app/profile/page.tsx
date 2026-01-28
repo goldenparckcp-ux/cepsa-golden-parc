@@ -89,11 +89,17 @@ function ProfileContent() {
     };
 
     // Cancel Order Handler
-    const handleCancelOrder = async (orderId: string, table: string) => {
+    const handleCancelOrder = async (orderId: string, table?: string) => {
         if (!confirm("Voulez-vous vraiment annuler cette réservation ?")) return;
 
         // Optimistic update: Remove immediately from UI
         setOrders(prev => prev.filter(o => o.id !== orderId));
+
+        // Validate table name exists
+        if (!table) {
+            console.error("Table name is required for cancellation");
+            return;
+        }
 
         const { error } = await supabase.from(table).update({ status: 'cancelled' }).eq('id', orderId);
 
