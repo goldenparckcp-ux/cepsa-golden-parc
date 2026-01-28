@@ -115,14 +115,20 @@ function ProfileContent() {
         if (!userId && !contactInfo) return;
         setLoadingOrders(true);
 
+        // Build query for each table based on available identifiers
         let query = '';
         if (userId && contactInfo) query = `user_id.eq.${userId},customer_phone.eq.${contactInfo}`;
         else if (userId) query = `user_id.eq.${userId}`;
         else query = `customer_phone.eq.${contactInfo}`;
 
+        // Pool bookings use customer_phone field
+        let poolQuery = contactInfo ? `customer_phone.eq.${contactInfo}` : '';
+        if (userId && poolQuery) poolQuery += `,user_id.eq.${userId}`;
+        else if (userId) poolQuery = `user_id.eq.${userId}`;
+
         const { data: serv } = await supabase.from('service_bookings').select('*').or(query);
         const { data: hotel } = await supabase.from('hotel_reservations').select('*').or(query);
-        const { data: pool } = await supabase.from('pool_bookings').select('*').or(query);
+        const { data: pool } = await supabase.from('pool_bookings').select('*').or(poolQuery || query);
         const { data: resto } = await supabase.from('restaurant_orders').select('*').or(query);
 
         const all = [
