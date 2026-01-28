@@ -1,12 +1,26 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
-const supabaseAdmin = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+    console.error('Missing Supabase environment variables');
+}
+
+const supabaseAdmin = supabaseUrl && supabaseKey
+    ? createClient(supabaseUrl, supabaseKey)
+    : null;
 
 export async function GET(request: Request) {
+    if (!supabaseAdmin) {
+        return NextResponse.json({ error: 'Database configuration error' }, { status: 500 });
+    }
+
     const { searchParams } = new URL(request.url);
     const type = searchParams.get('type'); // 'hotel', 'services', 'pool'
     let table = '';
@@ -31,6 +45,10 @@ export async function GET(request: Request) {
 }
 
 export async function PUT(request: Request) {
+    if (!supabaseAdmin) {
+        return NextResponse.json({ error: 'Database configuration error' }, { status: 500 });
+    }
+
     const body = await request.json();
     const { id, type, ...updates } = body;
 
