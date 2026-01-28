@@ -5,7 +5,21 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { ChevronLeft, Info, Calendar, Clock, Minus, Plus, Users, CheckCircle } from 'lucide-react';
 
-const POOL_PRICING: any = {
+// Interface for Pricing Structure
+interface PricingTier {
+    label: string;
+    morning: number;
+    afternoon: number;
+    full_day: number;
+}
+
+interface PoolPricing {
+    adults: PricingTier;
+    children: PricingTier;
+    infants: PricingTier;
+}
+
+const POOL_PRICING: PoolPricing = {
     adults: {
         label: 'Adultes (13+ ans)',
         morning: 100,      // 09:00 - 14:00
@@ -35,7 +49,8 @@ const TIME_SLOTS = [
 export default function PoolBookingPage() {
     const router = useRouter();
     const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
-    const [selectedSlot, setSelectedSlot] = useState<string>('full_day');
+    // Fix: Explicitly type selectedSlot
+    const [selectedSlot, setSelectedSlot] = useState<keyof PricingTier>('full_day');
     const [adults, setAdults] = useState(1);
     const [children, setChildren] = useState(0);
     const [infants, setInfants] = useState(0);
@@ -112,9 +127,9 @@ export default function PoolBookingPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#1A2332] pb-24 font-sans text-gray-100">
+        <div className="min-h-screen bg-[#0F172A] pb-24 font-sans text-gray-100">
             {/* Header */}
-            <div className="bg-[#2C3E50] p-4 flex items-center sticky top-0 z-50 shadow-md">
+            <div className="bg-[#1E293B] p-4 flex items-center sticky top-0 z-50 shadow-md">
                 <button onClick={() => router.push('/')} className="p-2 bg-white/10 rounded-full hover:bg-white/20 transition">
                     <ChevronLeft className="w-6 h-6 text-white" />
                 </button>
@@ -159,7 +174,7 @@ export default function PoolBookingPage() {
                     {/* Date */}
                     <div>
                         <label className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                            <Calendar className="w-5 h-5 text-cyan-600" /> Sélectionnez une Date
+                            <Calendar className="w-5 h-5 text-red-600" /> Sélectionnez une Date
                         </label>
                         <input
                             type="date"
@@ -173,15 +188,15 @@ export default function PoolBookingPage() {
                     {/* Ambiance Selection */}
                     <div>
                         <label className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                            <Users className="w-5 h-5 text-cyan-600" /> Ambiance
+                            <Users className="w-5 h-5 text-red-600" /> Ambiance
                         </label>
                         <div className="grid grid-cols-3 gap-3">
                             {/* Famille */}
                             <button
                                 onClick={() => setAmbiance('famille')}
                                 className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition relative ${ambiance === 'famille'
-                                    ? 'border-red-500 bg-cyan-50 shadow-md ring-1 ring-cyan-500'
-                                    : 'border-gray-200 hover:border-cyan-300 hover:shadow-lg'
+                                    ? 'border-red-500 bg-red-50 shadow-md ring-1 ring-red-500'
+                                    : 'border-gray-200 hover:border-red-300 hover:shadow-lg'
                                     }`}
                             >
                                 <span className="text-3xl">👨‍👩‍👧‍👦</span>
@@ -189,15 +204,15 @@ export default function PoolBookingPage() {
                                 <div className="bg-red-600 text-white text-xs font-black px-3 py-1.5 rounded-full shadow-md">
                                     📅 LUNDI
                                 </div>
-                                {ambiance === 'famille' && <CheckCircle className="w-5 h-5 text-cyan-600 absolute top-2 right-2" />}
+                                {ambiance === 'famille' && <CheckCircle className="w-5 h-5 text-red-600 absolute top-2 right-2" />}
                             </button>
 
                             {/* Mixte */}
                             <button
                                 onClick={() => setAmbiance('mixte')}
                                 className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition relative ${ambiance === 'mixte'
-                                    ? 'border-red-500 bg-cyan-50 shadow-md ring-1 ring-cyan-500'
-                                    : 'border-gray-200 hover:border-cyan-300 hover:shadow-lg'
+                                    ? 'border-red-500 bg-red-50 shadow-md ring-1 ring-red-500'
+                                    : 'border-gray-200 hover:border-red-300 hover:shadow-lg'
                                     }`}
                             >
                                 <span className="text-3xl">👫</span>
@@ -205,15 +220,15 @@ export default function PoolBookingPage() {
                                 <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white text-xs font-black px-3 py-1.5 rounded-full shadow-md">
                                     ✨ AUTRES JOURS
                                 </div>
-                                {ambiance === 'mixte' && <CheckCircle className="w-5 h-5 text-cyan-600 absolute top-2 right-2" />}
+                                {ambiance === 'mixte' && <CheckCircle className="w-5 h-5 text-red-600 absolute top-2 right-2" />}
                             </button>
 
                             {/* Femmes */}
                             <button
                                 onClick={() => setAmbiance('femmes')}
                                 className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition relative ${ambiance === 'femmes'
-                                    ? 'border-red-500 bg-cyan-50 shadow-md ring-1 ring-cyan-500'
-                                    : 'border-gray-200 hover:border-cyan-300 hover:shadow-lg'
+                                    ? 'border-red-500 bg-red-50 shadow-md ring-1 ring-red-500'
+                                    : 'border-gray-200 hover:border-red-300 hover:shadow-lg'
                                     }`}
                             >
                                 <span className="text-3xl">👭</span>
@@ -221,7 +236,7 @@ export default function PoolBookingPage() {
                                 <div className="bg-purple-600 text-white text-xs font-black px-3 py-1.5 rounded-full shadow-md">
                                     📅 JEUDI
                                 </div>
-                                {ambiance === 'femmes' && <CheckCircle className="w-5 h-5 text-cyan-600 absolute top-2 right-2" />}
+                                {ambiance === 'femmes' && <CheckCircle className="w-5 h-5 text-red-600 absolute top-2 right-2" />}
                             </button>
                         </div>
                     </div>
@@ -229,22 +244,22 @@ export default function PoolBookingPage() {
                     {/* Time Slot */}
                     <div>
                         <label className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-                            <Clock className="w-5 h-5 text-cyan-600" /> Choisissez un Créneau
+                            <Clock className="w-5 h-5 text-red-600" /> Choisissez un Créneau
                         </label>
                         <div className="grid grid-cols-1 gap-3">
                             {TIME_SLOTS.map(slot => (
                                 <button
                                     key={slot.id}
-                                    onClick={() => setSelectedSlot(slot.id)}
+                                    onClick={() => setSelectedSlot(slot.id as keyof PricingTier)}
                                     className={`p-4 rounded-xl border-2 flex items-center gap-4 transition text-left ${selectedSlot === slot.id
-                                        ? 'border-red-500 bg-cyan-50 shadow-md ring-1 ring-cyan-500'
-                                        : 'border-gray-200 hover:border-cyan-300'
+                                        ? 'border-red-500 bg-red-50 shadow-md ring-1 ring-red-500'
+                                        : 'border-gray-200 hover:border-red-300'
                                         }`}
                                 >
                                     <span className="text-3xl">{slot.icon}</span>
                                     <div>
                                         <div className="font-bold text-gray-900">{slot.label}</div>
-                                        {selectedSlot === slot.id && <div className="text-cyan-600 text-sm font-bold mt-1">Sélectionné</div>}
+                                        {selectedSlot === slot.id && <div className="text-red-600 text-sm font-bold mt-1">Sélectionné</div>}
                                     </div>
                                 </button>
                             ))}
@@ -299,16 +314,16 @@ export default function PoolBookingPage() {
                     </div>
 
                     {/* Summary */}
-                    <div className="bg-cyan-50 border-2 border-cyan-200 rounded-xl p-4">
+                    <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
                         <h3 className="font-bold text-gray-900 mb-3">💰 Récapitulatif</h3>
                         <div className="space-y-2 mb-4 text-sm">
                             {adults > 0 && <div className="flex justify-between"><span>{adults} Adulte(s)</span><span className="font-bold">{adults * currentPricing.adult} DH</span></div>}
                             {children > 0 && <div className="flex justify-between"><span>{children} Enfant(s)</span><span className="font-bold">{children * currentPricing.child} DH</span></div>}
                             {infants > 0 && <div className="flex justify-between text-green-700"><span>{infants} Bébé(s)</span><span className="font-bold">Gratuit</span></div>}
                         </div>
-                        <div className="border-t-2 border-cyan-200 pt-3 flex justify-between items-center">
+                        <div className="border-t-2 border-red-200 pt-3 flex justify-between items-center">
                             <span className="text-lg font-bold">Total</span>
-                            <span className="text-3xl font-black text-cyan-600">{calculateTotal()} DH</span>
+                            <span className="text-3xl font-black text-red-600">{calculateTotal()} DH</span>
                         </div>
                     </div>
 
@@ -316,7 +331,7 @@ export default function PoolBookingPage() {
                     <button
                         onClick={handleBooking}
                         disabled={loading || (adults + children === 0) || !customerPhone}
-                        className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2"
+                        className="w-full bg-gradient-to-r from-red-600 to-red-600 text-white py-4 rounded-xl font-bold text-lg shadow-lg disabled:opacity-50 disabled:shadow-none flex items-center justify-center gap-2"
                     >
                         {loading ? 'Traitement...' : 'Réserver Maintenant'}
                     </button>

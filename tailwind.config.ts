@@ -9,32 +9,33 @@ const config: Config = {
     theme: {
         extend: {
             // Master Prompt Design System
-            'bg-dark': '#0A1929',
+            'bg-dark': '#0F172A',
             'bg-card': '#1E293B',
             'bg-nav': '#0F172A',
 
-            // Primary (Cyan/Blue)
-            primary: '#06B6D4',
-            'primary-dark': '#0891B2',
-            'primary-light': '#22D3EE',
+            // Primary (Cepsa Red) - NO MORE CYAN
+            primary: '#D6001C',
+            'primary-dark': '#A00015',
+            'primary-light': '#FF1A33',
 
-            // Accent
-            accent: '#3B82F6',
-            'accent-red': '#EF4444',
+            // Accent (Gold)
+            accent: '#D4AF37',       // Premium Gold
+            'accent-gold': '#EAB308',
+            'accent-red': '#D6001C',
 
             // Text
             'text-primary': '#F8FAFC',
             'text-secondary': '#94A3B8',
 
             // Status
-            'status-pending': '#EAB308',
-            'status-preparing': '#3B82F6',
-            'status-ready': '#10B981',
-            'status-completed': '#6B7280',
+            'status-pending': '#EAB308',    // Gold
+            'status-preparing': '#D6001C',  // Red (was Blue)
+            'status-ready': '#10B981',      // Green
+            'status-completed': '#6B7280',  // Gray
 
-            // Legacy / Compatibility (keep if needed, otherwise rely on new system)
+            // Legacy / Compatibility
             'cepsa-red': '#D6001C',
-            'premium-gold': '#EAB308',
+            'premium-gold': '#D4AF37',
 
             fontFamily: {
                 sans: ['var(--font-space-grotesk)', 'system-ui', 'sans-serif'],
