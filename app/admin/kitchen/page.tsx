@@ -206,8 +206,8 @@ function SmartOrderCard({ order, now, updateStatus, parseTime }: { order: any, n
     // Determines Status & Styling
     let statusConfig = {
         label: "À Venir",
-        color: "bg-blue-600",
-        border: "border-blue-500/30",
+        color: "bg-red-600",
+        border: "border-red-500/30",
         bg: "bg-[#1E293B]",
         animate: false
     };
@@ -222,9 +222,9 @@ function SmartOrderCard({ order, now, updateStatus, parseTime }: { order: any, n
         } else if (diffMinutes <= 30) {
             statusConfig = { label: "👨‍🍳 CUISINEZ (FEU)", color: "bg-yellow-600", border: "border-yellow-500", bg: "bg-[#2E2E1E]", animate: false };
         } else if (diffMinutes <= 45) {
-            statusConfig = { label: "🔪 MISE EN PLACE", color: "bg-cyan-600", border: "border-cyan-500/50", bg: "bg-[#162B32]", animate: false };
+            statusConfig = { label: "🔪 MISE EN PLACE", color: "bg-red-600", border: "border-red-500/50", bg: "bg-[#162B32]", animate: false };
         } else if (diffMinutes <= 60) {
-            statusConfig = { label: "⚠️ PRÉP. BIENTÔT", color: "bg-blue-500", border: "border-blue-500/50", bg: "bg-[#1E293B]", animate: false };
+            statusConfig = { label: "⚠️ PRÉP. BIENTÔT", color: "bg-red-500", border: "border-red-500/50", bg: "bg-[#1E293B]", animate: false };
         } else {
             statusConfig = { label: `📅 PRÉVU (+${Math.floor(diffMinutes / 60)}H)`, color: "bg-gray-600", border: "border-gray-700", bg: "bg-[#1E293B]", animate: false };
         }
@@ -301,9 +301,9 @@ function SmartOrderCard({ order, now, updateStatus, parseTime }: { order: any, n
 
             {/* Remarques (Notes) - Changed to Information Style (Blue) */}
             {order.notes && (
-                <div className="bg-blue-500/10 border border-blue-500/30 p-3 rounded-xl flex gap-3 items-start animate-in slide-in-from-bottom-2">
-                    <AlertTriangle className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-                    <div className="text-xs font-bold text-blue-200 italic break-words w-full">
+                <div className="bg-red-500/10 border border-red-500/30 p-3 rounded-xl flex gap-3 items-start animate-in slide-in-from-bottom-2">
+                    <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                    <div className="text-xs font-bold text-red-200 italic break-words w-full">
                         "{order.notes.replace('[SYSTEM]', '')}"
                     </div>
                 </div>

@@ -188,7 +188,7 @@ export default function WashPage() {
     return (
         <div className="grid gap-6 pb-32" style={{ color: "#fff" }}>
             {/* Background decoration */}
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-transparent to-purple-900/20 pointer-events-none"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-red-900/20 via-transparent to-purple-900/20 pointer-events-none"></div>
 
             {/* Enhanced Header Section */}
             <div className="relative overflow-hidden rounded-3xl border border-white/10 shadow-2xl h-[280px]">
@@ -459,9 +459,9 @@ export default function WashPage() {
                             </div>
                         </div>
 
-                        <div className="bg-blue-500/10 p-4 rounded-xl border border-blue-500/20 flex gap-3">
-                            <CheckCircle2 className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
-                            <p className="text-xs text-blue-200 leading-relaxed">
+                        <div className="bg-red-500/10 p-4 rounded-xl border border-red-500/20 flex gap-3">
+                            <CheckCircle2 className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                            <p className="text-xs text-red-200 leading-relaxed">
                                 En confirmant, votre créneau sera réservé instantanément. Vous recevrez une notification de confirmation.
                             </p>
                         </div>

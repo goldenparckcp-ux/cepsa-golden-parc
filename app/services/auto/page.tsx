@@ -164,7 +164,7 @@ function AutoServiceContent() {
                             key={s.id}
                             onClick={() => { setActiveTab(s.id); setSelectedOption(null); }}
                             className={`flex-1 py-3 px-4 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition-all ${activeTab === s.id
-                                ? 'bg-blue-600 text-white shadow-lg'
+                                ? 'bg-red-600 text-white shadow-lg'
                                 : 'text-gray-400 hover:text-white'
                                 }`}
                         >
@@ -196,12 +196,12 @@ function AutoServiceContent() {
                                 key={opt.id}
                                 onClick={() => setSelectedOption(opt.id)}
                                 className={`w-full p-4 rounded-xl border flex items-center justify-between transition-all ${selectedOption === opt.id
-                                    ? 'bg-blue-600/20 border-blue-500 shadow-[0_0_20px_rgba(37,99,235,0.2)]'
+                                    ? 'bg-red-600/20 border-red-500 shadow-[0_0_20px_rgba(37,99,235,0.2)]'
                                     : 'bg-[#1E293B] border-white/5 hover:bg-[#1E293B]/80'
                                     }`}
                             >
                                 <div className="text-left">
-                                    <div className={`font-bold ${selectedOption === opt.id ? 'text-blue-400' : 'text-white'}`}>{opt.label}</div>
+                                    <div className={`font-bold ${selectedOption === opt.id ? 'text-red-400' : 'text-white'}`}>{opt.label}</div>
                                     <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
                                         <Clock className="w-3 h-3" /> {opt.duration}
                                     </div>
@@ -221,7 +221,7 @@ function AutoServiceContent() {
                             value={date}
                             onChange={(e) => setDate(e.target.value)}
                             min={new Date().toISOString().split('T')[0]}
-                            className="w-full bg-[#0F172A] border border-white/10 rounded-lg p-3 text-white outline-none focus:border-blue-500 transition-colors font-bold"
+                            className="w-full bg-[#0F172A] border border-white/10 rounded-lg p-3 text-white outline-none focus:border-red-500 transition-colors font-bold"
                         />
                     </div>
                     <div>
@@ -232,7 +232,7 @@ function AutoServiceContent() {
                                     key={t}
                                     onClick={() => setTime(t)}
                                     className={`px-3 py-2 rounded-lg text-sm font-bold border transition-all ${time === t
-                                        ? 'bg-blue-500 border-blue-500 text-white'
+                                        ? 'bg-red-500 border-red-500 text-white'
                                         : 'border-white/10 text-gray-400 hover:bg-white/5'
                                         }`}
                                 >
@@ -262,7 +262,7 @@ function AutoServiceContent() {
                 <button
                     onClick={handleBooking}
                     disabled={!selectedOption || loading}
-                    className="w-full py-4 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 text-white font-extrabold text-lg shadow-lg disabled:opacity-50 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                    className="w-full py-4 rounded-xl bg-gradient-to-r from-red-600 to-red-700 text-white font-extrabold text-lg shadow-lg disabled:opacity-50 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                 >
                     {loading ? 'Traitement...' : 'Réserver Rendez-vous'}
                 </button>
@@ -282,7 +282,7 @@ function AutoServiceContent() {
                         <div className="space-y-3">
                             <button
                                 onClick={() => router.push('/orders')}
-                                className="w-full py-4 bg-blue-600 rounded-xl font-bold text-white shadow-lg"
+                                className="w-full py-4 bg-red-600 rounded-xl font-bold text-white shadow-lg"
                             >
                                 Voir mes Rendez-vous
                             </button>

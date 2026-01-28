@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabase";
 function statusColor(type: string, status: string) {
     const s = status.toLowerCase();
     if (s === 'pending' || s === 'scheduled' || s === 'reserved') return "bg-yellow-500/20 text-yellow-500";
-    if (s === 'preparing' || s === 'in_progress' || s === 'active') return "bg-blue-500/20 text-blue-500";
+    if (s === 'preparing' || s === 'in_progress' || s === 'active') return "bg-red-500/20 text-red-500";
     if (s === 'ready' || s === 'checked_in') return "bg-green-500/20 text-green-500";
     if (s === 'completed' || s === 'checked_out') return "bg-gray-500/20 text-gray-500";
     return "bg-white/10 text-white/60";
@@ -101,8 +101,8 @@ export default function OrdersPage() {
                 </div>
             ) : !verifiedPhone ? (
                 <div className="rounded-2xl border border-white/10 p-8 flex flex-col items-center justify-center text-center space-y-4" style={{ backgroundColor: COLORS.bgCard }}>
-                    <div className="w-16 h-16 bg-blue-600/20 rounded-full flex items-center justify-center">
-                        <LogIn className="w-8 h-8 text-blue-500" />
+                    <div className="w-16 h-16 bg-red-600/20 rounded-full flex items-center justify-center">
+                        <LogIn className="w-8 h-8 text-red-500" />
                     </div>
                     <div>
                         <h3 className="text-lg font-bold text-white">Connexion Requise</h3>
@@ -112,7 +112,7 @@ export default function OrdersPage() {
                     </div>
                     <button
                         onClick={() => router.push('/profile?redirect=/orders')}
-                        className="w-full py-3 bg-blue-600 rounded-xl font-bold text-white shadow-lg hover:brightness-110 transition-all"
+                        className="w-full py-3 bg-red-600 rounded-xl font-bold text-white shadow-lg hover:brightness-110 transition-all"
                     >
                         Se Connecter
                     </button>

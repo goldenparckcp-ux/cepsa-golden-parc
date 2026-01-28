@@ -157,7 +157,7 @@ export default function AdminDashboard() {
             {/* Top Bar */}
             <header className="bg-[#1E293B] border-b border-white/10 p-4 sticky top-0 z-50 flex items-center justify-between shadow-2xl">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center text-xl shadow-lg shadow-cyan-500/20">
+                    <div className="w-10 h-10 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-xl flex items-center justify-center text-xl shadow-lg shadow-red-500/20">
                         👑
                     </div>
                     <div>
@@ -201,7 +201,7 @@ export default function AdminDashboard() {
                             {/* KPI Cards */}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                 <KPICard title="Commandes (Resto)" value={stats.orders.toString()} icon={<UtensilsCrossed />} color="text-yellow-500" bg="bg-yellow-500/10" border="border-yellow-500/20" />
-                                <KPICard title="Services Auto" value={stats.services.toString()} icon={<Car />} color="text-blue-500" bg="bg-blue-500/10" border="border-blue-500/20" />
+                                <KPICard title="Services Auto" value={stats.services.toString()} icon={<Car />} color="text-red-500" bg="bg-red-500/10" border="border-red-500/20" />
                                 <KPICard title="Hôtel & Repos" value={stats.hotel.toString()} icon={<BedDouble />} color="text-purple-500" bg="bg-purple-500/10" border="border-purple-500/20" />
                                 <KPICard title="Revenu Total" value={`${stats.revenue.toLocaleString()} DH`} icon={<TrendingUp />} color="text-green-500" bg="bg-green-500/10" border="border-green-500/20" />
                             </div>
@@ -211,7 +211,7 @@ export default function AdminDashboard() {
                                 {/* Activity Feed */}
                                 <div className="lg:col-span-2 bg-[#1E293B] rounded-3xl border border-white/10 p-6">
                                     <h3 className="font-black text-xl mb-6 flex items-center gap-3">
-                                        <LayoutDashboard className="w-6 h-6 text-cyan-400" />
+                                        <LayoutDashboard className="w-6 h-6 text-red-400" />
                                         Activité Récente
                                     </h3>
                                     <div className="space-y-3">
@@ -221,9 +221,9 @@ export default function AdminDashboard() {
                                             let bg = 'bg-gray-500/10';
 
                                             if (item.type === 'order') { icon = <UtensilsCrossed className="w-4 h-4" />; color = 'text-yellow-400'; bg = 'bg-yellow-500/10'; }
-                                            if (item.type === 'service') { icon = <Car className="w-4 h-4" />; color = 'text-blue-400'; bg = 'bg-blue-500/10'; }
+                                            if (item.type === 'service') { icon = <Car className="w-4 h-4" />; color = 'text-red-400'; bg = 'bg-red-500/10'; }
                                             if (item.type === 'hotel') { icon = <BedDouble className="w-4 h-4" />; color = 'text-purple-400'; bg = 'bg-purple-500/10'; }
-                                            if (item.type === 'pool') { icon = <Droplets className="w-4 h-4" />; color = 'text-cyan-400'; bg = 'bg-cyan-500/10'; }
+                                            if (item.type === 'pool') { icon = <Droplets className="w-4 h-4" />; color = 'text-red-400'; bg = 'bg-red-500/10'; }
 
                                             return (
                                                 <div key={idx} className="flex items-center gap-4 p-4 rounded-2xl bg-[#0F172A] border border-white/5 hover:border-white/10 transition-all">
@@ -260,12 +260,12 @@ export default function AdminDashboard() {
                                             <div className="w-2 h-2 rounded-full bg-yellow-500 animate-pulse" />
                                         </div>
 
-                                        <div className="p-4 rounded-2xl bg-[#0F172A] border border-white/5 flex justify-between items-center group cursor-pointer hover:border-blue-500/50 transition-colors" onClick={() => setActiveTab('services')}>
+                                        <div className="p-4 rounded-2xl bg-[#0F172A] border border-white/5 flex justify-between items-center group cursor-pointer hover:border-red-500/50 transition-colors" onClick={() => setActiveTab('services')}>
                                             <div className="flex items-center gap-3">
-                                                <div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-500 flex items-center justify-center font-bold">{stats.pending_services}</div>
+                                                <div className="w-8 h-8 rounded-lg bg-red-500/10 text-red-500 flex items-center justify-center font-bold">{stats.pending_services}</div>
                                                 <div className="text-sm font-bold text-gray-300 group-hover:text-white">Véhicules (Attente)</div>
                                             </div>
-                                            <div className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                                            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
                                         </div>
 
                                         <div className="p-4 rounded-2xl bg-[#0F172A] border border-white/5 flex justify-between items-center group cursor-pointer hover:border-purple-500/50 transition-colors" onClick={() => setActiveTab('hotel')}>
@@ -316,11 +316,11 @@ function NavButton({ active, onClick, icon: Icon, label }: NavButtonProps) {
         <button
             onClick={onClick}
             className={`flex items-center gap-4 px-6 py-3 w-full transition-all border-l-4 ${active
-                ? 'bg-white/5 border-cyan-500 text-white'
+                ? 'bg-white/5 border-red-500 text-white'
                 : 'border-transparent text-gray-400 hover:text-gray-200 hover:bg-white/5'
                 }`}
         >
-            <Icon className={`w-5 h-5 ${active ? 'text-cyan-400' : ''}`} />
+            <Icon className={`w-5 h-5 ${active ? 'text-red-400' : ''}`} />
             <span className="font-bold text-sm hidden md:block">{label}</span>
         </button>
     );

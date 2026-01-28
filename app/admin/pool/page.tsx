@@ -84,7 +84,7 @@ export default function PoolStaffDashboard() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
                 <div className="md:col-span-2 bg-[#1E293B] p-6 rounded-2xl border border-white/10 flex items-center justify-between">
                     <div className="flex items-center gap-4">
-                        <div className="bg-cyan-500/20 p-3 rounded-xl text-cyan-400">
+                        <div className="bg-red-500/20 p-3 rounded-xl text-red-400">
                             <Waves className="w-8 h-8" />
                         </div>
                         <div>
@@ -97,7 +97,7 @@ export default function PoolStaffDashboard() {
                             <button
                                 key={f}
                                 onClick={() => setFilter(f)}
-                                className={`px-4 py-2 rounded-md text-xs font-bold uppercase transition ${filter === f ? 'bg-cyan-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}
+                                className={`px-4 py-2 rounded-md text-xs font-bold uppercase transition ${filter === f ? 'bg-red-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}
                             >
                                 {f === 'today' ? "Aujourd'hui" : f === 'upcoming' ? 'Futur' : 'Tout'}
                             </button>
@@ -105,7 +105,7 @@ export default function PoolStaffDashboard() {
                     </div>
                 </div>
 
-                <KPICard icon={<Users />} label="Visiteurs (Ce jour)" value={stats.visitors} color="text-blue-400" bg="bg-blue-500/10" />
+                <KPICard icon={<Users />} label="Visiteurs (Ce jour)" value={stats.visitors} color="text-red-400" bg="bg-red-500/10" />
                 <KPICard icon={<Droplets />} label="Actifs (Baignade)" value={stats.active} color="text-green-400" bg="bg-green-500/10" />
             </div>
 
@@ -118,8 +118,8 @@ export default function PoolStaffDashboard() {
                 )}
 
                 {filtered.map(b => (
-                    <div key={b.id} className={`relative bg-[#1E293B] rounded-3xl p-6 border-2 transition-all group ${b.status === 'checked_in' ? 'border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.15)]' :
-                        b.status === 'completed' ? 'border-gray-800 opacity-60' : 'border-blue-500/30 hover:border-blue-500'
+                    <div key={b.id} className={`relative bg-[#1E293B] rounded-3xl p-6 border-2 transition-all group ${b.status === 'checked_in' ? 'border-red-500 shadow-[0_0_20px_rgba(6,182,212,0.15)]' :
+                        b.status === 'completed' ? 'border-gray-800 opacity-60' : 'border-red-500/30 hover:border-red-500'
                         }`}>
 
                         {/* Status Badge */}
@@ -140,7 +140,7 @@ export default function PoolStaffDashboard() {
                             {/* Ambiance */}
                             <div className="flex items-center justify-between bg-[#0F172A] p-3 rounded-xl border border-white/5">
                                 <span className="text-xs font-bold text-gray-400 uppercase">Ambiance</span>
-                                <span className={`text-sm font-bold capitalize px-2 py-1 rounded ${b.ambiance === 'famille' ? 'bg-blue-500/20 text-blue-400' :
+                                <span className={`text-sm font-bold capitalize px-2 py-1 rounded ${b.ambiance === 'famille' ? 'bg-red-500/20 text-red-400' :
                                     b.ambiance === 'femmes' ? 'bg-purple-500/20 text-purple-400' :
                                         'bg-green-500/20 text-green-400'
                                     }`}>
@@ -183,7 +183,7 @@ export default function PoolStaffDashboard() {
                             {(b.status === 'pending' || b.status === 'confirmed') && (
                                 <button
                                     onClick={() => updateStatus(b.id, 'checked_in')}
-                                    className="w-full py-3 bg-cyan-600 hover:bg-cyan-500 rounded-xl font-bold text-white shadow-lg shadow-cyan-900/20 transition active:scale-[0.98] flex items-center justify-center gap-2"
+                                    className="w-full py-3 bg-red-600 hover:bg-red-500 rounded-xl font-bold text-white shadow-lg shadow-cyan-900/20 transition active:scale-[0.98] flex items-center justify-center gap-2"
                                 >
                                     <CheckCircle className="w-5 h-5" /> CHECK-IN
                                 </button>
@@ -228,9 +228,9 @@ function KPICard({ icon, label, value, color, bg }: any) {
 
 function StatusBadge({ status }: { status: string }) {
     const styles = {
-        pending: 'bg-blue-500/20 text-blue-400',
-        active: 'bg-blue-500/20 text-blue-400',
-        checked_in: 'bg-cyan-500 text-white animate-pulse shadow-lg shadow-cyan-500/30',
+        pending: 'bg-red-500/20 text-red-400',
+        active: 'bg-red-500/20 text-red-400',
+        checked_in: 'bg-red-500 text-white animate-pulse shadow-lg shadow-red-500/30',
         completed: 'bg-gray-700/50 text-gray-500',
         cancelled: 'bg-red-500/20 text-red-500'
     };

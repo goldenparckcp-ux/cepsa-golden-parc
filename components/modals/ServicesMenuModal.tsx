@@ -20,9 +20,9 @@ export function ServicesMenuModal({ isOpen, onClose }: ServicesMenuModalProps) {
             name: 'Lavage Auto',
             icon: Droplets,
             description: 'Express • Complet • Vapeur',
-            color: 'text-blue-400',
-            bg: 'bg-blue-500/10',
-            border: 'border-blue-500/20',
+            color: 'text-red-400',
+            bg: 'bg-red-500/10',
+            border: 'border-red-500/20',
             route: '/services/lavage'
         },
         {
@@ -117,7 +117,7 @@ export function ServicesMenuModal({ isOpen, onClose }: ServicesMenuModalProps) {
                                         <service.icon className={`w-7 h-7 ${service.color}`} />
                                     </div>
                                     <div className="flex-1">
-                                        <h3 className="text-lg font-black text-white group-hover:text-blue-400 transition-colors">
+                                        <h3 className="text-lg font-black text-white group-hover:text-red-400 transition-colors">
                                             {service.name}
                                         </h3>
                                         <p className="text-xs text-gray-400 font-medium mt-1">

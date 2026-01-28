@@ -72,7 +72,7 @@ function ServicesContent() {
     return (
         <div className="grid gap-6" style={{ color: "#fff" }}>
             {/* Background decoration */}
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-900/20 via-transparent to-purple-900/20 pointer-events-none"></div>
+            <div className="absolute inset-0 bg-gradient-to-br from-red-900/20 via-transparent to-purple-900/20 pointer-events-none"></div>
 
             {/* Enhanced Header Section */}
             <section className="relative overflow-hidden rounded-3xl border border-white/10 shadow-2xl">

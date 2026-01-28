@@ -71,7 +71,7 @@ export function FoodCard({ item, onSelect }: FoodCardProps) {
                             </div>
                         </div>
 
-                        <div className="line-clamp-2 text-sm text-blue-200/80 font-medium leading-relaxed sm:text-base">
+                        <div className="line-clamp-2 text-sm text-red-200/80 font-medium leading-relaxed sm:text-base">
                             {item.description}
                         </div>
 

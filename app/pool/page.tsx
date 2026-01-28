@@ -149,7 +149,7 @@ export default function PoolBookingPage() {
                         <label className="font-bold text-gray-900 mb-2 block">📱 Votre Numéro</label>
                         <input
                             type="tel"
-                            className="w-full p-4 border-2 border-gray-200 rounded-xl bg-gray-50 focus:border-cyan-500 outline-none font-bold text-lg"
+                            className="w-full p-4 border-2 border-gray-200 rounded-xl bg-gray-50 focus:border-red-500 outline-none font-bold text-lg"
                             placeholder="06..."
                             value={customerPhone}
                             onChange={e => setCustomerPhone(e.target.value)}
@@ -166,7 +166,7 @@ export default function PoolBookingPage() {
                             min={new Date().toISOString().split('T')[0]}
                             value={selectedDate}
                             onChange={(e) => setSelectedDate(e.target.value)}
-                            className="w-full p-4 border-2 border-gray-200 rounded-xl bg-gray-50 focus:border-cyan-500 outline-none font-bold"
+                            className="w-full p-4 border-2 border-gray-200 rounded-xl bg-gray-50 focus:border-red-500 outline-none font-bold"
                         />
                     </div>
 
@@ -180,13 +180,13 @@ export default function PoolBookingPage() {
                             <button
                                 onClick={() => setAmbiance('famille')}
                                 className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition relative ${ambiance === 'famille'
-                                    ? 'border-cyan-500 bg-cyan-50 shadow-md ring-1 ring-cyan-500'
+                                    ? 'border-red-500 bg-cyan-50 shadow-md ring-1 ring-cyan-500'
                                     : 'border-gray-200 hover:border-cyan-300 hover:shadow-lg'
                                     }`}
                             >
                                 <span className="text-3xl">👨‍👩‍👧‍👦</span>
                                 <div className="font-bold text-gray-900 text-sm text-center">Famille</div>
-                                <div className="bg-blue-600 text-white text-xs font-black px-3 py-1.5 rounded-full shadow-md">
+                                <div className="bg-red-600 text-white text-xs font-black px-3 py-1.5 rounded-full shadow-md">
                                     📅 LUNDI
                                 </div>
                                 {ambiance === 'famille' && <CheckCircle className="w-5 h-5 text-cyan-600 absolute top-2 right-2" />}
@@ -196,7 +196,7 @@ export default function PoolBookingPage() {
                             <button
                                 onClick={() => setAmbiance('mixte')}
                                 className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition relative ${ambiance === 'mixte'
-                                    ? 'border-cyan-500 bg-cyan-50 shadow-md ring-1 ring-cyan-500'
+                                    ? 'border-red-500 bg-cyan-50 shadow-md ring-1 ring-cyan-500'
                                     : 'border-gray-200 hover:border-cyan-300 hover:shadow-lg'
                                     }`}
                             >
@@ -212,7 +212,7 @@ export default function PoolBookingPage() {
                             <button
                                 onClick={() => setAmbiance('femmes')}
                                 className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition relative ${ambiance === 'femmes'
-                                    ? 'border-cyan-500 bg-cyan-50 shadow-md ring-1 ring-cyan-500'
+                                    ? 'border-red-500 bg-cyan-50 shadow-md ring-1 ring-cyan-500'
                                     : 'border-gray-200 hover:border-cyan-300 hover:shadow-lg'
                                     }`}
                             >
@@ -237,7 +237,7 @@ export default function PoolBookingPage() {
                                     key={slot.id}
                                     onClick={() => setSelectedSlot(slot.id)}
                                     className={`p-4 rounded-xl border-2 flex items-center gap-4 transition text-left ${selectedSlot === slot.id
-                                        ? 'border-cyan-500 bg-cyan-50 shadow-md ring-1 ring-cyan-500'
+                                        ? 'border-red-500 bg-cyan-50 shadow-md ring-1 ring-cyan-500'
                                         : 'border-gray-200 hover:border-cyan-300'
                                         }`}
                                 >
@@ -264,7 +264,7 @@ export default function PoolBookingPage() {
                                 <div className="flex items-center gap-3">
                                     <button onClick={() => setAdults(Math.max(0, adults - 1))} className="w-10 h-10 rounded-full border-2 flex items-center justify-center font-bold bg-white text-gray-500 hover:bg-gray-100">-</button>
                                     <span className="text-xl font-bold w-6 text-center">{adults}</span>
-                                    <button onClick={() => setAdults(adults + 1)} className="w-10 h-10 rounded-full border-2 border-cyan-500 flex items-center justify-center font-bold bg-cyan-500 text-white hover:bg-cyan-600">+</button>
+                                    <button onClick={() => setAdults(adults + 1)} className="w-10 h-10 rounded-full border-2 border-red-500 flex items-center justify-center font-bold bg-red-500 text-white hover:bg-red-600">+</button>
                                 </div>
                             </div>
 
@@ -277,7 +277,7 @@ export default function PoolBookingPage() {
                                 <div className="flex items-center gap-3">
                                     <button onClick={() => setChildren(Math.max(0, children - 1))} className="w-10 h-10 rounded-full border-2 flex items-center justify-center font-bold bg-white text-gray-500 hover:bg-gray-100">-</button>
                                     <span className="text-xl font-bold w-6 text-center">{children}</span>
-                                    <button onClick={() => setChildren(children + 1)} className="w-10 h-10 rounded-full border-2 border-cyan-500 flex items-center justify-center font-bold bg-cyan-500 text-white hover:bg-cyan-600">+</button>
+                                    <button onClick={() => setChildren(children + 1)} className="w-10 h-10 rounded-full border-2 border-red-500 flex items-center justify-center font-bold bg-red-500 text-white hover:bg-red-600">+</button>
                                 </div>
                             </div>
 

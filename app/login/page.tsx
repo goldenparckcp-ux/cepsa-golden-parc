@@ -59,7 +59,7 @@ export default function LoginPage() {
                             placeholder="+212 6XX XX XX XX"
                             value={phone}
                             onChange={(e) => setPhone(e.target.value)}
-                            className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:border-cyan-500 outline-none transition font-medium text-lg bg-gray-50 focus:bg-white"
+                            className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:border-red-500 outline-none transition font-medium text-lg bg-gray-50 focus:bg-white"
                             required
                         />
                     </div>
@@ -74,7 +74,7 @@ export default function LoginPage() {
                             value={pin}
                             onChange={(e) => setPin(e.target.value)}
                             maxLength={4}
-                            className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:border-cyan-500 outline-none transition font-medium text-lg tracking-widest bg-gray-50 focus:bg-white"
+                            className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:border-red-500 outline-none transition font-medium text-lg tracking-widest bg-gray-50 focus:bg-white"
                             required
                         />
                     </div>

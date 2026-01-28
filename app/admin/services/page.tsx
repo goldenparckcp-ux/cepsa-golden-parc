@@ -103,7 +103,7 @@ export default function ServicesDashboard() {
             {/* Header */}
             <div className="flex flex-col md:flex-row items-center justify-between mb-8 bg-[#1E293B] p-6 rounded-3xl border border-white/10 gap-4">
                 <div className="flex items-center gap-4 w-full md:w-auto">
-                    <div className={`p-3 rounded-2xl ${tab === 'lavage' ? 'bg-cyan-500/20 text-cyan-400' : 'bg-orange-500/20 text-orange-400'}`}>
+                    <div className={`p-3 rounded-2xl ${tab === 'lavage' ? 'bg-red-500/20 text-red-400' : 'bg-orange-500/20 text-orange-400'}`}>
                         {tab === 'lavage' ? <Droplets className="w-8 h-8" /> : <Wrench className="w-8 h-8" />}
                     </div>
                     <div>
@@ -115,7 +115,7 @@ export default function ServicesDashboard() {
                 <div className="flex bg-[#0F172A] p-1.5 rounded-xl border border-white/5 w-full md:w-auto">
                     <button
                         onClick={() => setTab('lavage')}
-                        className={`flex-1 md:flex-none px-6 py-2 rounded-lg font-bold transition-all flex items-center justify-center gap-2 ${tab === 'lavage' ? 'bg-cyan-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}
+                        className={`flex-1 md:flex-none px-6 py-2 rounded-lg font-bold transition-all flex items-center justify-center gap-2 ${tab === 'lavage' ? 'bg-red-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}
                     >
                         <Droplets className="w-4 h-4" /> Lavage
                     </button>
@@ -159,15 +159,15 @@ export default function ServicesDashboard() {
                                     key={slot}
                                     className={`relative p-5 rounded-3xl border-2 transition-all flex flex-col justify-between min-h-[160px] ${booking
                                         ? booking.status === 'completed' ? 'bg-[#1E293B]/50 border-gray-700/50 opacity-60' // Done
-                                            : booking.status === 'in_progress' ? 'bg-blue-900/10 border-blue-500 shadow-[0_0_20px_rgba(59,130,246,0.1)]' // Active
-                                                : 'bg-cyan-900/10 border-cyan-500 shadow-[0_0_15px_rgba(6,182,212,0.1)]' // Scheduled
+                                            : booking.status === 'in_progress' ? 'bg-red-900/10 border-red-500 shadow-[0_0_20px_rgba(59,130,246,0.1)]' // Active
+                                                : 'bg-cyan-900/10 border-red-500 shadow-[0_0_15px_rgba(6,182,212,0.1)]' // Scheduled
                                         : 'bg-[#1E293B] border-white/5 hover:border-white/10' // Empty
                                         }`}
                                 >
                                     <div className="flex justify-between items-start">
                                         <div className={`text-lg font-black ${booking ? 'text-white' : 'text-gray-600'}`}>{slot}</div>
                                         {booking && (
-                                            <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-black ${booking.status === 'in_progress' ? 'bg-blue-500 text-white' : 'bg-cyan-500 text-white'
+                                            <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-black ${booking.status === 'in_progress' ? 'bg-red-500 text-white' : 'bg-red-500 text-white'
                                                 }`}>
                                                 {booking.status === 'in_progress' ? 'EN COURS' : booking.status === 'completed' ? 'TERMINÉ' : 'EN ATTENTE'}
                                             </span>
@@ -186,7 +186,7 @@ export default function ServicesDashboard() {
 
                                             <div className="mt-4 pt-3 border-t border-white/10 flex gap-2">
                                                 {(booking.status === 'scheduled' || booking.status === 'pending') && (
-                                                    <button onClick={() => updateStatus(booking.id, 'in_progress')} className="flex-1 py-2 bg-cyan-600 hover:bg-cyan-500 rounded-lg text-xs font-black shadow-lg shadow-cyan-900/20 active:scale-[0.98] transition">COMMENCER</button>
+                                                    <button onClick={() => updateStatus(booking.id, 'in_progress')} className="flex-1 py-2 bg-red-600 hover:bg-red-500 rounded-lg text-xs font-black shadow-lg shadow-cyan-900/20 active:scale-[0.98] transition">COMMENCER</button>
                                                 )}
                                                 {booking.status === 'in_progress' && (
                                                     <button onClick={() => updateStatus(booking.id, 'completed')} className="flex-1 py-2 bg-gray-700 hover:bg-red-900/50 hover:text-red-400 rounded-lg text-xs font-black shadow-lg transition">TERMINER</button>

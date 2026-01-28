@@ -591,7 +591,7 @@ function ProfileContent() {
             {/* Premium Background FX */}
             <div className="fixed inset-0 pointer-events-none">
                 <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[100px] opacity-30" />
-                <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[100px] opacity-30" />
+                <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-red-500/10 rounded-full blur-[100px] opacity-30" />
             </div>
 
             {/* --- DASHBOARD VIEW --- */}
@@ -743,7 +743,7 @@ function ProfileContent() {
                                 className="bg-[#1E293B]/60 backdrop-blur-md p-5 rounded-3xl border border-white/5 cursor-pointer hover:bg-white/10 active:scale-[0.98] transition-all group relative overflow-hidden"
                             >
                                 <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                                <div className="w-12 h-12 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400 mb-4 group-hover:scale-110 transition-transform duration-300">
+                                <div className="w-12 h-12 rounded-2xl bg-red-500/10 flex items-center justify-center text-red-400 mb-4 group-hover:scale-110 transition-transform duration-300">
                                     <Wifi className="w-6 h-6" />
                                 </div>
                                 <div className="font-bold text-white text-base">WiFi Gratuit</div>
@@ -769,7 +769,7 @@ function ProfileContent() {
                                 {[
                                     { name: 'Resto', icon: UtensilsCrossed, color: 'text-orange-500', bg: 'bg-orange-500/10', link: '/restaurant' },
                                     { name: 'Hôtel', icon: Moon, color: 'text-indigo-400', bg: 'bg-indigo-500/10', link: '/hotel' },
-                                    { name: 'Piscine', icon: Waves, color: 'text-cyan-400', bg: 'bg-cyan-500/10', link: '/piscine' },
+                                    { name: 'Piscine', icon: Waves, color: 'text-red-400', bg: 'bg-red-500/10', link: '/piscine' },
                                     { name: 'Meca', icon: Clock, color: 'text-red-400', bg: 'bg-red-500/10', link: '/mecanique' },
                                 ].map((item, i) => (
                                     <button

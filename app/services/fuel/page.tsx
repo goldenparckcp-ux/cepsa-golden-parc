@@ -42,7 +42,7 @@ export default function FuelPage() {
                     </div>
                 </div>
 
-                <div className="mt-8 p-4 bg-blue-900/20 border border-blue-500/30 rounded-xl max-w-sm text-sm text-blue-200">
+                <div className="mt-8 p-4 bg-red-900/20 border border-red-500/30 rounded-xl max-w-sm text-sm text-red-200">
                     💡 Payez directement sur piste par Carte ou Espèces.
                 </div>
             </div>

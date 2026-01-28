@@ -132,8 +132,8 @@ export default function CarWashStaffPage() {
                 {/* Header */}
                 <div className="mb-8">
                     <div className="flex items-center gap-4 mb-4">
-                        <div className="w-14 h-14 rounded-xl bg-blue-500/10 flex items-center justify-center">
-                            <Droplet className="w-7 h-7 text-blue-400" />
+                        <div className="w-14 h-14 rounded-xl bg-red-500/10 flex items-center justify-center">
+                            <Droplet className="w-7 h-7 text-red-400" />
                         </div>
                         <div>
                             <h1 className="text-3xl font-bold text-white">Car Wash Queue</h1>

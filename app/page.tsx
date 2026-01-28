@@ -34,8 +34,8 @@ export default function Home() {
       desc: "Summer Vibes 09h-19h",
       image: "https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=800&q=80",
       icon: <Waves className="w-5 h-5" />,
-      color: "text-cyan-400",
-      bg: "bg-cyan-500/10",
+      color: "text-red-400",
+      bg: "bg-red-500/10",
       link: "/services/pool"
     },
     {
@@ -130,8 +130,8 @@ export default function Home() {
             <div className="hidden md:block w-px h-12 bg-white/10" />
 
             <div className="flex items-center gap-4 w-full md:w-auto">
-              <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-blue-600/10 flex items-center justify-center shrink-0">
-                <Clock className="w-6 h-6 md:w-8 md:h-8 text-blue-500" />
+              <div className="w-12 h-12 md:w-16 md:h-16 rounded-full bg-red-600/10 flex items-center justify-center shrink-0">
+                <Clock className="w-6 h-6 md:w-8 md:h-8 text-red-500" />
               </div>
               <div>
                 <div className="text-white font-bold text-sm md:text-lg">Service Continu</div>

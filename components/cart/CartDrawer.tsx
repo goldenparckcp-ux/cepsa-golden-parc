@@ -102,7 +102,7 @@ export function CartDrawer() {
                 {/* Header */}
                 <div className="p-6 border-b border-white/10 flex items-center justify-between bg-[#1E293B]">
                     <div className="flex items-center gap-3">
-                        <div className="bg-cyan-500/20 p-2 rounded-xl text-cyan-400">
+                        <div className="bg-red-500/20 p-2 rounded-xl text-red-400">
                             <ShoppingBag className="w-6 h-6" />
                         </div>
                         <div>
@@ -140,7 +140,7 @@ export function CartDrawer() {
                                     <div className="flex-1 min-w-0">
                                         <div className="flex justify-between items-start mb-1">
                                             <h3 className="font-bold text-white truncate pr-2">{item.name}</h3>
-                                            <span className="font-bold text-cyan-400 shrink-0">
+                                            <span className="font-bold text-red-400 shrink-0">
                                                 {(item.totalPrice * (item.quantity || 1)).toFixed(0)} DH
                                             </span>
                                         </div>
@@ -217,7 +217,7 @@ export function CartDrawer() {
                                             <button
                                                 onClick={() => setServiceType('pre_order')}
                                                 className={`flex flex-col items-center justify-center gap-2 py-3 rounded-lg transition-all ${serviceType === 'pre_order'
-                                                    ? 'bg-blue-600 text-white shadow-lg'
+                                                    ? 'bg-red-600 text-white shadow-lg'
                                                     : 'text-gray-400 hover:bg-white/5'
                                                     }`}
                                             >
@@ -264,7 +264,7 @@ export function CartDrawer() {
                                                                     key={time}
                                                                     onClick={() => setArrivalTime(time)}
                                                                     className={`py-2 rounded-lg text-sm font-bold border transition ${arrivalTime === time
-                                                                        ? 'bg-blue-600 border-blue-500 text-white'
+                                                                        ? 'bg-red-600 border-red-500 text-white'
                                                                         : 'bg-[#0F172A] border-white/10 text-gray-400 hover:border-white/30'
                                                                         }`}
                                                                 >
@@ -285,7 +285,7 @@ export function CartDrawer() {
                                                                 placeholder="Ex: 4 hours, 18:30..."
                                                                 value={arrivalTime}
                                                                 onChange={(e) => setArrivalTime(e.target.value)}
-                                                                className="w-full bg-[#0F172A] border border-white/10 text-white rounded-lg px-4 py-3 focus:border-blue-500 outline-none font-bold"
+                                                                className="w-full bg-[#0F172A] border border-white/10 text-white rounded-lg px-4 py-3 focus:border-red-500 outline-none font-bold"
                                                                 autoFocus
                                                             />
                                                             <button
@@ -333,23 +333,23 @@ export function CartDrawer() {
                                 <button
                                     onClick={() => setPaymentMethod('card')}
                                     className={`relative p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${paymentMethod === 'card'
-                                        ? 'bg-blue-600/10 border-blue-500 text-blue-400'
+                                        ? 'bg-red-600/10 border-red-500 text-red-400'
                                         : 'bg-[#0F172A] border-white/10 text-gray-500 hover:bg-white/5'
                                         }`}
                                 >
-                                    <div className="bg-blue-500/20 p-2 rounded-full">
+                                    <div className="bg-red-500/20 p-2 rounded-full">
                                         <CreditCard className="w-5 h-5" />
                                     </div>
                                     <span className="text-xs font-bold">Carte Bancaire</span>
                                     {paymentMethod === 'card' && (
-                                        <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+                                        <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
                                     )}
                                 </button>
                             </div>
 
                             {/* Trust Badges */}
                             {paymentMethod === 'card' && (
-                                <div className="mt-4 p-3 bg-blue-500/5 rounded-lg border border-blue-500/10 flex flex-col items-center text-center animate-in fade-in slide-in-from-top-2">
+                                <div className="mt-4 p-3 bg-red-500/5 rounded-lg border border-red-500/10 flex flex-col items-center text-center animate-in fade-in slide-in-from-top-2">
                                     <p className="text-[10px] text-gray-400 mb-2">Paiement sécurisé via <b>YouCan Pay</b> (CMI)</p>
                                     <div className="flex items-center gap-3 opacity-70 grayscale hover:grayscale-0 transition-all">
                                         {/* Mock Logos */}
@@ -370,15 +370,15 @@ export function CartDrawer() {
                     <div className="p-6 bg-[#1E293B] border-t border-white/10 safe-area-bottom">
                         <div className="flex justify-between items-center mb-6">
                             <span className="text-gray-400">Total Amount</span>
-                            <span className="text-3xl font-black text-white">{total.toFixed(0)} <span className="text-sm text-cyan-400">DH</span></span>
+                            <span className="text-3xl font-black text-white">{total.toFixed(0)} <span className="text-sm text-red-400">DH</span></span>
                         </div>
 
                         <button
                             onClick={handleCheckout}
                             disabled={isSubmitting}
                             className={`w-full text-white py-4 rounded-xl font-bold text-lg hover:brightness-110 transition shadow-lg flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed group ${paymentMethod === 'card'
-                                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 shadow-blue-500/20' // Card Style
-                                : (serviceType === 'dine_in' ? 'bg-gradient-to-r from-orange-500 to-red-600 shadow-orange-500/20' : 'bg-gradient-to-r from-cyan-500 to-blue-600 shadow-cyan-500/20')
+                                ? 'bg-gradient-to-r from-red-600 to-indigo-600 shadow-red-500/20' // Card Style
+                                : (serviceType === 'dine_in' ? 'bg-gradient-to-r from-orange-500 to-red-600 shadow-orange-500/20' : 'bg-gradient-to-r from-cyan-500 to-blue-600 shadow-red-500/20')
                                 }`}
                         >
                             {isSubmitting ? (

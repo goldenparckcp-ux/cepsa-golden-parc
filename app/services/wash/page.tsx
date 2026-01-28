@@ -175,8 +175,8 @@ export default function CarWashPage() {
             <div className="bg-navy-surface border-b border-navy-border p-6">
                 <div className="max-w-4xl mx-auto">
                     <div className="flex items-center gap-3 mb-2">
-                        <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center">
-                            <Droplet className="w-6 h-6 text-blue-400" />
+                        <div className="w-12 h-12 rounded-full bg-red-500/10 flex items-center justify-center">
+                            <Droplet className="w-6 h-6 text-red-400" />
                         </div>
                         <div>
                             <h1 className="text-2xl font-bold text-white">Car Wash (Lavage)</h1>

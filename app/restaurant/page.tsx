@@ -265,7 +265,7 @@ export default function RestaurantPage() {
                         <div className="space-y-3">
                             <button
                                 onClick={() => router.push('/profile')}
-                                className="w-full py-4 bg-blue-600 rounded-xl font-bold text-white shadow-lg hover:bg-blue-500 transition-all"
+                                className="w-full py-4 bg-red-600 rounded-xl font-bold text-white shadow-lg hover:bg-red-500 transition-all"
                             >
                                 Suivre ma commande
                             </button>
@@ -393,14 +393,14 @@ export default function RestaurantPage() {
                                                         }
                                                     }}
                                                     className={`w-full flex items-center justify-between p-4 rounded-xl border transition-all duration-200 group ${isSelected
-                                                        ? 'bg-blue-600/10 border-blue-500/50 shadow-[0_0_15px_rgba(37,99,235,0.15)]'
+                                                        ? 'bg-red-600/10 border-red-500/50 shadow-[0_0_15px_rgba(37,99,235,0.15)]'
                                                         : 'bg-[#1E293B]/50 border-white/5 hover:bg-[#1E293B] hover:border-white/10'
                                                         }`}
                                                 >
                                                     <div className="flex items-center gap-3">
                                                         {/* Radio/Check Indicator */}
                                                         <div className={`w-5 h-5 rounded-full border flex items-center justify-center transition-all ${isSelected
-                                                            ? 'bg-blue-500 border-blue-500 scale-110'
+                                                            ? 'bg-red-500 border-red-500 scale-110'
                                                             : 'bg-transparent border-white/20 group-hover:border-white/40'
                                                             }`}>
                                                             {isSelected && <div className="w-2 h-2 bg-white rounded-full shadow-sm" />}
@@ -411,7 +411,7 @@ export default function RestaurantPage() {
                                                     </div>
 
                                                     {subOpt.price ? (
-                                                        <span className={`text-xs font-bold px-2 py-1 rounded-md ${isSelected ? 'bg-blue-500 text-white' : 'bg-white/5 text-amber-500'}`}>
+                                                        <span className={`text-xs font-bold px-2 py-1 rounded-md ${isSelected ? 'bg-red-500 text-white' : 'bg-white/5 text-amber-500'}`}>
                                                             +{subOpt.price} DH
                                                         </span>
                                                     ) : null}
@@ -435,7 +435,7 @@ export default function RestaurantPage() {
                                                     <span className="font-black text-xl text-white w-4 text-center">{selections[key]}</span>
                                                     <button
                                                         onClick={() => setSelections({ ...selections, [key]: Math.min(opt.max || 10, selections[key] + 1) })}
-                                                        className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shadow-lg hover:bg-blue-500 active:scale-95 transition-all text-white"
+                                                        className="w-10 h-10 rounded-xl bg-red-600 flex items-center justify-center shadow-lg hover:bg-red-500 active:scale-95 transition-all text-white"
                                                     >
                                                         +
                                                     </button>
@@ -451,7 +451,7 @@ export default function RestaurantPage() {
                                 <textarea
                                     value={selections.special_instructions}
                                     onChange={e => setSelections({ ...selections, special_instructions: e.target.value })}
-                                    className="w-full bg-[#1E293B]/50 border border-white/10 rounded-2xl p-4 text-white placeholder-gray-600 outline-none focus:border-blue-500 focus:bg-[#1E293B] transition-all h-28 resize-none text-sm"
+                                    className="w-full bg-[#1E293B]/50 border border-white/10 rounded-2xl p-4 text-white placeholder-gray-600 outline-none focus:border-red-500 focus:bg-[#1E293B] transition-all h-28 resize-none text-sm"
                                     placeholder="Ex: Pas d'oignon, sauce à part..."
                                 />
                             </div>
@@ -506,7 +506,7 @@ export default function RestaurantPage() {
                                         <p className="text-xs text-gray-400 line-clamp-2 my-1">{item.meta}</p>
                                         <div className="flex items-center gap-2 mt-1">
                                             <div className="text-amber-500 font-bold">{formatDh(item.price! * 1)}</div>
-                                            <div className="bg-blue-500/10 border border-blue-500/20 px-2 py-0.5 rounded text-[10px] text-blue-400 font-bold flex items-center gap-1">
+                                            <div className="bg-red-500/10 border border-red-500/20 px-2 py-0.5 rounded text-[10px] text-red-400 font-bold flex items-center gap-1">
                                                 <Clock className="w-3 h-3" />
                                                 {prepTime}
                                             </div>
@@ -530,7 +530,7 @@ export default function RestaurantPage() {
                                 <button
                                     onClick={() => setOrderType('takeout')}
                                     className={`py-3 rounded-lg font-bold text-sm flex flex-col items-center gap-1 transition-all ${orderType === 'takeout'
-                                        ? 'bg-blue-600 text-white shadow-lg'
+                                        ? 'bg-red-600 text-white shadow-lg'
                                         : 'text-gray-400 hover:text-white'
                                         }`}
                                 >
@@ -540,7 +540,7 @@ export default function RestaurantPage() {
                                 <button
                                     onClick={() => setOrderType('dine_in')}
                                     className={`py-3 rounded-lg font-bold text-sm flex flex-col items-center gap-1 transition-all ${orderType === 'dine_in'
-                                        ? 'bg-blue-600 text-white shadow-lg'
+                                        ? 'bg-red-600 text-white shadow-lg'
                                         : 'text-gray-400 hover:text-white'
                                         }`}
                                 >
@@ -562,7 +562,7 @@ export default function RestaurantPage() {
                                                     key={time}
                                                     onClick={() => { setArrivalTime(time); setShowCustomTime(false); }}
                                                     className={`py-2 rounded-lg text-sm font-bold border transition-all ${arrivalTime === time && !showCustomTime
-                                                        ? 'bg-blue-600 border-blue-600 text-white'
+                                                        ? 'bg-red-600 border-blue-600 text-white'
                                                         : 'bg-white/5 border-transparent text-gray-400 hover:bg-white/10'
                                                         }`}
                                                 >
@@ -575,7 +575,7 @@ export default function RestaurantPage() {
                                         <button
                                             onClick={() => setShowCustomTime(!showCustomTime)}
                                             className={`w-full py-3 rounded-xl text-sm font-bold border transition-all flex items-center justify-center gap-2 ${showCustomTime
-                                                ? 'bg-gradient-to-r from-blue-600 to-blue-500 border-blue-500 text-white shadow-lg shadow-blue-500/20'
+                                                ? 'bg-gradient-to-r from-red-600 to-red-700 border-red-500 text-white shadow-lg shadow-red-500/20'
                                                 : 'bg-[#1E293B] border-white/10 text-gray-300 hover:bg-[#253248] hover:border-white/20'
                                                 }`}
                                         >
@@ -596,7 +596,7 @@ export default function RestaurantPage() {
                                                             value={customHours}
                                                             onChange={(e) => setCustomHours(e.target.value)}
                                                             placeholder="0"
-                                                            className="w-full bg-[#0F172A] border-2 border-white/10 rounded-xl p-2 md:p-3 text-white text-center text-xl md:text-2xl font-black outline-none focus:border-blue-500 focus:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all"
+                                                            className="w-full bg-[#0F172A] border-2 border-white/10 rounded-xl p-2 md:p-3 text-white text-center text-xl md:text-2xl font-black outline-none focus:border-red-500 focus:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all"
                                                         />
                                                     </div>
                                                     <div className="text-white font-black text-2xl md:text-3xl pb-1 md:pb-2 opacity-50">:</div>
@@ -609,13 +609,13 @@ export default function RestaurantPage() {
                                                             value={customMinutes}
                                                             onChange={(e) => setCustomMinutes(e.target.value)}
                                                             placeholder="0"
-                                                            className="w-full bg-[#0F172A] border-2 border-white/10 rounded-xl p-2 md:p-3 text-white text-center text-xl md:text-2xl font-black outline-none focus:border-blue-500 focus:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all"
+                                                            className="w-full bg-[#0F172A] border-2 border-white/10 rounded-xl p-2 md:p-3 text-white text-center text-xl md:text-2xl font-black outline-none focus:border-red-500 focus:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all"
                                                         />
                                                     </div>
                                                 </div>
                                                 <button
                                                     onClick={handleCustomTimeApply}
-                                                    className="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-500 rounded-xl text-white font-black text-sm shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                                                    className="w-full py-3 bg-gradient-to-r from-red-600 to-red-700 rounded-xl text-white font-black text-sm shadow-lg shadow-red-500/30 hover:shadow-red-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                                                 >
                                                     <Check className="w-4 h-4" />
                                                     Appliquer
@@ -630,7 +630,7 @@ export default function RestaurantPage() {
                                             value={tableNumber}
                                             onChange={(e) => setTableNumber(e.target.value)}
                                             placeholder="Numéro de Table (Ex: 5)"
-                                            className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white font-bold text-xl text-center outline-none focus:border-blue-500"
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white font-bold text-xl text-center outline-none focus:border-red-500"
                                         />
                                     </>
                                 )}
@@ -647,7 +647,7 @@ export default function RestaurantPage() {
                         <button
                             onClick={handleCheckout}
                             disabled={isSubmitting || items.length === 0}
-                            className="w-full py-3 md:py-4 bg-[#2563EB] hover:bg-blue-600 rounded-xl font-black text-base md:text-lg text-white shadow-lg shadow-blue-500/20 active:scale-95 transition-transform flex items-center justify-center gap-2"
+                            className="w-full py-3 md:py-4 bg-[#2563EB] hover:bg-red-600 rounded-xl font-black text-base md:text-lg text-white shadow-lg shadow-red-500/20 active:scale-95 transition-transform flex items-center justify-center gap-2"
                         >
                             {isSubmitting ? "Traitement..." : <>Confirmer la commande <ChevronRight className="w-4 h-4 md:w-5 md:h-5" /></>}
                         </button>
@@ -661,7 +661,7 @@ export default function RestaurantPage() {
                     <div className="bg-[#0F172A] border-t border-white/10 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] md:rounded-2xl md:border md:bg-[#1E293B]">
                         <button
                             onClick={() => setIsCartOpen(true)}
-                            className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 rounded-xl font-bold text-white shadow-lg shadow-blue-900/20 active:scale-[0.98] transition-all flex items-center justify-between"
+                            className="w-full py-3 px-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-blue-500 hover:to-blue-400 rounded-xl font-bold text-white shadow-lg shadow-blue-900/20 active:scale-[0.98] transition-all flex items-center justify-between"
                         >
                             <div className="flex items-center gap-3">
                                 <div className="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">

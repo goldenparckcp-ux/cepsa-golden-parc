@@ -11,7 +11,7 @@ const OPTIONS = [
     { id: "vidange", label: "Vidange Huile (Simple)", price: 150, duration: "30 min", slots: 1, icon: <Droplets className="w-5 h-5 text-yellow-500" /> },
     { id: "vidange_complet", label: "Vidange + Filtres", price: 300, duration: "1h", slots: 2, icon: <Droplets className="w-5 h-5 text-orange-500" /> },
     { id: "freins", label: "Plaquettes de Frein", price: 120, duration: "1h", slots: 2, icon: <Disc className="w-5 h-5 text-gray-400" /> },
-    { id: "clim", label: "Recharge Clim", price: 250, duration: "1h", slots: 2, icon: <ThermometerSun className="w-5 h-5 text-blue-400" /> },
+    { id: "clim", label: "Recharge Clim", price: 250, duration: "1h", slots: 2, icon: <ThermometerSun className="w-5 h-5 text-red-400" /> },
 ];
 
 function Droplets(props: any) { return <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-5-9-7-15-2 6-7 13-7 15a7 7 0 0 0 7 7z" /></svg> }
