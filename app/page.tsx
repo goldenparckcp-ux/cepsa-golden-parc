@@ -53,8 +53,6 @@ export default function Home() {
           setLoading(false);
         }
       );
-    } else {
-      setLoading(false);
     }
   }, []);
 
@@ -281,28 +279,51 @@ export default function Home() {
         </div>
 
         {/* --- PROMO BANNER --- */}
+        {/* --- MAP LOCATION BANNER --- */}
         <div className="mt-12 mb-20 md:mb-12">
-          <div className="bg-gradient-to-r from-red-600 to-red-900 rounded-3xl p-8 md:p-12 relative overflow-hidden shadow-2xl group">
-            {/* Decorative Circles */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:scale-110 transition-transform duration-700" />
+          <a
+            href="https://maps.app.goo.gl/wWx1BeVM899uyPJ58"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block group relative rounded-3xl overflow-hidden shadow-2xl h-64 md:h-80 border border-white/10"
+          >
+            {/* Map Imagery Background */}
+            <div className="absolute inset-0 bg-[#1E293B]">
+              <img
+                src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=1600&q=80"
+                alt="Map Background"
+                className="w-full h-full object-cover opacity-40 mix-blend-overlay group-hover:scale-105 transition-transform duration-700"
+              />
+              {/* Overlay Gradient to ensure text readability */}
+              <div className="absolute inset-0 bg-gradient-to-r from-[#0F172A] via-[#0F172A]/90 to-transparent pb-10" />
+            </div>
 
-            <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+            <div className="absolute inset-0 p-8 md:p-12 flex flex-col md:flex-row items-start md:items-center justify-between z-10">
               <div className="max-w-2xl">
-                <div className="bg-white/20 backdrop-blur-sm text-white text-xs font-black px-3 py-1.5 rounded-lg inline-block mb-4 shadow-lg">
-                  OFFRE LIMITÉE
+                <div className="bg-red-600/20 backdrop-blur-sm border border-red-500/30 text-red-500 text-xs font-black px-3 py-1.5 rounded-lg inline-flex items-center gap-2 mb-4 shadow-lg">
+                  <MapPin className="w-3 h-3" /> LOCALISATION
                 </div>
                 <h3 className="text-3xl md:text-5xl font-black text-white mb-4 leading-tight">
-                  Menu Famille <span className="text-red-200">-20%</span>
+                  Cepsa Golden Park
                 </h3>
-                <p className="text-red-100 text-sm md:text-lg opacity-90">
-                  Validable uniquement ce week-end sur tous les plats mixtes. Profitez en famille !
+                <p className="text-gray-300 text-sm md:text-lg font-medium max-w-lg mb-6">
+                  Visitez notre station premium sur la Route Nationale 15.
+                  Cliquez ici pour lancer la navigation GPS.
                 </p>
+                <div className="inline-flex items-center gap-2 text-red-500 font-bold group-hover:gap-4 transition-all">
+                  Voir sur Google Maps <ChevronRight className="w-5 h-5" />
+                </div>
               </div>
-              <button onClick={() => router.push('/restaurant')} className="bg-white text-red-900 font-bold px-8 py-4 rounded-2xl shadow-xl hover:bg-gray-100 transition-colors text-lg whitespace-nowrap active:scale-95">
-                Commander Maintenant
-              </button>
+
+              {/* Visual Map Pin Icon Area */}
+              <div className="hidden md:flex relative w-32 h-32 items-center justify-center mr-10">
+                <div className="absolute inset-0 bg-red-600/20 rounded-full animate-ping" />
+                <div className="relative z-10 bg-white p-4 rounded-full shadow-[0_0_50px_rgba(214,0,28,0.5)]">
+                  <MapPin className="w-10 h-10 text-red-600 fill-red-600" />
+                </div>
+              </div>
             </div>
-          </div>
+          </a>
         </div>
 
       </div>
