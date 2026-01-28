@@ -45,7 +45,7 @@ export default function HotelDashboard() {
 
 
     useEffect(() => {
-        fetchReservations();
+        void Promise.resolve().then(() => fetchReservations());
         // Keep best-effort realtime
         const sub = supabase.channel('hotel_dash')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'hotel_reservations' }, () => fetchReservations())

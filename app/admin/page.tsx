@@ -128,7 +128,7 @@ export default function AdminDashboard() {
 
     useEffect(() => {
         // Initial Fetch
-        fetchData();
+        void Promise.resolve().then(() => fetchData());
 
         // Realtime Subscriptions
         const channels = [
@@ -139,7 +139,6 @@ export default function AdminDashboard() {
         ];
 
         // Clock
-        setCurrentTime(new Date().toLocaleTimeString());
         const timer = setInterval(() => {
             setCurrentTime(new Date().toLocaleTimeString());
             setNow(Date.now());

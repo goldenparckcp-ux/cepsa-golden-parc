@@ -329,6 +329,7 @@ export function CartDrawer() {
                                     {/* IOS Style Toggle */}
                                     <button
                                         onClick={() => setIsDepositMode(!isDepositMode)}
+                                        aria-label="Activer le mode acompte Arboune"
                                         className={`w-12 h-7 rounded-full transition-colors relative ${isDepositMode ? 'bg-amber-500' : 'bg-gray-700'}`}
                                     >
                                         <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-transform ${isDepositMode ? 'left-6' : 'left-1'}`} />
