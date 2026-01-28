@@ -180,54 +180,57 @@ export default function LavagePage() {
     }, []);
 
     const handleBooking = async () => {
-        if (!selectedOption || !endTime) return;
-        setLoading(true);
+        try {
+            if (!selectedOption || !endTime) return;
+            setLoading(true);
 
-        const { data: { user } } = await supabase.auth.getUser();
-        let userPhoneFromProfile = null;
-        if (user) {
+            const timeRange = `${time} - ${endTime}`;
+            const { data: { user } } = await supabase.auth.getUser();
+
+            if (!user) {
+                const bookingData = {
+                    optionId: selectedOption,
+                    carType,
+                    date,
+                    time,
+                    time_range: timeRange,
+                    duration_slots: optionData?.slots,
+                    price: selectedPrice
+                };
+                localStorage.setItem('pendingLavageBooking', JSON.stringify(bookingData));
+                router.push('/profile?redirect=/services/lavage');
+                return;
+            }
+
+            let userPhoneFromProfile = null;
             const { data } = await supabase.from('profiles').select('phone').eq('id', user.id).single();
-            userPhoneFromProfile = data?.phone;
-        }
+            userPhoneFromProfile = data?.phone || user.user_metadata?.phone;
 
-        const timeRange = `${time} - ${endTime}`;
+            const bookingNum = `WASH-${Date.now().toString().slice(-6)}`;
 
-        if (!user || !userPhoneFromProfile) {
-            const bookingData = {
-                optionId: selectedOption,
-                carType,
-                date,
-                time,
-                time_range: timeRange,
-                duration_slots: optionData?.slots,
-                price: selectedPrice
-            };
-            localStorage.setItem('pendingLavageBooking', JSON.stringify(bookingData));
-            router.push('/profile?redirect=/services/lavage');
+            const { error } = await supabase.from('service_bookings').insert({
+                booking_number: bookingNum,
+                customer_phone: userPhoneFromProfile || null,
+                service_type: 'lavage',
+                service_name: `${selectedOption} (${carType})`,
+                scheduled_date: date,
+                time_slot: timeRange,
+                price: selectedPrice,
+                status: 'pending',
+                user_id: user.id
+            });
+
+            if (error) {
+                alert("Erreur: " + error.message);
+            } else {
+                setShowSuccess(bookingNum);
+            }
+        } catch (err: any) {
+            console.error("Booking Error:", err);
+            alert("Une erreur est survenue. Veuillez réessayer.");
+        } finally {
             setLoading(false);
-            return;
         }
-
-        const bookingNum = `WASH-${Date.now().toString().slice(-6)}`;
-
-        const { error } = await supabase.from('service_bookings').insert({
-            booking_number: bookingNum,
-            customer_phone: userPhoneFromProfile,
-            service_type: 'lavage',
-            service_name: `${selectedOption} (${carType})`,
-            scheduled_date: date,
-            time_slot: timeRange, // Saving Range
-            price: selectedPrice,
-            status: 'pending',
-            user_id: user.id
-        });
-
-        if (error) {
-            alert("Erreur: " + error.message);
-        } else {
-            setShowSuccess(bookingNum);
-        }
-        setLoading(false);
     };
 
     return (
@@ -372,7 +375,7 @@ export default function LavagePage() {
             </div>
 
             {/* FLOATING PILL FOOTER (Food Cart Style) */}
-            <div className="fixed bottom-[90px] left-0 right-0 z-40 animate-slide-up px-4 md:px-0">
+            <div className="fixed bottom-[90px] left-0 right-0 z-[100] animate-slide-up px-4 md:px-0">
                 <div className="max-w-xl mx-auto">
                     <button
                         onClick={handleBooking}
@@ -418,7 +421,7 @@ export default function LavagePage() {
                         </p>
                         <div className="space-y-3">
                             <button
-                                onClick={() => router.push('/orders')}
+                                onClick={() => router.push('/profile')}
                                 className="w-full py-4 bg-blue-600 rounded-xl font-bold text-white shadow-lg"
                             >
                                 Mes Réservations

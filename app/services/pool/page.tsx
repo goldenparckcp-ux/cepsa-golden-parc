@@ -77,14 +77,15 @@ export default function PoolPage() {
 
             const serviceName = `Piscine ${bookingData.optionLabel} (${bookingData.category}) [${bookingData.adults}A + ${bookingData.children}E]`;
 
-            const { error } = await supabase.from('service_bookings').insert({
+            const { error } = await supabase.from('pool_bookings').insert({
                 booking_number: bookingNum,
                 customer_phone: profile.phone,
-                service_type: 'pool',
-                service_name: serviceName,
-                scheduled_date: bookingData.date,
+                booking_date: bookingData.date,
                 time_slot: bookingData.timeSlot,
-                price: bookingData.totalPrice,
+                ambiance: bookingData.category,
+                adults: bookingData.adults,
+                children: bookingData.children,
+                total_price: bookingData.totalPrice,
                 status: 'pending',
                 user_id: user.id
             });
@@ -103,13 +104,9 @@ export default function PoolPage() {
         setLoading(true);
 
         const { data: { user } } = await supabase.auth.getUser();
-        let userPhoneFromProfile = null;
-        if (user) {
-            const { data } = await supabase.from('profiles').select('phone').eq('id', user.id).single();
-            userPhoneFromProfile = data?.phone;
-        }
 
-        if (!user || !userPhoneFromProfile) {
+        if (!user) {
+            // Only redirect if NOT logged in
             const bookingData = {
                 optionId: selectedOption,
                 optionLabel: activeOption?.label,
@@ -126,17 +123,22 @@ export default function PoolPage() {
             return;
         }
 
-        const bookingNum = `POOL-${Date.now().toString().slice(-6)}`;
-        const serviceName = `Piscine ${activeOption?.label} (${category}) [${adults} Adulte(s) + ${children} Enfant(s)]`;
+        // Fetch phone if available, but don't block
+        let userPhoneFromProfile = null;
+        const { data } = await supabase.from('profiles').select('phone').eq('id', user.id).single();
+        userPhoneFromProfile = data?.phone || user.user_metadata?.phone;
 
-        const { error } = await supabase.from('service_bookings').insert({
+        const bookingNum = `POOL-${Date.now().toString().slice(-6)}`;
+
+        const { error } = await supabase.from('pool_bookings').insert({
             booking_number: bookingNum,
-            customer_phone: userPhoneFromProfile,
-            service_type: 'pool',
-            service_name: serviceName,
-            scheduled_date: date,
+            customer_phone: userPhoneFromProfile || null,
+            booking_date: date,
             time_slot: activeOption?.hours,
-            price: totalPrice,
+            ambiance: category,
+            adults: adults,
+            children: children,
+            total_price: totalPrice,
             status: 'pending',
             user_id: user.id
         });
@@ -181,19 +183,53 @@ export default function PoolPage() {
                 <div>
                     <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Ambiance</h3>
                     <div className="grid grid-cols-3 gap-4 md:gap-6">
-                        {CATEGORIES.map(cat => (
-                            <button
-                                key={cat.id}
-                                onClick={() => setCategory(cat.id)}
-                                className={`p-2 py-3 md:py-6 rounded-xl border flex flex-col items-center gap-1 transition-all ${category === cat.id
-                                        ? 'bg-cyan-600 border-cyan-500 shadow-lg shadow-cyan-500/20'
-                                        : 'bg-[#1E293B] border-white/5 hover:bg-[#1E293B]/80'
-                                    }`}
-                            >
-                                <span className="text-xl md:text-3xl mb-1">{cat.icon}</span>
-                                <span className={`text-[10px] md:text-sm font-bold leading-tight text-center ${category === cat.id ? 'text-white' : 'text-gray-300'}`}>{cat.label}</span>
-                            </button>
-                        ))}
+                        {/* Famille */}
+                        <button
+                            onClick={() => setCategory('family')}
+                            className={`p-2 py-3 md:py-6 rounded-xl border flex flex-col items-center gap-2 transition-all relative ${category === 'family'
+                                ? 'bg-cyan-600 border-cyan-500 shadow-lg shadow-cyan-500/20'
+                                : 'bg-[#1E293B] border-white/5 hover:bg-[#1E293B]/80'
+                                }`}
+                        >
+                            <span className="text-xl md:text-3xl mb-1">👨‍👩‍👧‍👦</span>
+                            <span className={`text-[10px] md:text-sm font-bold leading-tight text-center ${category === 'family' ? 'text-white' : 'text-gray-300'}`}>Famille</span>
+                            <div className="bg-blue-600 text-white text-[9px] md:text-xs font-black px-2 md:px-3 py-1 md:py-1.5 rounded-full shadow-md">
+                                📅 LUNDI
+                            </div>
+                            {category === 'family' && <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-white absolute top-2 right-2" />}
+                        </button>
+
+                        {/* Mixte */}
+                        <button
+                            onClick={() => setCategory('mixed')}
+                            className={`p-2 py-3 md:py-6 rounded-xl border flex flex-col items-center gap-2 transition-all relative ${category === 'mixed'
+                                ? 'bg-cyan-600 border-cyan-500 shadow-lg shadow-cyan-500/20'
+                                : 'bg-[#1E293B] border-white/5 hover:bg-[#1E293B]/80'
+                                }`}
+                        >
+                            <span className="text-xl md:text-3xl mb-1">👫</span>
+                            <span className={`text-[10px] md:text-sm font-bold leading-tight text-center ${category === 'mixed' ? 'text-white' : 'text-gray-300'}`}>Mixte</span>
+                            <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white text-[9px] md:text-xs font-black px-2 md:px-3 py-1 md:py-1.5 rounded-full shadow-md">
+                                ✨ AUTRES JOURS
+                            </div>
+                            {category === 'mixed' && <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-white absolute top-2 right-2" />}
+                        </button>
+
+                        {/* Femmes */}
+                        <button
+                            onClick={() => setCategory('women')}
+                            className={`p-2 py-3 md:py-6 rounded-xl border flex flex-col items-center gap-2 transition-all relative ${category === 'women'
+                                ? 'bg-cyan-600 border-cyan-500 shadow-lg shadow-cyan-500/20'
+                                : 'bg-[#1E293B] border-white/5 hover:bg-[#1E293B]/80'
+                                }`}
+                        >
+                            <span className="text-xl md:text-3xl mb-1">💃</span>
+                            <span className={`text-[10px] md:text-sm font-bold leading-tight text-center ${category === 'women' ? 'text-white' : 'text-gray-300'}`}>Femmes</span>
+                            <div className="bg-purple-600 text-white text-[9px] md:text-xs font-black px-2 md:px-3 py-1 md:py-1.5 rounded-full shadow-md">
+                                📅 JEUDI
+                            </div>
+                            {category === 'women' && <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-white absolute top-2 right-2" />}
+                        </button>
                     </div>
                 </div>
 
@@ -206,8 +242,8 @@ export default function PoolPage() {
                                 key={opt.id}
                                 onClick={() => setSelectedOption(opt.id)}
                                 className={`w-full p-4 md:p-6 rounded-xl border flex flex-col items-start justify-between gap-4 transition-all text-left group min-h-[140px] ${selectedOption === opt.id
-                                        ? 'bg-cyan-600/20 border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.2)]'
-                                        : 'bg-[#1E293B] border-white/5 hover:bg-[#1E293B]/80'
+                                    ? 'bg-cyan-600/20 border-cyan-500 shadow-[0_0_20px_rgba(6,182,212,0.2)]'
+                                    : 'bg-[#1E293B] border-white/5 hover:bg-[#1E293B]/80'
                                     }`}
                             >
                                 <div className="w-full">
@@ -319,7 +355,7 @@ export default function PoolPage() {
                         </p>
                         <div className="space-y-3">
                             <button
-                                onClick={() => router.push('/orders')}
+                                onClick={() => router.push('/profile')}
                                 className="w-full py-4 bg-cyan-600 rounded-xl font-bold text-white shadow-lg"
                             >
                                 Voir mon Ticket

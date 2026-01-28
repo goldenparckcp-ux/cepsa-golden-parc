@@ -134,53 +134,55 @@ export default function WashPage() {
 
     const handleConfirmBooking = async () => {
         if (!slot) return;
+        setLoading(true);
 
-        requirePhone({
-            reason: "reservation",
-            onVerified: async () => {
-                setLoading(true);
+        // 1. Check if user is already logged in
+        const { data: { user } } = await supabase.auth.getUser();
 
-                // Get fresh user/profile after verification
-                const { data: { user } } = await supabase.auth.getUser();
-                let customerPhone = null;
+        if (!user) {
+            // Not logged in? Trigger Auth/Phone flow
+            requirePhone({
+                reason: "reservation",
+                onVerified: () => handleConfirmBooking() // Retry after successful login
+            });
+            setLoading(false);
+            return;
+        }
 
-                if (user) {
-                    const { data: profile } = await supabase.from('profiles').select('phone').eq('id', user.id).single();
-                    customerPhone = profile?.phone;
-                }
+        // 2. User is logged in - Proceed with Booking
+        let customerPhone = user.user_metadata?.phone || user.phone;
 
-                if (!user || !customerPhone) {
-                    alert("User identification failed. Please try again.");
-                    setLoading(false);
-                    return;
-                }
+        // Try to fetch profile phone if not in metadata
+        if (!customerPhone) {
+            const { data: profile } = await supabase.from('profiles').select('phone').eq('id', user.id).single();
+            customerPhone = profile?.phone;
+        }
 
-                const bookingNum = `WASH-${Date.now().toString().slice(-6)}`;
-                const today = new Date().toISOString().split('T')[0];
+        const bookingNum = `WASH-${Date.now().toString().slice(-6)}`;
+        const today = new Date().toISOString().split('T')[0];
 
-                const { error } = await supabase.from('service_bookings').insert({
-                    booking_number: bookingNum,
-                    user_id: user.id,
-                    customer_phone: customerPhone,
-                    service_type: 'lavage',
-                    service_name: summary.title,
-                    booking_date: today,
-                    time_slot: slot,
-                    total_price: price,
-                    status: 'pending',
-                    notes: summary.detail
-                });
-
-                if (error) {
-                    console.error("Booking Error:", error);
-                    alert("Erreur lors de la réservation: " + error.message);
-                } else {
-                    setIsConfirmOpen(false);
-                    router.push('/profile?redirect=/wash');
-                }
-                setLoading(false);
-            }
+        const { error } = await supabase.from('service_bookings').insert({
+            booking_number: bookingNum,
+            user_id: user.id,
+            customer_phone: customerPhone || null, // Allow null unless strictly required
+            service_type: 'lavage',
+            service_name: summary.title,
+            booking_date: today,
+            time_slot: slot,
+            total_price: price,
+            status: 'pending',
+            price: price,
+            notes: summary.detail
         });
+
+        if (error) {
+            console.error("Booking Error:", error);
+            alert(`Erreur lors de la réservation: ${error.message || JSON.stringify(error)}`);
+        } else {
+            setIsConfirmOpen(false);
+            router.push('/profile');
+        }
+        setLoading(false);
     };
 
     return (

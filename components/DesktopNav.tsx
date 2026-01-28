@@ -27,9 +27,12 @@ export default function DesktopNav() {
                     <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center transform rotate-3 group-hover:rotate-0 transition-transform shadow-[0_0_15px_rgba(220,38,38,0.5)]">
                         <CepsaLogo className="w-6 h-6 text-white" />
                     </div>
-                    <h1 className="text-2xl font-black text-white tracking-tight">
-                        GOLDEN <span className="text-red-600">PARK</span>
-                    </h1>
+                    <div>
+                        <h1 className="text-2xl font-black text-white tracking-tight leading-none">
+                            GOLDEN <span className="text-red-600">PARK</span>
+                        </h1>
+                        <span className="text-[10px] font-bold text-amber-500 tracking-[0.3em] block ml-0.5">STATION</span>
+                    </div>
                 </Link>
 
                 {/* Nav Links - Spaced Out */}

@@ -1,9 +1,7 @@
 "use client";
 
-import Image from "next/image";
 import { useRouter } from 'next/navigation';
-import { Coffee, Car, Utensils, BedDouble, Waves, Wrench, ChevronRight, Star, Clock, MapPin, Phone } from "lucide-react";
-import { COLORS } from '@/lib/theme';
+import { Car, Utensils, BedDouble, Waves, Wrench, ChevronRight, Star, Clock, MapPin, Phone } from "lucide-react";
 import CepsaLogo from "@/components/CepsaLogo";
 
 export default function Home() {
@@ -63,13 +61,14 @@ export default function Home() {
   ];
 
   return (
-    <main className="min-h-screen bg-[#0F172A] pb-24 md:pb-10" style={{ backgroundColor: COLORS.bgDark }}>
+    <main className="min-h-screen bg-[#0F172A] pb-24 md:pb-10">
 
       {/* --- HERO SECTION --- */}
       {/* Added 'md:h-96' for desktop height and centered max-width content for text */}
       <div className="relative h-72 md:h-[500px] w-full overflow-hidden rounded-b-[3rem] md:rounded-b-[5rem] shadow-2xl z-10 group">
         <img
           src="/image/cepsa-hero.jpg"
+          alt="Golden Park Station - Premium CEPSA Service Station"
           className="w-full h-full object-cover opacity-80 transition-transform duration-1000 md:group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0F172A]/30 to-[#0F172A]" />
@@ -88,6 +87,9 @@ export default function Home() {
               <h1 className="text-4xl md:text-7xl font-black text-white leading-none mb-2 drop-shadow-lg">
                 GOLDEN <span className="text-red-600">PARK</span>
               </h1>
+              <div className="inline-block px-3 py-1 bg-white/5 rounded-full border border-amber-500/30 backdrop-blur-md mb-4 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
+                <span className="text-xs md:text-sm font-black text-amber-500 tracking-[0.4em] ml-1">STATION</span>
+              </div>
               <p className="text-gray-400 text-sm md:text-xl font-medium max-w-lg">
                 Outat El Haj, Route Nationale 15. Votre escale de luxe.
               </p>
@@ -163,6 +165,7 @@ export default function Home() {
                 {/* Background Image */}
                 <img
                   src={service.image}
+                  alt={`${service.title} - ${service.desc}`}
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                 />
                 {/* Overlay Gradient */}

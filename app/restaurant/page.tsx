@@ -67,12 +67,37 @@ export default function RestaurantPage() {
     const [phone, setPhone] = useState("");
     const [orderType, setOrderType] = useState<'takeout' | 'dine_in'>('takeout');
     const [arrivalTime, setArrivalTime] = useState<string>("15 min");
+    const [showCustomTime, setShowCustomTime] = useState(false);
+    const [customHours, setCustomHours] = useState("");
+    const [customMinutes, setCustomMinutes] = useState("");
     const [tableNumber, setTableNumber] = useState("");
     const [notes, setNotes] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Mock Time Slots
     const arrivalOptions = ["10 min", "15 min", "20 min", "30 min", "45 min", "1 h"];
+
+    // Handle custom time selection
+    const handleCustomTimeApply = () => {
+        const h = parseInt(customHours) || 0;
+        const m = parseInt(customMinutes) || 0;
+        if (h === 0 && m === 0) return;
+        const timeStr = h > 0 ? `${h}h${m > 0 ? m : ''}` : `${m} min`;
+        setArrivalTime(timeStr);
+        setShowCustomTime(false);
+    };
+
+    // Reset parameters when cart becomes empty
+    useEffect(() => {
+        if (items.length === 0) {
+            setOrderType('takeout');
+            setArrivalTime('15 min');
+            setShowCustomTime(false);
+            setCustomHours('');
+            setCustomMinutes('');
+            setTableNumber('');
+        }
+    }, [items.length]);
 
     // Filter Items
     const displayItems = useMemo(() => {
@@ -150,10 +175,19 @@ export default function RestaurantPage() {
         setIsSubmitting(true);
         const orderNum = `CMD-${Date.now().toString().slice(-6)}`;
 
+        // Determine effective arrival time
+        let effectiveArrivalTime = arrivalTime;
+        if (orderType === 'takeout' && showCustomTime) {
+            const h = parseInt(customHours) || 0;
+            const m = parseInt(customMinutes) || 0;
+            // Format neatly: 7h08
+            effectiveArrivalTime = `${h}h${m.toString().padStart(2, '0')}`;
+        }
+
         // Compile Delivery Info
         const deliveryInfo = {
             type: orderType,
-            arrival_time: orderType === 'takeout' ? arrivalTime : null,
+            arrival_time: orderType === 'takeout' ? effectiveArrivalTime : null,
             table_number: orderType === 'dine_in' ? tableNumber : null,
             customer_notes: notes,
             user_id: user.id
@@ -167,7 +201,7 @@ export default function RestaurantPage() {
         const { error } = await supabase.from('restaurant_orders').insert({
             order_number: orderNum,
             user_id: user.id,
-            customer_phone: profile.phone || profile.email,
+            customer_phone: profile?.phone || profile?.email || user.email || null,
             items: finalItems,
             status: 'pending',
             subtotal: total,
@@ -203,14 +237,15 @@ export default function RestaurantPage() {
             profile = data;
         }
 
-        // REDIRECT IF MISSING - Allow Google users (email) or Phone users
-        if (!user || (!profile?.phone && !profile?.email)) {
+        if (!user) {
+            // Only redirect if NOT logged in
             localStorage.setItem('pendingRestaurantOrder', 'true');
             router.push('/profile?redirect=/restaurant');
             return;
         }
 
-        await processOrder(user, profile);
+        // Proceed directly with User ID (Profile might be incomplete, that's okay, we rely on user_id)
+        await processOrder(user, profile || {});
     };
 
     return (
@@ -229,7 +264,7 @@ export default function RestaurantPage() {
                         </p>
                         <div className="space-y-3">
                             <button
-                                onClick={() => router.push('/orders')}
+                                onClick={() => router.push('/profile')}
                                 className="w-full py-4 bg-blue-600 rounded-xl font-bold text-white shadow-lg hover:bg-blue-500 transition-all"
                             >
                                 Suivre ma commande
@@ -452,7 +487,7 @@ export default function RestaurantPage() {
 
             {/* Cart & Checkout Sheet - Redesigned: Items First, Then Parameters */}
             <DarkSheet open={isCartOpen} onClose={() => setIsCartOpen(false)} title="Votre Panier">
-                <div className="p-5 pb-[200px] flex flex-col h-full min-h-[80vh]">
+                <div className="p-5 pb-[200px] flex flex-col h-full min-h-[80vh] overflow-y-auto custom-scrollbar">
 
                     {/* 1. CART ITEMS LIST - NOW FIRST! */}
                     <div className="space-y-4 mb-6">
@@ -485,92 +520,7 @@ export default function RestaurantPage() {
                         })}
                     </div>
 
-                    {/* Total Prep Time Warning */}
-                    {items.length > 0 && (() => {
-                        // Calculate total prep time with improved parsing
-                        const totalMinutes = items.reduce((sum, item) => {
-                            const menuItem = COMPLETE_MENU.find(m => m.name === item.name);
-                            const prepTime = menuItem?.prepTime || "15 min";
 
-                            // Parse time: handle "15 min", "1h", "1h30", "30min", etc.
-                            let minutes = 0;
-
-                            // Check for hours (e.g., "1h", "2h")
-                            const hourMatch = prepTime.match(/(\d+)\s*h/i);
-                            if (hourMatch) {
-                                minutes += parseInt(hourMatch[1]) * 60;
-                            }
-
-                            // Check for minutes (e.g., "30 min", "15min")
-                            const minMatch = prepTime.match(/(\d+)\s*min/i);
-                            if (minMatch) {
-                                minutes += parseInt(minMatch[1]);
-                            }
-
-                            // If no match found, default to 15 min
-                            if (minutes === 0) {
-                                minutes = 15;
-                            }
-
-                            return sum + minutes;
-                        }, 0);
-
-                        const hours = Math.floor(totalMinutes / 60);
-                        const mins = totalMinutes % 60;
-                        const timeDisplay = hours > 0 ? `${hours}h${mins > 0 ? mins : ''}` : `${mins} min`;
-
-                        // Parse customer arrival time
-                        const parseArrivalTime = (time: string) => {
-                            const hourMatch = time.match(/(\d+)\s*h/i);
-                            const minMatch = time.match(/(\d+)\s*min/i);
-                            let mins = 0;
-                            if (hourMatch) mins += parseInt(hourMatch[1]) * 60;
-                            if (minMatch) mins += parseInt(minMatch[1]);
-                            return mins || parseInt(time.replace(/\D/g, '')) || 15;
-                        };
-
-                        const arrivalMinutes = parseArrivalTime(arrivalTime);
-                        const timeDiff = arrivalMinutes - totalMinutes;
-
-                        // Determine status
-                        let status: 'good' | 'warning' | 'critical' = 'good';
-                        let statusMessage = '';
-
-                        if (timeDiff < 0) {
-                            status = 'critical';
-                            statusMessage = `⚠️ Votre commande sera prête ${Math.abs(timeDiff)} min après votre arrivée`;
-                        } else if (timeDiff < 5) {
-                            status = 'warning';
-                            statusMessage = '⏱️ Timing serré - Commande prête à votre arrivée';
-                        } else {
-                            status = 'good';
-                            statusMessage = `✅ Commande prête ${timeDiff} min avant votre arrivée`;
-                        }
-
-                        const bgColor = status === 'critical' ? 'bg-red-500/10 border-red-500/30' :
-                            status === 'warning' ? 'bg-orange-500/10 border-orange-500/30' :
-                                'bg-green-500/10 border-green-500/30';
-                        const textColor = status === 'critical' ? 'text-red-200' :
-                            status === 'warning' ? 'text-orange-200' :
-                                'text-green-200';
-                        const iconColor = status === 'critical' ? 'text-red-400' :
-                            status === 'warning' ? 'text-orange-400' :
-                                'text-green-400';
-
-                        return (
-                            <div className={`mb-6 p-3 rounded-xl border flex items-start gap-2 ${bgColor}`}>
-                                <Clock className={`w-4 h-4 mt-0.5 shrink-0 ${iconColor}`} />
-                                <div className="flex-1">
-                                    <div className={`text-xs font-bold ${textColor}`}>
-                                        Temps de préparation: {timeDisplay}
-                                    </div>
-                                    <div className="text-[10px] text-gray-400 mt-0.5">
-                                        {statusMessage}
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })()}
 
                     {/* 2. PARAMETERS - NOW SECOND */}
                     {items.length > 0 && (
@@ -606,12 +556,12 @@ export default function RestaurantPage() {
                                         <h3 className="text-white font-bold mb-4 flex items-center gap-2">
                                             <Clock className="w-4 h-4 text-gray-400" /> Heure d'arrivée
                                         </h3>
-                                        <div className="grid grid-cols-3 gap-3">
+                                        <div className="grid grid-cols-3 gap-3 mb-3">
                                             {arrivalOptions.map(time => (
                                                 <button
                                                     key={time}
-                                                    onClick={() => setArrivalTime(time)}
-                                                    className={`py-2 rounded-lg text-sm font-bold border transition-all ${arrivalTime === time
+                                                    onClick={() => { setArrivalTime(time); setShowCustomTime(false); }}
+                                                    className={`py-2 rounded-lg text-sm font-bold border transition-all ${arrivalTime === time && !showCustomTime
                                                         ? 'bg-blue-600 border-blue-600 text-white'
                                                         : 'bg-white/5 border-transparent text-gray-400 hover:bg-white/10'
                                                         }`}
@@ -620,44 +570,86 @@ export default function RestaurantPage() {
                                                 </button>
                                             ))}
                                         </div>
+
+                                        {/* Custom Time Button */}
+                                        <button
+                                            onClick={() => setShowCustomTime(!showCustomTime)}
+                                            className={`w-full py-3 rounded-xl text-sm font-bold border transition-all flex items-center justify-center gap-2 ${showCustomTime
+                                                ? 'bg-gradient-to-r from-blue-600 to-blue-500 border-blue-500 text-white shadow-lg shadow-blue-500/20'
+                                                : 'bg-[#1E293B] border-white/10 text-gray-300 hover:bg-[#253248] hover:border-white/20'
+                                                }`}
+                                        >
+                                            <Clock className="w-4 h-4" />
+                                            Autre heure
+                                        </button>
+
+                                        {/* Custom Time Input - Responsive */}
+                                        {showCustomTime && (
+                                            <div className="mt-4 p-4 md:p-5 bg-gradient-to-br from-[#1E293B] to-[#0F172A] rounded-2xl border border-white/10 shadow-xl animate-in fade-in slide-in-from-top-2 duration-200">
+                                                <div className="flex items-end gap-2 md:gap-3 mb-3 md:mb-4">
+                                                    <div className="flex-1">
+                                                        <label className="text-[10px] md:text-xs font-bold text-gray-400 mb-1 md:mb-2 block uppercase tracking-wider">Heures</label>
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            max="24"
+                                                            value={customHours}
+                                                            onChange={(e) => setCustomHours(e.target.value)}
+                                                            placeholder="0"
+                                                            className="w-full bg-[#0F172A] border-2 border-white/10 rounded-xl p-2 md:p-3 text-white text-center text-xl md:text-2xl font-black outline-none focus:border-blue-500 focus:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all"
+                                                        />
+                                                    </div>
+                                                    <div className="text-white font-black text-2xl md:text-3xl pb-1 md:pb-2 opacity-50">:</div>
+                                                    <div className="flex-1">
+                                                        <label className="text-[10px] md:text-xs font-bold text-gray-400 mb-1 md:mb-2 block uppercase tracking-wider">Minutes</label>
+                                                        <input
+                                                            type="number"
+                                                            min="0"
+                                                            max="59"
+                                                            value={customMinutes}
+                                                            onChange={(e) => setCustomMinutes(e.target.value)}
+                                                            placeholder="0"
+                                                            className="w-full bg-[#0F172A] border-2 border-white/10 rounded-xl p-2 md:p-3 text-white text-center text-xl md:text-2xl font-black outline-none focus:border-blue-500 focus:shadow-[0_0_20px_rgba(59,130,246,0.3)] transition-all"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    onClick={handleCustomTimeApply}
+                                                    className="w-full py-3 bg-gradient-to-r from-blue-600 to-blue-500 rounded-xl text-white font-black text-sm shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+                                                >
+                                                    <Check className="w-4 h-4" />
+                                                    Appliquer
+                                                </button>
+                                            </div>
+                                        )}
                                     </>
                                 ) : (
                                     <>
-                                        <h3 className="text-white font-bold mb-4 flex items-center gap-2">
-                                            <MapPin className="w-4 h-4 text-gray-400" /> Numéro de Table
-                                        </h3>
                                         <input
                                             type="number"
                                             value={tableNumber}
                                             onChange={(e) => setTableNumber(e.target.value)}
-                                            placeholder="Ex: 5"
+                                            placeholder="Numéro de Table (Ex: 5)"
                                             className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white font-bold text-xl text-center outline-none focus:border-blue-500"
                                         />
                                     </>
                                 )}
                             </div>
-
-                            {/* Removed Manual Phone Input - Will use Profile */}
-                            <div className="mb-4 px-2 p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
-                                <p className="text-xs text-blue-400 text-center">
-                                    Votre numéro de téléphone sera récupéré de votre profil.
-                                </p>
-                            </div>
                         </>
                     )}
 
-                    {/* Blue Confirm Button */}
-                    <div className="fixed bottom-0 left-0 right-0 bg-[#0F172A] p-4 border-t border-white/10 z-50 safe-area-bottom">
-                        <div className="flex justify-between items-center mb-4 px-2">
-                            <span className="text-gray-400 text-lg">Montant Total</span>
-                            <span className="text-3xl font-black text-white">{formatDh(total)}</span>
+                    {/* Blue Confirm Button - Compact on Mobile */}
+                    <div className="fixed bottom-0 left-0 right-0 bg-[#0F172A]/95 backdrop-blur-sm p-3 md:p-4 border-t border-white/10 z-50 safe-area-bottom">
+                        <div className="flex justify-between items-center mb-2 md:mb-3 px-1 md:px-2">
+                            <span className="text-gray-400 text-sm md:text-lg">Montant Total</span>
+                            <span className="text-2xl md:text-3xl font-black text-white">{formatDh(total)}</span>
                         </div>
                         <button
                             onClick={handleCheckout}
                             disabled={isSubmitting || items.length === 0}
-                            className="w-full py-4 bg-[#2563EB] hover:bg-blue-600 rounded-xl font-black text-lg text-white shadow-lg shadow-blue-500/20 active:scale-95 transition-transform flex items-center justify-center gap-2"
+                            className="w-full py-3 md:py-4 bg-[#2563EB] hover:bg-blue-600 rounded-xl font-black text-base md:text-lg text-white shadow-lg shadow-blue-500/20 active:scale-95 transition-transform flex items-center justify-center gap-2"
                         >
-                            {isSubmitting ? "Traitement..." : <>Confirmer la commande <ChevronRight className="w-5 h-5" /></>}
+                            {isSubmitting ? "Traitement..." : <>Confirmer la commande <ChevronRight className="w-4 h-4 md:w-5 md:h-5" /></>}
                         </button>
                     </div>
                 </div>

@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useCart } from "@/lib/state/CartContext";
 import { useUI } from "@/lib/state/UIContext";
-import { X, Trash2, ShoppingBag, Plus, Minus, ArrowRight, CheckCircle, Loader2, Utensils, Car, Clock, MapPin } from "lucide-react";
+import { X, Trash2, ShoppingBag, Plus, Minus, ArrowRight, CheckCircle, Loader2, Utensils, Car, Clock, MapPin, CreditCard, Banknote, Lock } from "lucide-react";
 import { createOrder } from "@/lib/supabase";
 
 export function CartDrawer() {
@@ -11,6 +11,9 @@ export function CartDrawer() {
     const { isCartOpen, closeCart, requirePhone } = useUI();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
+
+    // Payment State
+    const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('cash');
 
     // New Order Details State
     const [serviceType, setServiceType] = useState<'dine_in' | 'pre_order'>('pre_order');
@@ -110,6 +113,7 @@ export function CartDrawer() {
                     <button
                         onClick={closeCart}
                         className="p-2 hover:bg-white/10 rounded-full transition text-gray-400 hover:text-white"
+                        aria-label="Close cart"
                     >
                         <X className="w-6 h-6" />
                     </button>
@@ -154,6 +158,7 @@ export function CartDrawer() {
                                                 <button
                                                     onClick={() => setQuantity(item.id || "", (item.quantity || 1) - 1)}
                                                     className="w-7 h-7 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-md text-white transition"
+                                                    aria-label="Decrease quantity"
                                                 >
                                                     <Minus className="w-3 h-3" />
                                                 </button>
@@ -161,6 +166,7 @@ export function CartDrawer() {
                                                 <button
                                                     onClick={() => setQuantity(item.id || "", (item.quantity || 1) + 1)}
                                                     className="w-7 h-7 flex items-center justify-center bg-white/5 hover:bg-white/10 rounded-md text-white transition"
+                                                    aria-label="Increase quantity"
                                                 >
                                                     <Plus className="w-3 h-3" />
                                                 </button>
@@ -168,6 +174,7 @@ export function CartDrawer() {
                                             <button
                                                 onClick={() => removeItem(item.id || "")}
                                                 className="text-red-400 hover:text-red-300 p-2 transition"
+                                                aria-label="Remove item"
                                             >
                                                 <Trash2 className="w-4 h-4" />
                                             </button>
@@ -284,6 +291,7 @@ export function CartDrawer() {
                                                             <button
                                                                 onClick={() => setCustomTimeMode(false)}
                                                                 className="px-4 bg-white/5 hover:bg-white/10 rounded-lg text-gray-400"
+                                                                aria-label="Cancel custom time"
                                                             >
                                                                 <X className="w-4 h-4" />
                                                             </button>
@@ -298,6 +306,63 @@ export function CartDrawer() {
 
                         </div>
                     )}
+
+                    {/* --- PAYMENT METHOD SELECTOR --- */}
+                    {items.length > 0 && (
+                        <div className="px-6 pb-6 animate-fade-in border-t border-white/5 pt-6">
+                            <h3 className="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Mode de Paiement</h3>
+                            <div className="grid grid-cols-2 gap-3">
+                                {/* Cash Option */}
+                                <button
+                                    onClick={() => setPaymentMethod('cash')}
+                                    className={`relative p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${paymentMethod === 'cash'
+                                        ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400'
+                                        : 'bg-[#0F172A] border-white/10 text-gray-500 hover:bg-white/5'
+                                        }`}
+                                >
+                                    <div className="bg-emerald-500/20 p-2 rounded-full">
+                                        <Banknote className="w-5 h-5" />
+                                    </div>
+                                    <span className="text-xs font-bold">Sur Place</span>
+                                    {paymentMethod === 'cash' && (
+                                        <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                                    )}
+                                </button>
+
+                                {/* Card Option (YouCan Pay Style) */}
+                                <button
+                                    onClick={() => setPaymentMethod('card')}
+                                    className={`relative p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${paymentMethod === 'card'
+                                        ? 'bg-blue-600/10 border-blue-500 text-blue-400'
+                                        : 'bg-[#0F172A] border-white/10 text-gray-500 hover:bg-white/5'
+                                        }`}
+                                >
+                                    <div className="bg-blue-500/20 p-2 rounded-full">
+                                        <CreditCard className="w-5 h-5" />
+                                    </div>
+                                    <span className="text-xs font-bold">Carte Bancaire</span>
+                                    {paymentMethod === 'card' && (
+                                        <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-blue-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
+                                    )}
+                                </button>
+                            </div>
+
+                            {/* Trust Badges */}
+                            {paymentMethod === 'card' && (
+                                <div className="mt-4 p-3 bg-blue-500/5 rounded-lg border border-blue-500/10 flex flex-col items-center text-center animate-in fade-in slide-in-from-top-2">
+                                    <p className="text-[10px] text-gray-400 mb-2">Paiement sécurisé via <b>YouCan Pay</b> (CMI)</p>
+                                    <div className="flex items-center gap-3 opacity-70 grayscale hover:grayscale-0 transition-all">
+                                        {/* Mock Logos */}
+                                        <div className="h-6 w-10 bg-white/10 rounded flex items-center justify-center text-[8px] font-bold text-white">VISA</div>
+                                        <div className="h-6 w-10 bg-white/10 rounded flex items-center justify-center text-[8px] font-bold text-white">MasterCard</div>
+                                        <div className="h-6 w-10 bg-white/10 rounded flex items-center justify-center text-[8px] font-bold text-white">CMI</div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+                    {/* ------------------------------- */}
+
                 </div>
 
                 {/* Footer */}
@@ -311,7 +376,9 @@ export function CartDrawer() {
                         <button
                             onClick={handleCheckout}
                             disabled={isSubmitting}
-                            className={`w-full text-white py-4 rounded-xl font-bold text-lg hover:brightness-110 transition shadow-lg flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed group ${serviceType === 'dine_in' ? 'bg-gradient-to-r from-orange-500 to-red-600 shadow-orange-500/20' : 'bg-gradient-to-r from-cyan-500 to-blue-600 shadow-cyan-500/20'
+                            className={`w-full text-white py-4 rounded-xl font-bold text-lg hover:brightness-110 transition shadow-lg flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed group ${paymentMethod === 'card'
+                                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 shadow-blue-500/20' // Card Style
+                                : (serviceType === 'dine_in' ? 'bg-gradient-to-r from-orange-500 to-red-600 shadow-orange-500/20' : 'bg-gradient-to-r from-cyan-500 to-blue-600 shadow-cyan-500/20')
                                 }`}
                         >
                             {isSubmitting ? (
@@ -321,7 +388,8 @@ export function CartDrawer() {
                                 </>
                             ) : (
                                 <>
-                                    Confirm Order <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition" />
+                                    {paymentMethod === 'card' ? `Payer ${total.toFixed(0)} DH` : 'Confirmer la commande'}
+                                    {paymentMethod === 'card' ? <Lock className="w-5 h-5" /> : <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition" />}
                                 </>
                             )}
                         </button>

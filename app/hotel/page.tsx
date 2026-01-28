@@ -181,7 +181,11 @@ export default function HotelPage() {
 
         const finalBookingData = { ...commonData, ...specificData };
 
-        if (!user || !userPhoneFromProfile) {
+        // Robust User/Phone check
+        // Try profile phone, then metadata phone, then fallback/null
+        const userPhone = userPhoneFromProfile || user?.user_metadata?.phone || null;
+
+        if (!user) {
             localStorage.setItem('pendingHotelBooking', JSON.stringify(finalBookingData));
             router.push('/profile?redirect=/hotel');
             setLoading(false);
@@ -190,9 +194,9 @@ export default function HotelPage() {
 
         const bookingNum = `HOTEL-${Date.now().toString().slice(-6)}`;
 
-        const { error } = await supabase.from('hotel_bookings').insert({
+        const { error } = await supabase.from('hotel_reservations').insert({
             booking_number: bookingNum,
-            customer_phone: userPhoneFromProfile,
+            customer_phone: userPhone,
             room_type: selectedRoom,
             booking_type: bookingType,
             check_in: bookingType === 'night' ? dates.checkIn : siesteTime.date,
@@ -253,8 +257,8 @@ export default function HotelPage() {
                                 key={room.id}
                                 onClick={() => setSelectedRoom(room.id)}
                                 className={`rounded-2xl overflow-hidden border transition-all duration-300 relative group cursor-pointer h-full flex flex-col ${selectedRoom === room.id
-                                        ? 'border-amber-500 ring-4 ring-amber-500/20 transform md:-translate-y-2'
-                                        : 'border-white/10 hover:border-white/30 hover:shadow-2xl'
+                                    ? 'border-amber-500 ring-4 ring-amber-500/20 transform md:-translate-y-2'
+                                    : 'border-white/10 hover:border-white/30 hover:shadow-2xl'
                                     }`}
                             >
                                 <div className="h-48 md:h-56 relative w-full">
@@ -420,7 +424,7 @@ export default function HotelPage() {
                         </p>
                         <div className="space-y-3">
                             <button
-                                onClick={() => router.push('/orders')}
+                                onClick={() => router.push('/profile')}
                                 className="w-full py-4 bg-amber-600 rounded-xl font-bold text-white shadow-lg"
                             >
                                 Voir mes Réservations

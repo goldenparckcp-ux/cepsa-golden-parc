@@ -11,7 +11,7 @@ const inter = Inter({ subsets: ["latin"] });
 const outfit = Outfit({ subsets: ["latin"], variable: '--font-outfit' });
 
 export const metadata: Metadata = {
-  title: "Golden Park Cepsa",
+  title: "Golden Park Station (GPS)",
   description: "Station Service & Détente",
   manifest: "/manifest.json",
 };

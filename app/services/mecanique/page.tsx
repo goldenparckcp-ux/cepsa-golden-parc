@@ -183,18 +183,14 @@ export default function MecaniquePage() {
         if (!selectedOption || !endTime || !carModel || !carPlate) return;
         setLoading(true);
 
-        const { data: { user } } = await supabase.auth.getUser();
-
-        let userPhoneFromProfile = null;
-        if (user) {
-            const { data } = await supabase.from('profiles').select('phone').eq('id', user.id).single();
-            userPhoneFromProfile = data?.phone;
-        }
-
+        // Define these early so they are available for both auth paths
         const timeRange = `${time} - ${endTime}`;
         const optionLabel = optionData?.label || selectedOption;
 
-        if (!user || !userPhoneFromProfile) {
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) {
+            // Only redirect if NOT logged in
             const bookingData = {
                 optionId: selectedOption,
                 optionLabel,
@@ -213,6 +209,11 @@ export default function MecaniquePage() {
             return;
         }
 
+        // Fetch phone if available, but don't block
+        let userPhoneFromProfile = null;
+        const { data } = await supabase.from('profiles').select('phone').eq('id', user.id).single();
+        userPhoneFromProfile = data?.phone || user.user_metadata?.phone;
+
         const bookingNum = `MECA-${Date.now().toString().slice(-6)}`;
 
         const obsText = observation ? ` [Remarque: ${observation}]` : '';
@@ -220,7 +221,7 @@ export default function MecaniquePage() {
 
         const { error } = await supabase.from('service_bookings').insert({
             booking_number: bookingNum,
-            customer_phone: userPhoneFromProfile,
+            customer_phone: userPhoneFromProfile || null, // Allow null
             service_type: 'mecanique',
             service_name: detailService,
             scheduled_date: date,
@@ -450,7 +451,7 @@ export default function MecaniquePage() {
                         </p>
                         <div className="space-y-3">
                             <button
-                                onClick={() => router.push('/orders')}
+                                onClick={() => router.push('/profile')}
                                 className="w-full py-4 bg-orange-600 rounded-xl font-bold text-white shadow-lg"
                             >
                                 Voir mes RDV

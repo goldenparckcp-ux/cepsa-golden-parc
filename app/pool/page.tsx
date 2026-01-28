@@ -39,6 +39,7 @@ export default function PoolBookingPage() {
     const [adults, setAdults] = useState(1);
     const [children, setChildren] = useState(0);
     const [infants, setInfants] = useState(0);
+    const [ambiance, setAmbiance] = useState<'famille' | 'mixte' | 'femmes'>('mixte');
     const [notes, setNotes] = useState('');
     const [customerPhone, setCustomerPhone] = useState(''); // Need to capture phone if not logged in
     const [loading, setLoading] = useState(false);
@@ -67,34 +68,40 @@ export default function PoolBookingPage() {
     }, []);
 
     const handleBooking = async () => {
-        if (!customerPhone) {
-            alert("Veuillez entrer votre numéro de téléphone.");
+        // Get fresh user session
+        const { data: { user: freshUser } } = await supabase.auth.getUser();
+        const finalUserId = freshUser?.id || user?.id;
+
+        // Validation: Require Phone ONLY if not logged in
+        if (!finalUserId && !customerPhone) {
+            alert("Veuillez vous connecter ou entrer votre numéro de téléphone.");
             return;
         }
 
         setLoading(true);
-        const bookingNumber = `POOL-${Math.floor(1000 + Math.random() * 9000)}`;
+
+        const bookingNumber = `POOL-${Date.now().toString().slice(-6)}`;
 
         const { error } = await supabase.from('pool_bookings').insert({
             booking_number: bookingNumber,
-            customer_phone: customerPhone,
+            customer_phone: customerPhone || null, // Allow null if user_id exists
             booking_date: selectedDate,
             time_slot: selectedSlot,
+            ambiance,
             adults,
             children,
             infants,
             total_price: calculateTotal(),
-            status: 'active',
+            status: 'pending',
             notes: notes || undefined,
-            user_id: user?.id // Link to user
+            user_id: finalUserId
         });
 
         if (error) {
             console.error(error);
-            alert("Erreur lors de la réservation. Veuillez réessayer.");
+            alert("Erreur lors de la réservation: " + error.message);
         } else {
-            alert("Réservation confirmée via WhatsApp !"); // Mock
-            router.push('/profile?redirect=/pool'); // Redirect to profile to see order
+            router.push('/profile');
         }
         setLoading(false);
     };
@@ -161,6 +168,62 @@ export default function PoolBookingPage() {
                             onChange={(e) => setSelectedDate(e.target.value)}
                             className="w-full p-4 border-2 border-gray-200 rounded-xl bg-gray-50 focus:border-cyan-500 outline-none font-bold"
                         />
+                    </div>
+
+                    {/* Ambiance Selection */}
+                    <div>
+                        <label className="font-bold text-gray-900 mb-3 flex items-center gap-2">
+                            <Users className="w-5 h-5 text-cyan-600" /> Ambiance
+                        </label>
+                        <div className="grid grid-cols-3 gap-3">
+                            {/* Famille */}
+                            <button
+                                onClick={() => setAmbiance('famille')}
+                                className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition relative ${ambiance === 'famille'
+                                    ? 'border-cyan-500 bg-cyan-50 shadow-md ring-1 ring-cyan-500'
+                                    : 'border-gray-200 hover:border-cyan-300 hover:shadow-lg'
+                                    }`}
+                            >
+                                <span className="text-3xl">👨‍👩‍👧‍👦</span>
+                                <div className="font-bold text-gray-900 text-sm text-center">Famille</div>
+                                <div className="bg-blue-600 text-white text-xs font-black px-3 py-1.5 rounded-full shadow-md">
+                                    📅 LUNDI
+                                </div>
+                                {ambiance === 'famille' && <CheckCircle className="w-5 h-5 text-cyan-600 absolute top-2 right-2" />}
+                            </button>
+
+                            {/* Mixte */}
+                            <button
+                                onClick={() => setAmbiance('mixte')}
+                                className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition relative ${ambiance === 'mixte'
+                                    ? 'border-cyan-500 bg-cyan-50 shadow-md ring-1 ring-cyan-500'
+                                    : 'border-gray-200 hover:border-cyan-300 hover:shadow-lg'
+                                    }`}
+                            >
+                                <span className="text-3xl">👫</span>
+                                <div className="font-bold text-gray-900 text-sm text-center">Mixte</div>
+                                <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white text-xs font-black px-3 py-1.5 rounded-full shadow-md">
+                                    ✨ AUTRES JOURS
+                                </div>
+                                {ambiance === 'mixte' && <CheckCircle className="w-5 h-5 text-cyan-600 absolute top-2 right-2" />}
+                            </button>
+
+                            {/* Femmes */}
+                            <button
+                                onClick={() => setAmbiance('femmes')}
+                                className={`p-4 rounded-xl border-2 flex flex-col items-center gap-2 transition relative ${ambiance === 'femmes'
+                                    ? 'border-cyan-500 bg-cyan-50 shadow-md ring-1 ring-cyan-500'
+                                    : 'border-gray-200 hover:border-cyan-300 hover:shadow-lg'
+                                    }`}
+                            >
+                                <span className="text-3xl">👭</span>
+                                <div className="font-bold text-gray-900 text-sm text-center">Femmes</div>
+                                <div className="bg-purple-600 text-white text-xs font-black px-3 py-1.5 rounded-full shadow-md">
+                                    📅 JEUDI
+                                </div>
+                                {ambiance === 'femmes' && <CheckCircle className="w-5 h-5 text-cyan-600 absolute top-2 right-2" />}
+                            </button>
+                        </div>
                     </div>
 
                     {/* Time Slot */}
