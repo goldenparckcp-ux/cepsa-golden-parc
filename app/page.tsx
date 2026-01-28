@@ -1,11 +1,62 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
-import { Car, Utensils, BedDouble, Waves, Wrench, ChevronRight, Star, Clock, MapPin, Phone } from "lucide-react";
+import { Car, Utensils, BedDouble, Waves, Wrench, ChevronRight, Star, Clock, MapPin, Phone, Navigation } from "lucide-react";
 import CepsaLogo from "@/components/CepsaLogo";
+import { useEffect, useState } from 'react';
+
+// Coordonnées GPS de Cepsa Golden Park (depuis Google Maps)
+const STATION_COORDS = {
+  lat: 33.5731,  // Latitude approximative
+  lng: -7.5898   // Longitude approximative
+};
 
 export default function Home() {
   const router = useRouter();
+  const [eta, setEta] = useState<number | null>(null);
+  const [distance, setDistance] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Calculer la distance entre deux points GPS (formule Haversine)
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 6371; // Rayon de la Terre en km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c; // Distance en km
+  };
+
+  useEffect(() => {
+    // Demander la géolocalisation
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const userLat = position.coords.latitude;
+          const userLng = position.coords.longitude;
+
+          // Calculer la distance
+          const dist = calculateDistance(userLat, userLng, STATION_COORDS.lat, STATION_COORDS.lng);
+          setDistance(dist);
+
+          // Estimer le temps (vitesse moyenne 60 km/h sur autoroute)
+          const timeInHours = dist / 60;
+          const timeInMinutes = Math.round(timeInHours * 60);
+          setEta(timeInMinutes);
+          setLoading(false);
+        },
+        (error) => {
+          console.log('Géolocalisation refusée:', error);
+          setLoading(false);
+        }
+      );
+    } else {
+      setLoading(false);
+    }
+  }, []);
 
   const SERVICES = [
     {
@@ -111,6 +162,40 @@ export default function Home() {
 
       {/* --- CONTAINER FOR CONTENT --- */}
       <div className="max-w-7xl mx-auto px-4 md:px-8">
+
+        {/* GPS ETA CARD */}
+        {eta !== null && !loading && (
+          <div className="-mt-6 relative z-30 mx-4 md:mx-0 mb-6">
+            <div className="bg-gradient-to-br from-red-600 to-red-700 rounded-3xl p-6 md:p-8 shadow-[0_0_40px_rgba(214,0,28,0.4)] border border-red-500/20">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 text-white/90 text-sm mb-3">
+                    <Navigation className="w-4 h-4" />
+                    <span className="font-bold">Vous êtes en route</span>
+                  </div>
+                  <div className="flex items-baseline gap-3 mb-2">
+                    <h2 className="text-white text-5xl md:text-6xl font-black">
+                      {eta} min
+                    </h2>
+                    <span className="text-white/80 text-lg md:text-xl font-medium">
+                      ({distance?.toFixed(1)} km)
+                    </span>
+                  </div>
+                  <p className="text-white/80 text-sm md:text-base">
+                    Arrivée estimée à <span className="font-bold text-white">Golden Park Station</span>
+                  </p>
+                </div>
+
+                <div className="hidden md:block">
+                  <div className="w-24 h-24 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center relative">
+                    <div className="absolute inset-0 rounded-full border-4 border-white/20 animate-ping" />
+                    <MapPin className="w-12 h-12 text-white relative z-10" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* INFO & COORDONNEES */}
         <div className="-mt-6 relative z-20 mx-4 md:mx-0">
