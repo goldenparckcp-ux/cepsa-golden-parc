@@ -2,10 +2,10 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 import { ChevronLeft, Calendar, Info, Minus, Plus, Sparkles, CheckCircle, Loader2 } from 'lucide-react';
 import { useCart } from "@/lib/state/CartContext";
 import { useUI } from "@/lib/state/UIContext";
+import Image from 'next/image';
 
 // Interface for Pricing Structure
 interface PricingTier {
@@ -50,12 +50,38 @@ const TIME_SLOTS: { id: PricingSlot; label: string; icon: string }[] = [
     { id: 'full_day', label: 'Journée Complète (09:00 - 19:00)', icon: '🌞' }
 ];
 
+const Counter = ({ label, value, setter, min = 0, max = 10 }: { label: string, value: number, setter: (v: number) => void, min?: number, max?: number }) => (
+    <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/10">
+        <span className="font-medium text-white">{label}</span>
+        <div className="flex items-center gap-3">
+            <button
+                type="button"
+                onClick={() => setter(Math.max(min, value - 1))}
+                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition disabled:opacity-50"
+                disabled={value <= min}
+                aria-label={`Diminuer ${label}`}
+            >
+                <Minus className="w-4 h-4 text-white" />
+            </button>
+            <span className="w-4 text-center font-bold text-white">{value}</span>
+            <button
+                type="button"
+                onClick={() => setter(Math.min(max, value + 1))}
+                className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition disabled:opacity-50"
+                disabled={value >= max}
+                aria-label={`Augmenter ${label}`}
+            >
+                <Plus className="w-4 h-4 text-white" />
+            </button>
+        </div>
+    </div>
+);
+
 export default function PoolBookingPage() {
     const router = useRouter();
-    const { addItem, isCartOpen, openCart } = useCart();
-    const { requirePhone } = useUI();
+    const { addItem } = useCart();
+    const { requirePhone, isCartOpen, openCart } = useUI();
 
-    // Explicitly define state type
     const [selectedSlot, setSelectedSlot] = useState<PricingSlot | null>(null);
     const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
     const [adults, setAdults] = useState(1);
@@ -63,18 +89,12 @@ export default function PoolBookingPage() {
     const [infants, setInfants] = useState(0);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
-    // Calculate total price dynamically
     const calculateTotal = () => {
         if (!selectedSlot) return 0;
-
-        // At this point, selectedSlot is 'morning' | 'afternoon' | 'full_day'
-        // But TS might need reassurance
         const slot = selectedSlot;
-
         const adultsPrice = adults * POOL_PRICING.adults[slot];
         const childrenPrice = children * POOL_PRICING.children[slot];
         const infantsPrice = infants * POOL_PRICING.infants[slot];
-
         return adultsPrice + childrenPrice + infantsPrice;
     };
 
@@ -86,23 +106,20 @@ export default function PoolBookingPage() {
             reason: 'reservation',
             onVerified: async () => {
                 setIsSubmitting(true);
-
-                // Construct Booking Reference
                 const bookingRef = `POOL-${Date.now().toString().slice(-6)}`;
                 const total = calculateTotal();
 
-                // Add to Cart Logic
                 addItem({
                     id: bookingRef,
                     name: `Piscine - ${POOL_PRICING.adults.label}`,
                     price: total,
+                    totalPrice: total,
                     quantity: 1,
                     image: 'https://images.unsplash.com/photo-1572331165267-854da2b00ca1?auto=format&fit=crop&w=800',
                     type: 'pool',
                     notes: `Date: ${date} | Slot: ${selectedSlot} | A: ${adults}, C: ${children}, I: ${infants}`
                 });
 
-                // Simulate processing
                 setTimeout(() => {
                     setIsSubmitting(false);
                     if (!isCartOpen) openCart();
@@ -110,33 +127,6 @@ export default function PoolBookingPage() {
             }
         });
     };
-
-    const Counter = ({ label, value, setter, min = 0, max = 10 }: { label: string, value: number, setter: (v: number) => void, min?: number, max?: number }) => (
-        <div className="flex items-center justify-between p-3 bg-white/5 rounded-xl border border-white/10">
-            <span className="font-medium text-white">{label}</span>
-            <div className="flex items-center gap-3">
-                <button
-                    type="button"
-                    onClick={() => setter(Math.max(min, value - 1))}
-                    className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition disabled:opacity-50"
-                    disabled={value <= min}
-                    aria-label={`Diminuer ${label}`}
-                >
-                    <Minus className="w-4 h-4 text-white" />
-                </button>
-                <span className="w-4 text-center font-bold text-white">{value}</span>
-                <button
-                    type="button"
-                    onClick={() => setter(Math.min(max, value + 1))}
-                    className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition disabled:opacity-50"
-                    disabled={value >= max}
-                    aria-label={`Augmenter ${label}`}
-                >
-                    <Plus className="w-4 h-4 text-white" />
-                </button>
-            </div>
-        </div>
-    );
 
     return (
         <div className="min-h-screen pb-40 bg-[#0F172A] text-white font-sans selection:bg-red-500/30">
@@ -160,10 +150,12 @@ export default function PoolBookingPage() {
             {/* Hero Section */}
             <div className="relative h-[35vh] w-full overflow-hidden mt-16">
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0F172A]/50 to-[#0F172A] z-10" />
-                <img
+                <Image
                     src="https://images.unsplash.com/photo-1572331165267-854da2b00ca1?auto=format&fit=crop&w=800&q=80"
                     alt="Piscine Luxueuse"
+                    fill
                     className="w-full h-full object-cover"
+                    priority
                 />
                 <div className="absolute bottom-0 left-0 p-6 z-20 w-full">
                     <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-600/90 backdrop-blur text-white text-xs font-bold mb-3 shadow-lg shadow-red-600/20">
@@ -215,8 +207,8 @@ export default function PoolBookingPage() {
                                 type="button"
                                 onClick={() => setSelectedSlot(slot.id)}
                                 className={`p-4 rounded-xl border text-left transition-all ${selectedSlot === slot.id
-                                        ? 'bg-amber-500/10 border-amber-500/50 ring-1 ring-amber-500'
-                                        : 'bg-[#0F172A] border-white/10 hover:border-white/20'
+                                    ? 'bg-amber-500/10 border-amber-500/50 ring-1 ring-amber-500'
+                                    : 'bg-[#0F172A] border-white/10 hover:border-white/20'
                                     }`}
                             >
                                 <div className="flex items-center justify-between">
@@ -256,8 +248,8 @@ export default function PoolBookingPage() {
                             type="submit"
                             disabled={!selectedSlot || isSubmitting}
                             className={`px-8 py-4 rounded-xl font-bold text-white shadow-lg transition-all flex items-center gap-2 ${!selectedSlot || isSubmitting
-                                    ? 'bg-gray-700 cursor-not-allowed opacity-50'
-                                    : 'bg-gradient-to-r from-red-600 to-red-700 hover:brightness-110 shadow-red-600/20'
+                                ? 'bg-gray-700 cursor-not-allowed opacity-50'
+                                : 'bg-gradient-to-r from-red-600 to-red-700 hover:brightness-110 shadow-red-600/20'
                                 }`}
                         >
                             {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Réserver'}

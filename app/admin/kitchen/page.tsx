@@ -1,20 +1,46 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Clock, Phone, CheckCircle, XCircle, AlertTriangle, Utensils, User, MapPin, AlarmClock, UtensilsCrossed, Calendar } from 'lucide-react';
+import { CheckCircle, AlertTriangle, Utensils, User, AlarmClock, UtensilsCrossed, Calendar } from 'lucide-react';
+import Image from 'next/image';
+
+interface OrderItem {
+    name: string;
+    quantity: number;
+    image?: string;
+    customizations?: Record<string, unknown>;
+}
+
+interface KitchenOrder {
+    id: string;
+    source: string;
+    status: string;
+    service_type: string;
+    arrival_time?: string;
+    created_at: string;
+    updated_at?: string;
+    table_number?: string;
+    customer_phone?: string;
+    items: OrderItem[];
+    notes?: string;
+}
 
 export default function KitchenDashboard() {
-    const [orders, setOrders] = useState<any[]>([]);
-    const [now, setNow] = useState(Date.now());
+    const [orders, setOrders] = useState<KitchenOrder[]>([]);
+    const [now, setNow] = useState<number>(0);
 
     useEffect(() => {
-        // Sync timer
+        const initNow = async () => {
+            await Promise.resolve();
+            setNow(Date.now());
+        };
+        void initNow();
         const timer = setInterval(() => setNow(Date.now()), 1000);
         return () => clearInterval(timer);
     }, []);
 
-    const fetchOrders = async () => {
+    const fetchOrders = useCallback(async () => {
         try {
             const res = await fetch('/api/admin/orders', { cache: 'no-store' });
             if (res.ok) {
@@ -26,17 +52,24 @@ export default function KitchenDashboard() {
         } catch (err) {
             console.error("API error:", err);
         }
-    };
+    }, []);
 
     useEffect(() => {
-        fetchOrders();
+        const initFetch = async () => {
+            await Promise.resolve();
+            void fetchOrders();
+        };
+        void initFetch();
         const sub1 = supabase.channel('kitchen_new').on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, fetchOrders).subscribe();
-        const sub2 = supabase.channel('kitchen_old').on('postgres_changes', { event: '*', schema: 'public', table: 'restaurant_orders' }, fetchOrders).subscribe();
+        const sub2 = supabase.channel('kitchen_new_v2').on('postgres_changes', { event: '*', schema: 'public', table: 'restaurant_orders' }, fetchOrders).subscribe();
 
-        // Super-Aggressive Polling (2s) for "Instant" feel
-        const interval = setInterval(fetchOrders, 2000);
-        return () => { sub1.unsubscribe(); sub2.unsubscribe(); clearInterval(interval); };
-    }, []);
+        const interval = setInterval(() => void fetchOrders(), 5000);
+        return () => {
+            void sub1.unsubscribe();
+            void sub2.unsubscribe();
+            clearInterval(interval);
+        };
+    }, [fetchOrders]);
 
     const updateStatus = async (id: string, status: string) => {
         const order = orders.find(o => o.id === id);
@@ -56,84 +89,62 @@ export default function KitchenDashboard() {
         }
     };
 
-    // Robust Time Parser with Day Rollover & Duration Support
-    const parseTime = (input: any, anchorInput: string | number) => {
+    const parseTime = useCallback((input: unknown, anchorInput: string | number, currentNow: number): number => {
         const anchorTime = typeof anchorInput === 'string' ? new Date(anchorInput).getTime() : anchorInput;
         if (!input) return anchorTime;
 
-        // Regex to capture pure digits OR digits with "min" suffix
-        const durationMatch = typeof input === 'string' ? input.match(/^(\d+)(\s*(min|m|minutes?))?$/i) : null;
+        const inputStr = String(input);
+        const durationMatch = inputStr.match(/^(\d+)(\s*(min|m|minutes?))?$/i);
 
         if (durationMatch) {
             const minutes = parseInt(durationMatch[1]);
-
-            // 1. Try Duration Logic (Anchor + X mins)
             const durationTarget = anchorTime + minutes * 60000;
-            if (durationTarget > Date.now()) {
+            if (durationTarget > currentNow) {
                 return durationTarget;
             }
 
-            // 2. Fallback: Try "Time of Day" Logic (00:XX) to force Future via Rollover
-            // This rescues cases where Anchor is old but user wants "X mins from now"-ish behavior via Time Rollover
-            const h = 0;
-            const m = minutes;
             const d = new Date();
-            d.setHours(h, m, 0, 0);
+            d.setHours(0, minutes, 0, 0);
 
-            // Smart Rollover
-            if (d.getTime() < Date.now() - 6 * 60 * 60 * 1000) {
+            if (d.getTime() < currentNow - 6 * 60 * 60 * 1000) {
                 d.setDate(d.getDate() + 1);
             }
             return d.getTime();
         }
 
-        // 3. Handle "HH:MM" (Standard Time)
-        if (typeof input === 'string' && input.match(/^\d{1,2}:\d{2}(:\d{2})?$/)) {
-            const [h, m] = input.split(':').map(Number);
+        if (inputStr.match(/^\d{1,2}:\d{2}(:\d{2})?$/)) {
+            const [h, m] = inputStr.split(':').map(Number);
             const d = new Date();
             d.setHours(h, m, 0, 0);
 
-            // Smart Rollover
-            if (d.getTime() < Date.now() - 6 * 60 * 60 * 1000) {
+            if (d.getTime() < currentNow - 6 * 60 * 60 * 1000) {
                 d.setDate(d.getDate() + 1);
             }
             return d.getTime();
         }
 
-        const d = new Date(input);
+        const d = new Date(inputStr);
         return isNaN(d.getTime()) ? anchorTime : d.getTime();
-    };
+    }, []);
 
-    // --- SMART SORTING LOGIC ---
-    const getPriorityScore = (order: any) => {
-        // 0. Completed/Ready = Bottom
+    const getPriorityScore = useCallback((order: KitchenOrder) => {
         if (order.status === 'ready' || order.status === 'completed') return -1000;
-
-        // 1. Dine-in (Sur Place) = HIGHEST PRIORITY
         if (order.service_type === 'dine_in') return 10000;
 
-        const arrival = parseTime(order.arrival_time, order.created_at);
+        const arrival = parseTime(order.arrival_time, order.created_at, now);
         const diffMinutes = (arrival - now) / 60000;
 
-        // 2. Late (Retard) = CRITICAL (Strictly negative)
         if (diffMinutes < 0) return 6000 + Math.abs(diffMinutes);
-
-        // 3. Urgent (0-15m) = Final Prep / Client Arriving
         if (diffMinutes <= 15) return 5000;
-
-        // 4. Cook Now (15-30m) = Main Cooking Phase
         if (diffMinutes <= 30) return 4000;
-
-        // 5. Warmup (30-60m) = Prep Soon
         if (diffMinutes <= 60) return 3000;
-
-        // 6. Future (> 60m) = Queue sorted by time (closer = higher)
         return 1000 - diffMinutes;
-    };
+    }, [now, parseTime]);
 
-    // Filter out archived unless recently completed (optional, keeping it simple for now to show all active)
     const activeOrders = orders.filter(o => o.status !== 'completed' && o.status !== 'cancelled' && o.status !== 'rejected');
     const sortedOrders = [...activeOrders].sort((a, b) => getPriorityScore(b) - getPriorityScore(a));
+
+    if (now === 0) return null; // Wait for initial timer sync
 
     return (
         <div className="min-h-screen bg-[#0F172A] text-white p-4 font-sans">
@@ -183,27 +194,21 @@ export default function KitchenDashboard() {
     );
 }
 
-function SmartOrderCard({ order, now, updateStatus, parseTime }: { order: any, now: number, updateStatus: (id: string, s: string) => void, parseTime: Function }) {
-    // Timer Logic
-    let targetTime = 0;
-    // Use updated_at if available for "Fresh" duration calculations
+function SmartOrderCard({ order, now, updateStatus, parseTime }: {
+    order: KitchenOrder,
+    now: number,
+    updateStatus: (id: string, s: string) => void,
+    parseTime: (input: unknown, anchorInput: string | number, currentNow: number) => number
+}) {
     const anchorTime = order.updated_at || order.created_at;
-
-    if (order.arrival_time) {
-        // Pass anchorTime instead of just created_at
-        targetTime = parseTime(order.arrival_time, anchorTime);
-    } else {
-        targetTime = new Date(order.created_at).getTime() + 30 * 60000;
-    }
+    const targetTime = order.arrival_time
+        ? parseTime(order.arrival_time, anchorTime, now)
+        : new Date(order.created_at).getTime() + 30 * 60000;
 
     const diffMs = targetTime - now;
     const diffMinutes = Math.floor(diffMs / 60000);
     const diffSeconds = Math.floor((Math.abs(diffMs) % 60000) / 1000);
 
-    // DEBUG: Diagnose the "Retard" issue
-    // console.log("Order:", order.id, "Arrival:", order.arrival_time, "Created:", order.created_at, "Target:", new Date(targetTime).toLocaleTimeString());
-
-    // Determines Status & Styling
     let statusConfig = {
         label: "À Venir",
         color: "bg-red-600",
@@ -232,7 +237,6 @@ function SmartOrderCard({ order, now, updateStatus, parseTime }: { order: any, n
 
     if (order.status === 'ready') statusConfig = { label: "✅ PRÊT À SERVIR", color: "bg-green-600", border: "border-green-500", bg: "bg-green-900/20", animate: false };
 
-    // Format Timer for display
     const isLate = diffMinutes < 0;
     const timerDisplay = Math.abs(diffMinutes) > 60
         ? `${Math.floor(Math.abs(diffMinutes) / 60)}h`
@@ -240,8 +244,6 @@ function SmartOrderCard({ order, now, updateStatus, parseTime }: { order: any, n
 
     return (
         <div className={`relative rounded-3xl p-5 border-2 flex flex-col gap-4 shadow-2xl transition-all duration-500 ${statusConfig.bg} ${statusConfig.border} ${statusConfig.animate ? 'animate-pulse' : ''} ${order.status === 'ready' ? 'opacity-80 scale-95 grayscale-[0.3]' : ''}`}>
-
-            {/* Header / Status Banner */}
             <div className="flex justify-between items-start">
                 <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-wider text-white shadow-lg flex items-center gap-2 ${statusConfig.color}`}>
                     {statusConfig.animate && <AlarmClock className="w-3 h-3 animate-bounce" />}
@@ -259,7 +261,6 @@ function SmartOrderCard({ order, now, updateStatus, parseTime }: { order: any, n
                 )}
             </div>
 
-            {/* Customer Info */}
             <div className="flex items-center gap-3 bg-black/20 p-3 rounded-xl border border-white/5">
                 <div className="w-10 h-10 rounded-full bg-gray-700 flex items-center justify-center font-bold text-gray-300">
                     <User className="w-5 h-5" />
@@ -272,12 +273,18 @@ function SmartOrderCard({ order, now, updateStatus, parseTime }: { order: any, n
                 </div>
             </div>
 
-            {/* Items List */}
             <div className="space-y-3 flex-1 min-h-[80px]">
-                {order.items.map((item: any, i: number) => (
+                {order.items.map((item, i) => (
                     <div key={i} className="flex gap-3 items-start border-b border-white/5 pb-2 last:border-0">
                         {item.image && (
-                            <img src={item.image} alt={item.name} className="w-12 h-12 rounded-lg object-cover bg-gray-800 border border-white/10" />
+                            <div className="relative w-12 h-12 shrink-0">
+                                <Image
+                                    src={item.image}
+                                    alt={item.name}
+                                    fill
+                                    className="rounded-lg object-cover bg-gray-800 border border-white/10"
+                                />
+                            </div>
                         )}
                         <div className="flex-1 min-w-0">
                             <div className="flex justify-between items-start">
@@ -286,10 +293,10 @@ function SmartOrderCard({ order, now, updateStatus, parseTime }: { order: any, n
                             </div>
                             {item.customizations && Object.entries(item.customizations).length > 0 && (
                                 <div className="text-[10px] text-gray-400 mt-1 space-y-0.5 bg-white/5 p-1.5 rounded-lg">
-                                    {Object.entries(item.customizations).map(([key, val]: any) => (
+                                    {Object.entries(item.customizations).map(([key, val]) => (
                                         <div key={key} className="flex gap-1">
                                             <span className="opacity-50 capitalize">{key}:</span>
-                                            <span className="font-bold text-gray-300">{Array.isArray(val) ? val.join(', ') : val}</span>
+                                            <span className="font-bold text-gray-300">{Array.isArray(val) ? val.join(', ') : (val as string)}</span>
                                         </div>
                                     ))}
                                 </div>
@@ -299,17 +306,15 @@ function SmartOrderCard({ order, now, updateStatus, parseTime }: { order: any, n
                 ))}
             </div>
 
-            {/* Remarques (Notes) - Changed to Information Style (Blue) */}
             {order.notes && (
                 <div className="bg-red-500/10 border border-red-500/30 p-3 rounded-xl flex gap-3 items-start animate-in slide-in-from-bottom-2">
                     <AlertTriangle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
                     <div className="text-xs font-bold text-red-200 italic break-words w-full">
-                        "{order.notes.replace('[SYSTEM]', '')}"
+                        &ldquo;{order.notes.replace('[SYSTEM]', '')}&rdquo;
                     </div>
                 </div>
             )}
 
-            {/* Actions */}
             <div className="grid grid-cols-2 gap-3 mt-2">
                 {order.status !== 'ready' && (
                     <button

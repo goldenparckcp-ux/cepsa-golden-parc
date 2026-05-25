@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Droplets, Clock, ChevronLeft, CheckCircle2, AlertCircle } from "lucide-react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { Clock, ChevronLeft, CheckCircle2 } from "lucide-react";
 import { useRouter } from 'next/navigation';
+import Image from "next/image";
 import { supabase } from '@/lib/supabase';
-import { COLORS } from '@/lib/theme';
+import PaymentModal from '@/components/PaymentModal';
+import { useTranslation } from "@/lib/state/LanguageContext";
 
 const OPTIONS = [
     { id: "basic", label: "Lavage Rapide", price: 40, duration: "30 min", slots: 1 },
@@ -28,52 +30,51 @@ for (let h = 9; h <= 20; h++) {
 
 export default function LavagePage() {
     const router = useRouter();
+    const { t } = useTranslation();
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
     const [carType, setCarType] = useState('citadine');
     const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
     const [time, setTime] = useState("09:00");
     const [loading, setLoading] = useState(false);
     const [showSuccess, setShowSuccess] = useState<string | null>(null);
+    const [pendingPayment, setPendingPayment] = useState<{ id: string, amount: number, num: string } | null>(null);
 
     // Blocking Logic State
     const [bookedSlots, setBookedSlots] = useState<string[]>([]);
-    const [endTime, setEndTime] = useState<string | null>(null);
 
-    const activeService = {
-        name: "Lavage & Soin",
+    const activeService = useMemo(() => ({
+        name: t('lavage.title'),
         image: "https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=800",
         options: OPTIONS
-    };
+    }), [t]);
 
-    const selectedTypeInfo = VEHICLE_TYPES.find(t => t.id === carType) || VEHICLE_TYPES[0];
-    const optionData = activeService.options.find(o => o.id === selectedOption);
+    const selectedTypeInfo = useMemo(() => VEHICLE_TYPES.find(t => t.id === carType) || VEHICLE_TYPES[0], [carType]);
+    const optionData = useMemo(() => activeService.options.find(o => o.id === selectedOption), [activeService.options, selectedOption]);
     const baseOptionPrice = optionData?.price || 0;
     const selectedPrice = Math.round(baseOptionPrice * selectedTypeInfo.multiplier);
 
     // Helper: Calculate End Time based on slots
-    const calculateEndTime = (start: string, slots: number) => {
+    const calculateEndTime = useCallback((start: string, slots: number) => {
         const [h, m] = start.split(':').map(Number);
         const totalMinutes = h * 60 + m + (slots * 30);
         const endH = Math.floor(totalMinutes / 60);
         const endM = totalMinutes % 60;
         return `${endH.toString().padStart(2, '0')}:${endM.toString().padStart(2, '0')}`;
-    };
+    }, []);
 
-    // Update EndTime when Time or Option changes
-    useEffect(() => {
+    const endTime = useMemo(() => {
         if (time && optionData) {
-            setEndTime(calculateEndTime(time, optionData.slots));
-        } else {
-            setEndTime(null);
+            return calculateEndTime(time, optionData.slots);
         }
-    }, [time, optionData]);
+        return null;
+    }, [time, optionData, calculateEndTime]);
 
     // --- REAL-TIME SLOT BLOCKING ---
     useEffect(() => {
         const fetchBookings = async () => {
             setBookedSlots([]);
 
-            const { data, error } = await supabase
+            const { data } = await supabase
                 .from('service_bookings')
                 .select('time_slot')
                 .eq('service_type', 'lavage')
@@ -82,7 +83,7 @@ export default function LavagePage() {
 
             if (data) {
                 const busy: string[] = [];
-                data.forEach((booking: any) => {
+                data.forEach((booking: { time_slot: string | null }) => {
                     if (booking.time_slot && booking.time_slot.includes(' - ')) {
                         const [startStr, endStr] = booking.time_slot.split(' - ');
                         const [sH, sM] = startStr.split(':').map(Number);
@@ -179,7 +180,7 @@ export default function LavagePage() {
         attemptAutoBook();
     }, []);
 
-    const handleBooking = async () => {
+    const handleBooking = useCallback(async () => {
         try {
             if (!selectedOption || !endTime) return;
             setLoading(true);
@@ -199,16 +200,17 @@ export default function LavagePage() {
                 };
                 localStorage.setItem('pendingLavageBooking', JSON.stringify(bookingData));
                 router.push('/profile?redirect=/services/lavage');
+                setLoading(false);
                 return;
             }
 
             let userPhoneFromProfile = null;
-            const { data } = await supabase.from('profiles').select('phone').eq('id', user.id).single();
-            userPhoneFromProfile = data?.phone || user.user_metadata?.phone;
+            const { data: profile } = await supabase.from('profiles').select('phone').eq('id', user.id).single();
+            userPhoneFromProfile = (profile as { phone: string } | null)?.phone || user.user_metadata?.phone;
 
             const bookingNum = `WASH-${Date.now().toString().slice(-6)}`;
 
-            const { error } = await supabase.from('service_bookings').insert({
+            const { data, error } = await supabase.from('service_bookings').insert({
                 booking_number: bookingNum,
                 customer_phone: userPhoneFromProfile || null,
                 service_type: 'lavage',
@@ -218,31 +220,37 @@ export default function LavagePage() {
                 price: selectedPrice,
                 status: 'pending',
                 user_id: user.id
-            });
+            }).select().single();
 
-            if (error) {
-                alert("Erreur: " + error.message);
+            if (error || !data) {
+                alert("Erreur: " + error?.message);
             } else {
-                setShowSuccess(bookingNum);
+                // Arboun pour le lavage : min 20 DH ou 20%
+                const arboun = Math.max(20, Math.round(selectedPrice * 0.20));
+                setPendingPayment({
+                    id: data.id,
+                    amount: arboun,
+                    num: bookingNum
+                });
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error("Booking Error:", err);
             alert("Une erreur est survenue. Veuillez réessayer.");
         } finally {
             setLoading(false);
         }
-    };
+    }, [selectedOption, endTime, time, carType, date, optionData, selectedPrice, router]);
 
     return (
-        <div className="min-h-screen pb-40 bg-[#0F172A]" style={{ backgroundColor: COLORS.bgDark }}>
+        <div className="min-h-screen pb-40 bg-[#0F172A]">
 
             {/* Header */}
             <div className="sticky top-0 z-20 bg-[#0F172A]/95 backdrop-blur-xl border-b border-white/10 p-4 pt-6 md:px-8">
                 <div className="max-w-5xl mx-auto flex items-center gap-4">
-                    <button onClick={() => router.back()} className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all">
+                    <button onClick={() => router.back()} className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all font-bold rtl:rotate-180" aria-label="Retour">
                         <ChevronLeft className="w-5 h-5 text-white" />
                     </button>
-                    <h1 className="text-xl font-bold text-white">Lavage Auto</h1>
+                    <h1 className="text-xl font-bold text-white">{t('lavage.title')}</h1>
                 </div>
             </div>
 
@@ -250,17 +258,22 @@ export default function LavagePage() {
 
                 {/* Hero Image */}
                 <div className="relative h-48 md:h-80 rounded-2xl overflow-hidden shadow-2xl border border-white/10">
-                    <img src={activeService.image} className="w-full h-full object-cover transform md:hover:scale-105 transition-transform duration-700" />
+                    <Image
+                        src={activeService.image}
+                        alt={activeService.name}
+                        fill
+                        className="object-cover transform md:hover:scale-105 transition-transform duration-700"
+                    />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] to-transparent" />
-                    <div className="absolute bottom-4 left-4 md:bottom-8 md:left-8">
-                        <div className="bg-red-600 text-white text-[10px] md:text-xs font-black px-2 py-0.5 md:px-3 md:py-1 rounded inline-block mb-1 shadow-lg">SOIN & SPRAY</div>
+                    <div className="absolute bottom-4 left-4 rtl:left-auto rtl:right-4 md:bottom-8 md:left-8 rtl:md:left-auto rtl:md:right-8">
+                        <div className="bg-red-600 text-white text-[10px] md:text-xs font-black px-2 py-0.5 md:px-3 md:py-1 rounded inline-block mb-1 shadow-lg">{t('lavage.badge')}</div>
                         <h2 className="text-xl md:text-4xl font-black text-white">{activeService.name}</h2>
                     </div>
                 </div>
 
                 {/* 1. Vehicle Type Selector */}
                 <div>
-                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Type de Véhicule</h3>
+                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">{t('lavage.type.title')}</h3>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                         {VEHICLE_TYPES.map(type => (
                             <button
@@ -272,7 +285,7 @@ export default function LavagePage() {
                                     }`}
                             >
                                 <span className="text-2xl md:text-4xl">{type.icon}</span>
-                                <span className={`text-xs md:text-sm font-bold ${carType === type.id ? 'text-white' : 'text-gray-300'}`}>{type.label}</span>
+                                <span className={`text-xs md:text-sm font-bold ${carType === type.id ? 'text-white' : 'text-gray-300'}`}>{t(`lavage.type.${type.id}`) || type.label}</span>
                             </button>
                         ))}
                     </div>
@@ -280,7 +293,7 @@ export default function LavagePage() {
 
                 {/* 2. Options Grid */}
                 <div>
-                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Choisir une Formule</h3>
+                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">{t('lavage.formula.title')}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {activeService.options.map(opt => (
                             <button
@@ -309,13 +322,14 @@ export default function LavagePage() {
                 <div className="bg-[#1E293B] p-4 md:p-8 rounded-xl border border-white/10 space-y-4 md:space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div>
-                            <label className="text-xs font-bold text-gray-400 mb-2 block uppercase">Date Rendez-vous</label>
+                            <label className="text-xs font-bold text-gray-400 mb-2 block uppercase">{t('lavage.date_label')}</label>
                             <input
                                 type="date"
                                 value={date}
                                 onChange={(e) => setDate(e.target.value)}
                                 min={new Date().toISOString().split('T')[0]}
-                                className="w-full bg-[#0F172A] border border-white/10 rounded-lg p-3 text-white outline-none focus:border-red-500 transition-colors font-bold h-[50px]"
+                                aria-label="Date de rendez-vous"
+                                className="w-full bg-[#0F172A] border border-white/10 rounded-lg p-3 text-white outline-none focus:border-red-500 transition-colors font-bold h-[50px] appearance-none"
                             />
                         </div>
                         <div>
@@ -324,11 +338,11 @@ export default function LavagePage() {
                     </div>
 
                     <div>
-                        <label className="text-xs font-bold text-gray-400 mb-2 block uppercase">Heure de Départ</label>
+                        <label className="text-xs font-bold text-gray-400 mb-2 block uppercase">{t('lavage.time_label')}</label>
 
                         {!selectedOption ? (
                             <div className="text-sm text-yellow-500 mb-2 font-medium bg-yellow-500/10 p-2 rounded border border-yellow-500/20">
-                                ⚠ Veuillez choisir une formule ci-dessus d'abord.
+                                ⚠ Veuillez choisir une formule ci-dessus d&apos;abord.
                             </div>
                         ) : (
                             <div className="flex flex-wrap gap-2 max-h-56 overflow-y-auto pr-2 custom-scrollbar">
@@ -359,12 +373,12 @@ export default function LavagePage() {
                         )}
 
                         {selectedOption && time && endTime && (
-                            <div className="mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex items-start gap-2 animate-fade-in">
+                            <div className="mt-3 p-3 bg-red-500/10 border border-red-500/30 rounded-lg flex items-start gap-2 animate-fade-in rtl:flex-row-reverse rtl:text-right">
                                 <Clock className="w-4 h-4 text-red-400 mt-0.5 shrink-0" />
                                 <div>
-                                    <div className="text-xs font-bold text-red-200">Durée du Service : {optionData?.duration}</div>
-                                    <div className="text-[10px] text-gray-400 mt-0.5">
-                                        Réservation de <span className="text-white font-bold underline">{time} à {endTime}</span> ({optionData?.slots} slots).
+                                    <div className="text-xs font-bold text-red-200">{t('lavage.duration')} {optionData?.duration}</div>
+                                    <div className="text-[10px] text-gray-400 mt-0.5 flex items-center gap-1 rtl:flex-row-reverse">
+                                        {time} - {endTime} ({optionData?.slots} slots).
                                     </div>
                                 </div>
                             </div>
@@ -382,23 +396,22 @@ export default function LavagePage() {
                         disabled={!selectedOption || loading || !endTime}
                         className="w-full bg-[#1e293b] border border-white/10 p-2 pl-3 rounded-[2rem] shadow-2xl flex items-center justify-between group active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100 hover:bg-[#253248]"
                     >
-                        {/* Badge / Price Left */}
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-white font-bold shadow-lg shadow-red-500/20">
-                                1
-                            </div>
-                            <div className="text-left">
-                                <div className="text-white font-bold text-sm leading-tight">Réserver Lavage</div>
+                        <div className="flex flex-row-reverse items-center gap-3 rtl:flex-row">
+                            <div className="text-right rtl:text-left flex-1">
+                                <div className="text-white font-bold text-sm leading-tight">{t('lavage.book.btn')}</div>
                                 <div className="text-gray-400 text-[10px] font-medium">
                                     {date} {time ? `• ${time}` : ''}
                                 </div>
                             </div>
+                            <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-white font-bold shadow-lg shadow-red-500/20">
+                                1
+                            </div>
                         </div>
 
                         {/* Price Right */}
-                        <div className="flex items-center gap-2 pr-2">
+                        <div className="flex items-center gap-2 pl-2">
                             <span className="text-white font-black text-lg">{selectedPrice} <span className="text-xs font-bold text-gray-400">DH</span></span>
-                            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white group-hover:bg-red-500 group-hover:text-white transition-colors">→</div>
+                            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white group-hover:bg-red-500 group-hover:text-white transition-colors rotate-180 rtl:rotate-0">←</div>
                         </div>
                     </button>
                 </div>
@@ -415,28 +428,42 @@ export default function LavagePage() {
                         <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
                             <CheckCircle2 className="w-10 h-10 text-green-500" />
                         </div>
-                        <h2 className="text-2xl font-black text-white mb-2">Lavage Confirmé!</h2>
+                        <h2 className="text-2xl font-black text-white mb-2">{t('lavage.success.title')}</h2>
                         <p className="text-sm text-gray-400 mb-6">
-                            Votre réservation <span className="text-white font-bold">#{showSuccess}</span> a été enregistrée.
+                            {t('lavage.success.desc').replace('{id}', showSuccess)}
                         </p>
                         <div className="space-y-3">
                             <button
                                 onClick={() => router.push('/profile')}
                                 className="w-full py-4 bg-red-600 rounded-xl font-bold text-white shadow-lg"
                             >
-                                Mes Réservations
+                                {t('hotel.btn.view')}
                             </button>
                             <button
                                 onClick={() => setShowSuccess(null)}
                                 className="w-full py-4 bg-white/5 rounded-xl font-bold text-gray-400 hover:bg-white/10"
                             >
-                                Fermer
+                                {t('hotel.btn.close')}
                             </button>
                         </div>
                     </div>
                 </div>
             )}
 
+            {/* Payment Modal */}
+            {pendingPayment && (
+                <PaymentModal
+                    bookingId={pendingPayment.id}
+                    amount={pendingPayment.amount}
+                    serviceType="lavage"
+                    tableName="service_bookings"
+                    onSuccess={() => {
+                        setPendingPayment(null);
+                        setShowSuccess(pendingPayment.num);
+                    }}
+                    onClose={() => setPendingPayment(null)}
+                />
+            )}
         </div>
     );
 }

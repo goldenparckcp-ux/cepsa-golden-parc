@@ -1,52 +1,39 @@
 "use client";
 
-import React, { Suspense } from "react";
+import React, { Suspense, useEffect } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { Wrench, Droplets, Fuel, Hotel, Waves, ChevronRight, Star } from "lucide-react";
+import Image from "next/image";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Droplets, Hotel, Waves, ChevronRight, Star } from "lucide-react";
+import { useTranslation } from "@/lib/state/LanguageContext";
 
-const THEME = {
-    bg: "#0f172a",
-    panel: "#1e293b",
-    red: "#DC2626",
-    gold: "#EAB308",
-    gray: "#94A3B8",
-    accent: "#f59e0b"
-};
 
 function ServicesContent() {
     const router = useRouter();
+    const { t } = useTranslation();
     const searchParams = useSearchParams();
     const type = searchParams.get("type");
 
-    if (type === "pool") router.replace("/pool");
-    if (type === "wash") router.replace("/wash");
-    if (type === "mechanic") router.replace("/mechanic");
-    if (type === "auto") router.replace("/services");
+    useEffect(() => {
+        if (type === "pool") router.replace("/pool");
+        if (type === "wash") router.replace("/services/lavage");
+        if (type === "auto") router.replace("/services");
+    }, [type, router]);
 
     const tiles = [
         {
             key: "wash",
-            title: "Lavage",
-            desc: "30-min slots · smart duration blocking · eco-friendly products",
-            to: "/wash",
+            title: t('services.wash.title') || "Lavage",
+            desc: t('services.wash.desc') || "30-min slots · smart duration blocking · eco-friendly products",
+            to: "/services/lavage",
             icon: Droplets,
             image: "https://images.unsplash.com/photo-1487754180451-c456f719a1fc?w=1200",
             badge: "Popular"
         },
         {
-            key: "mechanic",
-            title: "Mécanique (Siyana)",
-            desc: "Professional diagnostics · urgent repairs · genuine parts",
-            to: "/mechanic",
-            icon: Wrench,
-            image: "https://images.unsplash.com/photo-1486262715619-67b85e0b08d3?w=1200",
-            badge: "Expert"
-        },
-        {
             key: "hotel",
-            title: "Hotel",
-            desc: "Premium rooms · day rates · soundproof · breakfast included",
+            title: t('services.hotel.title') || "Hotel",
+            desc: t('services.hotel.desc') || "Premium rooms · day rates · soundproof · breakfast included",
             to: "/hotel",
             icon: Hotel,
             image: "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=1200",
@@ -54,8 +41,8 @@ function ServicesContent() {
         },
         {
             key: "pool",
-            title: "Piscine",
-            desc: "Heated pool · lifeguard on duty · family-friendly",
+            title: t('services.pool.title') || "Piscine",
+            desc: t('services.pool.desc') || "Heated pool · lifeguard on duty · family-friendly",
             to: "/pool",
             icon: Waves,
             image: "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?w=1200",
@@ -70,17 +57,18 @@ function ServicesContent() {
     };
 
     return (
-        <div className="grid gap-6" style={{ color: "#fff" }}>
+        <div className="grid gap-6 text-white">
             {/* Background decoration */}
             <div className="absolute inset-0 bg-gradient-to-br from-red-900/20 via-transparent to-purple-900/20 pointer-events-none"></div>
 
             {/* Enhanced Header Section */}
-            <section className="relative overflow-hidden rounded-3xl border border-white/10 shadow-2xl">
-                <img
+            <section className="relative overflow-hidden rounded-3xl border border-white/10 shadow-2xl h-[200px]">
+                <Image
                     src="/image/cepsa-station.jpg"
                     alt="Cepsa Golden Parc"
-                    className="absolute inset-0 h-full w-full object-cover"
-                    loading="lazy"
+                    fill
+                    className="absolute inset-0 object-cover"
+                    priority
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
 
@@ -95,11 +83,11 @@ function ServicesContent() {
                 <div className="relative p-8">
                     <div className="flex items-center gap-3 mb-4">
                         <div className="h-1 w-8 rounded-full bg-gradient-to-r from-amber-400 to-red-500"></div>
-                        <div className="text-3xl font-extrabold text-white">Internal Services</div>
+                        <div className="text-3xl font-extrabold text-white">{t('services.title')}</div>
                         <div className="h-1 w-8 rounded-full bg-gradient-to-r from-red-500 to-amber-400"></div>
                     </div>
-                    <div className="mt-2 text-sm" style={{ color: THEME.gray }}>
-                        Lavage, Siyana, Hotel & Piscine — smart booking flows with premium service quality.
+                    <div className="mt-2 text-sm text-[#94A3B8]">
+                        {t('services.desc')}
                     </div>
                 </div>
             </section>
@@ -112,18 +100,14 @@ function ServicesContent() {
                         <Link
                             key={t.key}
                             href={t.to}
-                            className="group overflow-hidden rounded-3xl border border-white/10 transition-all duration-300 hover:shadow-3xl hover:-translate-y-1 hover:border-white/20 block"
-                            style={{
-                                background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)",
-                                backdropFilter: "blur(10px)"
-                            }}
+                            className="group overflow-hidden rounded-3xl border border-white/10 transition-all duration-300 hover:shadow-3xl hover:-translate-y-1 hover:border-white/20 block bg-[linear-gradient(135deg,#1e293b_0%,#334155_100%)] backdrop-blur-[10px]"
                         >
                             <div className="relative h-48 overflow-hidden">
-                                <img
+                                <Image
                                     src={t.image}
                                     alt={t.title}
-                                    className="h-full w-full object-cover transition-all duration-500 group-hover:scale-[1.08] group-hover:brightness-110"
-                                    loading="lazy"
+                                    fill
+                                    className="object-cover transition-all duration-500 group-hover:scale-[1.08] group-hover:brightness-110"
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/75 to-transparent" />
 
@@ -132,11 +116,7 @@ function ServicesContent() {
 
                                 <div className="absolute left-4 top-4 flex gap-3">
                                     <span
-                                        className="inline-flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-2xl transition-all duration-200 group-hover:scale-110"
-                                        style={{
-                                            background: "linear-gradient(135deg, #DC2626 0%, #EF4444 100%)",
-                                            boxShadow: "0 4px 20px rgba(220, 38, 38, 0.4)"
-                                        }}
+                                        className="inline-flex h-12 w-12 items-center justify-center rounded-2xl text-white shadow-[0_4px_20px_rgba(220,38,38,0.4)] transition-all duration-200 group-hover:scale-110 bg-[linear-gradient(135deg,#DC2626_0%,#EF4444_100%)]"
                                     >
                                         <Icon className="h-6 w-6" />
                                     </span>
@@ -156,12 +136,7 @@ function ServicesContent() {
                                 <div className="text-sm font-semibold text-white/90 leading-relaxed">{t.desc}</div>
                                 <div className="mt-5 flex items-center justify-between">
                                     <div
-                                        className="inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-xs font-extrabold transition-all duration-200"
-                                        style={{
-                                            background: "linear-gradient(135deg, rgba(234,179,8,0.2) 0%, rgba(220,38,38,0.1) 100%)",
-                                            color: THEME.gold,
-                                            boxShadow: "0 4px 15px rgba(234,179,8,0.3)"
-                                        }}
+                                        className="inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-xs font-extrabold transition-all duration-200 bg-[linear-gradient(135deg,rgba(234,179,8,0.2)_0%,rgba(220,38,38,0.1)_100%)] text-[#EAB308] shadow-[0_4px_15px_rgba(234,179,8,0.3)]"
                                     >
                                         Open booking
                                     </div>
@@ -174,27 +149,23 @@ function ServicesContent() {
             </div>
 
             {/* Enhanced Fuel Prices Section */}
-            <div className="rounded-3xl border border-white/10 p-6 backdrop-blur-sm" style={{
-                background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)",
-                boxShadow: "0 4px 20px rgba(30, 41, 59, 0.3)"
-            }}>
-                <div className="flex items-center gap-3 mb-4">
-                    <div className="h-1 w-8 rounded-full bg-gradient-to-r from-amber-400 to-red-500"></div>
-                    <div className="text-xl font-extrabold text-white">Fuel Prices</div>
-                    <div className="h-1 w-8 rounded-full bg-gradient-to-r from-red-500 to-amber-400"></div>
+            <div className="rounded-3xl border border-white/10 p-6 backdrop-blur-sm bg-[linear-gradient(135deg,#1e293b_0%,#334155_100%)] shadow-[0_4px_20px_rgba(30,41,59,0.3)]">
+                <div className="flex flex-row-reverse rtl:flex-row items-center gap-3 mb-4 rtl:justify-end">
+                    <div className="text-xl font-extrabold text-white">{t('services.fuel.title')}</div>
+                    <div className="h-1 flex-1 rtl:flex-none rtl:w-8 rounded-full bg-gradient-to-r from-red-500 to-amber-400"></div>
                 </div>
                 <div className="grid gap-4 sm:grid-cols-2">
                     <div className="rounded-2xl border border-white/10 p-4 backdrop-blur-sm">
-                        <div className="text-xs font-semibold text-white/70 mb-1">Gasoil</div>
-                        <div className="text-2xl font-extrabold" style={{ color: THEME.gold }}>{fuelPrices.gasoil}</div>
+                        <div className="text-xs font-semibold text-white/70 mb-1">{t('services.fuel.gasoil')}</div>
+                        <div className="text-2xl font-extrabold text-[#EAB308]">{fuelPrices.gasoil}</div>
                     </div>
                     <div className="rounded-2xl border border-white/10 p-4 backdrop-blur-sm">
-                        <div className="text-xs font-semibold text-white/70 mb-1">Sans Plomb</div>
-                        <div className="text-2xl font-extrabold" style={{ color: THEME.gold }}>{fuelPrices.sansPlomb}</div>
+                        <div className="text-xs font-semibold text-white/70 mb-1">{t('services.fuel.sansPlomb')}</div>
+                        <div className="text-2xl font-extrabold text-[#EAB308]">{fuelPrices.sansPlomb}</div>
                     </div>
                 </div>
                 <div className="mt-3 text-xs text-center text-white/60">
-                    {fuelPrices.lastUpdate} (mock) · Real-time updates available
+                    {fuelPrices.lastUpdate} (mock)
                 </div>
             </div>
         </div>

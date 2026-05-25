@@ -76,8 +76,8 @@ export default function DigitalKeyPage() {
                     {/* Rings Animation */}
                     {(status === 'scanning' || status === 'unlocking') && (
                         <>
-                            <div className="absolute inset-0 rounded-full border border-blue-500/30 animate-ping" style={{ animationDuration: '2s' }} />
-                            <div className="absolute inset-0 rounded-full border border-blue-500/20 animate-ping" style={{ animationDelay: '0.5s', animationDuration: '2s' }} />
+                            <div className="absolute inset-0 rounded-full border border-blue-500/30 animate-ping [animation-duration:2s]" />
+                            <div className="absolute inset-0 rounded-full border border-blue-500/20 animate-ping [animation-delay:0.5s] [animation-duration:2s]" />
                         </>
                     )}
 

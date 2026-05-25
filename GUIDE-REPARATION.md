@@ -1,11 +1,13 @@
 # 🔧 GUIDE DE RÉPARATION - CONFIRMATIONS NE S'AFFICHENT PAS
 
 ## 📋 PROBLÈME
+
 - ✅ Restaurant fonctionne (confirmation s'affiche)
-- ❌ Services (Lavage, Mécanique, Pool, Hotel) ne montrent pas de confirmation
+- ❌ Services (Lavage, Pool, Hotel) ne montrent pas de confirmation
 - ❌ Rien ne s'enregistre dans la base de données pour les services
 
 ## 🎯 CAUSE PRINCIPALE
+
 La colonne `user_id` manque dans les tables de la base de données, donc les insertions échouent silencieusement.
 
 ---
@@ -14,7 +16,7 @@ La colonne `user_id` manque dans les tables de la base de données, donc les ins
 
 ### ÉTAPE 1: Vérifier l'état actuel de la base de données
 
-1. Va sur **Supabase Dashboard** → https://supabase.com/dashboard
+1. Va sur **Supabase Dashboard** → <https://supabase.com/dashboard>
 2. Sélectionne ton projet
 3. Clique sur **SQL Editor** (dans le menu gauche)
 4. Clique sur **New Query**
@@ -23,6 +25,7 @@ La colonne `user_id` manque dans les tables de la base de données, donc les ins
 
 **📸 RÉSULTAT ATTENDU:**
 Tu verras toutes les colonnes de chaque table. **Vérifie si `user_id` existe** dans:
+
 - `service_bookings`
 - `pool_bookings`  
 - `hotel_reservations`
@@ -37,7 +40,8 @@ Tu verras toutes les colonnes de chaque table. **Vérifie si `user_id` existe** 
 3. Copie et colle **TOUT** le contenu de `supabase-complete-fix.sql`
 4. Clique sur **Run**
 
-**⚠️ IMPORTANT:** 
+**⚠️ IMPORTANT:**
+
 - Ignore les erreurs "already exists" (c'est normal)
 - Les messages importants sont ceux qui disent "ALTER TABLE" ou "CREATE POLICY"
 
@@ -46,13 +50,14 @@ Tu verras toutes les colonnes de chaque table. **Vérifie si `user_id` existe** 
 ### ÉTAPE 3: Tester l'application
 
 1. Ouvre ton application dans le navigateur
-2. Va sur **Services → Lavage** (ou Pool, Mécanique)
+2. Va sur **Services → Lavage** (ou Pool)
 3. Sélectionne une option
 4. Clique sur "Réserver"
 5. Si tu n'es pas connecté, connecte-toi
 6. Confirme la réservation
 
 **✅ RÉSULTAT ATTENDU:**
+
 - La modal de confirmation doit s'afficher avec le numéro de réservation
 - Tu dois voir "Lavage Confirmé!" ou "Ticket Validé!"
 
@@ -100,9 +105,11 @@ Tu devrais voir une policy "Enable all access" avec `permissive = true`.
 ## 📝 NOTES TECHNIQUES
 
 ### Pourquoi le restaurant fonctionne ?
+
 Le restaurant utilise probablement la table `restaurant_orders` qui a déjà la colonne `user_id`.
 
 ### Pourquoi les autres services ne fonctionnent pas ?
+
 Les tables `service_bookings`, `pool_bookings`, `hotel_reservations` n'ont pas la colonne `user_id`, donc quand le code essaie de faire:
 
 ```typescript

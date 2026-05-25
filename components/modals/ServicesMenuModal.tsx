@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Droplets, Wrench, Waves, Fuel, ChevronRight, Zap } from 'lucide-react';
+import { Droplets, Waves, Fuel, ChevronRight, Zap } from 'lucide-react';
 
 interface ServicesMenuModalProps {
     isOpen: boolean;
@@ -24,16 +24,6 @@ export function ServicesMenuModal({ isOpen, onClose }: ServicesMenuModalProps) {
             bg: 'bg-red-500/10',
             border: 'border-red-500/20',
             route: '/services/lavage'
-        },
-        {
-            id: 'mecanique',
-            name: 'Mécanique',
-            icon: Wrench,
-            description: 'Vidange • Pneus • Freins',
-            color: 'text-orange-400',
-            bg: 'bg-orange-500/10',
-            border: 'border-orange-500/20',
-            route: '/services/mecanique'
         },
         // Carburant removed as requested
         {
@@ -62,7 +52,7 @@ export function ServicesMenuModal({ isOpen, onClose }: ServicesMenuModalProps) {
                 <div className="sticky top-0 bg-[#0F172A]/90 backdrop-blur-xl p-6 border-b border-white/10 flex items-center justify-between z-10">
                     <div>
                         <h2 className="text-white text-2xl font-black tracking-tight">Nos Services</h2>
-                        <p className="text-xs text-gray-400 font-medium">Cepsa Golden Park</p>
+                        <p className="text-xs text-gray-400 font-medium">Cepsa Golden Parc</p>
                     </div>
                     <button
                         onClick={onClose}

@@ -1,29 +1,29 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
-import { Plus, ShoppingCart, UtensilsCrossed, Phone, ChevronRight, Trash2, Clock, MapPin, Check } from "lucide-react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
+import { Plus, UtensilsCrossed, ChevronRight, Trash2, Clock, Check } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useCart } from "@/lib/state/CartContext";
-import { useUI } from "@/lib/state/UIContext";
-import { COMPLETE_MENU, restaurantCategories, MenuItem } from "@/lib/types/menu";
-import { COLORS } from "@/lib/theme";
+import { COMPLETE_MENU, restaurantCategories, MenuItem, MenuOption } from "@/lib/types/menu";
 import { DarkSheet } from "@/components/ui/DarkSheet";
 import { supabase } from "@/lib/supabase";
+import { useTranslation } from "@/lib/state/LanguageContext";
 
 function formatDh(price: number) {
     return `${price.toFixed(2)} DH`;
 }
 
 // ... Initial Selections Helper ...
-function initSelections(item: MenuItem): Record<string, any> {
-    const out: any = {};
+function initSelections(item: MenuItem): Record<string, unknown> {
+    const out: Record<string, unknown> = {};
     const cfg = item?.customization || {};
     Object.entries(cfg).forEach(([key, opt]) => {
         if (opt.type === "stepper") out[key] = opt.default ?? opt.min ?? 0;
         if (opt.type === "radio") out[key] = opt.default ?? opt.options?.[0]?.id ?? null;
         if (opt.type === "checkbox") out[key] = [];
         if (opt.type === "checkbox-group") {
-            const defaults = (opt.options || []).filter((o: any) => o.included).map((o: any) => o.id);
+            const defaults = (opt.options || []).filter((o: MenuOption) => o.included).map((o: MenuOption) => o.id);
             out[key] = defaults;
         }
     });
@@ -31,20 +31,20 @@ function initSelections(item: MenuItem): Record<string, any> {
     return out;
 }
 
-function calcPrice(item: MenuItem, selections: any): number {
+function calcPrice(item: MenuItem, selections: Record<string, unknown>): number {
     let price = item.basePrice;
     const cfg = item.customization || {};
 
     Object.entries(cfg).forEach(([key, opt]) => {
         const value = selections?.[key];
         if (opt.type === "radio") {
-            const selected = opt.options?.find((o: any) => o.id === value);
+            const selected = opt.options?.find((o: MenuOption) => o.id === value);
             if (typeof selected?.price === "number") price += selected.price;
         }
         if (opt.type === "checkbox" || opt.type === "checkbox-group") {
             const ids = Array.isArray(value) ? value : [];
             ids.forEach((id: string) => {
-                const selected = opt.options?.find((o: any) => o.id === id);
+                const selected = opt.options?.find((o: MenuOption) => o.id === id);
                 if (selected && !selected.included && typeof selected.price === "number") price += selected.price;
             });
         }
@@ -54,6 +54,7 @@ function calcPrice(item: MenuItem, selections: any): number {
 
 export default function RestaurantPage() {
     const router = useRouter();
+    const { t } = useTranslation();
     const { items, addItem, removeItem, clear, total, itemCount } = useCart();
 
     // UI States
@@ -61,17 +62,15 @@ export default function RestaurantPage() {
     const [activeCategory, setActiveCategory] = useState("all");
     const [customizeItem, setCustomizeItem] = useState<MenuItem | null>(null);
     const [isCartOpen, setIsCartOpen] = useState(false);
-    const [selections, setSelections] = useState<any>({});
+    const [selections, setSelections] = useState<Record<string, unknown>>({});
 
     // Order info
-    const [phone, setPhone] = useState("");
     const [orderType, setOrderType] = useState<'takeout' | 'dine_in'>('takeout');
     const [arrivalTime, setArrivalTime] = useState<string>("15 min");
     const [showCustomTime, setShowCustomTime] = useState(false);
     const [customHours, setCustomHours] = useState("");
     const [customMinutes, setCustomMinutes] = useState("");
     const [tableNumber, setTableNumber] = useState("");
-    const [notes, setNotes] = useState("");
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // Mock Time Slots
@@ -89,14 +88,17 @@ export default function RestaurantPage() {
 
     // Reset parameters when cart becomes empty
     useEffect(() => {
-        if (items.length === 0) {
-            setOrderType('takeout');
-            setArrivalTime('15 min');
-            setShowCustomTime(false);
-            setCustomHours('');
-            setCustomMinutes('');
-            setTableNumber('');
-        }
+        const reset = async () => {
+            if (items.length === 0) {
+                setOrderType('takeout');
+                setArrivalTime('15 min');
+                setShowCustomTime(false);
+                setCustomHours('');
+                setCustomMinutes('');
+                setTableNumber('');
+            }
+        };
+        void reset();
     }, [items.length]);
 
     // Filter Items
@@ -126,16 +128,16 @@ export default function RestaurantPage() {
             const opt = cfg[k];
             const v = selections[k];
             if (opt.type === "radio") {
-                const o = opt.options?.find((x: any) => x.id === v);
+                const o = opt.options?.find((x: MenuOption) => x.id === v);
                 if (o) metaParts.push(`${opt.label}: ${o.label}`);
             }
-            if (opt.type === "stepper" && v > 0) metaParts.push(`${opt.label}: ${v} ${opt.unit || ""}`);
+            if (opt.type === "stepper" && typeof v === "number" && v > 0) metaParts.push(`${opt.label}: ${v} ${opt.unit || ""}`);
             if ((opt.type === "checkbox" || opt.type === "checkbox-group") && Array.isArray(v) && v.length > 0) {
-                const labels = v.map((id: string) => opt.options?.find((x: any) => x.id === id)?.label || id).join(", ");
+                const labels = v.map((id: string) => opt.options?.find((x: MenuOption) => x.id === id)?.label || id).join(", ");
                 metaParts.push(`${opt.label}: ${labels}`);
             }
         });
-        if (selections.special_instructions) metaParts.push(`Note: ${selections.special_instructions}`);
+        if (typeof selections.special_instructions === "string" && selections.special_instructions) metaParts.push(`Note: ${selections.special_instructions}`);
 
         addItem({
             id: `${customizeItem.id}-${Date.now()}`,
@@ -152,26 +154,7 @@ export default function RestaurantPage() {
         setCustomizeItem(null);
     };
 
-    // --- AUTO-CHECKOUT LOGIC ---
-    useEffect(() => {
-        const attemptAutoCheckout = async () => {
-            if (!localStorage.getItem('pendingRestaurantOrder')) return;
-
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-
-            const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-            if (!profile?.phone && !profile?.email) return;
-
-            // Execute Order
-            await processOrder(user, profile);
-            localStorage.removeItem('pendingRestaurantOrder');
-        };
-        attemptAutoCheckout();
-    }, [items, total]); // Dep on items to ensure they are loaded
-    // ---------------------------
-
-    const processOrder = async (user: any, profile: any) => {
+    const processOrder = useCallback(async (user: { id: string, email?: string }, profile: { phone?: string, email?: string }) => {
         setIsSubmitting(true);
         const orderNum = `CMD-${Date.now().toString().slice(-6)}`;
 
@@ -189,7 +172,7 @@ export default function RestaurantPage() {
             type: orderType,
             arrival_time: orderType === 'takeout' ? effectiveArrivalTime : null,
             table_number: orderType === 'dine_in' ? tableNumber : null,
-            customer_notes: notes,
+            customer_notes: "",
             user_id: user.id
         };
 
@@ -219,7 +202,24 @@ export default function RestaurantPage() {
             setIsCartOpen(false);
             setIsSubmitting(false);
         }
-    };
+    }, [arrivalTime, orderType, showCustomTime, customHours, customMinutes, tableNumber, items, total, clear]);
+
+    useEffect(() => {
+        const attemptAutoCheckout = async () => {
+            if (!localStorage.getItem('pendingRestaurantOrder')) return;
+
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) return;
+
+            const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+            if (!profile?.phone && !profile?.email) return;
+
+            // Execute Order
+            await processOrder(user, profile);
+            localStorage.removeItem('pendingRestaurantOrder');
+        };
+        void attemptAutoCheckout();
+    }, [processOrder]);
 
     const handleCheckout = async () => {
         if (items.length === 0) return;
@@ -245,11 +245,11 @@ export default function RestaurantPage() {
         }
 
         // Proceed directly with User ID (Profile might be incomplete, that's okay, we rely on user_id)
-        await processOrder(user, profile || {});
+        await processOrder({ id: user.id, email: user.email }, profile || {});
     };
 
     return (
-        <div className="min-h-screen pb-40 bg-[#0F172A]" style={{ backgroundColor: COLORS.bgDark }}>
+        <div className="min-h-screen pb-40 bg-[#0F172A]">
 
             {/* Success Modal */}
             {showSuccess && (
@@ -258,22 +258,22 @@ export default function RestaurantPage() {
                         <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
                             <Check className="w-10 h-10 text-green-500" />
                         </div>
-                        <h2 className="text-2xl font-black text-white mb-2">Commande Confirmée! 🎉</h2>
+                        <h2 className="text-2xl font-black text-white mb-2">{t('restaurant.success.title')}</h2>
                         <p className="text-gray-400 mb-6">
-                            Votre commande <span className="text-white font-bold">#{showSuccess}</span> a été envoyée en cuisine.
+                            {t('restaurant.success.desc').replace('{id}', showSuccess)}
                         </p>
                         <div className="space-y-3">
                             <button
                                 onClick={() => router.push('/profile')}
                                 className="w-full py-4 bg-red-600 rounded-xl font-bold text-white shadow-lg hover:bg-red-500 transition-all"
                             >
-                                Suivre ma commande
+                                {t('restaurant.btn.track')}
                             </button>
                             <button
                                 onClick={() => setShowSuccess(null)}
                                 className="w-full py-4 bg-white/5 rounded-xl font-bold text-gray-400 hover:bg-white/10 transition-all"
                             >
-                                Fermer
+                                {t('hotel.btn.close')}
                             </button>
                         </div>
                     </div>
@@ -288,8 +288,8 @@ export default function RestaurantPage() {
                             <UtensilsCrossed className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-xl font-bold text-white leading-none">Menu</h1>
-                            <p className="text-xs text-gray-400 mt-1">Restaurant & Café</p>
+                            <h1 className="text-xl font-bold text-white leading-none">{t('restaurant.title')}</h1>
+                            <p className="text-xs text-gray-400 mt-1">{t('restaurant.subtitle')}</p>
                         </div>
                     </div>
                 </div>
@@ -316,7 +316,7 @@ export default function RestaurantPage() {
             <div className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {displayItems.length === 0 && (
                     <div className="col-span-full text-center py-20 text-gray-500">
-                        Aucun article trouvé dans cette catégorie.
+                        {t('restaurant.empty')}
                     </div>
                 )}
                 {displayItems.map(item => (
@@ -326,9 +326,11 @@ export default function RestaurantPage() {
                         className="group bg-[#1E293B] border border-white/5 rounded-3xl overflow-hidden text-left flex flex-col hover:border-white/20 transition-all shadow-lg hover:shadow-2xl"
                     >
                         <div className={`relative overflow-hidden w-full ${item.name.includes("Couscous") ? "h-64" : "h-48"}`}>
-                            <img
+                            <Image
                                 src={item.image}
-                                className={`w-full h-full object-cover transition duration-700 group-hover:scale-110 ${item.name.includes("Couscous") ? "object-bottom" : "object-center"}`}
+                                alt={item.name}
+                                fill
+                                className={`object-cover transition duration-700 group-hover:scale-110 ${item.name.includes("Couscous") ? "object-bottom" : "object-center"}`}
                             />
                             {item.badge && (
                                 <div className="absolute top-3 left-3 bg-red-600 text-white text-[10px] font-black px-2 py-1 rounded-lg shadow-lg">
@@ -360,12 +362,17 @@ export default function RestaurantPage() {
 
                             {/* Image Header (Optional - adds nice touch) */}
                             <div className="rounded-2xl overflow-hidden h-40 w-full relative -mt-2">
-                                <img src={customizeItem.image} className="w-full h-full object-cover" />
+                                <Image
+                                    src={customizeItem.image}
+                                    alt={customizeItem.name}
+                                    fill
+                                    className="object-cover"
+                                />
                                 <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] to-transparent" />
                             </div>
 
                             {/* Options List */}
-                            {Object.entries(customizeItem.customization || {}).map(([key, opt]: [string, any]) => (
+                            {customizeItem.customization && Object.entries(customizeItem.customization).map(([key, opt]) => (
                                 <div key={key} className="space-y-4">
                                     <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest flex items-center gap-3">
                                         <div className="h-[1px] bg-white/10 flex-1"></div>
@@ -374,7 +381,7 @@ export default function RestaurantPage() {
                                     </h3>
 
                                     <div className="space-y-2">
-                                        {opt.options?.map((subOpt: any) => {
+                                        {opt.options?.map((subOpt: MenuOption) => {
                                             const isSelected = Array.isArray(selections[key])
                                                 ? selections[key].includes(subOpt.id)
                                                 : selections[key] === subOpt.id;
@@ -385,9 +392,9 @@ export default function RestaurantPage() {
                                                     onClick={() => {
                                                         if (opt.type === 'radio') setSelections({ ...selections, [key]: subOpt.id });
                                                         if (opt.type.includes('checkbox')) {
-                                                            const current = selections[key] || [];
+                                                            const current = (selections[key] as string[]) || [];
                                                             const next = current.includes(subOpt.id)
-                                                                ? current.filter((x: any) => x !== subOpt.id)
+                                                                ? current.filter((x: string) => x !== subOpt.id)
                                                                 : [...current, subOpt.id];
                                                             setSelections({ ...selections, [key]: next });
                                                         }
@@ -427,14 +434,14 @@ export default function RestaurantPage() {
                                                 </div>
                                                 <div className="flex items-center gap-6">
                                                     <button
-                                                        onClick={() => setSelections({ ...selections, [key]: Math.max(opt.min || 0, selections[key] - 1) })}
+                                                        onClick={() => setSelections({ ...selections, [key]: Math.max(opt.min || 0, (selections[key] as number) - 1) })}
                                                         className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all text-white"
                                                     >
                                                         -
                                                     </button>
-                                                    <span className="font-black text-xl text-white w-4 text-center">{selections[key]}</span>
+                                                    <span className="font-black text-xl text-white w-4 text-center">{selections[key] as number}</span>
                                                     <button
-                                                        onClick={() => setSelections({ ...selections, [key]: Math.min(opt.max || 10, selections[key] + 1) })}
+                                                        onClick={() => setSelections({ ...selections, [key]: Math.min(opt.max || 10, (selections[key] as number) + 1) })}
                                                         className="w-10 h-10 rounded-xl bg-red-600 flex items-center justify-center shadow-lg hover:bg-red-500 active:scale-95 transition-all text-white"
                                                     >
                                                         +
@@ -447,12 +454,12 @@ export default function RestaurantPage() {
                             ))}
 
                             <div className="pt-4 border-t border-white/10">
-                                <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-4">Note Spéciale</h3>
+                                <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-4">{t('restaurant.note.title')}</h3>
                                 <textarea
-                                    value={selections.special_instructions}
+                                    value={selections.special_instructions as string || ""}
                                     onChange={e => setSelections({ ...selections, special_instructions: e.target.value })}
                                     className="w-full bg-[#1E293B]/50 border border-white/10 rounded-2xl p-4 text-white placeholder-gray-600 outline-none focus:border-red-500 focus:bg-[#1E293B] transition-all h-28 resize-none text-sm"
-                                    placeholder="Ex: Pas d'oignon, sauce à part..."
+                                    placeholder={t('restaurant.note.placeholder')}
                                 />
                             </div>
                         </div>
@@ -474,7 +481,7 @@ export default function RestaurantPage() {
                                     onClick={handleAddToCart}
                                     className="w-full py-4 bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 rounded-2xl font-black text-lg text-white shadow-xl shadow-red-900/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
                                 >
-                                    <span>Ajouter au Panier</span>
+                                    <span>{t('restaurant.btn.add')}</span>
                                     <div className="bg-white/20 rounded-full p-1">
                                         <Plus className="w-4 h-4" />
                                     </div>
@@ -486,7 +493,7 @@ export default function RestaurantPage() {
             </DarkSheet>
 
             {/* Cart & Checkout Sheet - Redesigned: Items First, Then Parameters */}
-            <DarkSheet open={isCartOpen} onClose={() => setIsCartOpen(false)} title="Votre Panier">
+            <DarkSheet open={isCartOpen} onClose={() => setIsCartOpen(false)} title={t('restaurant.cart.title')}>
                 <div className="p-5 pb-[200px] flex flex-col h-full min-h-[80vh] overflow-y-auto custom-scrollbar">
 
                     {/* 1. CART ITEMS LIST - NOW FIRST! */}
@@ -498,8 +505,13 @@ export default function RestaurantPage() {
 
                             return (
                                 <div key={idx} className="flex gap-4 bg-[#1E293B] p-3 rounded-2xl border border-white/5 relative">
-                                    <div className="w-16 h-16 rounded-xl bg-black/40 overflow-hidden shrink-0">
-                                        <img src={item.image} className="w-full h-full object-cover" />
+                                    <div className="w-16 h-16 rounded-xl bg-black/40 overflow-hidden shrink-0 relative">
+                                        <Image
+                                            src={item.image}
+                                            alt={item.name}
+                                            fill
+                                            className="object-cover"
+                                        />
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="font-bold text-white truncate">{item.name}</div>
@@ -512,7 +524,11 @@ export default function RestaurantPage() {
                                             </div>
                                         </div>
                                     </div>
-                                    <button onClick={() => removeItem(item.id!)} className="absolute top-3 right-3 text-red-500 opacity-50 hover:opacity-100">
+                                    <button
+                                        onClick={() => removeItem(item.id!)}
+                                        className="absolute top-3 right-3 text-red-500 opacity-50 hover:opacity-100"
+                                        aria-label="Supprimer l'article"
+                                    >
                                         <Trash2 className="w-4 h-4" />
                                     </button>
                                 </div>
@@ -535,7 +551,7 @@ export default function RestaurantPage() {
                                         }`}
                                 >
                                     <Clock className="w-4 h-4" />
-                                    À Emporter
+                                    {t('restaurant.cart.takeout')}
                                 </button>
                                 <button
                                     onClick={() => setOrderType('dine_in')}
@@ -545,7 +561,7 @@ export default function RestaurantPage() {
                                         }`}
                                 >
                                     <UtensilsCrossed className="w-4 h-4" />
-                                    Sur Place
+                                    {t('restaurant.cart.dinein')}
                                 </button>
                             </div>
 
@@ -554,7 +570,7 @@ export default function RestaurantPage() {
                                 {orderType === 'takeout' ? (
                                     <>
                                         <h3 className="text-white font-bold mb-4 flex items-center gap-2">
-                                            <Clock className="w-4 h-4 text-gray-400" /> Heure d'arrivée
+                                            <Clock className="w-4 h-4 text-gray-400" /> {t('restaurant.cart.time')}
                                         </h3>
                                         <div className="grid grid-cols-3 gap-3 mb-3">
                                             {arrivalOptions.map(time => (
@@ -580,7 +596,7 @@ export default function RestaurantPage() {
                                                 }`}
                                         >
                                             <Clock className="w-4 h-4" />
-                                            Autre heure
+                                            {t('restaurant.cart.other_time')}
                                         </button>
 
                                         {/* Custom Time Input - Responsive */}
@@ -629,7 +645,7 @@ export default function RestaurantPage() {
                                             type="number"
                                             value={tableNumber}
                                             onChange={(e) => setTableNumber(e.target.value)}
-                                            placeholder="Numéro de Table (Ex: 5)"
+                                            placeholder={t('restaurant.cart.table')}
                                             className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-white font-bold text-xl text-center outline-none focus:border-red-500"
                                         />
                                     </>
@@ -640,16 +656,16 @@ export default function RestaurantPage() {
 
                     {/* Blue Confirm Button - Compact on Mobile */}
                     <div className="fixed bottom-0 left-0 right-0 bg-[#0F172A]/95 backdrop-blur-sm p-3 md:p-4 border-t border-white/10 z-50 safe-area-bottom">
-                        <div className="flex justify-between items-center mb-2 md:mb-3 px-1 md:px-2">
-                            <span className="text-gray-400 text-sm md:text-lg">Montant Total</span>
+                        <div className="flex justify-between items-center mb-2 md:mb-3 px-1 md:px-2 flex-row-reverse rtl:flex-row">
                             <span className="text-2xl md:text-3xl font-black text-white">{formatDh(total)}</span>
+                            <span className="text-gray-400 text-sm md:text-lg">{t('restaurant.cart.total')}</span>
                         </div>
                         <button
                             onClick={handleCheckout}
                             disabled={isSubmitting || items.length === 0}
-                            className="w-full py-3 md:py-4 bg-[#2563EB] hover:bg-red-600 rounded-xl font-black text-base md:text-lg text-white shadow-lg shadow-red-500/20 active:scale-95 transition-transform flex items-center justify-center gap-2"
+                            className="w-full py-3 md:py-4 bg-[#2563EB] hover:bg-red-600 rounded-xl font-black text-base md:text-lg text-white shadow-lg shadow-red-500/20 active:scale-95 transition-transform flex items-center justify-center gap-2 flex-row-reverse rtl:flex-row"
                         >
-                            {isSubmitting ? "Traitement..." : <>Confirmer la commande <ChevronRight className="w-4 h-4 md:w-5 md:h-5" /></>}
+                            {isSubmitting ? t('restaurant.cart.processing') : <><ChevronRight className="w-4 h-4 md:w-5 md:h-5 rotate-180 rtl:rotate-0" /> {t('restaurant.cart.confirm')}</>}
                         </button>
                     </div>
                 </div>
@@ -667,11 +683,10 @@ export default function RestaurantPage() {
                                 <div className="bg-white/20 w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm">
                                     {itemCount}
                                 </div>
-                                <span className="text-sm font-bold uppercase tracking-wide">Voir Panier</span>
+                                <span className="text-sm font-bold uppercase tracking-wide">{t('restaurant.btn.view')}</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 <span className="font-black text-lg">{formatDh(total)}</span>
-                                <ChevronRight className="w-5 h-5 text-white/50" />
                             </div>
                         </button>
                     </div>

@@ -3,7 +3,18 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
+if (!supabaseUrl || !supabaseAnonKey) {
+    if (typeof window !== 'undefined') {
+        console.error('⚠️ Supabase credentials missing! Please restart the dev server to load .env.local.');
+    }
+} else {
+    if (typeof window !== 'undefined') {
+        console.log('✅ Supabase initialized for project:', supabaseUrl.split('//')[1]?.split('.')[0]);
+    }
+}
+
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
 
 // Helper functions for common operations
 export const getProfile = async (userId: string) => {
@@ -32,10 +43,22 @@ export const getMenuItems = async (category?: string) => {
     return data;
 };
 
+export interface OrderItem {
+    name: string;
+    quantity: number;
+    price?: number;
+    totalPrice?: number;
+    image?: string;
+    customizations?: Record<string, unknown>;
+    prep_time?: string;
+    is_meta?: boolean;
+    [key: string]: string | number | boolean | Record<string, unknown> | undefined | OrderItem[];
+}
+
 export const createOrder = async (orderData: {
     customer_phone: string;
     total: number;
-    items: any[];
+    items: OrderItem[];
     notes?: string;
     status: string;
     service_type: 'dine_in' | 'pre_order';
@@ -44,10 +67,10 @@ export const createOrder = async (orderData: {
 }) => {
 
     // 1. Separate Items
-    const foodItems: any[] = [];
-    const serviceItems: any[] = [];
-    const hotelItems: any[] = [];
-    const poolItems: any[] = [];
+    const foodItems: OrderItem[] = [];
+    const serviceItems: OrderItem[] = [];
+    const hotelItems: OrderItem[] = [];
+    const poolItems: OrderItem[] = [];
 
     // --- RISK CONTROL (PRO MODE) ---
     // "Concierge Strategy": Never block money. 
@@ -65,7 +88,7 @@ export const createOrder = async (orderData: {
         const name = item.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
         const qty = item.quantity || 1;
 
-        if (name.includes('lavage') || name.includes('wash') || name.includes('vapeur') || name.includes('mecanique') || name.includes('vidange')) {
+        if (name.includes('lavage') || name.includes('wash') || name.includes('vapeur')) {
             serviceItems.push(item);
         } else if (name.includes('hotel') || name.includes('chambre') || name.includes('room') || name.includes('nuit')) {
             // Check Duration: If > 3 nights OR > 2 rooms -> Flag for concierge
@@ -133,13 +156,11 @@ export const createOrder = async (orderData: {
         if (itemsError) throw itemsError;
     }
 
-    // 3. Handle Service Bookings (Lavage/Mecanique)
-    // 3. Handle Service Bookings (Lavage/Mecanique)
+    // 3. Handle Service Bookings (Lavage)
     if (serviceItems.length > 0) {
         // --- CHECK 1: Prevent Same-User Overlap (Anti-Spam) ---
-        const typesInCart = new Set(serviceItems.map(item => {
-            const norm = item.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-            return (norm.includes('mecanic') || norm.includes('vidange')) ? 'mecanique' : 'lavage';
+        const typesInCart = new Set(serviceItems.map(() => {
+            return 'lavage';
         }));
 
         for (const type of Array.from(typesInCart)) {
@@ -152,19 +173,17 @@ export const createOrder = async (orderData: {
                 .limit(1);
 
             if (existing && existing.length > 0) {
-                const label = type === 'mecanique' ? 'Mécanique' : 'Lavage';
-                throw new Error(`⚠️ Vous avez déjà un service ${label} en cours. Veuillez attendre sa finalisation.`);
+                throw new Error(`⚠️ Vous avez déjà un service Lavage en cours. Veuillez attendre sa finalisation.`);
             }
         }
 
         // --- CHECK 2: Capacity Assessment (Availability) ---
-        const LIMITS: Record<string, number> = { 'mecanique': 2, 'lavage': 4 };
+        const LIMITS: Record<string, number> = { 'lavage': 4 };
 
         for (const item of serviceItems) {
             // Only check if a specific slot is requested
             if (item.time_slot && item.date) {
-                const normName = item.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                const type = (normName.includes('mecanic') || normName.includes('vidange')) ? 'mecanique' : 'lavage';
+                const type = 'lavage';
 
                 // Count active bookings for this slot
                 const { count, error } = await supabase
@@ -188,11 +207,10 @@ export const createOrder = async (orderData: {
         // Create a booking for each item * quantity
         for (const item of serviceItems) {
             const qty = item.quantity || 1;
-            const normName = item.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
             for (let i = 0; i < qty; i++) {
                 await supabase.from('service_bookings').insert({
-                    service_type: normName.includes('mecanic') || normName.includes('vidange') ? 'mecanique' : 'lavage',
+                    service_type: 'lavage',
                     service_name: item.name,
                     customer_phone: orderData.customer_phone,
                     vehicle_info: "Non spécifié (Via Panier)",
@@ -252,7 +270,7 @@ export const createOrder = async (orderData: {
                     customer_phone: orderData.customer_phone,
                     check_in_at: item.date ? `${item.date}T14:00:00` : new Date().toISOString(),
                     duration_label: "Overnight",
-                    price: item.price,
+                    price: item.price || 0,
                     status: 'reserved'
                 });
             }
@@ -271,7 +289,7 @@ export const createOrder = async (orderData: {
                 customer_phone: orderData.customer_phone,
                 scheduled_at: new Date().toISOString(),
                 status: 'active',
-                total_amount: item.price * qty
+                total_amount: (item.price || 0) * qty
             });
         }
     }
@@ -345,7 +363,7 @@ export const getHotelBooking = async (userId: string) => {
 };
 
 // Real-time subscription for order updates
-export const subscribeToOrderUpdates = (orderId: string, callback: (payload: any) => void) => {
+export const subscribeToOrderUpdates = (orderId: string, callback: (payload: { new: Record<string, unknown> }) => void) => {
     return supabase
         .channel(`order-${orderId}`)
         .on(

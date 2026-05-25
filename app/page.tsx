@@ -1,11 +1,12 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
-import { Car, Utensils, BedDouble, Waves, Wrench, ChevronRight, Star, Clock, MapPin, Phone, Navigation } from "lucide-react";
-import CepsaLogo from "@/components/CepsaLogo";
+import { Car, Utensils, BedDouble, Waves, ChevronRight, Star, Clock, MapPin, Phone, Navigation } from "lucide-react";
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
+import { useTranslation } from '@/lib/state/LanguageContext';
 
-// Coordonnées GPS de Cepsa Golden Park (depuis Google Maps)
+// Coordonnées GPS de Cepsa Golden Parc (depuis Google Maps)
 const STATION_COORDS = {
   lat: 33.5731,  // Latitude approximative
   lng: -7.5898   // Longitude approximative
@@ -13,6 +14,7 @@ const STATION_COORDS = {
 
 export default function Home() {
   const router = useRouter();
+  const { t } = useTranslation();
   const [eta, setEta] = useState<number | null>(null);
   const [distance, setDistance] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -59,8 +61,8 @@ export default function Home() {
   const SERVICES = [
     {
       id: 'restaurant',
-      title: "Restaurant",
-      desc: "Grillades, Pizza & Plats",
+      title: t('home.service.resto.title'),
+      desc: t('home.service.resto.desc'),
       image: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80",
       icon: <Utensils className="w-5 h-5" />,
       color: "text-amber-500",
@@ -69,8 +71,8 @@ export default function Home() {
     },
     {
       id: 'hotel',
-      title: "Hôtel l'Escale",
-      desc: "Repos confortable & Suites",
+      title: t('home.service.hotel.title'),
+      desc: t('home.service.hotel.desc'),
       image: "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80",
       icon: <BedDouble className="w-5 h-5" />,
       color: "text-purple-500",
@@ -79,8 +81,8 @@ export default function Home() {
     },
     {
       id: 'pool',
-      title: "Piscine & Détente",
-      desc: "Summer Vibes 09h-19h",
+      title: t('home.service.pool.title'),
+      desc: t('home.service.pool.desc'),
       image: "https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=800&q=80",
       icon: <Waves className="w-5 h-5" />,
       color: "text-red-400",
@@ -89,23 +91,13 @@ export default function Home() {
     },
     {
       id: 'lavage',
-      title: "Lavage & Soin",
-      desc: "Nettoyage Pro & Polissage",
+      title: t('home.service.wash.title'),
+      desc: t('home.service.wash.desc'),
       image: "https://images.unsplash.com/photo-1601362840469-51e4d8d58785?auto=format&fit=crop&w=800&q=80",
       icon: <Car className="w-5 h-5" />,
       color: "text-red-500",
       bg: "bg-red-500/10",
       link: "/services/lavage"
-    },
-    {
-      id: 'mecanique',
-      title: "Atelier Méca",
-      desc: "Vidange, Diagnostic & Pneus",
-      image: "https://images.unsplash.com/photo-1487754180451-c456f719a1fc?auto=format&fit=crop&w=800&q=80",
-      icon: <Wrench className="w-5 h-5" />,
-      color: "text-orange-500",
-      bg: "bg-orange-500/10",
-      link: "/services/mecanique"
     }
   ];
 
@@ -113,12 +105,13 @@ export default function Home() {
     <main className="min-h-screen bg-[#0F172A] pb-24 md:pb-10">
 
       {/* --- HERO SECTION --- */}
-      {/* Added 'md:h-96' for desktop height and centered max-width content for text */}
       <div className="relative h-72 md:h-[500px] w-full overflow-hidden rounded-b-[3rem] md:rounded-b-[5rem] shadow-2xl z-10 group">
-        <img
+        <Image
           src="/image/cepsa-hero.jpg"
-          alt="Golden Park Station - Premium CEPSA Service Station"
-          className="w-full h-full object-cover opacity-80 transition-transform duration-1000 md:group-hover:scale-105"
+          alt="Golden Parc Station - Premium CEPSA Service Station"
+          fill
+          priority
+          className="object-cover opacity-80 transition-transform duration-1000 md:group-hover:scale-105"
         />
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#0F172A]/30 to-[#0F172A]" />
 
@@ -127,28 +120,32 @@ export default function Home() {
             <div>
               <div className="flex items-center gap-2 mb-2">
                 <span className="bg-red-600 text-white text-[10px] md:text-xs font-black px-2 py-0.5 md:py-1 md:px-3 rounded flex items-center gap-1 shadow-lg shadow-red-600/20">
-                  <CepsaLogo className="w-3 h-3 text-white" /> CEPSA
+                  CEPSA
                 </span>
                 <span className="text-gray-300 text-xs md:text-sm font-bold uppercase tracking-wider flex items-center gap-1">
                   <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" /> Premium Station
                 </span>
               </div>
-              <h1 className="text-4xl md:text-7xl font-black text-white leading-none mb-2 drop-shadow-lg">
-                GOLDEN <span className="text-red-600">PARK</span>
+              <h1 className={`text-4xl md:text-7xl font-black text-white leading-none mb-2 drop-shadow-lg ${t('home.hero.title') === 'جولدن بارك' ? 'font-sans' : ''}`}>
+                {t('home.hero.title') === 'GOLDEN PARC' ? (
+                  <>GOLDEN <span className="text-red-600">PARC</span></>
+                ) : (
+                  t('home.hero.title')
+                )}
               </h1>
               <div className="inline-block px-3 py-1 bg-white/5 rounded-full border border-amber-500/30 backdrop-blur-md mb-4 shadow-[0_0_15px_rgba(245,158,11,0.2)]">
                 <span className="text-xs md:text-sm font-black text-amber-500 tracking-[0.4em] ml-1">STATION</span>
               </div>
-              <p className="text-gray-400 text-sm md:text-xl font-medium max-w-lg">
-                Outat El Haj, Route Nationale 15. Votre escale de luxe.
+              <p className="text-gray-400 text-sm md:text-xl font-medium max-w-lg" dir="auto">
+                {t('home.hero.subtitle')}
               </p>
             </div>
 
             {/* Desktop Only Call Action */}
             <div className="hidden md:flex items-center gap-4">
               <div className="text-right">
-                <div className="text-green-400 font-bold text-lg">Ouvert 24h/24</div>
-                <div className="text-gray-400 text-sm">7j/7 sans interruption</div>
+                <div className="text-green-400 font-bold text-lg">{t('home.hero.open')}</div>
+                <div className="text-gray-400 text-sm">{t('home.hero.open.sub')}</div>
               </div>
               <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center shadow-lg shadow-green-600/30 animate-pulse-green">
                 <Phone className="w-8 h-8 text-white" />
@@ -169,7 +166,7 @@ export default function Home() {
                 <div className="flex-1">
                   <div className="flex items-center gap-2 text-white/90 text-sm mb-3">
                     <Navigation className="w-4 h-4" />
-                    <span className="font-bold">Vous êtes en route</span>
+                    <span className="font-bold">{t('home.eta.route')}</span>
                   </div>
                   <div className="flex items-baseline gap-3 mb-2">
                     <h2 className="text-white text-5xl md:text-6xl font-black">
@@ -180,7 +177,7 @@ export default function Home() {
                     </span>
                   </div>
                   <p className="text-white/80 text-sm md:text-base">
-                    Arrivée estimée à <span className="font-bold text-white">Golden Park Station</span>
+                    {t('home.eta.arrival')} <span className="font-bold text-white">Golden Parc Station</span>
                   </p>
                 </div>
 
@@ -217,8 +214,8 @@ export default function Home() {
                 <Clock className="w-6 h-6 md:w-8 md:h-8 text-red-500" />
               </div>
               <div>
-                <div className="text-white font-bold text-sm md:text-lg">Service Continu</div>
-                <div className="text-gray-500 text-xs md:text-sm">Café & Store 24/7</div>
+                <div className="text-white font-bold text-sm md:text-lg">{t('home.info.service')}</div>
+                <div className="text-gray-500 text-xs md:text-sm">{t('home.info.cafe')}</div>
               </div>
             </div>
 
@@ -230,11 +227,10 @@ export default function Home() {
         </div>
 
         {/* --- SERVICES GRID --- */}
-        {/* Changed from 'grid-cols-1' to 'md:grid-cols-2 lg:grid-cols-3' */}
         <div className="mt-12 space-y-6">
-          <div className="flex items-center justify-between px-2">
-            <h2 className="text-2xl font-black text-white">Nos Services</h2>
-            <span className="text-red-500 font-bold hover:text-red-400 cursor-pointer transition-colors">Découvrir tout</span>
+          <div className="flex items-center justify-between px-2" dir="auto">
+            <h2 className="text-2xl font-black text-white">{t('home.services.title')}</h2>
+            <span className="text-red-500 font-bold hover:text-red-400 cursor-pointer transition-colors">{t('home.services.all')}</span>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -246,10 +242,11 @@ export default function Home() {
                   }`}
               >
                 {/* Background Image */}
-                <img
+                <Image
                   src={service.image}
                   alt={`${service.title} - ${service.desc}`}
-                  className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                  fill
+                  className="object-cover transition-transform duration-700 group-hover:scale-110"
                 />
                 {/* Overlay Gradient */}
                 <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-[#0F172A]/40 to-transparent" />
@@ -278,7 +275,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* --- PROMO BANNER --- */}
         {/* --- MAP LOCATION BANNER --- */}
         <div className="mt-12 mb-20 md:mb-12">
           <a
@@ -289,29 +285,29 @@ export default function Home() {
           >
             {/* Map Imagery Background */}
             <div className="absolute inset-0 bg-[#1E293B]">
-              <img
+              <Image
                 src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=1600&q=80"
                 alt="Map Background"
-                className="w-full h-full object-cover opacity-40 mix-blend-overlay group-hover:scale-105 transition-transform duration-700"
+                fill
+                className="object-cover opacity-40 mix-blend-overlay group-hover:scale-105 transition-transform duration-700"
               />
               {/* Overlay Gradient to ensure text readability */}
               <div className="absolute inset-0 bg-gradient-to-r from-[#0F172A] via-[#0F172A]/90 to-transparent pb-10" />
             </div>
 
             <div className="absolute inset-0 p-8 md:p-12 flex flex-col md:flex-row items-start md:items-center justify-between z-10">
-              <div className="max-w-2xl">
+              <div className="max-w-2xl" dir="auto">
                 <div className="bg-red-600/20 backdrop-blur-sm border border-red-500/30 text-red-500 text-xs font-black px-3 py-1.5 rounded-lg inline-flex items-center gap-2 mb-4 shadow-lg">
-                  <MapPin className="w-3 h-3" /> LOCALISATION
+                  <MapPin className="w-3 h-3" /> {t('home.map.badge')}
                 </div>
                 <h3 className="text-3xl md:text-5xl font-black text-white mb-4 leading-tight">
-                  Cepsa Golden Park
+                  {t('home.map.title')}
                 </h3>
                 <p className="text-gray-300 text-sm md:text-lg font-medium max-w-lg mb-6">
-                  Visitez notre station premium sur la Route Nationale 15.
-                  Cliquez ici pour lancer la navigation GPS.
+                  {t('home.map.desc')}
                 </p>
                 <div className="inline-flex items-center gap-2 text-red-500 font-bold group-hover:gap-4 transition-all">
-                  Voir sur Google Maps <ChevronRight className="w-5 h-5" />
+                  {t('home.map.btn')} <ChevronRight className="w-5 h-5 auto-flip-icon" />
                 </div>
               </div>
 

@@ -1,69 +1,69 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { BedDouble, Users, Calendar, Wifi, Coffee, Star, ChevronLeft, CheckCircle2, Moon, Sun, AlertCircle } from "lucide-react";
+import { BedDouble, Calendar, ChevronLeft, CheckCircle2, Moon, Sun, AlertCircle } from "lucide-react";
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import { supabase } from '@/lib/supabase';
-import { COLORS } from '@/lib/theme';
+import PaymentModal from '@/components/PaymentModal';
+import { useTranslation } from '@/lib/state/LanguageContext';
+// Force TS index update
 
 const ROOM_TYPES = [
     {
         id: 'standard',
-        name: 'Chambre Standard',
+        nameKey: 'hotel.room.standard',
         price: 300,
         siestePrice: 150,
         image: 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80',
-        features: ['Wifi Gratuit', 'TV HD', 'Douche Italienne'],
+        featuresKeys: ['hotel.feat.wifi', 'hotel.feat.tv', 'hotel.feat.shower'],
         capacity: 2
     },
     {
         id: 'deluxe',
-        name: 'Suite Deluxe',
+        nameKey: 'hotel.room.deluxe',
         price: 500,
         siestePrice: 250,
         image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80',
-        features: ['Vue Panoramique', 'Mini Bar', 'Salon Privé', 'Baignoire'],
+        featuresKeys: ['hotel.feat.view', 'hotel.feat.minibar', 'hotel.feat.salon', 'hotel.feat.bath'],
         capacity: 2
     },
     {
         id: 'family',
-        name: 'Suite Familiale',
+        nameKey: 'hotel.room.family',
         price: 700,
         siestePrice: 350,
         image: 'https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=800&q=80',
-        features: ['2 Lits Doubles', 'Espace Jeux', 'Kitchenette', 'Terrasse'],
+        featuresKeys: ['hotel.feat.beds', 'hotel.feat.games', 'hotel.feat.kitchen', 'hotel.feat.terrace'],
         capacity: 4
     }
 ];
 
 export default function HotelPage() {
     const router = useRouter();
+    const { t } = useTranslation();
     const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
     const [bookingType, setBookingType] = useState<'night' | 'sieste'>('night');
 
     // Dates Logic
-    const [dates, setDates] = useState({ checkIn: '', checkOut: '' });
-    const [dateError, setDateError] = useState<string | null>(null);
-
-    const [siesteTime, setSiesteTime] = useState({ date: '', hours: 3 });
-    const [loading, setLoading] = useState(false);
-    const [showSuccess, setShowSuccess] = useState<string | null>(null);
-
-    // Initial Defaults
-    useEffect(() => {
+    const [dates, setDates] = useState(() => {
         const today = new Date();
         const tomorrow = new Date(today);
         tomorrow.setDate(tomorrow.getDate() + 1);
+        return {
+            checkIn: today.toISOString().split('T')[0],
+            checkOut: tomorrow.toISOString().split('T')[0]
+        };
+    });
+    const [dateError, setDateError] = useState<string | null>(null);
 
-        const todayStr = today.toISOString().split('T')[0];
-        const tomorrowStr = tomorrow.toISOString().split('T')[0];
-
-        setDates({
-            checkIn: todayStr,
-            checkOut: tomorrowStr
-        });
-        setSiesteTime(prev => ({ ...prev, date: todayStr }));
-    }, []);
+    const [siesteTime, setSiesteTime] = useState(() => ({
+        date: new Date().toISOString().split('T')[0],
+        hours: 3
+    }));
+    const [loading, setLoading] = useState(false);
+    const [showSuccess, setShowSuccess] = useState<string | null>(null);
+    const [pendingPayment, setPendingPayment] = useState<{ id: string, amount: number, num: string } | null>(null);
 
     const activeRoom = ROOM_TYPES.find(r => r.id === selectedRoom);
 
@@ -107,7 +107,7 @@ export default function HotelPage() {
         setDates(prev => ({ ...prev, checkOut: newCheckOut }));
 
         if (newCheckOut <= dates.checkIn) {
-            setDateError("La date de fin doit être après la date de départ !");
+            setDateError(t('hotel.dates.error'));
         } else {
             setDateError(null);
         }
@@ -194,7 +194,7 @@ export default function HotelPage() {
 
         const bookingNum = `HOTEL-${Date.now().toString().slice(-6)}`;
 
-        const { error } = await supabase.from('hotel_reservations').insert({
+        const { data, error } = await supabase.from('hotel_reservations').insert({
             booking_number: bookingNum,
             customer_phone: userPhone,
             room_type: selectedRoom,
@@ -206,51 +206,57 @@ export default function HotelPage() {
             total_price: totalPrice,
             status: 'pending',
             user_id: user.id
-        });
+        }).select().single();
 
-        if (error) {
-            alert("Erreur: " + error.message);
+        if (error || !data) {
+            alert("Erreur: " + error?.message);
         } else {
-            setShowSuccess(bookingNum);
+            // Hotel Arboun calculation (20% or 20 DH min)
+            const arboun = Math.max(20, Math.round(totalPrice * 0.20));
+            setPendingPayment({
+                id: data.id,
+                amount: arboun,
+                num: bookingNum
+            });
         }
         setLoading(false);
     };
 
     return (
-        <div className="min-h-screen pb-40 bg-[#0F172A]" style={{ backgroundColor: COLORS.bgDark }}>
+        <div className="min-h-screen pb-52 bg-[#0F172A]">
 
             {/* Header */}
             <div className="sticky top-0 z-20 bg-[#0F172A]/95 backdrop-blur-xl border-b border-white/10 p-4 pt-6 md:px-8">
                 <div className="max-w-6xl mx-auto flex items-center gap-4">
-                    <button onClick={() => router.back()} className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all">
+                    <button onClick={() => router.back()} className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all font-bold rtl:rotate-180" aria-label="Retour">
                         <ChevronLeft className="w-5 h-5 text-white" />
                     </button>
-                    <h1 className="text-xl font-bold text-white">Hôtel & Repos</h1>
+                    <h1 className="text-xl font-bold text-white">{t('hotel.title')}</h1>
                 </div>
             </div>
 
             <div className="p-5 md:p-8 space-y-6 max-w-6xl mx-auto">
 
                 {/* MODE SWITCHER */}
-                <div className="bg-[#1E293B] p-2 rounded-2xl border border-white/10 flex relative max-w-md mx-auto w-full">
-                    <div className={`absolute top-2 bottom-2 w-[calc(50%-8px)] bg-amber-500 rounded-xl transition-all duration-300 ${bookingType === 'sieste' ? 'left-[calc(50%+4px)]' : 'left-2'}`} />
+                <div className="bg-[#1E293B] p-2 rounded-2xl border border-white/10 flex relative max-w-md mx-auto w-full rtl:flex-row-reverse">
+                    <div className={`absolute top-2 bottom-2 w-[calc(50%-8px)] bg-amber-500 rounded-xl transition-all duration-300 ${bookingType === 'sieste' ? 'ltr:left-[calc(50%+4px)] rtl:right-[calc(50%+4px)]' : 'ltr:left-2 rtl:right-2'}`} />
                     <button
                         onClick={() => setBookingType('night')}
                         className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl relative z-10 font-bold text-sm transition-colors ${bookingType === 'night' ? 'text-black' : 'text-gray-400'}`}
                     >
-                        <Moon className="w-4 h-4" /> Nuitée
+                        <Moon className="w-4 h-4" /> {t('hotel.night_mode')}
                     </button>
                     <button
                         onClick={() => setBookingType('sieste')}
                         className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl relative z-10 font-bold text-sm transition-colors ${bookingType === 'sieste' ? 'text-black' : 'text-gray-400'}`}
                     >
-                        <Sun className="w-4 h-4" /> Sieste (Jour)
+                        <Sun className="w-4 h-4" /> {t('hotel.siesta_mode')}
                     </button>
                 </div>
 
                 {/* Room Gallery */}
                 <div>
-                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">Choisir une Chambre</h3>
+                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">{t('hotel.choose_room')}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {ROOM_TYPES.map(room => (
                             <div
@@ -262,15 +268,15 @@ export default function HotelPage() {
                                     }`}
                             >
                                 <div className="h-48 md:h-56 relative w-full">
-                                    <img src={room.image} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                                    <Image src={room.image} alt={t(room.nameKey)} fill title={t(room.nameKey)} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] to-transparent" />
                                     <div className="absolute bottom-3 left-4 right-4 flex justify-between items-end">
-                                        <h3 className="text-xl font-black text-white leading-tight">{room.name}</h3>
+                                        <h3 className="text-xl font-black text-white leading-tight">{t(room.nameKey)}</h3>
                                         <div className="bg-black/50 backdrop-blur-md px-3 py-1 rounded-lg text-amber-500 font-bold flex flex-col items-end shrink-0">
                                             {/* Dynamic Price Display */}
                                             {bookingType === 'night'
-                                                ? <>{room.price} DH <span className="text-[10px] text-white/70 font-medium">/nuit</span></>
-                                                : <>{room.siestePrice} DH <span className="text-[10px] text-white/70 font-medium">/sieste</span></>
+                                                ? <>{room.price} DH <span className="text-[10px] text-white/70 font-medium">/{t('hotel.per_night')}</span></>
+                                                : <>{room.siestePrice} DH <span className="text-[10px] text-white/70 font-medium">/{t('hotel.per_siesta')}</span></>
                                             }
                                         </div>
                                     </div>
@@ -278,9 +284,9 @@ export default function HotelPage() {
 
                                 <div className={`p-4 bg-[#1E293B] flex-1 transition-colors ${selectedRoom === room.id ? 'bg-amber-900/10' : ''}`}>
                                     <div className="flex flex-wrap gap-2 mb-2">
-                                        {room.features.map(f => (
-                                            <span key={f} className="text-[10px] bg-white/5 border border-white/5 rounded-md px-2 py-1 text-gray-300">
-                                                {f}
+                                        {room.featuresKeys.map(key => (
+                                            <span key={key} className="text-[10px] bg-white/5 border border-white/5 rounded-md px-2 py-1 text-gray-300">
+                                                {t(key)}
                                             </span>
                                         ))}
                                     </div>
@@ -304,27 +310,29 @@ export default function HotelPage() {
                         <>
                             <div className="flex items-center gap-2 mb-2">
                                 <Calendar className="w-5 h-5 text-amber-500" />
-                                <h3 className="font-bold text-white">Dates de Séjour</h3>
+                                <h3 className="font-bold text-white">{t('hotel.dates.stay')}</h3>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Date Départ</label>
+                                    <label htmlFor="checkInDate" className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">{t('hotel.dates.checkin')}</label>
                                     <input
+                                        id="checkInDate"
                                         type="date"
                                         value={dates.checkIn}
                                         onChange={handleCheckInChange}
                                         min={new Date().toISOString().split('T')[0]}
-                                        className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-white outline-none focus:border-amber-500 font-bold h-[50px]"
+                                        className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-white outline-none focus:border-amber-500 font-bold h-[50px] appearance-none"
                                     />
                                 </div>
                                 <div>
-                                    <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Date Fin</label>
+                                    <label htmlFor="checkOutDate" className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">{t('hotel.dates.checkout')}</label>
                                     <input
+                                        id="checkOutDate"
                                         type="date"
                                         value={dates.checkOut}
                                         onChange={handleCheckOutChange}
                                         min={dates.checkIn}
-                                        className={`w-full bg-[#0F172A] border rounded-xl p-3 text-white outline-none font-bold transition-all h-[50px] ${dateError ? 'border-red-500 ring-1 ring-red-500/50' : 'border-white/10 focus:border-amber-500'
+                                        className={`w-full bg-[#0F172A] border rounded-xl p-3 text-white outline-none font-bold transition-all h-[50px] appearance-none ${dateError ? 'border-red-500 ring-1 ring-red-500/50' : 'border-white/10 focus:border-amber-500'
                                             }`}
                                     />
                                 </div>
@@ -342,30 +350,31 @@ export default function HotelPage() {
                         <>
                             <div className="flex items-center gap-2 mb-2">
                                 <Sun className="w-5 h-5 text-amber-500" />
-                                <h3 className="font-bold text-white">Repos Rapide</h3>
+                                <h3 className="font-bold text-white">{t('hotel.siesta.fast')}</h3>
                             </div>
                             <div>
-                                <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Date</label>
+                                <label htmlFor="siesteDate" className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">{t('hotel.siesta.date')}</label>
                                 <input
+                                    id="siesteDate"
                                     type="date"
                                     value={siesteTime.date}
                                     onChange={(e) => setSiesteTime({ ...siesteTime, date: e.target.value })}
                                     min={new Date().toISOString().split('T')[0]}
-                                    className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-white outline-none focus:border-amber-500 font-bold mb-4 h-[50px]"
+                                    className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-white outline-none focus:border-amber-500 font-bold mb-4 h-[50px] appearance-none"
                                 />
-                                <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">Durée Estimée</label>
-                                <div className="flex gap-4">
+                                <label className="text-[10px] font-bold text-gray-400 uppercase mb-1 block">{t('hotel.siesta.duration')}</label>
+                                <div className="flex gap-4 flex-wrap md:flex-nowrap">
                                     {[2, 3, 4, 6].map(h => (
                                         <button
                                             key={h}
                                             onClick={() => setSiesteTime({ ...siesteTime, hours: h })}
-                                            className={`flex-1 py-3 rounded-xl font-bold border transition-all ${siesteTime.hours === h ? 'bg-amber-500 text-black border-amber-500 shadow-lg' : 'bg-transparent text-gray-400 border-white/10 hover:bg-white/5'}`}
+                                            className={`flex-1 min-w-[60px] py-3 rounded-xl font-bold border transition-all ${siesteTime.hours === h ? 'bg-amber-500 text-black border-amber-500 shadow-lg' : 'bg-transparent text-gray-400 border-white/10 hover:bg-white/5'}`}
                                         >
                                             {h}h
                                         </button>
                                     ))}
                                 </div>
-                                <p className="text-[10px] text-gray-500 mt-2">*Tarif sieste unique applicable jusqu'à 6h.</p>
+                                <p className="text-[10px] text-gray-500 mt-2">{t('hotel.siesta.note')}</p>
                             </div>
                         </>
                     )}
@@ -379,30 +388,30 @@ export default function HotelPage() {
                     <button
                         onClick={handleBooking}
                         disabled={!selectedRoom || loading || !!dateError}
-                        className="w-full bg-[#1e293b] border border-white/10 p-2 pl-3 rounded-[2rem] shadow-2xl flex items-center justify-between group active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed hover:bg-[#253248]"
+                        className="w-full bg-[#1e293b] flex-row-reverse rtl:flex-row border border-white/10 p-2 pl-3 rounded-[2rem] shadow-2xl flex items-center justify-between group active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed hover:bg-[#253248]"
                     >
+                        {/* Price Right */}
+                        <div className="flex items-center gap-2 pl-2">
+                            <span className="text-white font-black text-lg">{dateError ? '--' : (totalPrice || 0)} <span className="text-xs font-bold text-gray-400">{t('hotel.book.dh')}</span></span>
+                            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white group-hover:bg-amber-500 group-hover:text-black transition-colors rotate-180 rtl:rotate-0">←</div>
+                        </div>
+
                         {/* Badge / Quantity Left */}
-                        <div className="flex items-center gap-3">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-black font-bold shadow-lg ${dateError ? 'bg-red-500' : 'bg-amber-500 shadow-amber-500/20'}`}>
-                                {bookingType === 'night' ? (dateError ? '!' : nights) : '1'}
-                            </div>
-                            <div className="text-left">
+                        <div className="flex flex-row-reverse rtl:flex-row items-center gap-3">
+                            <div className="text-right rtl:text-left">
                                 <div className="text-white font-bold text-sm leading-tight">
-                                    {bookingType === 'night' ? 'Réserver Nuitée' : 'Réserver Sieste'}
+                                    {bookingType === 'night' ? t('hotel.book.night') : t('hotel.book.siesta')}
                                 </div>
                                 <div className="text-gray-400 text-[10px] font-medium">
                                     {bookingType === 'night'
-                                        ? (dateError ? 'Date Invalide' : `${nights} Nuit(s)`)
-                                        : `${siesteTime.hours} Heures`
+                                        ? (dateError ? t('hotel.book.invalid') : `${nights} ${t('hotel.book.nights_count')}`)
+                                        : `${siesteTime.hours} ${t('hotel.book.hours_count')}`
                                     }
                                 </div>
                             </div>
-                        </div>
-
-                        {/* Price Right */}
-                        <div className="flex items-center gap-2 pr-2">
-                            <span className="text-white font-black text-lg">{dateError ? '--' : (totalPrice || 0)} <span className="text-xs font-bold text-gray-400">DH</span></span>
-                            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white group-hover:bg-amber-500 group-hover:text-black transition-colors">→</div>
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-black font-bold shadow-lg ${dateError ? 'bg-red-500' : 'bg-amber-500 shadow-amber-500/20'}`}>
+                                {bookingType === 'night' ? (dateError ? '!' : nights) : '1'}
+                            </div>
                         </div>
                     </button>
                 </div>
@@ -418,28 +427,42 @@ export default function HotelPage() {
                         <div className="w-20 h-20 bg-amber-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
                             <BedDouble className="w-10 h-10 text-amber-500" />
                         </div>
-                        <h2 className="text-2xl font-black text-white mb-2">Réservation Reçue!</h2>
+                        <h2 className="text-2xl font-black text-white mb-2">{t('hotel.success.title')}</h2>
                         <p className="text-sm text-gray-400 mb-6">
-                            Votre réservation <span className="text-white font-bold">#{showSuccess}</span> est en cours de traitement.
+                            {t('hotel.success.desc').replace('{id}', showSuccess)}
                         </p>
                         <div className="space-y-3">
                             <button
                                 onClick={() => router.push('/profile')}
                                 className="w-full py-4 bg-amber-600 rounded-xl font-bold text-white shadow-lg"
                             >
-                                Voir mes Réservations
+                                {t('hotel.btn.view')}
                             </button>
                             <button
                                 onClick={() => setShowSuccess(null)}
                                 className="w-full py-4 bg-white/5 rounded-xl font-bold text-gray-400 hover:bg-white/10"
                             >
-                                Fermer
+                                {t('hotel.btn.close')}
                             </button>
                         </div>
                     </div>
                 </div>
             )}
 
+            {/* Payment Modal */}
+            {pendingPayment && (
+                <PaymentModal
+                    bookingId={pendingPayment.id}
+                    amount={pendingPayment.amount}
+                    serviceType="hotel"
+                    tableName="hotel_reservations"
+                    onSuccess={() => {
+                        setPendingPayment(null);
+                        setShowSuccess(pendingPayment.num);
+                    }}
+                    onClose={() => setPendingPayment(null)}
+                />
+            )}
         </div>
     );
 }

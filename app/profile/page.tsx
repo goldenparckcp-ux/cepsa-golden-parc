@@ -1,11 +1,16 @@
 "use client";
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Smartphone, Check, User, Loader2, ArrowRight, LogOut, Clock, Package, Wifi, Phone, Crown, QrCode, X, Moon, Waves, Trash2, UtensilsCrossed, AlertTriangle, Pencil, Save } from 'lucide-react';
+import { Smartphone, Check, User, Loader2, ArrowRight, LogOut, Clock, Package, Wifi, Phone, Crown, QrCode, X, Moon, Waves, Trash2, UtensilsCrossed, AlertTriangle, Pencil, Save, Plus, CreditCard } from 'lucide-react';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
+import { useTranslation } from '@/lib/state/LanguageContext';
 
 import { useAuth } from '@/lib/state/AuthProvider';
+
+import Image from 'next/image';
+import PaymentModal from '@/components/PaymentModal';
 
 function ProfileContent() {
     const router = useRouter();
@@ -21,6 +26,7 @@ function ProfileContent() {
     const [fullName, setFullName] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [userId, setUserId] = useState<string | null>(null);
+    const [walletBalance, setWalletBalance] = useState<number>(0);
 
     // Edit Profile State
     const [isEditing, setIsEditing] = useState(false);
@@ -39,8 +45,10 @@ function ProfileContent() {
         table?: string;
         image?: string;
         duration?: string;
-        contextInfo?: string;
         contextIcon?: string | null;
+        scheduledAt?: string;
+        deposit_amount?: number;
+        deposit_paid?: boolean;
     }
 
     // Dashboard Data
@@ -50,6 +58,11 @@ function ProfileContent() {
 
     // QR Modal State
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
+    // Top-up Modal State
+    const [showTopUp, setShowTopUp] = useState(false); // Step 1: Amount picker
+    const [topUpAmount, setTopUpAmount] = useState<number | null>(null);
+    const [showTopUpPayment, setShowTopUpPayment] = useState(false); // Step 2: PaymentModal
 
     // Update Profile Handler
     const handleUpdateProfile = async () => {
@@ -89,29 +102,61 @@ function ProfileContent() {
     };
 
     // Cancel Order Handler
-    const handleCancelOrder = async (orderId: string, table?: string) => {
-        if (!confirm("Voulez-vous vraiment annuler cette réservation ?")) return;
+    const handleCancelOrder = async (orderId: string, table: string, scheduledAt?: string, depositAmount?: number, depositPaid?: boolean) => {
+        let isRefundable = true;
+        let refundMsg = "";
 
-        // Optimistic update: Remove immediately from UI
-        setOrders(prev => prev.filter(o => o.id !== orderId));
+        if (scheduledAt && depositPaid && depositAmount) {
+            const now = new Date();
+            const serviceTime = new Date(scheduledAt);
+            const diffMs = serviceTime.getTime() - now.getTime();
+            const diffMins = Math.floor(diffMs / 60000);
 
-        // Validate table name exists
-        if (!table) {
-            console.error("Table name is required for cancellation");
-            return;
+            if (diffMins <= 45) {
+                isRefundable = false;
+                refundMsg = "\n⚠️ Attention: Annulation à moins de 45min. Le dépôt ne sera pas remboursé.";
+            } else {
+                refundMsg = `\n✅ Remboursable: ${depositAmount - 10} DH seront crédités sur votre Wallet (Frais 10 DH).`;
+            }
+        }
+
+        if (!confirm(`Voulez-vous vraiment annuler cette réservation ?${refundMsg}`)) return;
+
+        setIsLoading(true);
+
+        // 1. If Refundable, Credit Wallet (Simulation or API Call)
+        if (isRefundable && depositPaid && depositAmount && userId) {
+            const refundValue = Math.max(0, depositAmount - 10);
+
+            // Increment wallet balance
+            const { data: profile } = await supabase.from('profiles').select('wallet_balance').eq('id', userId).single();
+            await supabase.from('profiles').update({
+                wallet_balance: (profile?.wallet_balance || 0) + refundValue
+            }).eq('id', userId);
+
+            // Log Wallet Transaction
+            await supabase.from('wallet_transactions').insert({
+                user_id: userId,
+                amount: refundValue,
+                type: 'refund',
+                description: `Annulation Booking #${orderId.slice(0, 5)}`,
+                status: 'completed'
+            });
         }
 
         const { error } = await supabase.from(table).update({ status: 'cancelled' }).eq('id', orderId);
 
         if (error) {
             alert("Erreur lors de l'annulation");
-            // Revert if error (optional, but good practice)
-            if (userId && phone) fetchUserOrders(userId, phone);
+        } else {
+            // Update UI
+            setOrders(prev => prev.filter(o => o.id !== orderId));
         }
+        setIsLoading(false);
     };
 
     // Fetch Orders - Updated to work with both phone and Google users
-    const fetchUserOrders = async (userId: string | null, contactInfo: string) => {
+    const fetchUserOrders = useCallback(async (userId: string | null, contactInfo: string) => {
         if (!userId && !contactInfo) return;
         setLoadingOrders(true);
 
@@ -136,17 +181,15 @@ function ProfileContent() {
             ...(serv || []).map(x => ({
                 ...x,
                 id: x.id,
-                type: (x.service_type === 'mecanique') ? 'Mécanique' : 'Service',
+                type: 'Service',
                 date: x.created_at,
                 status: x.status,
                 title: (x.service_type === 'pool' || (x.service_name || '').toLowerCase().includes('piscine'))
                     ? 'Accès Piscine'
                     : (x.service_type === 'lavage')
                         ? (x.service_name || 'Lavage Auto').replace(/\b\w/g, (l: string) => l.toUpperCase())
-                        : (x.service_type === 'mecanique')
-                            ? (x.service_name || 'Mécanique Auto').split('(')[0].trim()
-                            : (x.service_name || 'Service Auto'),
-                details: (x.service_type === 'lavage' || x.service_type === 'mecanique')
+                        : (x.service_name || 'Lavage Auto'),
+                details: (x.service_type === 'lavage')
                     ? `Le ${new Date(x.scheduled_date || x.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} • ${x.time_slot || 'En attente'}`
                     : ((x.service_type === 'pool' || (x.service_name || '').toLowerCase().includes('piscine'))
                         ? (x.service_name || '').replace(/^Piscine\s*/i, '')
@@ -156,17 +199,18 @@ function ProfileContent() {
                 table: 'service_bookings',
                 image: (x.service_type === 'lavage')
                     ? 'https://images.unsplash.com/photo-1601362840469-51e4d8d58785?w=200'
-                    : (x.service_type === 'mecanique')
-                        ? 'https://images.unsplash.com/photo-1487754180451-c456f719a1fc?w=200'
-                        : (x.service_type === 'pool' || (x.service_name || '').toLowerCase().includes('piscine'))
-                            ? 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=200'
-                            : 'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?w=200',
+                    : (x.service_type === 'pool' || (x.service_name || '').toLowerCase().includes('piscine'))
+                        ? 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?w=200'
+                        : 'https://images.unsplash.com/photo-1517524008697-84bbe3c3fd98?w=200',
                 duration: (x.service_type === 'pool' || (x.service_name || '').toLowerCase().includes('piscine'))
                     ? 'Journée'
                     : (x.time_slot ? x.time_slot.split('-').length > 1
                         ? 'Sur RDV'
                         : '45 min'
-                        : '45 min')
+                        : '45 min'),
+                scheduledAt: x.scheduled_at || x.scheduled_date || x.booking_date,
+                deposit_amount: x.deposit_amount,
+                deposit_paid: x.deposit_paid
             })),
 
             // --- HOTEL ---
@@ -203,7 +247,10 @@ function ProfileContent() {
                     code: x.booking_number,
                     table: 'hotel_reservations',
                     image: img,
-                    duration: '24h'
+                    duration: '24h',
+                    scheduledAt: x.check_in,
+                    deposit_amount: x.deposit_amount,
+                    deposit_paid: x.deposit_paid
                 };
             }),
 
@@ -242,7 +289,10 @@ function ProfileContent() {
                     code: x.booking_number,
                     table: 'pool_bookings',
                     image: img,
-                    duration: 'Journée'
+                    duration: 'Journée',
+                    scheduledAt: x.booking_date,
+                    deposit_amount: x.deposit_amount,
+                    deposit_paid: x.deposit_paid
                 };
             }),
 
@@ -272,7 +322,7 @@ function ProfileContent() {
                         // Filter out empty values and special keys like 'special_instructions'
                         const visibleOpts = Object.entries(sels as Record<string, unknown>)
                             .filter(([k, v]) => k !== 'special_instructions' && v && (Array.isArray(v) ? v.length > 0 : true))
-                            .map(([_k, v]) => {
+                            .map(([, v]) => {
                                 if (Array.isArray(v)) return v.join(', ');
                                 return `${v}`;
                             });
@@ -356,10 +406,10 @@ function ProfileContent() {
         setOrders(all);
         setLoadingOrders(false);
         setIsLoading(false);
-    };
+    }, []);
 
     // Helper to load profile data
-    const loadUserProfile = async (uid: string) => {
+    const loadUserProfile = useCallback(async (uid: string) => {
         setIsLoading(true);
         let { data: profile } = await supabase.from('profiles').select('*').eq('id', uid).single();
 
@@ -389,6 +439,7 @@ function ProfileContent() {
             setFullName(profile.full_name || 'Client');
             setPhone(profile.phone || '');
             setEmail(profile.email || '');
+            setWalletBalance(profile.wallet_balance || 0);
             setUserId(uid);
 
             // Check if there's a redirect parameter
@@ -411,7 +462,7 @@ function ProfileContent() {
             setStep('profile');
         }
         setIsLoading(false);
-    };
+    }, [authUser, fetchUserOrders, redirectTo, router]);
 
     // React to Auth Changes
     useEffect(() => {
@@ -451,10 +502,10 @@ function ProfileContent() {
 
         handleAuth();
         return () => { isMounted = false; };
-    }, [authUser, authLoading]);
+    }, [authUser, authLoading, loadUserProfile]);
 
     const handleCopyWifi = () => {
-        navigator.clipboard.writeText("GoldenPark2024");
+        navigator.clipboard.writeText("GoldenParc2024");
         setWifiCopied(true);
         setTimeout(() => setWifiCopied(false), 2000);
     };
@@ -476,7 +527,6 @@ function ProfileContent() {
 
         // --- UNIVERSAL BYPASS (NO SMS NEEDED) ---
         if (otp === '111111' || (phone === '0600000000' && otp === '123456')) {
-            const cleanPhone = phone.startsWith('+') ? phone : `+212${phone.replace(/^0/, '')}`;
 
             setFullName("Utilisateur Test");
             setUserId("test-user-id");
@@ -496,6 +546,7 @@ function ProfileContent() {
 
         if (profile) {
             setFullName(profile.full_name);
+            setWalletBalance(profile.wallet_balance || 0);
             setUserId(data.user.id);
 
             // Check if there's a redirect parameter
@@ -673,55 +724,86 @@ function ProfileContent() {
                             </div>
                         )}
 
-                        {/* DIGITAL MEMBER CARD - ULTRA PREMIUM */}
-                        <div className="relative w-full aspect-[1.7/1] rounded-[2rem] p-8 border border-white/10 shadow-2xl mb-10 overflow-hidden group transform hover:scale-[1.02] transition-transform duration-500">
+                        {/* WALLET BALANCE & DIGITAL MEMBER CARD */}
+                        <div className="grid grid-cols-1 gap-4 mb-6">
+                            {/* WALLET / SOLDE */}
+                            <div className="relative w-full rounded-3xl p-6 border border-amber-500/30 overflow-hidden group">
+                                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-amber-900/5" />
+                                <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-500/20 blur-3xl rounded-full" />
 
-                            {/* Dynamic Background */}
-                            <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-[#0F172A] to-black" />
-                            <div className="absolute inset-0 opacity-30 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
-
-                            {/* Gold Accents */}
-                            <div className="absolute -top-20 -right-20 w-64 h-64 bg-amber-500/20 blur-[80px] rounded-full group-hover:bg-amber-500/30 transition-colors duration-700" />
-                            <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-amber-900/10 to-transparent" />
-
-                            <div className="relative z-10 h-full flex flex-col justify-between">
-                                {/* Card Header */}
-                                <div className="flex justify-between items-start">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-300 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/40">
-                                            <Crown className="w-5 h-5 text-black fill-black/20 stroke-[2.5]" />
-                                        </div>
-                                        <div>
-                                            <div className="font-black text-amber-500 tracking-widest text-xs uppercase mb-0.5">Golden Member</div>
-                                            <div className="text-[10px] text-gray-400 font-mono tracking-wider">ID: {userId?.slice(0, 8).toUpperCase() || 'Waitlist'}</div>
+                                <div className="relative z-10 flex items-center justify-between">
+                                    <div>
+                                        <div className="text-amber-500/80 text-[10px] uppercase tracking-[0.2em] font-bold mb-1">Solde Wallet (Arboun)</div>
+                                        <div className="text-3xl font-black text-white tracking-tight flex items-baseline gap-1">
+                                            {walletBalance.toFixed(2)} <span className="text-xl text-amber-500">DH</span>
                                         </div>
                                     </div>
-                                    {/* User Picture (Replaces Points) */}
-                                    <div className="w-12 h-12 rounded-full border-2 border-amber-500/30 p-0.5 shadow-lg shadow-black/50">
-                                        <div className="w-full h-full rounded-full overflow-hidden bg-black/50">
-                                            <img
-                                                src={authUser?.user_metadata?.avatar_url || "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=100&h=100&fit=crop"}
-                                                alt="Profile"
-                                                className="w-full h-full object-cover"
-                                            />
+                                    <div className="flex flex-col items-end gap-2">
+                                        <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center border border-amber-500/30 shadow-inner relative overflow-hidden">
+                                            <Image src="https://cdn-icons-png.flaticon.com/512/8586/8586414.png" alt="Wallet" fill className="object-contain p-2 opacity-80 brightness-0 invert sepia saturate-[5] hue-rotate-[350deg]" />
                                         </div>
+                                        <button
+                                            onClick={() => setShowTopUp(true)}
+                                            title="Recharger"
+                                            className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500 border border-amber-500/50 rounded-lg text-amber-500 hover:text-black font-bold text-xs flex items-center gap-1 transition-all"
+                                        >
+                                            <Plus className="w-3 h-3" /> Recharger
+                                        </button>
                                     </div>
                                 </div>
+                            </div>
 
-                                {/* Card Footer */}
-                                <div>
-                                    <div className="flex items-center justify-between mb-2">
-                                        <div className="text-gray-500 text-[10px] uppercase tracking-[0.2em] font-bold">Titulaire de la carte</div>
-                                        <div className="text-amber-500/80 text-[10px] uppercase tracking-widest font-mono font-bold">
-                                            Depuis {new Date(authUser?.created_at || '2024-01-01').getFullYear()}
+                            {/* DIGITAL MEMBER CARD - ULTRA PREMIUM */}
+                            <div className="relative w-full aspect-[1.7/1] rounded-[2rem] p-8 border border-white/10 shadow-2xl mb-10 overflow-hidden group transform hover:scale-[1.02] transition-transform duration-500">
+
+                                {/* Dynamic Background */}
+                                <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-[#0F172A] to-black" />
+                                <div className="absolute inset-0 opacity-30 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')]" />
+
+                                {/* Gold Accents */}
+                                <div className="absolute -top-20 -right-20 w-64 h-64 bg-amber-500/20 blur-[80px] rounded-full group-hover:bg-amber-500/30 transition-colors duration-700" />
+                                <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-amber-900/10 to-transparent" />
+
+                                <div className="relative z-10 h-full flex flex-col justify-between">
+                                    {/* Card Header */}
+                                    <div className="flex justify-between items-start">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-300 to-amber-600 flex items-center justify-center shadow-lg shadow-amber-500/40">
+                                                <Crown className="w-5 h-5 text-black fill-black/20 stroke-[2.5]" />
+                                            </div>
+                                            <div>
+                                                <div className="font-black text-amber-500 tracking-widest text-xs uppercase mb-0.5">Golden Member</div>
+                                                <div className="text-[10px] text-gray-400 font-mono tracking-wider">ID: {userId?.slice(0, 8).toUpperCase() || 'Waitlist'}</div>
+                                            </div>
+                                        </div>
+                                        {/* User Picture (Replaces Points) */}
+                                        <div className="w-12 h-12 rounded-full border-2 border-amber-500/30 p-0.5 shadow-lg shadow-black/50">
+                                            <div className="w-full h-full rounded-full overflow-hidden bg-black/50 relative">
+                                                <Image
+                                                    src={authUser?.user_metadata?.avatar_url || "https://images.unsplash.com/photo-1633332755192-727a05c4013d?w=100&h=100&fit=crop"}
+                                                    alt="Profile"
+                                                    fill
+                                                    className="object-cover"
+                                                />
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="flex justify-between items-end">
-                                        <div className="text-2xl md:text-3xl font-black text-white tracking-tight leading-none shadow-black drop-shadow-sm">
-                                            {fullName}
+
+                                    {/* Card Footer */}
+                                    <div>
+                                        <div className="flex items-center justify-between mb-2">
+                                            <div className="text-gray-500 text-[10px] uppercase tracking-[0.2em] font-bold">Titulaire de la carte</div>
+                                            <div className="text-amber-500/80 text-[10px] uppercase tracking-widest font-mono font-bold">
+                                                Depuis {new Date(authUser?.created_at || '2024-01-01').getFullYear()}
+                                            </div>
                                         </div>
-                                        <div className="h-8 w-12 bg-white/10 rounded-md backdrop-blur border border-white/5 flex items-center justify-center">
-                                            <div className="w-6 h-4 border border-white/30 rounded-sm opacity-50" />
+                                        <div className="flex justify-between items-end">
+                                            <div className="text-2xl md:text-3xl font-black text-white tracking-tight leading-none shadow-black drop-shadow-sm">
+                                                {fullName}
+                                            </div>
+                                            <div className="h-8 w-12 bg-white/10 rounded-md backdrop-blur border border-white/5 flex items-center justify-center">
+                                                <div className="w-6 h-4 border border-white/30 rounded-sm opacity-50" />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -754,7 +836,7 @@ function ProfileContent() {
                                 </div>
                                 <div className="font-bold text-white text-base">WiFi Gratuit</div>
                                 <div className="text-xs text-gray-500 font-mono mt-1">
-                                    {wifiCopied ? <span className="text-green-400 flex items-center gap-1 font-bold animate-pulse"><Check className="w-3 h-3" /> Copié!</span> : 'GoldenPark2024'}
+                                    {wifiCopied ? <span className="text-green-400 flex items-center gap-1 font-bold animate-pulse"><Check className="w-3 h-3" /> Copié!</span> : 'GoldenParc2024'}
                                 </div>
                             </div>
 
@@ -771,12 +853,11 @@ function ProfileContent() {
                         {/* SERVICES SHORTCUTS */}
                         <div className="mb-8">
                             <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest px-2 mb-4">Menu Rapide</h3>
-                            <div className="grid grid-cols-4 gap-3 px-1">
+                            <div className="grid grid-cols-3 gap-3 px-1">
                                 {[
                                     { name: 'Resto', icon: UtensilsCrossed, color: 'text-orange-500', bg: 'bg-orange-500/10', link: '/restaurant' },
                                     { name: 'Hôtel', icon: Moon, color: 'text-indigo-400', bg: 'bg-indigo-500/10', link: '/hotel' },
                                     { name: 'Piscine', icon: Waves, color: 'text-red-400', bg: 'bg-red-500/10', link: '/piscine' },
-                                    { name: 'Meca', icon: Clock, color: 'text-red-400', bg: 'bg-red-500/10', link: '/mecanique' },
                                 ].map((item, i) => (
                                     <button
                                         key={i}
@@ -823,14 +904,14 @@ function ProfileContent() {
 
                                             {/* Image (Left) */}
                                             <div className="w-20 h-24 rounded-2xl overflow-hidden shrink-0 bg-black/50 relative shadow-inner">
-                                                <img src={order.image} alt={order.type} className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                                                <Image src={order.image || 'https://images.unsplash.com/photo-1542204165-65bf26472b9b?w=200&h=200&fit=crop'} alt={order.type || 'Order'} fill className="object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
                                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
                                                 {/* Type Badge on Image */}
                                                 <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
                                                     {/* Mini Icon based on Type */}
                                                     {order.type === 'Piscine' && <Waves className="w-4 h-4 text-white" />}
                                                     {order.type === 'Restaurant' && <UtensilsCrossed className="w-4 h-4 text-white" />}
-                                                    {(order.type === 'Service' || order.type === 'Mécanique') && <Clock className="w-4 h-4 text-white" />}
+                                                    {(order.type === 'Service') && <Clock className="w-4 h-4 text-white" />}
                                                     {order.type === 'Hôtel' && <Moon className="w-4 h-4 text-white" />}
                                                 </div>
                                             </div>
@@ -867,9 +948,19 @@ function ProfileContent() {
                                             </div>
 
                                             {/* Delete Button (Hidden by default, shown on group hover if not cancelled) */}
+                                            {/* Delete Button (Hidden by default, shown on group hover if not cancelled) */}
                                             {order.status !== 'cancelled' && (
                                                 <button
-                                                    onClick={(e) => { e.stopPropagation(); handleCancelOrder(order.id, order.table); }}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleCancelOrder(
+                                                            order.id,
+                                                            order.table || 'service_bookings',
+                                                            order.scheduledAt,
+                                                            order.deposit_amount,
+                                                            order.deposit_paid
+                                                        );
+                                                    }}
                                                     className="absolute bottom-4 right-4 text-gray-600 hover:text-red-500 transition-colors p-1"
                                                     title="Annuler"
                                                     aria-label="Cancel order"
@@ -907,9 +998,11 @@ function ProfileContent() {
                                     </div>
 
                                     <div className="bg-white p-5 rounded-3xl mx-auto mb-8 aspect-square max-w-[240px] flex items-center justify-center shadow-inner relative z-10 group">
-                                        <img
+                                        <Image
                                             src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${selectedOrder.code || 'UNKNOWN'}`}
                                             alt="Order QR"
+                                            width={300}
+                                            height={300}
                                             className="w-full h-full object-contain mix-blend-multiply group-hover:scale-105 transition-transform duration-500"
                                         />
                                         {/* Corner Accents */}
@@ -929,6 +1022,14 @@ function ProfileContent() {
                             </div>
                         )}
 
+                        {/* LANGUAGE SELECTOR */}
+                        <div className="mt-8 px-4">
+                            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-widest mb-3 px-2">Langue / اللغة</h3>
+                            <div className="flex w-full items-center">
+                                <LanguageSwitcher variant="profile" />
+                            </div>
+                        </div>
+
                         {/* LOGOUT BUTTON - Explicit */}
                         <div className="mt-8 mb-4 px-4">
                             <button
@@ -939,6 +1040,81 @@ function ProfileContent() {
                                 Se Déconnecter
                             </button>
                         </div>
+
+                        {/* AMOUNT PICKER MODAL - Step 1 */}
+                        {showTopUp && (
+                            <div className="fixed inset-0 z-[100] flex flex-col justify-end md:justify-center md:items-center p-0 md:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
+                                <div className="bg-[#1E293B] w-full max-w-md rounded-t-[2rem] md:rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl relative animate-in slide-in-from-bottom-10 md:slide-in-from-bottom-4 duration-500">
+                                    <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 blur-[100px] pointer-events-none" />
+
+                                    <div className="p-6 pb-4 flex justify-between items-start relative z-10">
+                                        <div>
+                                            <h2 className="text-2xl font-black text-white tracking-tight">Recharger Wallet</h2>
+                                            <p className="text-gray-400 text-sm">Choisissez le montant à ajouter</p>
+                                        </div>
+                                        <button title="Fermer" onClick={() => setShowTopUp(false)} className="p-2 bg-white/5 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-colors">
+                                            <X className="w-5 h-5" />
+                                        </button>
+                                    </div>
+
+                                    <div className="p-6 relative z-10 pt-0">
+                                        <div className="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Sélectionnez un montant</div>
+                                        <div className="grid grid-cols-2 gap-3 mb-6">
+                                            {[50, 100, 200, 500].map(amt => (
+                                                <button
+                                                    key={amt}
+                                                    onClick={() => setTopUpAmount(amt)}
+                                                    className={`py-4 rounded-xl font-black text-lg border transition-all ${topUpAmount === amt
+                                                        ? 'bg-amber-500 text-black border-amber-500 shadow-lg shadow-amber-500/30'
+                                                        : 'bg-black/30 text-white border-white/10 hover:border-amber-500/50'
+                                                        }`}
+                                                >
+                                                    {amt} <span className="text-sm opacity-80">DH</span>
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <button
+                                            onClick={() => {
+                                                if (!topUpAmount) return;
+                                                setShowTopUp(false);
+                                                setShowTopUpPayment(true);
+                                            }}
+                                            disabled={!topUpAmount}
+                                            className={`w-full flex items-center justify-center gap-2 py-4 rounded-xl font-black text-lg transition-all ${!topUpAmount
+                                                ? 'bg-white/10 text-gray-500 cursor-not-allowed'
+                                                : 'bg-amber-500 text-black shadow-[0_0_30px_rgba(245,158,11,0.3)] hover:scale-[1.02]'
+                                                }`}
+                                        >
+                                            Continuer → Paiement
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* PAYMENT MODAL - Step 2 (Stripe / PayPal) */}
+                        {showTopUpPayment && topUpAmount && (
+                            <PaymentModal
+                                bookingId={`topup-${authUser?.id?.slice(0, 8) || 'guest'}-${Date.now()}`}
+                                amount={topUpAmount}
+                                serviceType="topup"
+                                tableName="profiles"
+                                onSuccess={async () => {
+                                    // Refresh wallet balance after success
+                                    if (authUser?.id) {
+                                        const { data } = await supabase.from('profiles').select('wallet_balance').eq('id', authUser.id).single();
+                                        if (data) setWalletBalance(data.wallet_balance || 0);
+                                    }
+                                    setShowTopUpPayment(false);
+                                    setTopUpAmount(null);
+                                }}
+                                onClose={() => {
+                                    setShowTopUpPayment(false);
+                                    setTopUpAmount(null);
+                                }}
+                            />
+                        )}
 
                     </div>
                 ) : (
@@ -1009,7 +1185,7 @@ function ProfileContent() {
                                         }}
                                         className="w-full py-4 bg-white text-black rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-gray-100 active:scale-[0.98] transition-all"
                                     >
-                                        <img src="https://www.svgrepo.com/show/475656/google-color.svg" className="w-5 h-5" alt="Google" />
+                                        <Image src="https://www.svgrepo.com/show/475656/google-color.svg" width={20} height={20} className="w-5 h-5" alt="Google" />
                                         Google
                                     </button>
                                 </div>
@@ -1067,8 +1243,9 @@ function ProfileContent() {
                             )}
                         </div>
                     </div>
-                )}
-        </div>
+                )
+            }
+        </div >
     );
 }
 

@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Phone, UtensilsCrossed, Droplets, Hotel, Headphones, Car, Waves, LogIn, ArrowLeft, LayoutDashboard } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { UtensilsCrossed, Droplets, Hotel, Waves, LogIn, ArrowLeft, LayoutDashboard } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { COLORS } from "@/lib/theme";
 import { supabase } from "@/lib/supabase";
 
 function statusColor(type: string, status: string) {
@@ -19,22 +18,48 @@ function TypeIcon({ type }: { type: string }) {
     const cls = "h-4 w-4";
     if (type === "restaurant") return <UtensilsCrossed className={cls} />;
     if (type === "lavage") return <Droplets className={cls} />;
-    if (type === "mecanique") return <Car className={cls} />;
     if (type === "pool") return <Waves className={cls} />;
     return <Hotel className={cls} />;
+}
+
+interface Order {
+    id: string;
+    type: string;
+    summary: string;
+    date: string;
+    status: string;
 }
 
 export default function OrdersPage() {
     const router = useRouter();
     const [verifiedPhone, setVerifiedPhone] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
-    const [orders, setOrders] = useState<any[]>([]);
+    const [orders, setOrders] = useState<Order[]>([]);
 
-    useEffect(() => {
-        checkAuth();
+    const fetchOrders = useCallback(async (userId: string, contactInfo: string) => {
+        // Construct OR query: user_id matches OR contact info matches
+        const query = `user_id.eq.${userId},customer_phone.eq.${contactInfo}`;
+
+        // 1. Restaurant
+        const { data: rest } = await supabase.from('restaurant_orders').select('*').or(query);
+        // 2. Services
+        const { data: serv } = await supabase.from('service_bookings').select('*').or(query);
+        // 3. Hotel
+        const { data: hotel } = await supabase.from('hotel_reservations').select('*').or(query);
+        // 4. Pool
+        const { data: pool } = await supabase.from('pool_bookings').select('*').or(query);
+
+        const all: Order[] = [
+            ...(rest || []).map(x => ({ ...x, type: 'restaurant', summary: `#${x.order_number} · ${x.items.length} items`, date: x.created_at })),
+            ...(serv || []).map(x => ({ ...x, type: x.service_type, summary: `${x.service_name || x.service_type} · ${x.scheduled_date || new Date(x.scheduled_time || x.created_at).toLocaleDateString()}`, date: x.created_at })),
+            ...(hotel || []).map(x => ({ ...x, type: 'hotel', summary: `Room ${x.room_number || '?'} · ${x.room_type}`, date: x.created_at })),
+            ...(pool || []).map(x => ({ ...x, type: 'pool', summary: `Pool Access · ${x.time_slot}`, date: x.created_at })),
+        ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+        setOrders(all);
     }, []);
 
-    const checkAuth = async () => {
+    const checkAuth = useCallback(async () => {
         setIsLoading(true);
         const { data: { user } } = await supabase.auth.getUser();
 
@@ -50,37 +75,23 @@ export default function OrdersPage() {
             await fetchOrders(user.id, displayId);
         }
         setIsLoading(false);
-    };
+    }, [fetchOrders]);
 
-    const fetchOrders = async (userId: string, contactInfo: string) => {
-        // Construct OR query: user_id matches OR contact info matches
-        const query = `user_id.eq.${userId},customer_phone.eq.${contactInfo}`;
-
-        // 1. Restaurant
-        const { data: rest } = await supabase.from('restaurant_orders').select('*').or(query);
-        // 2. Services
-        const { data: serv } = await supabase.from('service_bookings').select('*').or(query);
-        // 3. Hotel
-        const { data: hotel } = await supabase.from('hotel_reservations').select('*').or(query);
-        // 4. Pool
-        const { data: pool } = await supabase.from('pool_bookings').select('*').or(query);
-
-        const all = [
-            ...(rest || []).map(x => ({ ...x, type: 'restaurant', summary: `#${x.order_number} · ${x.items.length} items`, date: x.created_at })),
-            ...(serv || []).map(x => ({ ...x, type: x.service_type, summary: `${x.service_name || x.service_type} · ${x.scheduled_date || new Date(x.scheduled_time).toLocaleDateString()}`, date: x.created_at })),
-            ...(hotel || []).map(x => ({ ...x, type: 'hotel', summary: `Room ${x.room_number || '?'} · ${x.room_type}`, date: x.created_at })),
-            ...(pool || []).map(x => ({ ...x, type: 'pool', summary: `Pool Access · ${x.time_slot}`, date: x.created_at })),
-        ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-        setOrders(all);
-    };
+    useEffect(() => {
+        const init = async () => {
+            await Promise.resolve();
+            void checkAuth();
+        };
+        void init();
+    }, [checkAuth]);
 
     return (
-        <div className="grid gap-4 p-4 pb-24 min-h-screen" style={{ backgroundColor: COLORS.bgDark }}>
+        <div className="grid gap-4 p-4 pb-24 min-h-screen bg-[#0F172A]">
             <div className="flex items-center gap-3 mb-6">
                 <button
                     onClick={() => router.push('/profile')}
                     className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white hover:bg-white/10 transition-all active:scale-95"
+                    title="Retour au profil"
                 >
                     <ArrowLeft className="w-6 h-6" />
                 </button>
@@ -100,14 +111,14 @@ export default function OrdersPage() {
                     Chargement...
                 </div>
             ) : !verifiedPhone ? (
-                <div className="rounded-2xl border border-white/10 p-8 flex flex-col items-center justify-center text-center space-y-4" style={{ backgroundColor: COLORS.bgCard }}>
+                <div className="rounded-2xl border border-white/10 p-8 flex flex-col items-center justify-center text-center space-y-4 bg-[#1E293B]">
                     <div className="w-16 h-16 bg-red-600/20 rounded-full flex items-center justify-center">
                         <LogIn className="w-8 h-8 text-red-500" />
                     </div>
                     <div>
                         <h3 className="text-lg font-bold text-white">Connexion Requise</h3>
                         <p className="text-sm text-gray-400 mt-2">
-                            Veuillez vous connecter pour voir l'historique de vos commandes.
+                            Veuillez vous connecter pour voir l&apos;historique de vos commandes.
                         </p>
                     </div>
                     <button
@@ -119,7 +130,7 @@ export default function OrdersPage() {
                 </div>
             ) : (
                 <>
-                    <div className="flex items-center gap-2 rounded-2xl border border-white/10 p-4" style={{ backgroundColor: COLORS.bgCard }}>
+                    <div className="flex items-center gap-2 rounded-2xl border border-white/10 p-4 bg-[#1E293B]">
                         <div className="text-xs text-white/60">Compte:</div>
                         <div className="text-sm font-extrabold text-white">{verifiedPhone}</div>
                         {/* Optional Logout or Profile Link could go here */}
@@ -132,7 +143,7 @@ export default function OrdersPage() {
                             </div>
                         ) : (
                             orders.map((o) => (
-                                <div key={o.id} className="rounded-2xl border border-white/10 p-4" style={{ backgroundColor: COLORS.bgCard }}>
+                                <div key={o.id} className="rounded-2xl border border-white/10 p-4 bg-[#1E293B]">
                                     <div className="flex items-start gap-3">
                                         <div className="rounded-2xl bg-white/5 p-3 text-white">
                                             <TypeIcon type={o.type} />

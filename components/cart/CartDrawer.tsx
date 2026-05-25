@@ -7,7 +7,7 @@ import { X, Trash2, ShoppingBag, Plus, Minus, ArrowRight, CheckCircle, Loader2, 
 import { createOrder } from "@/lib/supabase";
 
 export function CartDrawer() {
-    const { items, total, addItem, removeItem, setQuantity, clear } = useCart();
+    const { items, total, removeItem, setQuantity, clear } = useCart();
     const { isCartOpen, closeCart, requirePhone } = useUI();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [success, setSuccess] = useState(false);
@@ -48,7 +48,15 @@ export function CartDrawer() {
             await createOrder({
                 customer_phone: phone,
                 total: total,
-                items: items,
+                items: items.map(i => ({
+                    id: i.id,
+                    name: i.name,
+                    price: i.price,
+                    totalPrice: i.totalPrice,
+                    quantity: i.quantity || 1,
+                    meta: i.meta,
+                    image: i.image
+                })),
                 status: "pending",
                 notes: isDepositMode ? `MODE ARBOUNE: Acompte ${(total * 0.3).toFixed(0)} DH payé. Reste ${(total * 0.7).toFixed(0)} DH à régler sur place.` : "",
                 service_type: serviceType,
@@ -195,7 +203,7 @@ export function CartDrawer() {
                             {/* Logic to check if we need Food Options */}
                             {(() => {
                                 const hasFood = items.some(i => {
-                                    // Normalize string to handle accents (Mécanique -> mecanique)
+                                    // Normalize string to handle accents
                                     const n = i.name.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
                                     return !(
                                         n.includes('lavage') ||
@@ -203,9 +211,7 @@ export function CartDrawer() {
                                         n.includes('hotel') ||
                                         n.includes('chambre') ||
                                         n.includes('room') ||
-                                        n.includes('mecanique') ||
                                         n.includes('vapeur') ||
-                                        n.includes('vidange') ||
                                         n.includes('pool') ||
                                         n.includes('piscine')
                                     );

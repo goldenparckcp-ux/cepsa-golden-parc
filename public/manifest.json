@@ -1,0 +1,16 @@
+{
+    "name": "Golden Parc Station",
+    "short_name": "GPS",
+    "description": "Station Service & Détente",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#0F172A",
+    "theme_color": "#D6001C",
+    "icons": [
+        {
+            "src": "/image/cepsa-hero.jpg",
+            "sizes": "192x192",
+            "type": "image/jpeg"
+        }
+    ]
+}

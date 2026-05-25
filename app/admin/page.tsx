@@ -112,7 +112,7 @@ export default function AdminDashboard() {
 
             // 4. Build Activity Feed (Mix top 5 from each source to avoid heavy sorting of thousands)
             const mixOrders = (orders || []).slice(0, 5).map((x: DataItem) => ({ type: 'order' as const, date: x.created_at, label: `Commande #${x.order_number || '?'}`, status: x.status }));
-            const mixServices = (services || []).slice(0, 5).map((x: DataItem) => ({ type: 'service' as const, date: x.created_at, label: `${x.service_type === 'lavage' ? 'Lavage' : 'Méca'}`, status: x.status }));
+            const mixServices = (services || []).slice(0, 5).map((x: DataItem) => ({ type: 'service' as const, date: x.created_at, label: 'Lavage Auto', status: x.status }));
             const mixHotel = (hotel || []).slice(0, 5).map((x: DataItem) => ({ type: 'hotel' as const, date: x.created_at, label: `Chambre ${x.room_number || '?'}`, status: x.status }));
             const mixPool = (pool || []).slice(0, 5).map((x: DataItem) => ({ type: 'pool' as const, date: x.created_at, label: `Piscine (${x.adults || 1})`, status: x.status }));
 
@@ -127,16 +127,16 @@ export default function AdminDashboard() {
     }, []);
 
     useEffect(() => {
-        // Initial Fetch
-        void Promise.resolve().then(() => fetchData());
+        const init = async () => {
+            await fetchData();
+        };
+        init();
 
         // Realtime Subscriptions
-        const channels = [
-            supabase.channel('admin-orders').on('postgres_changes', { event: '*', schema: 'public', table: 'restaurant_orders' }, () => fetchData()).subscribe(),
-            supabase.channel('admin-services').on('postgres_changes', { event: '*', schema: 'public', table: 'service_bookings' }, () => fetchData()).subscribe(),
-            supabase.channel('admin-hotel').on('postgres_changes', { event: '*', schema: 'public', table: 'hotel_reservations' }, () => fetchData()).subscribe(),
-            supabase.channel('admin-pool').on('postgres_changes', { event: '*', schema: 'public', table: 'pool_bookings' }, () => fetchData()).subscribe()
-        ];
+        const ordersSub = supabase.channel('admin-orders').on('postgres_changes', { event: '*', schema: 'public', table: 'restaurant_orders' }, () => fetchData()).subscribe();
+        const servicesSub = supabase.channel('admin-services').on('postgres_changes', { event: '*', schema: 'public', table: 'service_bookings' }, () => fetchData()).subscribe();
+        const hotelSub = supabase.channel('admin-hotel').on('postgres_changes', { event: '*', schema: 'public', table: 'hotel_reservations' }, () => fetchData()).subscribe();
+        const poolSub = supabase.channel('admin-pool').on('postgres_changes', { event: '*', schema: 'public', table: 'pool_bookings' }, () => fetchData()).subscribe();
 
         // Clock
         const timer = setInterval(() => {
@@ -145,7 +145,10 @@ export default function AdminDashboard() {
         }, 1000);
 
         return () => {
-            channels.forEach(ch => ch.unsubscribe());
+            ordersSub.unsubscribe();
+            servicesSub.unsubscribe();
+            hotelSub.unsubscribe();
+            poolSub.unsubscribe();
             clearInterval(timer);
         };
     }, [fetchData]);
@@ -161,7 +164,7 @@ export default function AdminDashboard() {
                     </div>
                     <div>
                         <h1 className="font-bold text-lg leading-tight">Admin Dashboard</h1>
-                        <p className="text-xs text-gray-400 font-mono">Cepsa Golden Park • Live</p>
+                        <p className="text-xs text-gray-400 font-mono">Cepsa Golden Parc • Live</p>
                     </div>
                 </div>
 
@@ -185,7 +188,7 @@ export default function AdminDashboard() {
                     <NavButton active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={LayoutDashboard} label="Vue d'Ensemble" />
                     <div className="h-px bg-white/5 my-2 mx-4" />
                     <NavButton active={activeTab === 'kitchen'} onClick={() => setActiveTab('kitchen')} icon={UtensilsCrossed} label="Cuisine" />
-                    <NavButton active={activeTab === 'services'} onClick={() => setActiveTab('services')} icon={Car} label="Services Auto" />
+                    <NavButton active={activeTab === 'services'} onClick={() => setActiveTab('services')} icon={Car} label="Lavage Auto" />
                     <NavButton active={activeTab === 'hotel'} onClick={() => setActiveTab('hotel')} icon={BedDouble} label="Hôtel" />
                     <NavButton active={activeTab === 'pool'} onClick={() => setActiveTab('pool')} icon={Droplets} label="Piscine" />
                     <div className="h-px bg-white/5 my-2 mx-4" />
@@ -200,7 +203,7 @@ export default function AdminDashboard() {
                             {/* KPI Cards */}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                                 <KPICard title="Commandes (Resto)" value={stats.orders.toString()} icon={<UtensilsCrossed />} color="text-yellow-500" bg="bg-yellow-500/10" border="border-yellow-500/20" />
-                                <KPICard title="Services Auto" value={stats.services.toString()} icon={<Car />} color="text-red-500" bg="bg-red-500/10" border="border-red-500/20" />
+                                <KPICard title="Lavage Auto" value={stats.services.toString()} icon={<Car />} color="text-red-500" bg="bg-red-500/10" border="border-red-500/20" />
                                 <KPICard title="Hôtel & Repos" value={stats.hotel.toString()} icon={<BedDouble />} color="text-purple-500" bg="bg-purple-500/10" border="border-purple-500/20" />
                                 <KPICard title="Revenu Total" value={`${stats.revenue.toLocaleString()} DH`} icon={<TrendingUp />} color="text-green-500" bg="bg-green-500/10" border="border-green-500/20" />
                             </div>

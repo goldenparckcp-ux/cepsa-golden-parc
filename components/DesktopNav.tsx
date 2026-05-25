@@ -1,21 +1,23 @@
 "use client";
 
 import Link from 'next/link';
-import { Home, UtensilsCrossed, Car, BedDouble, User, Waves, Wrench, Droplets } from 'lucide-react';
+import { Home, UtensilsCrossed, BedDouble, User, Waves, Droplets } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import CepsaLogo from './CepsaLogo';
+import { useTranslation } from '@/lib/state/LanguageContext';
+import LanguageSwitcher from './LanguageSwitcher';
 
 export default function DesktopNav() {
     const pathname = usePathname();
+    const { t } = useTranslation();
 
     const LINKS = [
         { href: '/', label: 'Home', icon: Home },
-        { href: '/restaurant', label: 'Resto', icon: UtensilsCrossed },
-        { href: '/hotel', label: 'Hôtel', icon: BedDouble },
-        { href: '/services/pool', label: 'Piscine', icon: Waves },
-        { href: '/services/lavage', label: 'Lavage', icon: Droplets },
-        { href: '/services/mecanique', label: 'Méca', icon: Wrench },
-        { href: '/profile', label: 'Compte', icon: User },
+        { href: '/restaurant', label: t('nav.restaurant'), icon: UtensilsCrossed },
+        { href: '/hotel', label: t('nav.hotel'), icon: BedDouble },
+        { href: '/services/pool', label: t('nav.piscine'), icon: Waves },
+        { href: '/services/lavage', label: t('nav.lavage'), icon: Droplets },
+        { href: '/profile', label: t('nav.profile'), icon: User },
     ];
 
     return (
@@ -29,7 +31,7 @@ export default function DesktopNav() {
                     </div>
                     <div>
                         <h1 className="text-2xl font-black text-white tracking-tight leading-none">
-                            GOLDEN <span className="text-red-600">PARK</span>
+                            GOLDEN <span className="text-red-600">PARC</span>
                         </h1>
                         <span className="text-[10px] font-bold text-amber-500 tracking-[0.3em] block ml-0.5">STATION</span>
                     </div>
@@ -58,8 +60,15 @@ export default function DesktopNav() {
                     })}
                 </nav>
 
-                {/* Decorative Red Dot (remplace le bouton Commander) */}
-                <div className="w-3 h-3 bg-red-600 rounded-full animate-pulse shadow-[0_0_10px_rgba(220,38,38,0.8)]" />
+                <div className="flex items-center gap-4">
+                    {/* Language Switcher */}
+                    <div className="flex items-center gap-2">
+                        <LanguageSwitcher variant="nav" />
+                    </div>
+
+                    {/* Decorative Red Dot */}
+                    <div className="w-3 h-3 bg-red-600 rounded-full animate-pulse shadow-[0_0_10px_rgba(220,38,38,0.8)]" />
+                </div>
             </div>
         </header>
     );

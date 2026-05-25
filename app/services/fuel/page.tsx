@@ -3,14 +3,13 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Fuel } from 'lucide-react';
-import { COLORS } from '@/lib/theme';
 
 export default function FuelPage() {
     const router = useRouter();
 
     return (
-        <div className="min-h-screen p-6" style={{ backgroundColor: COLORS.bgDark }}>
-            <button onClick={() => router.back()} className="p-2 rounded-full bg-white/10 text-white mb-6">
+        <div className="min-h-screen p-6 bg-[#0F172A]">
+            <button onClick={() => router.back()} className="p-2 rounded-full bg-white/10 text-white mb-6" aria-label="Retour">
                 <ArrowLeft className="w-6 h-6" />
             </button>
 

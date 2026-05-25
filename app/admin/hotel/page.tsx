@@ -1,41 +1,41 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { BedDouble, Clock, Moon, User, Key, LogOut, Calendar } from 'lucide-react';
 
-export default function HotelDashboard() {
-    interface Reservation {
-        id: string;
-        status: string;
-        created_at: string;
-        total_price?: number;
-        room_number?: string;
-        room_id?: string;
-        room?: string;
-        check_in_at?: string;
-        check_in?: string;
-        start_date?: string;
-        date?: string;
-        check_out_at?: string;
-        check_out?: string;
-        end_date?: string;
-        full_name?: string;
-        name?: string;
-        customer_phone?: string;
-        phone?: string;
-        room_type?: string;
-        type?: string;
-    }
+interface Reservation {
+    id: string;
+    status: string;
+    created_at: string;
+    total_price?: number;
+    room_number?: string;
+    room_id?: string;
+    room?: string;
+    check_in_at?: string;
+    check_in?: string;
+    start_date?: string;
+    date?: string;
+    check_out_at?: string;
+    check_out?: string;
+    end_date?: string;
+    full_name?: string;
+    name?: string;
+    customer_phone?: string;
+    phone?: string;
+    room_type?: string;
+    type?: string;
+}
 
+export default function HotelDashboard() {
     const [reservations, setReservations] = useState<Reservation[]>([]);
     const [filter, setFilter] = useState('all'); // today, future, all
 
-    const fetchReservations = React.useCallback(async () => {
+    const fetchReservations = useCallback(async () => {
         try {
             const res = await fetch('/api/admin/data?type=hotel', { cache: 'no-store' });
             if (res.ok) {
-                const data = await res.json();
+                const data: Reservation[] = await res.json();
                 setReservations(data);
             }
         } catch (err) {
@@ -45,15 +45,20 @@ export default function HotelDashboard() {
 
 
     useEffect(() => {
-        void Promise.resolve().then(() => fetchReservations());
-        // Keep best-effort realtime
+        const init = async () => {
+            await fetchReservations();
+        };
+        init();
+
         const sub = supabase.channel('hotel_dash')
             .on('postgres_changes', { event: '*', schema: 'public', table: 'hotel_reservations' }, () => fetchReservations())
             .subscribe();
 
-        // Add Polling (5s) because RLS likely blocks realtime
         const interval = setInterval(fetchReservations, 5000);
-        return () => { sub.unsubscribe(); clearInterval(interval); };
+        return () => {
+            sub.unsubscribe();
+            clearInterval(interval);
+        };
     }, [fetchReservations]);
 
     const updateStatus = async (id: string, status: string, assignedRoom?: string) => {
@@ -64,8 +69,7 @@ export default function HotelDashboard() {
         }
         if (status === 'checked_out') update.check_out_at = new Date().toISOString();
 
-        // Optimistic
-        setReservations(reservations.map(r => r.id === id ? { ...r, ...update, status } : r));
+        setReservations(prev => prev.map(r => r.id === id ? { ...r, ...update, status } : r));
 
         await fetch('/api/admin/data', {
             method: 'PUT',
@@ -75,13 +79,11 @@ export default function HotelDashboard() {
         fetchReservations();
     };
 
-    // Helper to resolve potential column mismatches
     const getCheckIn = (r: Reservation) => r.check_in_at || r.check_in || r.start_date || r.date || null;
     const getCheckOut = (r: Reservation) => r.check_out_at || r.check_out || r.end_date || null;
     const getRoomNum = (r: Reservation) => r.room_number || r.room_id || r.room || '?';
     const getStatus = (r: Reservation) => r.status || 'reserved';
 
-    // Filter Logic
     const getFilteredReservations = () => {
         const today = new Date().toISOString().split('T')[0];
         return reservations.filter(r => {
@@ -98,21 +100,16 @@ export default function HotelDashboard() {
 
     const filtered = getFilteredReservations();
 
-    // --- SMART ROOM ASSIGNMENT LOGIC ---
     const ROOMS = Array.from({ length: 10 }, (_, i) => (101 + i).toString());
 
-    // 1. Find all currently occupied rooms
     const occupiedRooms = new Set(reservations
         .filter(r => getStatus(r) === 'checked_in')
         .map(r => getRoomNum(r)?.toString())
         .filter(Boolean)
     );
 
-    // 2. Identify available rooms
     const availableRooms = ROOMS.filter(r => !occupiedRooms.has(r));
 
-    // 3. Map assignments for pending reservations
-    // We sort pending reservations to assign consistently
     const pendingReservations = reservations
         .filter(r => (getStatus(r) === 'reserved' || getStatus(r) === 'pending') && !getRoomNum(r))
         .sort((a, b) => (getCheckIn(a) || '').localeCompare(getCheckIn(b) || ''));
@@ -124,7 +121,6 @@ export default function HotelDashboard() {
         }
     });
 
-    // Stats
     const occupiedCount = reservations.filter(r => getStatus(r) === 'checked_in').length;
 
     const reservedToday = reservations.filter(r => {
@@ -134,7 +130,6 @@ export default function HotelDashboard() {
         return isPending && checkIn && checkIn.split('T')[0] === new Date().toISOString().split('T')[0];
     }).length;
 
-    // Helper to calculate duration text
     const getDurationText = (start: string | null, end: string | null) => {
         if (!start || !end) return 'Durée inconnue';
         const s = new Date(start).getTime();
@@ -150,10 +145,7 @@ export default function HotelDashboard() {
 
     return (
         <div className="min-h-screen bg-[#0F172A] text-white p-6 font-sans">
-            {/* ... Header & Stats ... */}
-
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                {/* ... (Keep existing Header code) ... */}
                 <div className="md:col-span-2 bg-[#1E293B] p-6 rounded-3xl border border-white/10 flex flex-col md:flex-row items-center justify-between gap-4">
                     <div className="flex items-center gap-4 w-full">
                         <div className="bg-indigo-500/20 p-3 rounded-2xl text-indigo-400">
@@ -182,7 +174,6 @@ export default function HotelDashboard() {
                 <KPICard value={occupiedCount} label="Chambres Occupées" indent={`${10 - occupiedCount} Libres`} color="text-purple-500" bg="bg-purple-500/10" />
             </div>
 
-            {/* Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
                 {filtered.length === 0 && (
                     <div className="col-span-full py-20 text-center text-gray-500 font-medium bg-[#1E293B]/50 rounded-3xl border border-white/5 border-dashed">
@@ -192,7 +183,6 @@ export default function HotelDashboard() {
 
                 {filtered.map(res => {
                     const status = getStatus(res);
-                    // Normalize status for logic: 'pending' same as 'reserved' for us here
                     const isPending = status === 'reserved' || status === 'pending';
                     const originalRoomNum = getRoomNum(res);
                     const checkIn = getCheckIn(res);
@@ -200,12 +190,10 @@ export default function HotelDashboard() {
                     const durationText = getDurationText(checkIn, checkOut);
                     const isNight = durationText.includes('Nuit');
 
-                    // Smart Room Assignment
                     const suggestedRoom = assignments.get(res.id);
                     const displayRoom = originalRoomNum || suggestedRoom || '?';
                     const isSuggestion = !originalRoomNum && suggestedRoom;
 
-                    // Display Status Translation
                     let statusDisplay = status;
                     let statusColor = 'bg-amber-500 text-black';
 
@@ -225,7 +213,6 @@ export default function HotelDashboard() {
                             status === 'checked_out' ? 'border-gray-800 opacity-60' : 'border-amber-500/30 hover:border-amber-500'
                             }`}>
 
-                            {/* Top Badge (Room & Status) */}
                             <div className="flex justify-between items-start mb-6">
                                 <div className={`px-4 py-2 rounded-xl border min-w-[80px] text-center ${isSuggestion ? 'bg-indigo-600/20 border-indigo-500 animate-pulse' : 'bg-[#0F172A] border-white/5'}`}>
                                     <span className={`text-[10px] uppercase font-black block mb-1 ${isSuggestion ? 'text-indigo-300' : 'text-gray-500'}`}>{isSuggestion ? 'Suggéré' : 'Chambre'}</span>
@@ -236,9 +223,7 @@ export default function HotelDashboard() {
                                 </span>
                             </div>
 
-                            {/* Details Grid */}
                             <div className="space-y-4 mb-6">
-                                {/* Customer */}
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full bg-gray-700/50 flex items-center justify-center">
                                         <User className="w-5 h-5 text-gray-400" />
@@ -249,7 +234,6 @@ export default function HotelDashboard() {
                                     </div>
                                 </div>
 
-                                {/* Check-In */}
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
                                         <Calendar className="w-5 h-5 text-emerald-400" />
@@ -262,7 +246,6 @@ export default function HotelDashboard() {
                                     </div>
                                 </div>
 
-                                {/* Check-Out */}
                                 <div className="flex items-center gap-3">
                                     <div className="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center">
                                         <LogOut className="w-5 h-5 text-rose-400" />
@@ -275,7 +258,6 @@ export default function HotelDashboard() {
                                     </div>
                                 </div>
 
-                                {/* Duration & Type Tag */}
                                 <div className="bg-[#0F172A] p-3 rounded-xl flex items-center justify-between border border-white/5 mt-2">
                                     <div className="flex items-center gap-2">
                                         {isNight ? <Moon className="w-4 h-4 text-indigo-400" /> : <Clock className="w-4 h-4 text-orange-400" />}
@@ -288,9 +270,7 @@ export default function HotelDashboard() {
                             </div>
 
 
-                            {/* Buttons */}
                             <div className="pt-2 border-t border-white/5 space-y-2">
-                                {/* Fix for Checked In but No Room */}
                                 {status === 'checked_in' && displayRoom === '?' && (
                                     <div className="bg-red-500/10 p-2 rounded-lg border border-red-500/30 mb-2">
                                         <div className="text-[10px] text-red-400 font-bold uppercase mb-1">Chambre Manquante</div>

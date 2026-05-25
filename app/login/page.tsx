@@ -45,7 +45,7 @@ export default function LoginPage() {
                     <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-blue-50 mb-4 text-6xl">
                         🏢
                     </div>
-                    <h1 className="text-3xl font-bold text-gray-900">Cepsa Golden Park</h1>
+                    <h1 className="text-3xl font-bold text-gray-900">Cepsa Golden Parc</h1>
                     <p className="text-gray-500 mt-2 font-medium">Staff Dashboard Access</p>
                 </div>
 
