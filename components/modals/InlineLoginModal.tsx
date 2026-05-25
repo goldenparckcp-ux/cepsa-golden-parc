@@ -36,8 +36,8 @@ export default function InlineLoginModal({
             if (error) throw error;
 
             setStep('otp');
-        } catch (err: any) {
-            setError(err.message || 'Failed to send OTP. Please try again.');
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : 'Failed to send OTP. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -76,7 +76,7 @@ export default function InlineLoginModal({
             // clear mock session if real login succeeds
             localStorage.removeItem('cep_mock_session');
             onSuccess(formattedPhone);
-        } catch (err: any) {
+        } catch (err: unknown) {
             // Check for bypass again in catch block to be safe
             if (otp === '123456') {
                 console.log('⚡ Dev Mode: Bypassing authentication with magic code');
@@ -85,7 +85,7 @@ export default function InlineLoginModal({
                 onSuccess(formattedPhone);
                 return;
             }
-            setError(err.message || 'Invalid OTP. Please try again.');
+            setError(err instanceof Error ? err.message : 'Invalid OTP. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -152,7 +152,7 @@ export default function InlineLoginModal({
                                     />
                                 </div>
                                 <p className="text-xs text-text-muted mt-2">
-                                    We'll send you a verification code
+                                    We&apos;ll send you a verification code
                                 </p>
                             </div>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
-import { Phone, MapPin, AlertTriangle, X } from 'lucide-react';
+import { Phone, MapPin, AlertTriangle } from 'lucide-react';
 
 export default function SOSButton() {
     const [isOpen, setIsOpen] = useState(false);
@@ -29,7 +29,7 @@ export default function SOSButton() {
                 setLoading(false);
                 setIsOpen(false);
             },
-            (error) => {
+            () => {
                 alert("Impossible de récupérer votre position. Veuillez l'activer.");
                 setLoading(false);
             }

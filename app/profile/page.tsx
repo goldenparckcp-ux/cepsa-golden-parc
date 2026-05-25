@@ -3,9 +3,8 @@
 import { useState, useEffect, Suspense, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Smartphone, Check, User, Loader2, ArrowRight, LogOut, Clock, Package, Wifi, Phone, Crown, QrCode, X, Moon, Waves, Trash2, UtensilsCrossed, AlertTriangle, Pencil, Save, Plus, CreditCard } from 'lucide-react';
+import { Smartphone, Check, User, Loader2, ArrowRight, LogOut, Clock, Package, Wifi, Phone, Crown, QrCode, X, Moon, Waves, Trash2, UtensilsCrossed, AlertTriangle, Pencil, Save, Plus } from 'lucide-react';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
-import { useTranslation } from '@/lib/state/LanguageContext';
 
 import { useAuth } from '@/lib/state/AuthProvider';
 
@@ -63,6 +62,7 @@ function ProfileContent() {
     const [showTopUp, setShowTopUp] = useState(false); // Step 1: Amount picker
     const [topUpAmount, setTopUpAmount] = useState<number | null>(null);
     const [showTopUpPayment, setShowTopUpPayment] = useState(false); // Step 2: PaymentModal
+    const [topUpBookingId, setTopUpBookingId] = useState<string | null>(null);
 
     // Update Profile Handler
     const handleUpdateProfile = async () => {
@@ -1077,6 +1077,7 @@ function ProfileContent() {
                                         <button
                                             onClick={() => {
                                                 if (!topUpAmount) return;
+                                                setTopUpBookingId(`topup-${authUser?.id?.slice(0, 8) || 'guest'}-${Date.now()}`);
                                                 setShowTopUp(false);
                                                 setShowTopUpPayment(true);
                                             }}
@@ -1094,9 +1095,9 @@ function ProfileContent() {
                         )}
 
                         {/* PAYMENT MODAL - Step 2 (Stripe / PayPal) */}
-                        {showTopUpPayment && topUpAmount && (
+                        {showTopUpPayment && topUpAmount && topUpBookingId && (
                             <PaymentModal
-                                bookingId={`topup-${authUser?.id?.slice(0, 8) || 'guest'}-${Date.now()}`}
+                                bookingId={topUpBookingId}
                                 amount={topUpAmount}
                                 serviceType="topup"
                                 tableName="profiles"
@@ -1108,10 +1109,12 @@ function ProfileContent() {
                                     }
                                     setShowTopUpPayment(false);
                                     setTopUpAmount(null);
+                                    setTopUpBookingId(null);
                                 }}
                                 onClose={() => {
                                     setShowTopUpPayment(false);
                                     setTopUpAmount(null);
+                                    setTopUpBookingId(null);
                                 }}
                             />
                         )}

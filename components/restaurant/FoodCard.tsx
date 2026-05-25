@@ -2,6 +2,7 @@
 
 import React from "react";
 import { Plus, Clock, Star, Zap } from "lucide-react";
+import Image from "next/image";
 import { MenuItem } from "@/lib/types/menu";
 
 interface FoodCardProps {
@@ -32,11 +33,12 @@ export function FoodCard({ item, onSelect }: FoodCardProps) {
             >
                 {/* Big Premium Image */}
                 <div className="relative h-56 w-full overflow-hidden bg-black/10 sm:h-72">
-                    <img
+                    <Image
                         src={item.image}
                         alt={item.name}
-                        className="h-full w-full object-cover transition-all duration-700 group-hover:scale-110"
-                        loading="lazy"
+                        fill
+                        sizes="(min-width: 640px) 50vw, 100vw"
+                        className="object-cover transition-all duration-700 group-hover:scale-110"
                     />
 
                     <div className="absolute inset-0 bg-gradient-to-t from-[#111f37] via-transparent to-transparent opacity-90" />

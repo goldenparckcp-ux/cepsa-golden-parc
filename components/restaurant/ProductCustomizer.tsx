@@ -2,9 +2,13 @@
 
 import React, { useState, useMemo } from "react";
 import { Coffee } from "lucide-react";
-import { MenuItem } from "@/lib/types/menu";
+import Image from "next/image";
+import { MenuItem, MenuOption } from "@/lib/types/menu";
 import { initSelections, calcPrice } from "@/lib/utils/menu";
 import { CartItem } from "@/lib/state/CartContext";
+
+type CustomizationConfig = NonNullable<MenuItem["customization"]>;
+type CustomizationEntry = CustomizationConfig[string];
 
 const COLORS = {
     bg: "#1A2332",
@@ -15,7 +19,7 @@ const COLORS = {
     gray: "#94A3B8"
 };
 
-function classNames(...xs: any[]) {
+function classNames(...xs: unknown[]) {
     return xs.filter(Boolean).join(" ");
 }
 
@@ -29,8 +33,8 @@ interface ProductCustomizerProps {
     onClose?: () => void;
 }
 
-export function ProductCustomizer({ item, onAddToCart, onClose }: ProductCustomizerProps) {
-    const [selections, setSelections] = useState<any>(() => initSelections(item));
+export function ProductCustomizer({ item, onAddToCart }: ProductCustomizerProps) {
+    const [selections, setSelections] = useState<Record<string, unknown>>(() => initSelections(item));
 
     const customizationPrice = useMemo(() => {
         return calcPrice(item, selections);
@@ -42,24 +46,25 @@ export function ProductCustomizer({ item, onAddToCart, onClose }: ProductCustomi
             .map((k) => {
                 const opt = cfg[k];
                 const v = selections[k];
-                if (opt.type === "radio") {
-                    const o = opt.options?.find((x: any) => x.id === v);
-                    return `${opt.label}: ${o?.label || v}`;
+                const typedOpt = opt as CustomizationEntry;
+                if (typedOpt.type === "radio") {
+                    const o = (typedOpt.options || []).find((x: MenuOption) => x.id === v);
+                    return `${typedOpt.label}: ${o?.label || String(v)}`;
                 }
-                if (opt.type === "stepper") return `${opt.label}: ${v} ${opt.unit || ""}`;
-                if (opt.type === "checkbox" || opt.type === "checkbox-group") {
+                if (typedOpt.type === "stepper") return `${typedOpt.label}: ${String(v)} ${typedOpt.unit || ""}`;
+                if (typedOpt.type === "checkbox" || typedOpt.type === "checkbox-group") {
                     const ids = Array.isArray(v) ? v : [];
                     const labels = ids
-                        .map((id: string) => opt.options?.find((x: any) => x.id === id)?.label || id)
+                        .map((id: string) => (typedOpt.options || []).find((x: MenuOption) => x.id === id)?.label || id)
                         .join(", ");
-                    return `${opt.label}: ${labels || "None"}`;
+                    return `${typedOpt.label}: ${labels || "None"}`;
                 }
                 return null;
             })
             .filter(Boolean);
 
         if (selections.special_instructions) {
-            parts.push(`Note: ${selections.special_instructions}`);
+            parts.push(`Note: ${String(selections.special_instructions)}`);
         }
 
         const meta = parts.join(" · ");
@@ -79,11 +84,12 @@ export function ProductCustomizer({ item, onAddToCart, onClose }: ProductCustomi
     return (
         <div className="p-4 pb-10">
             <div className="overflow-hidden rounded-2xl mb-4 shadow-lg border border-white/10">
-                <img
+                <Image
                     src={item.image}
                     alt={item.name}
+                    width={900}
+                    height={360}
                     className="h-48 w-full object-cover"
-                    loading="lazy"
                 />
             </div>
 
@@ -102,7 +108,8 @@ export function ProductCustomizer({ item, onAddToCart, onClose }: ProductCustomi
             </div>
 
             <div className="mt-4 grid gap-4">
-                {Object.entries(item.customization || {}).map(([key, opt]: [string, any]) => {
+                {Object.entries(item.customization || {}).map(([key, opt]) => {
+                    const typedOpt = opt as CustomizationEntry;
                     const value = selections[key];
 
                     return (
@@ -112,18 +119,18 @@ export function ProductCustomizer({ item, onAddToCart, onClose }: ProductCustomi
                             style={{ backgroundColor: COLORS.bg }}
                         >
                             <div className="mb-3 flex items-center gap-2">
-                                <div className="text-sm font-extrabold text-white">{opt.label}</div>
-                                {opt.required ? <div className="text-xs font-extrabold text-red-300">*</div> : null}
+                                <div className="text-sm font-extrabold text-white">{typedOpt.label}</div>
+                                {typedOpt.required ? <div className="text-xs font-extrabold text-red-300">*</div> : null}
                             </div>
 
-                            {opt.type === "stepper" ? (
+                            {typedOpt.type === "stepper" ? (
                                 <div className="flex items-center justify-center gap-4 rounded-xl bg-white/5 p-4">
                                     <button
                                         type="button"
                                         onClick={() =>
-                                            setSelections((s: any) => ({
+                                            setSelections((s) => ({
                                                 ...s,
-                                                [key]: Math.max(opt.min ?? 0, (s[key] ?? opt.default ?? 0) - 1)
+                                                [key]: Math.max(typedOpt.min ?? 0, (Number(s[key] ?? typedOpt.default ?? 0) - 1))
                                             }))
                                         }
                                         className="flex h-12 w-12 items-center justify-center rounded-full bg-white/10 text-2xl font-extrabold text-white hover:bg-white/15 active:scale-95 transition-all"
@@ -131,14 +138,14 @@ export function ProductCustomizer({ item, onAddToCart, onClose }: ProductCustomi
                                         −
                                     </button>
                                     <div className="min-w-[90px] text-center text-2xl font-extrabold text-white">
-                                        {value ?? opt.default} <span className="text-xs text-white/50">{opt.unit || ""}</span>
+                                        {typeof value === "number" ? value : Number(typedOpt.default ?? 0)} <span className="text-xs text-white/50">{typedOpt.unit || ""}</span>
                                     </div>
                                     <button
                                         type="button"
                                         onClick={() =>
-                                            setSelections((s: any) => ({
+                                            setSelections((s) => ({
                                                 ...s,
-                                                [key]: Math.min(opt.max ?? 99, (s[key] ?? opt.default ?? 0) + 1)
+                                                [key]: Math.min(typedOpt.max ?? 99, (Number(s[key] ?? typedOpt.default ?? 0) + 1))
                                             }))
                                         }
                                         className="flex h-12 w-12 items-center justify-center rounded-full text-2xl font-extrabold text-white hover:brightness-110 active:scale-95 transition-all shadow-lg"
@@ -151,13 +158,13 @@ export function ProductCustomizer({ item, onAddToCart, onClose }: ProductCustomi
 
                             {opt.type === "radio" ? (
                                 <div className="grid gap-2">
-                                    {opt.options.map((o: any) => {
+                                    {(typedOpt.options || []).map((o: MenuOption) => {
                                         const selected = value === o.id;
                                         return (
                                             <button
                                                 key={o.id}
                                                 type="button"
-                                                onClick={() => setSelections((s: any) => ({ ...s, [key]: o.id }))}
+                                                onClick={() => setSelections((s) => ({ ...s, [key]: o.id }))}
                                                 className={classNames(
                                                     "flex items-center justify-between rounded-xl p-4 text-left transition-all duration-200",
                                                     selected ? "border border-white/20 bg-white/10 shadow-lg" : "border border-white/0 bg-white/5 hover:bg-white/10"
@@ -189,7 +196,7 @@ export function ProductCustomizer({ item, onAddToCart, onClose }: ProductCustomi
                                             {opt.freeCount} inclus{opt.freeCount > 1 ? "es" : ""}, +{opt.extraPrice} DH par supplément
                                         </div>
                                     ) : null}
-                                    {opt.options.map((o: any) => {
+                                    {(typedOpt.options || []).map((o: MenuOption) => {
                                         const ids = Array.isArray(value) ? value : [];
                                         const selected = ids.includes(o.id);
                                         const disabled = opt.type === 'checkbox-group' && o.included && o.removable === false;
@@ -200,9 +207,9 @@ export function ProductCustomizer({ item, onAddToCart, onClose }: ProductCustomi
                                                 type="button"
                                                 disabled={disabled}
                                                 onClick={() => {
-                                                    setSelections((s: any) => {
+                                                    setSelections((s) => {
                                                         const cur = Array.isArray(s[key]) ? s[key] : [];
-                                                        const next = selected ? cur.filter((x: any) => x !== o.id) : [...cur, o.id];
+                                                        const next = selected ? cur.filter((x) => x !== o.id) : [...cur, o.id];
                                                         return { ...s, [key]: next };
                                                     });
                                                 }}
@@ -237,8 +244,8 @@ export function ProductCustomizer({ item, onAddToCart, onClose }: ProductCustomi
                 <div className="rounded-2xl bg-[#1A2332] p-4" style={{ backgroundColor: COLORS.bg }}>
                     <div className="mb-3 text-sm font-extrabold text-white">Instructions Spéciales (Optionnel)</div>
                     <textarea
-                        value={selections.special_instructions || ""}
-                        onChange={(e) => setSelections((s: any) => ({ ...s, special_instructions: e.target.value }))}
+                        value={String(selections.special_instructions || "")}
+                        onChange={(e) => setSelections((s) => ({ ...s, special_instructions: e.target.value }))}
                         rows={3}
                         placeholder="Ex: Pas épicé, bien cuit, sans oignon..."
                         className="w-full rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-white outline-none focus:border-red-600 focus:ring-1 focus:ring-red-600 transition-all placeholder:text-white/30"

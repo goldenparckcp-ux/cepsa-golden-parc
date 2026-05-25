@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Droplet, Car, Clock, Play, CheckCircle } from 'lucide-react';
+import { Droplet, Clock, Play, CheckCircle } from 'lucide-react';
 
 interface WashBooking {
     id: string;

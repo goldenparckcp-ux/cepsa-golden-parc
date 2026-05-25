@@ -11,8 +11,8 @@ interface PhoneFlowState {
 interface UIContextType {
     language: string;
     toggleLanguage: () => void;
-    activeCustomization: any;
-    openCustomization: (menuItem: any) => void;
+    activeCustomization: unknown;
+    openCustomization: (menuItem: unknown) => void;
     closeCustomization: () => void;
     isCartOpen: boolean;
     openCart: () => void;
@@ -30,14 +30,14 @@ const UIContext = createContext<UIContextType | null>(null);
 export function UIProvider({ children }: { children: ReactNode }) {
     const [language, setLanguage] = useState("FR");
 
-    const [activeCustomization, setActiveCustomization] = useState(null);
+    const [activeCustomization, setActiveCustomization] = useState<unknown>(null);
     const [isCartOpen, setCartOpen] = useState(false);
     const [isCheckoutOpen, setCheckoutOpen] = useState(false);
     const [phoneFlow, setPhoneFlow] = useState<PhoneFlowState>({ open: false, reason: null, onVerified: null });
 
     const toggleLanguage = () => setLanguage((l) => (l === "FR" ? "AR" : "FR"));
 
-    const openCustomization = (menuItem: any) => setActiveCustomization(menuItem);
+    const openCustomization = (menuItem: unknown) => setActiveCustomization(menuItem);
     const closeCustomization = () => setActiveCustomization(null);
 
     const openCart = () => setCartOpen(true);

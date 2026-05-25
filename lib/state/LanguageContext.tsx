@@ -52,7 +52,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
             }, 300); // Delay slightly to allow React DOM to render new components
             return () => clearTimeout(timeoutId);
         }
-    }, [pathname]);
+    }, [pathname, language]);
 
     useEffect(() => {
         const storedLang = localStorage.getItem('app_lang') as Language;

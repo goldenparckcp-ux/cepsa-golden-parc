@@ -1,14 +1,27 @@
 "use client";
 
 import React, { useState } from "react";
-import { ScanLine, Search, CheckCircle2, XCircle, AlertTriangle, Package, User, Calendar, ArrowRight } from "lucide-react";
+import { ScanLine, Search, CheckCircle2, XCircle, Package, User, Calendar, ArrowRight } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import { COLORS } from "@/lib/theme";
 
 export default function StaffScanner() {
     const [code, setCode] = useState("");
     const [loading, setLoading] = useState(false);
-    const [result, setResult] = useState<any | null>(null);
+
+    type ScanResult = {
+        type?: string;
+        context?: string;
+        booking_number?: string;
+        customer_phone?: string;
+        total_price?: number;
+        price?: number;
+        time_slot?: string;
+        check_in?: string;
+        status?: string;
+        [key: string]: unknown;
+    };
+
+    const [result, setResult] = useState<ScanResult | null>(null);
     const [error, setError] = useState<string | null>(null);
 
     const handleVerify = async (e?: React.FormEvent) => {
@@ -40,7 +53,7 @@ export default function StaffScanner() {
             // For MVP we matched booking_number string.
 
             setError("Code introuvable ou invalide.");
-        } catch (err) {
+        } catch {
             setError("Erreur système.");
         }
         setLoading(false);
@@ -60,7 +73,7 @@ export default function StaffScanner() {
         if (error) {
             alert("Erreur maj status");
         } else {
-            setResult((prev: any) => prev ? ({ ...prev, status: 'completed' }) : null);
+            setResult((prev) => (prev ? ({ ...prev, status: 'completed' }) : null));
         }
         setLoading(false);
     };
@@ -126,23 +139,23 @@ export default function StaffScanner() {
                         <div className="p-6 space-y-6">
                             {/* Key Info */}
                             <div className="text-center">
-                                <h2 className="text-2xl font-black text-white mb-1">{result.context || result.type}</h2>
-                                <div className="text-red-400 font-mono font-bold tracking-wider text-xl">{result.booking_number}</div>
+                                <h2 className="text-2xl font-black text-white mb-1">{String(result.context || result.type || "")}</h2>
+                                <div className="text-red-400 font-mono font-bold tracking-wider text-xl">{String(result.booking_number || "")}</div>
                             </div>
 
                             {/* Details Grid */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="bg-black/20 p-3 rounded-xl">
                                     <div className="text-xs text-gray-500 uppercase font-bold mb-1 flex items-center gap-1"><User className="w-3 h-3" /> Client</div>
-                                    <div className="text-white font-bold truncate">{result.customer_phone}</div>
+                                    <div className="text-white font-bold truncate">{String(result.customer_phone || "")}</div>
                                 </div>
                                 <div className="bg-black/20 p-3 rounded-xl">
                                     <div className="text-xs text-gray-500 uppercase font-bold mb-1 flex items-center gap-1"><Package className="w-3 h-3" /> Prix</div>
-                                    <div className="text-white font-bold">{result.total_price || result.price} DH</div>
+                                    <div className="text-white font-bold">{String(result.total_price ?? result.price ?? "")} DH</div>
                                 </div>
                                 <div className="bg-black/20 p-3 rounded-xl col-span-2">
                                     <div className="text-xs text-gray-500 uppercase font-bold mb-1 flex items-center gap-1"><Calendar className="w-3 h-3" /> Date/Heure</div>
-                                    <div className="text-white font-bold">{result.time_slot || result.check_in || "N/A"}</div>
+                                    <div className="text-white font-bold">{String(result.time_slot ?? result.check_in ?? "N/A")}</div>
                                 </div>
                             </div>
 

@@ -58,7 +58,7 @@ create table public.service_bookings (
     id uuid default uuid_generate_v4() primary key,
     created_at timestamp with time zone default timezone('utc'::text, now()) not null,
     booking_number serial not null,
-    service_type text not null check (service_type in ('lavage', 'mecanique')),
+    service_type text not null check (service_type in ('lavage', 'lubrifiant')),
     service_name text not null, -- e.g. "Lavage Complet" or "Vidange"
     customer_phone text not null,
     vehicle_info text not null, -- e.g. "Golf 7 Blanche"

@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS service_bookings (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   booking_number VARCHAR(20) UNIQUE NOT NULL,
   customer_phone VARCHAR(20) NOT NULL,
-  service_type VARCHAR(20) NOT NULL CHECK (service_type IN ('lavage', 'mecanique')),
+  service_type VARCHAR(20) NOT NULL CHECK (service_type IN ('lavage', 'lubrifiant')),
   service_id INTEGER,
   service_name VARCHAR(100),
   scheduled_date DATE,

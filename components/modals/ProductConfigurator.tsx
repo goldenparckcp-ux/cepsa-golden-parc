@@ -2,14 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { X, Plus, Minus, Coffee, Leaf } from 'lucide-react';
-import PriceTag from '@/components/ui/PriceTag';
-import type { MenuItem } from '@/lib/menuTypes';
+import type { MenuItem, ToppingsOptions, GenericOptions, VariantParameter, MultiParameter } from '@/lib/menuTypes';
 
 interface ProductConfiguratorProps {
     item: MenuItem;
     isOpen: boolean;
     onClose: () => void;
-    onAddToCart: (item: MenuItem, customizations: any, finalPrice: number) => void;
+    onAddToCart: (item: MenuItem, customizations: Record<string, unknown>, finalPrice: number) => void;
 }
 
 export default function ProductConfigurator({
@@ -41,7 +40,7 @@ export default function ProductConfigurator({
     const [selectedSauce, setSelectedSauce] = useState('');
 
     // Generic parameters state (for new parameter system)
-    const [genericParams, setGenericParams] = useState<{ [key: string]: any }>({});
+    const [genericParams, setGenericParams] = useState<Record<string, unknown>>({});
 
     // General states
     const [quantity, setQuantity] = useState(1);
@@ -58,7 +57,7 @@ export default function ProductConfigurator({
         if (item.options?.type === 'toppings' && item.options.availableToppings) {
             const toppingPrices = selectedToppings.reduce((total, toppingName) => {
                 const topping = item.options?.type === 'toppings'
-                    ? item.options.availableToppings.find((t: any) => t.name === toppingName)
+                    ? item.options.availableToppings.find((t) => t.name === toppingName)
                     : null;
                 return total + (topping?.price || 0);
             }, 0);
@@ -71,7 +70,7 @@ export default function ProductConfigurator({
     const finalPrice = calculatePrice();
 
     const handleAddToCart = () => {
-        const customizations: any = { quantity };
+        const customizations: Record<string, unknown> = { quantity };
 
         if (item.options?.type === 'barista') {
             customizations.sugarLevel = sugarLevel;
@@ -102,6 +101,7 @@ export default function ProductConfigurator({
     };
 
     // Reset customizations when modal opens
+    /* eslint-disable react-hooks/set-state-in-effect */
     useEffect(() => {
         if (isOpen) {
             setSugarLevel(2);
@@ -112,6 +112,7 @@ export default function ProductConfigurator({
             setQuantity(1);
         }
     }, [isOpen]);
+    /* eslint-enable react-hooks/set-state-in-effect */
 
     if (!isOpen) return null;
 
@@ -374,7 +375,7 @@ export default function ProductConfigurator({
                                 Toppings {item.options.maxSelections && `(Max ${item.options.maxSelections})`}
                             </h3>
                             <div className="grid grid-cols-2 gap-3">
-                                {item.options.availableToppings.map((topping: any) => {
+                                {(item.options as ToppingsOptions).availableToppings.map((topping) => {
                                     const isSelected = selectedToppings.includes(topping.name);
                                     const maxSelections = item.options?.type === 'toppings' && item.options.maxSelections ? item.options.maxSelections : 999;
                                     const canSelect = selectedToppings.length < maxSelections;
@@ -479,10 +480,11 @@ export default function ProductConfigurator({
                     {/* TYPE H: GENERIC PARAMETERS (New System) */}
                     {item.options?.type === 'generic' && item.options.parameters && (
                         <div className="space-y-4">
-                            {item.options.parameters.map((param: any, index: number) => {
+                            {(item.options as GenericOptions).parameters.map((param, index: number) => {
                                 // STEPPER TYPE (for Sugar, Quantity, etc.)
                                 if (param.type === 'stepper') {
-                                    const value = genericParams[param.label] ?? param.default ?? param.min;
+                                    const raw = genericParams[param.label];
+                                    const value = typeof raw === 'number' ? raw : (param.default ?? param.min);
                                     return (
                                         <div key={index} className="card bg-surface-lighter">
                                             <h3 className="font-bold text-xl mb-4">{param.label}</h3>
@@ -546,12 +548,13 @@ export default function ProductConfigurator({
 
                                 // VARIANT TYPE (for Portions with price modifiers)
                                 if (param.type === 'variant') {
-                                    const value = genericParams[param.label] ?? param.default ?? param.options[0]?.label;
+                                    const typedParam = param as VariantParameter;
+                                    const value = genericParams[typedParam.label] ?? typedParam.default ?? typedParam.options[0]?.label;
                                     return (
                                         <div key={index} className="card bg-surface-lighter">
-                                            <h3 className="font-bold text-xl mb-4">{param.label}</h3>
+                                            <h3 className="font-bold text-xl mb-4">{typedParam.label}</h3>
                                             <div className="space-y-3">
-                                                {param.options.map((option: any) => {
+                                                {typedParam.options.map((option) => {
                                                     const isSelected = value === option.label;
                                                     const displayPrice = item.price + option.priceModifier;
                                                     return (
@@ -559,7 +562,7 @@ export default function ProductConfigurator({
                                                             key={option.label}
                                                             onClick={() => setGenericParams(prev => ({
                                                                 ...prev,
-                                                                [param.label]: option.label
+                                                                [typedParam.label]: option.label
                                                             }))}
                                                             className={`w-full p-6 rounded-2xl border-2 transition-all ${isSelected
                                                                 ? 'border-premium-gold bg-premium-gold/10 shadow-xl scale-105'
@@ -590,32 +593,33 @@ export default function ProductConfigurator({
 
                                 // MULTI TYPE (for Toppings with checkboxes)
                                 if (param.type === 'multi') {
-                                    const selectedItems = genericParams[param.label] ?? [];
+                                    const typedParam = param as MultiParameter;
+                                    const selectedItems = Array.isArray(genericParams[typedParam.label]) ? (genericParams[typedParam.label] as string[]) : [];
                                     return (
                                         <div key={index} className="card bg-surface-lighter">
                                             <h3 className="font-bold text-xl mb-4">
-                                                {param.label} {param.maxSelections && `(Max ${param.maxSelections})`}
+                                                {typedParam.label} {typedParam.maxSelections && `(Max ${typedParam.maxSelections})`}
                                             </h3>
                                             <div className="grid grid-cols-2 gap-3">
-                                                {param.options.map((option: any) => {
+                                                {typedParam.options.map((option) => {
                                                     const isSelected = selectedItems.includes(option.name);
-                                                    const canSelect = !param.maxSelections || selectedItems.length < param.maxSelections;
+                                                    const canSelect = !typedParam.maxSelections || selectedItems.length < typedParam.maxSelections;
 
                                                     return (
                                                         <button
                                                             key={option.name}
                                                             onClick={() => {
                                                                 setGenericParams(prev => {
-                                                                    const current = prev[param.label] || [];
+                                                                    const current = Array.isArray(prev[typedParam.label]) ? (prev[typedParam.label] as string[]) : [];
                                                                     if (isSelected) {
                                                                         return {
                                                                             ...prev,
-                                                                            [param.label]: current.filter((item: string) => item !== option.name)
+                                                                            [typedParam.label]: current.filter((item: string) => item !== option.name)
                                                                         };
                                                                     } else if (canSelect) {
                                                                         return {
                                                                             ...prev,
-                                                                            [param.label]: [...current, option.name]
+                                                                            [typedParam.label]: [...current, option.name]
                                                                         };
                                                                     }
                                                                     return prev;

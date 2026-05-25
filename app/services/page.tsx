@@ -4,7 +4,7 @@ import React, { Suspense, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Droplets, Hotel, Waves, ChevronRight, Star } from "lucide-react";
+import { Droplets, Hotel, Waves, ChevronRight, Star, Wrench } from "lucide-react";
 import { useTranslation } from "@/lib/state/LanguageContext";
 
 
@@ -47,6 +47,15 @@ function ServicesContent() {
             icon: Waves,
             image: "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?w=1200",
             badge: "Relax"
+        },
+        {
+            key: "lube",
+            title: t('services.lube.title') || "Lubrifiants",
+            desc: t('services.lube.desc') || "Changement d'huile et entretien rapide",
+            to: "#",
+            icon: Wrench,
+            image: "https://images.unsplash.com/photo-1599839619722-39751411ea63?w=1200",
+            badge: "Auto Care"
         }
     ];
 

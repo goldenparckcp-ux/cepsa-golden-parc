@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Local one-off scripts (not part of app runtime):
+    "fix-colors.js",
+    "fix-colors-components.js",
   ]),
 ]);
 

@@ -5,6 +5,7 @@ import { useCart } from "@/lib/state/CartContext";
 import { useUI } from "@/lib/state/UIContext";
 import { X, Trash2, ShoppingBag, Plus, Minus, ArrowRight, CheckCircle, Loader2, Utensils, Car, Clock, MapPin, CreditCard, Banknote, Lock } from "lucide-react";
 import { createOrder } from "@/lib/supabase";
+import Image from "next/image";
 
 export function CartDrawer() {
     const { items, total, removeItem, setQuantity, clear } = useCart();
@@ -145,7 +146,7 @@ export function CartDrawer() {
                                 <div key={item.id} className="bg-[#1E293B] p-4 rounded-2xl flex gap-4 border border-white/5 animate-fade-in">
                                     {item.image && (
                                         <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-gray-800">
-                                            <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                                            <Image src={item.image} alt={item.name} width={80} height={80} className="w-full h-full object-cover" />
                                         </div>
                                     )}
                                     <div className="flex-1 min-w-0">

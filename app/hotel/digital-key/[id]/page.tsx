@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { Unlock, Key, Wifi, Smartphone, Battery } from 'lucide-react';
 

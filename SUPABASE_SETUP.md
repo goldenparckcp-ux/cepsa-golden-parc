@@ -2,8 +2,10 @@
 
 ## ✅ Step 1: Environment Variables (COMPLETED)
 Your `.env.local` file has been created with your Supabase credentials:
-- **Project URL**: https://vktqecgylkjogquhsymz.supabase.co
-- **Anon Key**: sb_publishable_Z698wcBReZzBGsVRJdVmHg_10KeiSD3
+- **Project URL**: `https://<your-project-ref>.supabase.co`
+- **Anon Key**: `<your-anon-key>`
+
+> Security note: do not paste real credentials into docs or commit them to git.
 
 ## 📊 Step 2: Create Database Tables
 

@@ -65,6 +65,19 @@ export const createOrder = async (orderData: {
     table_number?: string;
     arrival_time?: string;
 }) => {
+    // Prefer server-side creation (validations + service role) when available
+    if (typeof window !== 'undefined') {
+        const res = await fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(orderData),
+        });
+        if (!res.ok) {
+            const body = await res.json().catch(() => ({}));
+            throw new Error(body?.error || 'Order API failed');
+        }
+        return await res.json();
+    }
 
     // 1. Separate Items
     const foodItems: OrderItem[] = [];

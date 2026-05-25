@@ -88,6 +88,8 @@ A modern, full-stack web application for **Restaurant et Café Cepsa Golden Park
    ```env
    NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+   # Server-side API routes (admin/orders/create)
+   SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key
    ```
 
 4. **Set up the database**
@@ -104,7 +106,7 @@ A modern, full-stack web application for **Restaurant et Café Cepsa Golden Park
    ```
 
 6. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000)
+   Navigate to [http://localhost:3001](http://localhost:3001)
 
 ## 🗄️ Database Schema
 

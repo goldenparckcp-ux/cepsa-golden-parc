@@ -2,10 +2,9 @@
 // ts-refresh
 
 import { useState, useEffect } from 'react';
-import { CreditCard, Wallet, AlertTriangle, ShieldCheck, X, CheckCircle2, Loader2, ArrowRight } from 'lucide-react';
+import { Wallet, AlertTriangle, ShieldCheck, X, CheckCircle2, Loader2, ArrowRight } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/lib/state/AuthProvider';
-import Image from 'next/image';
 
 type PaymentGateway = 'wallet' | null;
 
@@ -75,8 +74,8 @@ export default function PaymentModal({ bookingId, amount, serviceType, tableName
 
             setStep('success');
             setTimeout(() => onSuccess('wallet'), 2000);
-        } catch (err: any) {
-            setError(err.message || String(err));
+        } catch (err: unknown) {
+            setError(err instanceof Error ? err.message : String(err));
         }
         setLoading(false);
     };

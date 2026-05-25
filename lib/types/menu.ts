@@ -15,7 +15,7 @@ export interface MenuCustomization {
         required?: boolean;
         min?: number;
         max?: number;
-        default?: any;
+        default?: unknown;
         unit?: string;
         options?: MenuOption[];
         freeCount?: number;
@@ -164,6 +164,16 @@ export const COMPLETE_MENU: MenuItem[] = [
                     { id: "ketchup", label: "Ketchup" },
                     { id: "mayo", label: "Mayonnaise" }
                 ]
+            },
+            extras: {
+                label: "Suppléments",
+                type: "checkbox",
+                options: [
+                    { id: "extra_sauce", label: "Extra Sauce", price: 2 },
+                    { id: "extra_fromage", label: "Extra Fromage", price: 5 },
+                    { id: "extra_frites", label: "Frites Supplémentaires", price: 10 },
+                    { id: "extra_viande", label: "Double Viande", price: 12 }
+                ]
             }
         }
     },
@@ -188,6 +198,15 @@ export const COMPLETE_MENU: MenuItem[] = [
                     { id: "thon", label: "Thon (+5 DH)", price: 5 }
                 ],
                 default: "fromage"
+            },
+            extras: {
+                label: "Suppléments",
+                type: "checkbox",
+                options: [
+                    { id: "extra_sauce", label: "Extra Sauce", price: 2 },
+                    { id: "extra_fromage", label: "Extra Fromage", price: 5 },
+                    { id: "extra_frites", label: "Frites Supplémentaires", price: 10 }
+                ]
             }
         }
     },
@@ -278,6 +297,15 @@ export const COMPLETE_MENU: MenuItem[] = [
                     { id: "l", label: "Familiale (Grand Format)", price: 30 }
                 ],
                 default: "s"
+            },
+            extras: {
+                label: "Suppléments",
+                type: "checkbox",
+                options: [
+                    { id: "extra_fromage", label: "Double Fromage", price: 10 },
+                    { id: "extra_olive", label: "Extra Olives", price: 3 },
+                    { id: "extra_sauce", label: "Extra Sauce Piquante", price: 2 }
+                ]
             }
         }
     },

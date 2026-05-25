@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS service_bookings (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   booking_number VARCHAR(20) UNIQUE NOT NULL,
   customer_phone VARCHAR(20) NOT NULL,
-  service_type VARCHAR(20) NOT NULL CHECK (service_type IN ('lavage', 'mecanique')),
+  service_type VARCHAR(20) NOT NULL CHECK (service_type IN ('lavage', 'lubrifiant')),
   
   -- For Lavage
   service_id INTEGER,
@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS service_bookings (
   duration VARCHAR(20),
   
   -- For Mécanique
-  services JSONB, -- Array of service names for mecanique
+  services JSONB, -- Array of service names for lubrifiant
   scheduled_time TIMESTAMP,
   appointment_type VARCHAR(20), -- 'scheduled' or 'urgence'
   

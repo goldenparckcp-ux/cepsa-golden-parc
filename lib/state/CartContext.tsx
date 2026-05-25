@@ -8,7 +8,10 @@ export interface CartItem {
     price?: number;
     totalPrice: number;
     quantity?: number;
-    [key: string]: any;
+    image?: string;
+    meta?: string;
+    customizations?: Record<string, unknown>;
+    [key: string]: unknown;
 }
 
 interface CartState {

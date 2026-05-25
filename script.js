@@ -1,7 +1,10 @@
-"use client";
+const fs = require('fs');
+const path = require('path');
+
+const content = `"use client";
 
 import React, { useMemo, useState, useEffect, useCallback } from "react";
-import { Plus, UtensilsCrossed, ChevronRight, Trash2, Clock, Check, Car, MapPin, Navigation, ShoppingBag } from "lucide-react";
+import { Plus, UtensilsCrossed, ChevronRight, Trash2, Clock, Check, Car, MapPin, Navigation } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCart } from "@/lib/state/CartContext";
@@ -12,7 +15,7 @@ import { useTranslation } from "@/lib/state/LanguageContext";
 import { motion, AnimatePresence } from 'framer-motion';
 
 function formatDh(price: number) {
-    return `${price.toFixed(2)} DH`;
+    return \`\${price.toFixed(2)} DH\`;
 }
 
 function initSelections(item: MenuItem): Record<string, unknown> {
@@ -84,7 +87,7 @@ export default function RestaurantPage() {
         const h = parseInt(customHours) || 0;
         const m = parseInt(customMinutes) || 0;
         if (h === 0 && m === 0) return;
-        const timeStr = h > 0 ? `${h}h${m > 0 ? m : ''}` : `${m} min`;
+        const timeStr = h > 0 ? \`\${h}h\${m > 0 ? m : ''}\` : \`\${m} min\`;
         setArrivalTime(timeStr);
         setShowCustomTime(false);
     };
@@ -129,18 +132,18 @@ export default function RestaurantPage() {
             const v = selections[k];
             if (opt.type === "radio") {
                 const o = opt.options?.find((x: MenuOption) => x.id === v);
-                if (o) metaParts.push(`${opt.label}: ${o.label}`);
+                if (o) metaParts.push(\`\${opt.label}: \${o.label}\`);
             }
-            if (opt.type === "stepper" && typeof v === "number" && v > 0) metaParts.push(`${opt.label}: ${v} ${opt.unit || ""}`);
+            if (opt.type === "stepper" && typeof v === "number" && v > 0) metaParts.push(\`\${opt.label}: \${v} \${opt.unit || ""}\`);
             if ((opt.type === "checkbox" || opt.type === "checkbox-group") && Array.isArray(v) && v.length > 0) {
                 const labels = v.map((id: string) => opt.options?.find((x: MenuOption) => x.id === id)?.label || id).join(", ");
-                metaParts.push(`${opt.label}: ${labels}`);
+                metaParts.push(\`\${opt.label}: \${labels}\`);
             }
         });
-        if (typeof selections.special_instructions === "string" && selections.special_instructions) metaParts.push(`Note: ${selections.special_instructions}`);
+        if (typeof selections.special_instructions === "string" && selections.special_instructions) metaParts.push(\`Note: \${selections.special_instructions}\`);
 
         addItem({
-            id: `${customizeItem.id}-${Date.now()}`,
+            id: \`\${customizeItem.id}-\${Date.now()}\`,
             name: customizeItem.name,
             image: customizeItem.image,
             basePrice: customizeItem.basePrice,
@@ -155,13 +158,13 @@ export default function RestaurantPage() {
 
     const processOrder = useCallback(async (user: { id: string, email?: string }, profile: { phone?: string, email?: string }) => {
         setIsSubmitting(true);
-        const orderNum = `CMD-${Date.now().toString().slice(-6)}`;
+        const orderNum = \`CMD-\${Date.now().toString().slice(-6)}\`;
 
         let effectiveArrivalTime = arrivalTime;
         if (locationType === 'on_way' && showCustomTime) {
             const h = parseInt(customHours) || 0;
             const m = parseInt(customMinutes) || 0;
-            effectiveArrivalTime = `${h}h${m.toString().padStart(2, '0')}`;
+            effectiveArrivalTime = \`\${h}h\${m.toString().padStart(2, '0')}\`;
         }
 
         const deliveryInfo = {
@@ -218,6 +221,8 @@ export default function RestaurantPage() {
             return;
         }
 
+        // Si Sur Place, on peut tolérer une commande anonyme (on créera un id temporaire si on veut, ou on oblige le login)
+        // Pour l'instant, on oblige le login pour tout le monde pour le tracking, mais c'est "sans paiement".
         if (!user) {
             localStorage.setItem('pendingRestaurantOrder', 'true');
             router.push('/profile?redirect=/restaurant');
@@ -283,10 +288,10 @@ export default function RestaurantPage() {
                             <button
                                 key={cat.id}
                                 onClick={() => setActiveCategory(cat.id)}
-                                className={`px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ${activeCategory === cat.id
+                                className={\`px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 \${activeCategory === cat.id
                                     ? "bg-gradient-to-r from-red-600 to-orange-500 text-white shadow-[0_0_20px_rgba(220,38,38,0.4)] scale-105"
                                     : "bg-[#1E293B]/50 text-gray-400 border border-white/5 hover:bg-white/10"
-                                    }`}
+                                    }\`}
                             >
                                 {cat.label}
                             </button>
@@ -314,12 +319,12 @@ export default function RestaurantPage() {
                             onClick={() => handleItemClick(item)}
                             className="group bg-[#111827] border border-white/5 rounded-[2rem] overflow-hidden text-left flex flex-col hover:border-white/20 transition-all shadow-xl hover:shadow-2xl"
                         >
-                            <div className={`relative overflow-hidden w-full ${item.name.includes("Couscous") ? "h-64" : "h-56"}`}>
+                            <div className={\`relative overflow-hidden w-full \${item.name.includes("Couscous") ? "h-64" : "h-56"}\`}>
                                 <Image
                                     src={item.image || "/image/cepsa-hero.jpg"}
                                     alt={item.name}
                                     fill
-                                    className={`object-cover transition duration-700 group-hover:scale-110 ${item.name.includes("Couscous") ? "object-bottom" : "object-center"}`}
+                                    className={\`object-cover transition duration-700 group-hover:scale-110 \${item.name.includes("Couscous") ? "object-bottom" : "object-center"}\`}
                                 />
                                 {item.badge && (
                                     <div className="absolute top-4 left-4 bg-red-600 text-white text-[10px] font-black px-3 py-1.5 rounded-full shadow-lg uppercase tracking-wider">
@@ -379,26 +384,26 @@ export default function RestaurantPage() {
                                                             setSelections({ ...selections, [key]: next });
                                                         }
                                                     }}
-                                                    className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 group ${isSelected
+                                                    className={\`w-full flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 group \${isSelected
                                                         ? 'bg-red-600/10 border-red-500/50 shadow-[0_0_20px_rgba(220,38,38,0.15)]'
                                                         : 'bg-[#1E293B]/50 border-white/5 hover:bg-[#1E293B] hover:border-white/20'
-                                                        }`}
+                                                        }\`}
                                                 >
                                                     <div className="flex items-center gap-4">
-                                                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isSelected
+                                                        <div className={\`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all \${isSelected
                                                             ? 'bg-red-500 border-red-500 scale-110'
                                                             : 'bg-transparent border-white/20 group-hover:border-white/40'
-                                                            }`}>
+                                                            }\`}>
                                                             {isSelected && <div className="w-2.5 h-2.5 bg-white rounded-full shadow-sm" />}
                                                         </div>
-                                                        <span className={`font-bold transition-colors ${isSelected ? 'text-white' : 'text-gray-300'}`}>
+                                                        <span className={\`font-bold transition-colors \${isSelected ? 'text-white' : 'text-gray-300'}\`}>
                                                             {subOpt.label}
                                                         </span>
                                                     </div>
 
                                                     {subOpt.price ? (
-                                                        <span className={`text-xs font-black px-3 py-1.5 rounded-lg ${isSelected ? 'bg-red-500 text-white shadow-lg' : 'bg-white/5 text-amber-500'}`}>
-                                                            +{subOpt.price} DH
+                                                        <span className={\`text-xs font-black px-3 py-1.5 rounded-lg \${isSelected ? 'bg-red-500 text-white shadow-lg' : 'bg-white/5 text-amber-500'}\`}>
+                                                            +\${subOpt.price} DH
                                                         </span>
                                                     ) : null}
                                                 </button>
@@ -493,30 +498,30 @@ export default function RestaurantPage() {
                     {items.length > 0 && (
                         <div className="animate-in slide-in-from-bottom-4 duration-500">
                             <h3 className="text-white font-black text-xl mb-4 flex items-center gap-3">
-                                {t('cart.where')}
+                                Où êtes-vous ?
                             </h3>
                             
                             {/* Toggle Location Type */}
                             <div className="flex bg-[#1E293B] p-1.5 rounded-2xl mb-6 border border-white/5 shadow-inner">
                                 <button
                                     onClick={() => setLocationType('on_site')}
-                                    className={`flex-1 py-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all ${locationType === 'on_site'
+                                    className={\`flex-1 py-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all \${locationType === 'on_site'
                                         ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-[0_5px_15px_rgba(37,99,235,0.4)]'
                                         : 'text-gray-400 hover:text-white hover:bg-white/5'
-                                        }`}
+                                        }\`}
                                 >
                                     <MapPin className="w-5 h-5" />
-                                    {t('cart.onsite')}
+                                    Sur Place (Ici)
                                 </button>
                                 <button
                                     onClick={() => setLocationType('on_way')}
-                                    className={`flex-1 py-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all ${locationType === 'on_way'
+                                    className={\`flex-1 py-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all \${locationType === 'on_way'
                                         ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-[0_5px_15px_rgba(245,158,11,0.4)]'
                                         : 'text-gray-400 hover:text-white hover:bg-white/5'
-                                        }`}
+                                        }\`}
                                 >
                                     <Navigation className="w-5 h-5" />
-                                    {t('cart.onway')}
+                                    En Route (J'arrive)
                                 </button>
                             </div>
 
@@ -524,21 +529,21 @@ export default function RestaurantPage() {
                             <div className="bg-[#111827] rounded-[2rem] p-6 border border-white/5 shadow-xl">
                                 {locationType === 'on_site' ? (
                                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                                        <h4 className="text-gray-400 font-bold text-sm mb-4 uppercase tracking-wider">{t('cart.where_exact')}</h4>
+                                        <h4 className="text-gray-400 font-bold text-sm mb-4 uppercase tracking-wider">Où vous livrer exactement ?</h4>
                                         <div className="grid grid-cols-2 gap-3 mb-4">
                                             {[
-                                                { id: 'table', icon: <UtensilsCrossed className="w-4 h-4"/>, label: "{t('cart.loc.table')}" },
-                                                { id: 'pump', icon: <Car className="w-4 h-4"/>, label: "{t('cart.loc.pump')}" },
-                                                { id: 'pool', icon: <UtensilsCrossed className="w-4 h-4"/>, label: "{t('cart.loc.pool')}" },
-                                                { id: 'room', icon: <MapPin className="w-4 h-4"/>, label: "{t('cart.loc.room')}" }
+                                                { id: 'table', icon: <UtensilsCrossed className="w-4 h-4"/>, label: "Table (Café/Resto)" },
+                                                { id: 'pump', icon: <Car className="w-4 h-4"/>, label: "Pompe / Parking" },
+                                                { id: 'pool', icon: <UtensilsCrossed className="w-4 h-4"/>, label: "Piscine" },
+                                                { id: 'room', icon: <MapPin className="w-4 h-4"/>, label: "Chambre Hôtel" }
                                             ].map(loc => (
                                                 <button
                                                     key={loc.id}
                                                     onClick={() => setOnSiteLocation(loc.id as any)}
-                                                    className={`py-3 px-2 rounded-xl text-xs font-bold border flex items-center justify-center gap-2 transition-all ${onSiteLocation === loc.id
+                                                    className={\`py-3 px-2 rounded-xl text-xs font-bold border flex items-center justify-center gap-2 transition-all \${onSiteLocation === loc.id
                                                         ? 'bg-blue-600/20 border-blue-500 text-blue-400'
                                                         : 'bg-white/5 border-transparent text-gray-400 hover:bg-white/10'
-                                                    }`}
+                                                    }\`}
                                                 >
                                                     {loc.icon} {loc.label}
                                                 </button>
@@ -548,26 +553,26 @@ export default function RestaurantPage() {
                                             type="text"
                                             value={locationDetail}
                                             onChange={(e) => setLocationDetail(e.target.value)}
-                                            placeholder={t('cart.loc.placeholder')}
+                                            placeholder={\`Ex: \${onSiteLocation === 'table' ? 'Table 12' : onSiteLocation === 'pump' ? 'Pompe 4 ou Plaque XYZ' : onSiteLocation === 'pool' ? 'Transat N°5' : 'Chambre 105'}\`}
                                             className="w-full bg-[#1E293B] border border-white/10 rounded-xl p-4 text-white font-bold text-lg outline-none focus:border-blue-500 transition-colors"
                                         />
                                         <p className="text-xs text-green-400 mt-4 flex items-center gap-1 font-medium bg-green-500/10 p-3 rounded-xl border border-green-500/20">
                                             <Check className="w-4 h-4"/>
-                                            {t('cart.onsite_note')}
+                                            Aucun paiement en ligne requis. Vous paierez à la réception de votre commande.
                                         </p>
                                     </motion.div>
                                 ) : (
                                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                                        <h4 className="text-gray-400 font-bold text-sm mb-4 uppercase tracking-wider">{t('cart.eta.title')}</h4>
+                                        <h4 className="text-gray-400 font-bold text-sm mb-4 uppercase tracking-wider">Temps d'arrivée estimé (ETA)</h4>
                                         <div className="grid grid-cols-3 gap-3 mb-4">
                                             {arrivalOptions.map(time => (
                                                 <button
                                                     key={time}
                                                     onClick={() => { setArrivalTime(time); setShowCustomTime(false); }}
-                                                    className={`py-3 rounded-xl text-sm font-bold border transition-all ${arrivalTime === time && !showCustomTime
+                                                    className={\`py-3 rounded-xl text-sm font-bold border transition-all \${arrivalTime === time && !showCustomTime
                                                         ? 'bg-amber-500/20 border-amber-500 text-amber-500'
                                                         : 'bg-white/5 border-transparent text-gray-400 hover:bg-white/10'
-                                                        }`}
+                                                        }\`}
                                                 >
                                                     {time}
                                                 </button>
@@ -575,20 +580,20 @@ export default function RestaurantPage() {
                                         </div>
                                         <button
                                             onClick={() => setShowCustomTime(!showCustomTime)}
-                                            className={`w-full py-4 rounded-xl text-sm font-bold border transition-all flex items-center justify-center gap-2 ${showCustomTime
+                                            className={\`w-full py-4 rounded-xl text-sm font-bold border transition-all flex items-center justify-center gap-2 \${showCustomTime
                                                 ? 'bg-amber-500/20 border-amber-500 text-amber-500'
                                                 : 'bg-[#1E293B] border-white/10 text-gray-300'
-                                                }`}
+                                                }\`}
                                         >
                                             <Clock className="w-5 h-5" />
-                                            {t('cart.eta.custom')}
+                                            Saisir une heure précise
                                         </button>
 
                                         {showCustomTime && (
                                             <div className="mt-4 p-5 bg-[#1E293B] rounded-xl border border-white/5">
                                                 <div className="flex items-end gap-3 mb-4">
                                                     <div className="flex-1">
-                                                        <label className="text-xs font-bold text-gray-400 mb-2 block uppercase tracking-wider">{t('cart.eta.hours')}</label>
+                                                        <label className="text-xs font-bold text-gray-400 mb-2 block uppercase tracking-wider">Heures</label>
                                                         <input
                                                             type="number" min="0" max="24" value={customHours} onChange={(e) => setCustomHours(e.target.value)} placeholder="0"
                                                             className="w-full bg-[#0F172A] border-2 border-white/5 rounded-xl p-3 text-white text-center text-2xl font-black outline-none focus:border-amber-500 transition-all"
@@ -596,7 +601,7 @@ export default function RestaurantPage() {
                                                     </div>
                                                     <div className="text-white font-black text-3xl pb-2 opacity-50">:</div>
                                                     <div className="flex-1">
-                                                        <label className="text-xs font-bold text-gray-400 mb-2 block uppercase tracking-wider">{t('cart.eta.mins')}</label>
+                                                        <label className="text-xs font-bold text-gray-400 mb-2 block uppercase tracking-wider">Minutes</label>
                                                         <input
                                                             type="number" min="0" max="59" value={customMinutes} onChange={(e) => setCustomMinutes(e.target.value)} placeholder="0"
                                                             className="w-full bg-[#0F172A] border-2 border-white/5 rounded-xl p-3 text-white text-center text-2xl font-black outline-none focus:border-amber-500 transition-all"
@@ -604,14 +609,14 @@ export default function RestaurantPage() {
                                                     </div>
                                                 </div>
                                                 <button onClick={handleCustomTimeApply} className="w-full py-3 bg-amber-500 hover:bg-amber-400 rounded-xl text-black font-black text-sm transition-all">
-                                                    {t('cart.eta.apply')}
+                                                    Appliquer
                                                 </button>
                                             </div>
                                         )}
 
                                         <p className="text-xs text-amber-400 mt-4 flex items-center gap-2 font-medium bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
                                             <Navigation className="w-4 h-4 shrink-0"/>
-                                            {t('cart.onway_note')}
+                                            Pour les commandes "En Route", un pré-paiement ou garantie par carte bancaire sera requis à l'étape suivante.
                                         </p>
                                     </motion.div>
                                 )}
@@ -628,11 +633,11 @@ export default function RestaurantPage() {
                         <button
                             onClick={handleCheckout}
                             disabled={isSubmitting || items.length === 0}
-                            className={`w-full py-5 rounded-2xl font-black text-lg text-white shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-3 ${
+                            className={\`w-full py-5 rounded-2xl font-black text-lg text-white shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-3 \${
                                 locationType === 'on_site' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 shadow-blue-500/30' : 'bg-gradient-to-r from-amber-500 to-orange-500 shadow-orange-500/30'
-                            }`}
+                            }\`}
                         >
-                            {isSubmitting ? "Traitement..." : locationType === 'on_site' ? "{t('cart.btn.onsite')}" : "{t('cart.btn.onway')}"}
+                            {isSubmitting ? "Traitement..." : locationType === 'on_site' ? "Commander Maintenant (Payer sur place)" : "Continuer vers le Paiement (Garantie)"}
                         </button>
                     </div>
                 </div>
@@ -658,3 +663,6 @@ export default function RestaurantPage() {
         </div>
     );
 }
+`;
+
+fs.writeFileSync(path.join(__dirname, 'update-resto.js'), \`const fs = require('fs'); fs.writeFileSync('app/restaurant/page.tsx', \${JSON.stringify(content)});\`);
