@@ -235,7 +235,7 @@ export default function HotelPage() {
                 </div>
             </div>
 
-            <div className="p-5 md:p-8 space-y-6 max-w-6xl mx-auto">
+            <div className="p-3 md:p-4 space-y-4 max-w-6xl mx-auto">
 
                 {/* MODE SWITCHER */}
                 <div className="bg-[#1E293B] p-2 rounded-2xl border border-white/10 flex relative max-w-md mx-auto w-full rtl:flex-row-reverse">
@@ -267,11 +267,11 @@ export default function HotelPage() {
                                     : 'border-white/10 hover:border-white/30 hover:shadow-2xl'
                                     }`}
                             >
-                                <div className="h-48 md:h-56 relative w-full">
+                                <div className="h-32 md:h-40 relative w-full">
                                     <Image src={room.image} alt={t(room.nameKey)} fill title={t(room.nameKey)} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
                                     <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] to-transparent" />
                                     <div className="absolute bottom-3 left-4 right-4 flex justify-between items-end">
-                                        <h3 className="text-xl font-black text-white leading-tight">{t(room.nameKey)}</h3>
+                                        <h3 className="text-lg font-black text-white leading-tight">{t(room.nameKey)}</h3>
                                         <div className="bg-black/50 backdrop-blur-md px-3 py-1 rounded-lg text-amber-500 font-bold flex flex-col items-end shrink-0">
                                             {/* Dynamic Price Display */}
                                             {bookingType === 'night'
@@ -303,7 +303,7 @@ export default function HotelPage() {
                 </div>
 
                 {/* Conditional Inputs: Dates vs Hours */}
-                <div className="bg-[#1E293B] p-6 rounded-2xl border border-white/10 space-y-4 animate-fade-in max-w-4xl mx-auto w-full">
+                <div className="bg-[#1E293B] p-4 rounded-xl border border-white/10 space-y-4 animate-fade-in max-w-4xl mx-auto w-full">
 
                     {bookingType === 'night' ? (
                         /* Night Mode Inputs */

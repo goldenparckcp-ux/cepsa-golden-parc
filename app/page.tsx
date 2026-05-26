@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
-import { Car, Utensils, BedDouble, Waves, ChevronRight, Star, MapPin, Phone, Search, Wrench, ShoppingBag, Wind, Zap, Clock, Navigation } from "lucide-react";
+import { Car, Utensils, BedDouble, Waves, ChevronRight, Star, MapPin, Phone, Search, Wrench, ShoppingBag, Wind, Zap, Clock, Navigation, PhoneCall, Droplets } from "lucide-react";
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useTranslation } from '@/lib/state/LanguageContext';
@@ -58,7 +58,6 @@ export default function Home() {
   const SERVICES = [
     { id: 'restaurant', title: t('home.service.resto.title') || "Restaurant", image: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80", icon: <Utensils className="w-8 h-8" />, color: "from-amber-500 to-orange-600", link: "/restaurant", delay: 0.1 },
     { id: 'lube', title: t('home.service.lube.title') || "Lubrifiants", image: "https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=600&q=80", icon: <Wrench className="w-8 h-8" />, color: "from-gray-700 to-gray-900", link: "/services/lubrifiants", delay: 0.3 },
-    { id: 'boutique', title: t('home.service.boutique.title') || 'Boutique', image: "https://images.unsplash.com/photo-1604719312566-8fa20f137782?auto=format&fit=crop&w=600&q=80", icon: <ShoppingBag className="w-8 h-8" />, color: "from-green-500 to-emerald-700", link: "#", delay: 0.4 },
     { id: 'pool', title: t('home.service.pool.title') || "Piscine", image: "https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=600&q=80", icon: <Waves className="w-8 h-8" />, color: "from-cyan-400 to-blue-600", link: "/services/pool", delay: 0.5 },
     { id: 'hotel', title: t('home.service.hotel.title') || "Hôtel", image: "https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=600&q=80", icon: <BedDouble className="w-8 h-8" />, color: "from-purple-500 to-indigo-600", link: "/hotel", delay: 0.6 }
   ];
@@ -288,16 +287,13 @@ export default function Home() {
         </div>
 
 
-
         {/* --- INFORMATIONS PRATIQUES (Contact, GPS, Horaires) --- */}
         <div className="mb-24">
           <motion.h2 
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-3xl md:text-4xl font-black text-white mb-8"
+            initial={{ opacity: 0, x: -30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
+            className="text-4xl md:text-5xl font-black text-white mb-12 drop-shadow-lg"
           >
-            Informations Pratiques
+            {t('home.info.title') || 'Informations Pratiques'}
           </motion.h2>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -311,7 +307,7 @@ export default function Home() {
               onClick={() => window.open('https://maps.app.goo.gl/wWx1BeVM899uyPJ58')}
             >
               <Image 
-                src="https://images.unsplash.com/photo-1524661135-423995f22d0b?auto=format&fit=crop&w=1600&q=80" 
+                src="https://lh3.googleusercontent.com/gps-cs-s/APNQkAFdEGJrDvqy2Rsub4z3eT3VI4mbfz9dRLmE9bFoYDlGLmDWZ1RAWRIsARJJjIuHfI5wClt5JwwbVVeKIJeOpDGYKCVf8FMcaISw_OhywoLMmTs13UqBEnYqu8x28zDB_XL31LCJeK931Eht=s1600" 
                 alt="Map Background" 
                 fill 
                 className="object-cover opacity-40 group-hover:scale-105 transition-transform duration-1000"
@@ -324,8 +320,8 @@ export default function Home() {
                 </div>
                 <h3 className="text-3xl md:text-4xl font-black text-white mb-2">{t('home.info.loc.address1')}</h3>
                 <p className="text-gray-300 font-medium mb-4">{t('home.info.loc.address2')}</p>
-                <div className="flex items-center gap-2 text-white font-bold group-hover:text-red-400 transition-colors">
-                  Ouvrir dans Google Maps <ChevronRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
+                <div className="text-white font-bold flex items-center gap-2 group-hover:text-red-400 transition-colors">
+                  {t('home.map.btn') || 'Ouvrir dans Google Maps'} <ChevronRight className="w-5 h-5 group-hover:translate-x-2 transition-transform" />
                 </div>
               </div>
               
@@ -388,6 +384,21 @@ export default function Home() {
 
       </div>
       <Chatbot />
+      
+      {/* FOOTER */}
+      <footer className="mt-16 bg-[#070A13] border-t border-white/10 py-8 px-4 relative z-10 w-full">
+         <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="flex items-center gap-2">
+               <span className="text-white font-bold text-lg">Cepsa Golden Parc</span>
+               <span className="text-gray-500 text-sm">© {new Date().getFullYear()}</span>
+            </div>
+            <div className="flex gap-4">
+               <a href="tel:0661690179" className="bg-red-600/20 text-red-500 hover:bg-red-600 hover:text-white px-4 py-2 rounded-full font-bold text-sm transition-all flex items-center gap-2">
+                  <PhoneCall className="w-4 h-4" /> SOS Dépannage
+               </a>
+            </div>
+         </div>
+      </footer>
     </main>
   );
 }

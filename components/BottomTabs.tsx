@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { ServicesMenuModal } from "./modals/ServicesMenuModal";
 import { User, Home, UtensilsCrossed, Car, BedDouble } from "lucide-react";
+import { useTranslation } from "@/lib/state/LanguageContext";
 
 // Reusable Nav Component with smooth animations
 function NavButton({ onClick, active, icon, label }: { onClick: () => void, active: boolean, icon: React.ReactNode, label: string }) {
@@ -39,6 +40,7 @@ function NavButton({ onClick, active, icon, label }: { onClick: () => void, acti
 export default function BottomTabs() {
     const router = useRouter();
     const pathname = usePathname();
+    const { t } = useTranslation();
     const [showServicesMenu, setShowServicesMenu] = useState(false);
 
     const isHomeActive = pathname === '/';
@@ -60,7 +62,7 @@ export default function BottomTabs() {
                         onClick={() => router.push('/restaurant')}
                         active={isRestaurantActive}
                         icon={<UtensilsCrossed className="w-6 h-6" />}
-                        label="Resto"
+                        label={t('nav.restaurant') || "Resto"}
                     />
 
                     {/* 2. SERVICES */}
@@ -68,7 +70,7 @@ export default function BottomTabs() {
                         onClick={() => setShowServicesMenu(true)}
                         active={showServicesMenu}
                         icon={<Car className="w-6 h-6" />}
-                        label="Services"
+                        label={t('nav.services') || "Services"}
                     />
 
                     {/* 3. HOME - CENTRAL FLOATING ORB (RED THEME) */}
@@ -93,7 +95,7 @@ export default function BottomTabs() {
                             </div>
 
                             <span className={`text-[10px] font-bold mt-2 transition-opacity duration-300 ${isHomeActive ? 'text-red-500' : 'text-slate-500'}`}>
-                                Home
+                                {t('nav.home') || 'Home'}
                             </span>
                         </button>
                     </div>
@@ -103,7 +105,7 @@ export default function BottomTabs() {
                         onClick={() => router.push('/hotel')}
                         active={isHotelActive}
                         icon={<BedDouble className="w-6 h-6" />}
-                        label="Hotel"
+                        label={t('nav.hotel') || "Hotel"}
                     />
 
                     {/* 5. PROFILE */}
@@ -111,7 +113,7 @@ export default function BottomTabs() {
                         onClick={() => router.push('/profile')}
                         active={isProfileActive}
                         icon={<User className="w-6 h-6" />}
-                        label="Profile"
+                        label={t('nav.profile') || "Profile"}
                     />
 
                 </div>

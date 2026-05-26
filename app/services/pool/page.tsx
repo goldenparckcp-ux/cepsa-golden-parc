@@ -171,10 +171,10 @@ export default function PoolPage() {
                 </div>
             </div>
 
-            <div className="p-5 md:p-8 space-y-6 max-w-5xl mx-auto">
+            <div className="p-3 md:p-4 space-y-4 max-w-5xl mx-auto">
 
                 {/* Hero Image */}
-                <div className="relative h-48 md:h-80 rounded-2xl overflow-hidden shadow-2xl border border-white/10 group">
+                <div className="relative h-32 md:h-48 rounded-2xl overflow-hidden shadow-2xl border border-white/10 group">
                     <Image
                         src="https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=800&q=80"
                         alt={t('pool.title')}
@@ -184,7 +184,7 @@ export default function PoolPage() {
                     <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-transparent to-transparent" />
                     <div className="absolute bottom-4 left-4 rtl:left-auto rtl:right-4 md:bottom-8 md:left-8 rtl:md:left-auto rtl:md:right-8">
                         <div className="bg-red-500 text-black text-[10px] md:text-xs font-black px-2 py-0.5 md:px-3 md:py-1 rounded inline-block mb-1 shadow-lg uppercase">{t('pool.hero.badge')}</div>
-                        <h2 className="text-xl md:text-4xl font-black text-white">{t('pool.hero.title')}</h2>
+                        <h2 className="text-lg md:text-2xl font-black text-white">{t('pool.hero.title')}</h2>
                     </div>
                 </div>
 
@@ -195,12 +195,12 @@ export default function PoolPage() {
                         {/* Famille */}
                         <button
                             onClick={() => setCategory('family')}
-                            className={`p-2 py-3 md:py-6 rounded-xl border flex flex-col items-center gap-2 transition-all relative ${category === 'family'
+                            className={`p-2 py-2 md:py-3 rounded-xl border flex flex-col items-center gap-2 transition-all relative ${category === 'family'
                                 ? 'bg-red-600 border-red-500 shadow-lg shadow-red-500/20'
                                 : 'bg-[#1E293B] border-white/5 hover:bg-[#1E293B]/80'
                                 }`}
                         >
-                            <span className="text-xl md:text-3xl mb-1">👨‍👩‍👧‍👦</span>
+                            <span className="text-lg md:text-xl mb-1">👨‍👩‍👧‍👦</span>
                             <span className={`text-[10px] md:text-sm font-bold leading-tight text-center ${category === 'family' ? 'text-white' : 'text-gray-300'}`}>{t('pool.ambiance.family')}</span>
                             <div className="bg-red-600 text-white text-[9px] md:text-xs font-black px-2 md:px-3 py-1 md:py-1.5 rounded-full shadow-md">
                                 {t('pool.ambiance.family_day')}
@@ -211,12 +211,12 @@ export default function PoolPage() {
                         {/* Mixte */}
                         <button
                             onClick={() => setCategory('mixed')}
-                            className={`p-2 py-3 md:py-6 rounded-xl border flex flex-col items-center gap-2 transition-all relative ${category === 'mixed'
+                            className={`p-2 py-2 md:py-3 rounded-xl border flex flex-col items-center gap-2 transition-all relative ${category === 'mixed'
                                 ? 'bg-red-600 border-red-500 shadow-lg shadow-red-500/20'
                                 : 'bg-[#1E293B] border-white/5 hover:bg-[#1E293B]/80'
                                 }`}
                         >
-                            <span className="text-xl md:text-3xl mb-1">👫</span>
+                            <span className="text-lg md:text-xl mb-1">👫</span>
                             <span className={`text-[10px] md:text-sm font-bold leading-tight text-center ${category === 'mixed' ? 'text-white' : 'text-gray-300'}`}>{t('pool.ambiance.mixed')}</span>
                             <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white text-[9px] md:text-xs font-black px-2 md:px-3 py-1 md:py-1.5 rounded-full shadow-md">
                                 {t('pool.ambiance.mixed_day')}
@@ -227,12 +227,12 @@ export default function PoolPage() {
                         {/* Femmes */}
                         <button
                             onClick={() => setCategory('women')}
-                            className={`p-2 py-3 md:py-6 rounded-xl border flex flex-col items-center gap-2 transition-all relative ${category === 'women'
+                            className={`p-2 py-2 md:py-3 rounded-xl border flex flex-col items-center gap-2 transition-all relative ${category === 'women'
                                 ? 'bg-red-600 border-red-500 shadow-lg shadow-red-500/20'
                                 : 'bg-[#1E293B] border-white/5 hover:bg-[#1E293B]/80'
                                 }`}
                         >
-                            <span className="text-xl md:text-3xl mb-1">💃</span>
+                            <span className="text-lg md:text-xl mb-1">💃</span>
                             <span className={`text-[10px] md:text-sm font-bold leading-tight text-center ${category === 'women' ? 'text-white' : 'text-gray-300'}`}>{t('pool.ambiance.women')}</span>
                             <div className="bg-purple-600 text-white text-[9px] md:text-xs font-black px-2 md:px-3 py-1 md:py-1.5 rounded-full shadow-md">
                                 {t('pool.ambiance.women_day')}
@@ -250,7 +250,7 @@ export default function PoolPage() {
                             <button
                                 key={opt.id}
                                 onClick={() => setSelectedOption(opt.id)}
-                                className={`w-full p-4 md:p-6 rounded-xl border flex flex-col items-start justify-between gap-4 transition-all text-left rtl:text-right group min-h-[140px] ${selectedOption === opt.id
+                                className={`w-full p-3 md:p-4 rounded-xl border flex flex-col items-start justify-between gap-4 transition-all text-left rtl:text-right group min-h-[140px] ${selectedOption === opt.id
                                     ? 'bg-red-600/20 border-red-500 shadow-[0_0_20px_rgba(6,182,212,0.2)]'
                                     : 'bg-[#1E293B] border-white/5 hover:bg-[#1E293B]/80'
                                     }`}

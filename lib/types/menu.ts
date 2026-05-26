@@ -1,11 +1,10 @@
-
-// High-quality photos from Unsplash
+// Auto-generated full menu consolidated (Glovo Style)
 export interface MenuOption {
     id: string;
     label: string;
     price?: number;
     included?: boolean;
-    removable?: boolean; // Can be removed if included
+    removable?: boolean;
 }
 
 export interface MenuCustomization {
@@ -28,7 +27,9 @@ export interface MenuItem {
     id: number;
     category: string;
     name: string;
+    name_ar?: string;
     description: string;
+    description_ar?: string;
     basePrice: number;
     image: string;
     prepTime: string;
@@ -39,489 +40,1227 @@ export interface MenuItem {
     customization?: MenuCustomization;
 }
 
-export const COMPLETE_MENU: MenuItem[] = [
-    // ==========================================
-    // 🍳 FTOUR MAROCAIN (Breakfast)
-    // ==========================================
-    {
-        id: 101,
-        category: "Ftour",
-        name: "Omelette",
-        description: "Œufs frais préparés à votre goût.",
-        basePrice: 15,
-        image: "/image/Omelette.jpeg",
-        prepTime: "10 min",
-        available: true,
-        customizable: true,
-        customization: {
-            variant: {
-                label: "Type d'Omelette",
-                type: "radio",
-                options: [
-                    { id: "nature", label: "Omelette Nature", price: 0 },
-                    { id: "fromage", label: "Omelette Fromage (+3 DH)", price: 3 },
-                    { id: "khlii", label: "Omelette Khliaa (+7 DH)", price: 7 }
-                ],
-                default: "nature"
-            }
-        }
-    },
-    {
-        id: 102,
-        category: "Ftour",
-        name: "Ftour Complet",
-        description: "Petit déjeuner complet traditionnel.",
-        basePrice: 20,
-        image: "/image/ftor complet.jpeg",
-        prepTime: "15 min",
-        available: true
-    },
-    {
-        id: 103,
-        category: "Ftour",
-        name: "Crêpes & Galettes (Msamen/Harcha)",
-        description: "Spécialités marocaines chaudes.",
-        basePrice: 2,
-        image: "/image/msmn o 7rcha.jpeg",
-        prepTime: "5 min",
-        available: true,
-        customizable: true,
-        customization: {
-            variant: {
-                label: "Choix",
-                type: "radio",
-                options: [
-                    { id: "baghrir", label: "Baghrir", price: 0 },
-                    { id: "msamen", label: "Msamen", price: 0 },
-                    { id: "harcha", label: "Harcha", price: 0 },
-                    { id: "toast", label: "Toast Grillé (+13 DH)", price: 13 }
-                ],
-                default: "msamen"
-            }
-        }
-    },
-    {
-        id: 104,
-        category: "Ftour",
-        name: "Raib / Mhalabia / Flan",
-        description: "Desserts lactés frais.",
-        basePrice: 6,
-        image: "/image/flo.jpeg",
-        prepTime: "0 min",
-        available: true,
-        customizable: true,
-        customization: {
-            variant: {
-                label: "Choix",
-                type: "radio",
-                options: [
-                    { id: "mhalabia", label: "Mhalabia", price: 0 },
-                    { id: "flan", label: "Flan Royal (+4 DH)", price: 4 },
-                    { id: "panna", label: "Panna Cotta (+9 DH)", price: 9 },
-                    { id: "raib", label: "Raib (+9 DH)", price: 9 }
-                ],
-                default: "mhalabia"
-            }
-        }
-    },
+export const restaurantCategories = [
+    { id: "FastFood", label: "Fast Food" },
+    { id: "Plats", label: "Plats & Beldi" },
+    { id: "Ftour", label: "Ftour (Ptit Déj)" },
+    { id: "Salades", label: "Salades" },
+    { id: "Desserts", label: "Desserts" },
+    { id: "Boissons", label: "Boissons" }
+];
 
-    // ==========================================
-    // 🌮 SNACKS (Tacos, Panini)
-    // ==========================================
+export const COMPLETE_MENU: MenuItem[] = [
     {
-        id: 201,
-        category: "Snacks",
-        name: "Tacos",
-        description: "Le fameux Tacos servi avec frites.",
+        id: 1000,
+        category: "FastFood",
+        name: "Pizza Personnalisée",
+        name_ar: "بيتزا مخصصة",
+        description: "Créez votre pizza parfaite avec la pâte et les garnitures de votre choix.",
+        description_ar: "اصنع البيتزا المثالية مع العجينة والإضافات التي تختارها.",
+        basePrice: 20,
+        image: "https://images.unsplash.com/photo-1574071318508-1cdbab80d002?w=800",
+        prepTime: "15 min",
+        available: true,
+        badge: "Populaire",
+        isFeatured: true,
+        customizable: true,
+        customization: {
+          type: {
+                    label: "Recette",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "marg",
+                                        label: "Margerite",
+                                        price: 0
+                              },
+                              {
+                                        id: "veg",
+                                        label: "Végétarienne",
+                                        price: 0
+                              },
+                              {
+                                        id: "viande",
+                                        label: "Viande Hachée",
+                                        price: 10
+                              },
+                              {
+                                        id: "dinde",
+                                        label: "Dinde",
+                                        price: 10
+                              },
+                              {
+                                        id: "4from",
+                                        label: "4 Fromages",
+                                        price: 10
+                              },
+                              {
+                                        id: "kabab",
+                                        label: "Kabab",
+                                        price: 10
+                              },
+                              {
+                                        id: "fruit",
+                                        label: "Fruit de Mér",
+                                        price: 15
+                              },
+                              {
+                                        id: "4saisons",
+                                        label: "4 Saisons",
+                                        price: 15
+                              },
+                              {
+                                        id: "dindefume",
+                                        label: "Dinde Fumé",
+                                        price: 15
+                              }
+                    ],
+                    default: "marg"
+          },
+          taille: {
+                    label: "Taille",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "P",
+                                        label: "Petite (P)",
+                                        price: 0
+                              },
+                              {
+                                        id: "M",
+                                        label: "Moyenne (M)",
+                                        price: 10
+                              },
+                              {
+                                        id: "G",
+                                        label: "Grande (G)",
+                                        price: 20
+                              }
+                    ],
+                    default: "P"
+          }
+}
+    },
+    {
+        id: 1001,
+        category: "FastFood",
+        name: "Tacos Sur Mesure",
+        name_ar: "طاكوس على المقاس",
+        description: "Votre Tacos avec frites et sauce fromagère maison.",
+        description_ar: "طاكوس مع بطاطس مقلية وصلصة الجبن المنزلية.",
         basePrice: 30,
         image: "/image/taxos.jpeg",
-        prepTime: "15 min",
-        available: true,
-        customizable: true,
-        customization: {
-            variant: {
-                label: "Choix Viande",
-                type: "radio",
-                options: [
-                    { id: "poulet", label: "Poulet / Dinde", price: 0 },
-                    { id: "hachee", label: "Viande Hachée (+5 DH)", price: 5 },
-                    { id: "mix", label: "Mixte (Poulet + Viande) (+10 DH)", price: 10 },
-                    { id: "nuggets", label: "Tacos Nuggets", price: 0 }
-                ],
-                default: "poulet"
-            },
-            sauce: {
-                label: "Sauces (Max 2)",
-                type: "checkbox",
-                freeCount: 2,
-                extraPrice: 0,
-                options: [
-                    { id: "alg", label: "Algérienne" },
-                    { id: "biggy", label: "Biggy" },
-                    { id: "samurai", label: "Samurai" },
-                    { id: "andalouse", label: "Andalouse" },
-                    { id: "blanche", label: "Blanche" },
-                    { id: "ketchup", label: "Ketchup" },
-                    { id: "mayo", label: "Mayonnaise" }
-                ]
-            },
-            extras: {
-                label: "Suppléments",
-                type: "checkbox",
-                options: [
-                    { id: "extra_sauce", label: "Extra Sauce", price: 2 },
-                    { id: "extra_fromage", label: "Extra Fromage", price: 5 },
-                    { id: "extra_frites", label: "Frites Supplémentaires", price: 10 },
-                    { id: "extra_viande", label: "Double Viande", price: 12 }
-                ]
-            }
-        }
-    },
-    {
-        id: 202,
-        category: "Snacks",
-        name: "Panini",
-        description: "Pain croustillant servi chaud.",
-        basePrice: 20,
-        image: "/image/panini.jpeg",
         prepTime: "10 min",
         available: true,
+        badge: "Bestseller",
+        isFeatured: true,
         customizable: true,
         customization: {
-            variant: {
-                label: "Choix",
-                type: "radio",
-                options: [
-                    { id: "fromage", label: "Fromage", price: 0 },
-                    { id: "poulet", label: "Poulet (+5 DH)", price: 5 },
-                    { id: "viande", label: "Viande Hachée (+5 DH)", price: 5 },
-                    { id: "thon", label: "Thon (+5 DH)", price: 5 }
-                ],
-                default: "fromage"
-            },
-            extras: {
-                label: "Suppléments",
-                type: "checkbox",
-                options: [
-                    { id: "extra_sauce", label: "Extra Sauce", price: 2 },
-                    { id: "extra_fromage", label: "Extra Fromage", price: 5 },
-                    { id: "extra_frites", label: "Frites Supplémentaires", price: 10 }
-                ]
-            }
-        }
+          viande: {
+                    label: "Choix Viande",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "viande",
+                                        label: "Viande Hachée",
+                                        price: 0
+                              },
+                              {
+                                        id: "dinde",
+                                        label: "Dinde",
+                                        price: 0
+                              },
+                              {
+                                        id: "mixte",
+                                        label: "Mixte",
+                                        price: 5
+                              },
+                              {
+                                        id: "nuggets",
+                                        label: "Nuggets",
+                                        price: 10
+                              },
+                              {
+                                        id: "fruitmer",
+                                        label: "Fruit de Mer",
+                                        price: 15
+                              }
+                    ],
+                    default: "dinde"
+          },
+          taille: {
+                    label: "Taille du Tacos",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "M",
+                                        label: "Taille M",
+                                        price: 0
+                              },
+                              {
+                                        id: "L",
+                                        label: "Taille L",
+                                        price: 10
+                              },
+                              {
+                                        id: "XL",
+                                        label: "Taille XL",
+                                        price: 20
+                              }
+                    ],
+                    default: "M"
+          },
+          gratine: {
+                    label: "Supplément Gratiné",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "non",
+                                        label: "Normal (Non Gratiné)",
+                                        price: 0
+                              },
+                              {
+                                        id: "grat_m",
+                                        label: "Gratiné M",
+                                        price: 5
+                              },
+                              {
+                                        id: "grat_l",
+                                        label: "Gratiné L",
+                                        price: 7
+                              },
+                              {
+                                        id: "grat_xl",
+                                        label: "Gratiné XL",
+                                        price: 10
+                              }
+                    ],
+                    default: "non"
+          },
+          sauce: {
+                    label: "Sauces internes (Max 2)",
+                    type: "checkbox",
+                    options: [
+                              {
+                                        id: "alg",
+                                        label: "Algérienne"
+                              },
+                              {
+                                        id: "sam",
+                                        label: "Samourai"
+                              },
+                              {
+                                        id: "and",
+                                        label: "Andalouse"
+                              },
+                              {
+                                        id: "big",
+                                        label: "Biggy"
+                              },
+                              {
+                                        id: "ketchup",
+                                        label: "Ketchup"
+                              }
+                    ]
+          },
+          supplements: {
+                    label: "Suppléments",
+                    type: "checkbox",
+                    options: [
+                              {
+                                        id: "frites",
+                                        label: "Frites",
+                                        price: 8
+                              },
+                              {
+                                        id: "fromage",
+                                        label: "Fromage",
+                                        price: 3
+                              },
+                              {
+                                        id: "oeuf",
+                                        label: "Oeuf",
+                                        price: 3
+                              },
+                              {
+                                        id: "nuggets",
+                                        label: "1 Nugget",
+                                        price: 4
+                              },
+                              {
+                                        id: "crabe",
+                                        label: "Crabe",
+                                        price: 5
+                              }
+                    ]
+          }
+}
     },
-
-    // ==========================================
-    // 🍝 PLATS (Couscous, Pâtes)
-    // ==========================================
     {
-        id: 301,
-        category: "Plats",
-        name: "Couscous (Vendredi)",
-        description: "Plat traditionnel marocain, servi uniquement le vendredi.",
+        id: 1002,
+        category: "FastFood",
+        name: "Burger Maison",
+        name_ar: "برغر منزلي",
+        description: "Steak haché de boeuf, salade, tomate, oignons, sauce burger.",
+        description_ar: "شريحة لحم بقري مفروم، سلطة، طماطم، بصل، وصلصة برغر.",
+        basePrice: 20,
+        image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800",
+        prepTime: "10 min",
+        available: true,
+        badge: undefined,
+        isFeatured: false,
+        customizable: true,
+        customization: {
+          type: {
+                    label: "Type de Burger",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "burger",
+                                        label: "Hamburger",
+                                        price: 0
+                              },
+                              {
+                                        id: "cheese",
+                                        label: "Cheese Burger",
+                                        price: 5
+                              },
+                              {
+                                        id: "chicken",
+                                        label: "Chicken Burger",
+                                        price: 10
+                              },
+                              {
+                                        id: "american",
+                                        label: "American Burger",
+                                        price: 15
+                              }
+                    ],
+                    default: "burger"
+          },
+          combo: {
+                    label: "Formule Menu",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "seul",
+                                        label: "Seul",
+                                        price: 0
+                              },
+                              {
+                                        id: "menu",
+                                        label: "Menu (Frites + Boisson)",
+                                        price: 15
+                              }
+                    ],
+                    default: "seul"
+          },
+          supplements: {
+                    label: "Suppléments",
+                    type: "checkbox",
+                    options: [
+                              {
+                                        id: "frites",
+                                        label: "Frites",
+                                        price: 8
+                              },
+                              {
+                                        id: "fromage",
+                                        label: "Fromage",
+                                        price: 3
+                              },
+                              {
+                                        id: "oeuf",
+                                        label: "Oeuf",
+                                        price: 3
+                              },
+                              {
+                                        id: "nuggets",
+                                        label: "1 Nugget",
+                                        price: 4
+                              },
+                              {
+                                        id: "crabe",
+                                        label: "Crabe",
+                                        price: 5
+                              }
+                    ]
+          }
+}
+    },
+    {
+        id: 1003,
+        category: "FastFood",
+        name: "Panini Pressé",
+        name_ar: "بانيني",
+        description: "Pain ciabatta, fromage fondant, garniture au choix.",
+        description_ar: "خبز الشيباتا، جبن ذائب، حشوة من اختيارك.",
+        basePrice: 15,
+        image: "/image/panini.jpeg",
+        prepTime: "5 min",
+        available: true,
+        badge: undefined,
+        isFeatured: false,
+        customizable: true,
+        customization: {
+          viande: {
+                    label: "Garniture",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "thon",
+                                        label: "Thon",
+                                        price: 0
+                              },
+                              {
+                                        id: "viande",
+                                        label: "Viande Hachée",
+                                        price: 5
+                              },
+                              {
+                                        id: "dinde",
+                                        label: "Dinde",
+                                        price: 5
+                              },
+                              {
+                                        id: "mixte",
+                                        label: "Mixte",
+                                        price: 10
+                              },
+                              {
+                                        id: "fruitmer",
+                                        label: "Fruits De Mer",
+                                        price: 10
+                              },
+                              {
+                                        id: "nuggets",
+                                        label: "Nuggets",
+                                        price: 10
+                              },
+                              {
+                                        id: "cordon",
+                                        label: "Cordon Bleu",
+                                        price: 10
+                              }
+                    ],
+                    default: "thon"
+          },
+          combo: {
+                    label: "Formule Menu",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "seul",
+                                        label: "Seul",
+                                        price: 0
+                              },
+                              {
+                                        id: "menu",
+                                        label: "Menu (Frites + Boisson)",
+                                        price: 15
+                              }
+                    ],
+                    default: "seul"
+          }
+}
+    },
+    {
+        id: 1004,
+        category: "FastFood",
+        name: "Sandwich Classique",
+        name_ar: "ساندويتش كلاسيكي",
+        description: "Baguette croustillante, frites, salade, garniture au choix.",
+        description_ar: "باكيط مقرمش، بطاطس مقلية، سلطة، حشوة من اختيارك.",
+        basePrice: 10,
+        image: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=800",
+        prepTime: "5 min",
+        available: true,
+        badge: undefined,
+        isFeatured: false,
+        customizable: true,
+        customization: {
+          viande: {
+                    label: "Garniture",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "normal",
+                                        label: "Normal (Sans viande)",
+                                        price: 0
+                              },
+                              {
+                                        id: "froid",
+                                        label: "Froid (Cachir/Fromage)",
+                                        price: 3
+                              },
+                              {
+                                        id: "thon",
+                                        label: "Thon",
+                                        price: 5
+                              },
+                              {
+                                        id: "viande",
+                                        label: "Viande Hachée",
+                                        price: 10
+                              },
+                              {
+                                        id: "dinde",
+                                        label: "Dinde",
+                                        price: 10
+                              },
+                              {
+                                        id: "mixte",
+                                        label: "Mixte",
+                                        price: 15
+                              },
+                              {
+                                        id: "fruitmer",
+                                        label: "Fruits De Mer",
+                                        price: 15
+                              }
+                    ],
+                    default: "viande"
+          },
+          combo: {
+                    label: "Formule Menu",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "seul",
+                                        label: "Seul",
+                                        price: 0
+                              },
+                              {
+                                        id: "menu",
+                                        label: "Menu (Frites + Boisson)",
+                                        price: 15
+                              }
+                    ],
+                    default: "seul"
+          }
+}
+    },
+    {
+        id: 1005,
+        category: "FastFood",
+        name: "Sandwich Pain Maison",
+        name_ar: "ساندويتش بخبز الدار",
+        description: "Notre spécialité pain maison extra moelleux.",
+        description_ar: "تخصصنا بخبز منزلي ناعم جداً.",
         basePrice: 30,
-        image: "/image/couscous.jpeg",
-        prepTime: "30 min",
+        image: "https://images.unsplash.com/photo-1553909489-cd47cebeefa9?w=800",
+        prepTime: "10 min",
         available: true,
+        badge: "Signature",
+        isFeatured: false,
         customizable: true,
         customization: {
-            variant: {
-                label: "Type",
-                type: "radio",
-                options: [
-                    { id: "poulet", label: "Couscous Poulet", price: 0 },
-                    { id: "viande", label: "Couscous Viande (+15 DH)", price: 15 }
-                ],
-                default: "poulet"
-            }
-        }
+          viande: {
+                    label: "Spécialité",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "chiken",
+                                        label: "Chiken",
+                                        price: 0
+                              },
+                              {
+                                        id: "foud",
+                                        label: "Foud Paris",
+                                        price: 0
+                              },
+                              {
+                                        id: "tandoori",
+                                        label: "Chiken Tandoori",
+                                        price: 0
+                              },
+                              {
+                                        id: "mixparis",
+                                        label: "Mix Paris",
+                                        price: 0
+                              },
+                              {
+                                        id: "mixroyale",
+                                        label: "Mix Royale",
+                                        price: 0
+                              },
+                              {
+                                        id: "cordon",
+                                        label: "Cordon Bleu",
+                                        price: 0
+                              }
+                    ],
+                    default: "chiken"
+          },
+          combo: {
+                    label: "Formule Menu",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "seul",
+                                        label: "Seul",
+                                        price: 0
+                              },
+                              {
+                                        id: "menu",
+                                        label: "Menu (Frites + Boisson)",
+                                        price: 15
+                              }
+                    ],
+                    default: "seul"
+          }
+}
     },
     {
-        id: 302,
-        category: "Plats",
-        name: "Pâtes",
-        description: "Pâtes italiennes fraîches, sauce maison.",
-        basePrice: 20,
-        image: "/image/les pate.jpeg",
+        id: 1006,
+        category: "FastFood",
+        name: "Pasticcio & Lasagnes",
+        name_ar: "باستيشيو و لازانيا",
+        description: "Plats au four gratinés.",
+        description_ar: "أطباق مخبوزة ومحمرة في الفرن.",
+        basePrice: 25,
+        image: "https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=800",
         prepTime: "20 min",
         available: true,
+        badge: "Gourmand",
+        isFeatured: false,
         customizable: true,
         customization: {
-            variant: {
-                label: "Sauce",
-                type: "radio",
-                options: [
-                    { id: "tomate", label: "Sauce Tomate (25 DH)", price: 5 },
-                    { id: "bolo", label: "Bolognaise (30 DH)", price: 10 },
-                    { id: "poulet", label: "Poulet Champignon (35 DH)", price: 15 },
-                    { id: "carbo", label: "Carbonara (25 DH)", price: 5 }
-                ],
-                default: "tomate"
-            }
-        }
+          type: {
+                    label: "Type de Plat",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "lasagne",
+                                        label: "Lasagne",
+                                        price: 0
+                              },
+                              {
+                                        id: "pasticcio",
+                                        label: "Pasticcio (Macaronis)",
+                                        price: 10
+                              }
+                    ],
+                    default: "pasticcio"
+          },
+          viande: {
+                    label: "Garniture",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "dinde",
+                                        label: "Dinde",
+                                        price: 0
+                              },
+                              {
+                                        id: "viande",
+                                        label: "Viande Hachée",
+                                        price: 0
+                              },
+                              {
+                                        id: "mixte",
+                                        label: "Mixte",
+                                        price: 5
+                              },
+                              {
+                                        id: "fruitmer",
+                                        label: "Fruit de Mer",
+                                        price: 10
+                              },
+                              {
+                                        id: "kabab",
+                                        label: "Kabab",
+                                        price: 10
+                              }
+                    ],
+                    default: "viande"
+          }
+}
     },
-
-    // ==========================================
-    // 🍕 PIZZA
-    // ==========================================
     {
-        id: 401,
-        category: "Snacks",
-        name: "Pizza",
-        description: "Pâte fine maison et mozzarella.",
-        basePrice: 20,
-        image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800",
-        prepTime: "20 min",
+        id: 1007,
+        category: "FastFood",
+        name: "Shawarma & Cheese Naan",
+        name_ar: "شاورما و نان بالجبن",
+        description: "Spécialités orientales, pain libanais ou indien au fromage.",
+        description_ar: "تخصصات شرقية، خبز لبناني أو هندي بالجبن.",
+        basePrice: 25,
+        image: "https://images.unsplash.com/photo-1529006557810-274b9b2fc783?w=800",
+        prepTime: "5 min",
         available: true,
+        badge: undefined,
+        isFeatured: false,
         customizable: true,
         customization: {
-            variant: {
-                label: "Choix",
-                type: "radio",
-                options: [
-                    { id: "marg", label: "Margherita (20 DH)", price: 0 },
-                    { id: "veg", label: "Végétarienne (25 DH)", price: 5 },
-                    { id: "thon", label: "Thon (25 DH)", price: 5 },
-                    { id: "poulet", label: "Poulet (30 DH)", price: 10 },
-                    { id: "bolo", label: "Bolognaise (35 DH)", price: 15 },
-                    { id: "mix", label: "Mixte (35 DH)", price: 15 },
-                    { id: "mer", label: "Fruits de Mer (35 DH)", price: 15 }
-                ],
-                default: "marg"
-            },
-            size: {
-                label: "Taille",
-                type: "radio",
-                options: [
-                    { id: "s", label: "Individuelle", price: 0 },
-                    { id: "l", label: "Familiale (Grand Format)", price: 30 }
-                ],
-                default: "s"
-            },
-            extras: {
-                label: "Suppléments",
-                type: "checkbox",
-                options: [
-                    { id: "extra_fromage", label: "Double Fromage", price: 10 },
-                    { id: "extra_olive", label: "Extra Olives", price: 3 },
-                    { id: "extra_sauce", label: "Extra Sauce Piquante", price: 2 }
-                ]
-            }
-        }
+          type: {
+                    label: "Type de Pain",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "shawarma",
+                                        label: "Shawarma Syrien",
+                                        price: 0
+                              },
+                              {
+                                        id: "naan",
+                                        label: "Cheese Naan",
+                                        price: 10
+                              }
+                    ],
+                    default: "shawarma"
+          },
+          viande: {
+                    label: "Garniture",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "normal",
+                                        label: "Poulet",
+                                        price: 0
+                              },
+                              {
+                                        id: "viande",
+                                        label: "V.Haché",
+                                        price: 0
+                              },
+                              {
+                                        id: "mixte",
+                                        label: "Mixte",
+                                        price: 5
+                              }
+                    ],
+                    default: "normal"
+          },
+          combo: {
+                    label: "Formule Menu",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "seul",
+                                        label: "Seul",
+                                        price: 0
+                              },
+                              {
+                                        id: "menu",
+                                        label: "Menu (Frites + Boisson)",
+                                        price: 15
+                              }
+                    ],
+                    default: "seul"
+          }
+}
     },
-
-    // ==========================================
-    // 🥘 BELDI & PLATS TRADITIONNELS
-    // ==========================================
     {
-        id: 303,
+        id: 1008,
         category: "Plats",
         name: "Tajine Marocain",
+        name_ar: "طاجين مغربي",
         description: "Cuit lentement sur charbon (Fekhar).",
+        description_ar: "مطهو ببطء على الفحم (طاجين الفخار).",
         basePrice: 35,
         image: "/image/tajin.jpeg",
         prepTime: "40 min",
         available: true,
+        badge: "Beldi",
+        isFeatured: true,
         customizable: true,
         customization: {
-            variant: {
-                label: "Type de Tajine",
-                type: "radio",
-                options: [
-                    { id: "poulet_citron", label: "Poulet Citron / Dghmira", price: 0 },
-                    { id: "kefta", label: "Kefta Oeufs (Sauce Tomate)", price: 0 },
-                    { id: "legume", label: "Légumes (Végétarien) -5 DH", price: -5 },
-                    { id: "viande_pruneau", label: "Viande Pruneaux (Barkouk) +15 DH", price: 15 }
-                ],
-                default: "poulet_citron"
-            }
-        }
+          variant: {
+                    label: "Type de Tajine",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "poulet_citron",
+                                        label: "Poulet Citron / Dghmira",
+                                        price: 0
+                              },
+                              {
+                                        id: "kefta",
+                                        label: "Kefta Oeufs (Sauce Tomate)",
+                                        price: 0
+                              },
+                              {
+                                        id: "legume",
+                                        label: "Légumes (Végétarien)",
+                                        price: -5
+                              },
+                              {
+                                        id: "viande_pruneau",
+                                        label: "Viande Pruneaux",
+                                        price: 30
+                              }
+                    ],
+                    default: "poulet_citron"
+          }
+}
     },
     {
-        id: 304,
+        id: 1009,
         category: "Plats",
         name: "Poulet Rôti (Djaj Mhamer)",
+        name_ar: "دجاج محمر",
         description: "Poulet rôti à la marocaine avec frites et olives.",
+        description_ar: "دجاج محمر على الطريقة المغربية مع البطاطس والزيتون.",
         basePrice: 40,
         image: "/image/djaj m7amar.jpeg",
         prepTime: "20 min",
         available: true,
+        badge: undefined,
+        isFeatured: false,
         customizable: true,
         customization: {
-            portion: {
-                label: "Portion",
-                type: "radio",
-                options: [
-                    { id: "quart", label: "1/4 Poulet (Individuel)", price: 0 },
-                    { id: "demi", label: "1/2 Poulet (+30 DH)", price: 30 },
-                    { id: "entier", label: "Poulet Entier (Famille) (+80 DH)", price: 80 }
-                ],
-                default: "quart"
-            },
-            sides: {
-                label: "Accompagnement",
-                type: "checkbox",
-                freeCount: 1,
-                extraPrice: 10,
-                options: [
-                    { id: "frites", label: "Frites Maison" },
-                    { id: "riz", label: "Riz" },
-                    { id: "salade", label: "Petite Salade" },
-                    { id: "zaalouk", label: "Zaalouk / Taktouka" }
-                ]
-            }
-        }
+          portion: {
+                    label: "Portion",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "quart",
+                                        label: "1/4 Poulet (Individuel)",
+                                        price: 0
+                              },
+                              {
+                                        id: "demi",
+                                        label: "1/2 Poulet",
+                                        price: 30
+                              },
+                              {
+                                        id: "entier",
+                                        label: "Poulet Entier (Famille)",
+                                        price: 80
+                              }
+                    ],
+                    default: "quart"
+          }
+}
     },
-
-    // ==========================================
-    // 🍹 JUS & DESSERTS
-    // ==========================================
     {
-        id: 501,
+        id: 1010,
+        category: "Plats",
+        name: "Couscous (Vendredi)",
+        name_ar: "كسكس (الجمعة)",
+        description: "Plat traditionnel marocain, servi uniquement le vendredi.",
+        description_ar: "طبق مغربي تقليدي، يقدم يوم الجمعة فقط.",
+        basePrice: 30,
+        image: "/image/couscous.jpeg",
+        prepTime: "30 min",
+        available: true,
+        badge: "Spécialité",
+        isFeatured: false,
+        customizable: true,
+        customization: {
+          variant: {
+                    label: "Type",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "poulet",
+                                        label: "Couscous Poulet",
+                                        price: 0
+                              },
+                              {
+                                        id: "viande",
+                                        label: "Couscous Viande",
+                                        price: 20
+                              }
+                    ],
+                    default: "poulet"
+          }
+}
+    },
+    {
+        id: 1011,
+        category: "Plats",
+        name: "Pâtes",
+        name_ar: "معكرونة (پاستا)",
+        description: "Spaghetti ou Penne servis avec votre sauce préférée.",
+        description_ar: "سباغيتي أو بيني تقدم مع الصلصة المفضلة لديك.",
+        basePrice: 30,
+        image: "/image/les pate.jpeg",
+        prepTime: "15 min",
+        available: true,
+        badge: undefined,
+        isFeatured: false,
+        customizable: true,
+        customization: {
+          sauce: {
+                    label: "Recette",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "bolo",
+                                        label: "Bolognaise",
+                                        price: 0
+                              },
+                              {
+                                        id: "dinde",
+                                        label: "Dinde Fumé & Crème Fraîche",
+                                        price: 5
+                              },
+                              {
+                                        id: "fruitmer",
+                                        label: "Fruits de Mer",
+                                        price: 10
+                              }
+                    ],
+                    default: "bolo"
+          },
+          type: {
+                    label: "Type de Pâtes",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "penne",
+                                        label: "Penne"
+                              },
+                              {
+                                        id: "spag",
+                                        label: "Spaghetti"
+                              }
+                    ],
+                    default: "penne"
+          }
+}
+    },
+    {
+        id: 1012,
+        category: "Ftour",
+        name: "Omelette",
+        name_ar: "أومليط",
+        description: "Œufs de ferme préparés à votre goût.",
+        description_ar: "بيض مزرعة محضر حسب ذوقك.",
+        basePrice: 15,
+        image: "/image/Omelette.jpeg",
+        prepTime: "10 min",
+        available: true,
+        badge: undefined,
+        isFeatured: false,
+        customizable: true,
+        customization: {
+          variant: {
+                    label: "Type",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "nature",
+                                        label: "Nature",
+                                        price: 0
+                              },
+                              {
+                                        id: "fromage",
+                                        label: "Fromage",
+                                        price: 5
+                              },
+                              {
+                                        id: "khlii",
+                                        label: "Khliî (Viande séchée)",
+                                        price: 10
+                              }
+                    ],
+                    default: "nature"
+          }
+}
+    },
+    {
+        id: 1013,
+        category: "Ftour",
+        name: "Ftour Complet",
+        name_ar: "فطور كامل",
+        description: "Petit déjeuner complet traditionnel.",
+        description_ar: "فطور تقليدي كامل.",
+        basePrice: 35,
+        image: "/image/ftor complet.jpeg",
+        prepTime: "15 min",
+        available: true,
+        badge: undefined,
+        isFeatured: false,
+        customizable: false,
+        customization: undefined
+    },
+    {
+        id: 1014,
+        category: "Ftour",
+        name: "Crêpes & Galettes Chaudes",
+        name_ar: "فطائر ومسمن",
+        description: "Assortiment de Baghrir, Msamen, Harcha.",
+        description_ar: "تشكيلة من البغرير، المسمن، والحرشة.",
+        basePrice: 10,
+        image: "/image/msmn o 7rcha.jpeg",
+        prepTime: "5 min",
+        available: true,
+        badge: undefined,
+        isFeatured: false,
+        customizable: true,
+        customization: {
+          accompagnement: {
+                    label: "Accompagnements",
+                    type: "checkbox",
+                    options: [
+                              {
+                                        id: "miel",
+                                        label: "Miel & Beurre",
+                                        price: 2
+                              },
+                              {
+                                        id: "amlou",
+                                        label: "Amlou (Amandes & Argan)",
+                                        price: 5
+                              },
+                              {
+                                        id: "nutella",
+                                        label: "Nutella",
+                                        price: 5
+                              }
+                    ]
+          }
+}
+    },
+    {
+        id: 1015,
+        category: "Salades",
+        name: "Salade Fraîche",
+        name_ar: "سلطة طازجة",
+        description: "Légumes frais de saison.",
+        description_ar: "خضروات موسمية طازجة.",
+        basePrice: 25,
+        image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800",
+        prepTime: "10 min",
+        available: true,
+        badge: undefined,
+        isFeatured: false,
+        customizable: true,
+        customization: {
+          type: {
+                    label: "Variété",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "nicoise",
+                                        label: "Niçoise",
+                                        price: 0
+                              },
+                              {
+                                        id: "mexicaine",
+                                        label: "Mexicaine",
+                                        price: 0
+                              },
+                              {
+                                        id: "cesar",
+                                        label: "César",
+                                        price: 10
+                              },
+                              {
+                                        id: "paris",
+                                        label: "Paris",
+                                        price: 15
+                              }
+                    ],
+                    default: "nicoise"
+          }
+}
+    },
+    {
+        id: 1016,
         category: "Boissons",
         name: "Jus Frais",
-        description: "Fruits frais pressés minute.",
-        basePrice: 10, // Lowest price (Orange)
+        name_ar: "عصير طازج",
+        description: "Pressé minute, 100% fruits.",
+        description_ar: "معصور طازج، 100٪ فواكه.",
+        basePrice: 10,
         image: "https://images.unsplash.com/photo-1600271886742-f049cd451bba?w=800",
         prepTime: "5 min",
         available: true,
+        badge: undefined,
+        isFeatured: false,
         customizable: true,
         customization: {
-            variant: {
-                label: "Saveur",
-                type: "radio",
-                options: [
-                    { id: "orange", label: "Orange (13 DH)", price: 3 },
-                    { id: "banane", label: "Jus de Banane (13 DH)", price: 3 },
-                    { id: "pomme", label: "Jus de Pomme (13 DH)", price: 3 },
-                    { id: "citron", label: "Jus de Citron (13 DH)", price: 3 },
-                    { id: "fraise", label: "Jus de Fraise (15 DH)", price: 5 },
-                    { id: "avocat", label: "Jus d'Avocat (17 DH)", price: 7 },
-                    { id: "avocat_sec", label: "Avocat + Fruits Secs (20 DH)", price: 10 },
-                    { id: "panache", label: "Panaché (15 DH)", price: 5 },
-                    { id: "dragon", label: "Jus de Dragon (30 DH)", price: 20 },
-                    { id: "peche", label: "Jus de Pêche (15 DH)", price: 5 }
-                ],
-                default: "orange"
-            },
-            sugar: {
-                label: "Préférence Sucre",
-                type: "radio",
-                options: [
-                    { id: "avec", label: "Avec Sucre (Normal)" },
-                    { id: "sans", label: "Sans Sucre (Naturel)" },
-                    { id: "peu", label: "Un peu de sucre" }
-                ],
-                default: "avec"
-            }
-        }
+          fruit: {
+                    label: "Fruit",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "orange",
+                                        label: "D'orange",
+                                        price: 0
+                              },
+                              {
+                                        id: "citron",
+                                        label: "De Citron",
+                                        price: 0
+                              },
+                              {
+                                        id: "pomme",
+                                        label: "De pomme",
+                                        price: 0
+                              },
+                              {
+                                        id: "banane",
+                                        label: "De Banane",
+                                        price: 0
+                              },
+                              {
+                                        id: "tropical",
+                                        label: "Tropical",
+                                        price: 0
+                              },
+                              {
+                                        id: "avocat",
+                                        label: "De avocat",
+                                        price: 6
+                              },
+                              {
+                                        id: "panache",
+                                        label: "Panaché (Orange)",
+                                        price: 8
+                              }
+                    ],
+                    default: "orange"
+          },
+          sucre: {
+                    label: "Sucre",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "avec",
+                                        label: "Avec Sucre"
+                              },
+                              {
+                                        id: "sans",
+                                        label: "Sans Sucre"
+                              }
+                    ],
+                    default: "avec"
+          }
+}
     },
     {
-        id: 502,
-        category: "Desserts",
-        name: "Les Crêpes Sucrées",
-        description: "Gourmandise faite maison.",
-        basePrice: 10,
-        image: "https://images.unsplash.com/photo-1519676867240-f03562e64548?w=800",
-        prepTime: "10 min",
-        available: true,
-        customizable: true,
-        customization: {
-            variant: {
-                label: "Garniture",
-                type: "radio",
-                options: [
-                    { id: "sucre", label: "Sucre (10 DH)", price: 0 },
-                    { id: "miel", label: "Miel (10 DH)", price: 0 },
-                    { id: "amlou", label: "Amlou (12 DH)", price: 2 },
-                    { id: "nutella", label: "Nutella (15 DH)", price: 5 },
-                    { id: "nutella_banane", label: "Nutella Banane (20 DH)", price: 10 }
-                ],
-                default: "sucre"
-            }
-        }
-    },
-
-    // ==========================================
-    // ☕ BOISSONS CHAUDES
-    // ==========================================
-    {
-        id: 601,
+        id: 1017,
         category: "Boissons",
         name: "Cafétéria",
+        name_ar: "مقهى",
         description: "Boissons chaudes premium.",
-        basePrice: 9,
+        description_ar: "مشروبات ساخنة ممتازة.",
+        basePrice: 10,
         image: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=800",
         prepTime: "5 min",
         available: true,
+        badge: undefined,
+        isFeatured: false,
         customizable: true,
         customization: {
-            variant: {
-                label: "Choix",
-                type: "radio",
-                options: [
-                    { id: "cafe", label: "Café (9 DH)", price: 0 },
-                    { id: "lait", label: "Lait Chaud (9 DH)", price: 0 },
-                    { id: "nousnous", label: "Nouss Nouss (9 DH)", price: 0 }
-                ],
-                default: "cafe"
-            },
-            sugar: {
-                label: "Sucre",
-                type: "radio",
-                options: [
-                    { id: "normal", label: "Sucre Normal" },
-                    { id: "sans", label: "Sans Sucre" },
-                    { id: "apart", label: "Sucre à part" }
-                ],
-                default: "normal"
-            }
-        }
+          boisson: {
+                    label: "Choix",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "cafe",
+                                        label: "Café Espresso",
+                                        price: 0
+                              },
+                              {
+                                        id: "lait",
+                                        label: "Lait Chaud",
+                                        price: 0
+                              },
+                              {
+                                        id: "nousnous",
+                                        label: "Nouss Nouss",
+                                        price: 0
+                              },
+                              {
+                                        id: "the",
+                                        label: "Thé à la Menthe",
+                                        price: 5
+                              }
+                    ],
+                    default: "cafe"
+          }
+}
     },
     {
-        id: 602,
+        id: 1018,
         category: "Boissons",
-        name: "Thé Marocain (Barrad)",
-        description: "Thé traditionnel servi avec herbes fraîches.",
-        basePrice: 15,
-        image: "/image/Tea.jpeg",
-        prepTime: "5 min",
+        name: "Soda & Eau",
+        name_ar: "مشروبات غازية وماء",
+        description: "Boissons fraîches.",
+        description_ar: "مشروبات باردة.",
+        basePrice: 5,
+        image: "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=800",
+        prepTime: "2 min",
         available: true,
+        badge: undefined,
+        isFeatured: false,
         customizable: true,
         customization: {
-            flavor: {
-                label: "Nessma (Choix)",
-                type: "radio",
-                options: [
-                    { id: "menthe", label: "Na3na3 (Menthe)" },
-                    { id: "chiba", label: "Chiba (Absinthe)" },
-                    { id: "fliyo", label: "Fliyo" },
-                    { id: "lwiza", label: "Lwiza (Verveine)" },
-                    { id: "mansour", label: "Ssalmia" },
-                    { id: "mkhallat", label: "Mkhallat (Mélange)" }
-                ],
-                default: "menthe"
-            },
-            sugar: {
-                label: "Hlawa (Sucre)",
-                type: "radio",
-                options: [
-                    { id: "normal", label: "Hlou (Normal)" },
-                    { id: "medium", label: "N9ess (Moins sucré)" },
-                    { id: "messous", label: "Messous (Sans Sucre)" },
-                    { id: "apart", label: "Sucre à part" }
-                ],
-                default: "normal"
-            }
-        }
+          boisson: {
+                    label: "Choix",
+                    type: "radio",
+                    options: [
+                              {
+                                        id: "eau_p",
+                                        label: "Eau Minérale (Petite)",
+                                        price: 0
+                              },
+                              {
+                                        id: "eau_g",
+                                        label: "Eau 50 Cl",
+                                        price: 3
+                              },
+                              {
+                                        id: "coca",
+                                        label: "Soda Canette (Coca, etc.)",
+                                        price: 5
+                              }
+                    ],
+                    default: "eau_p"
+          }
+}
+    },
+    {
+        id: 1019,
+        category: "Desserts",
+        name: "Salade de fruit",
+        name_ar: "سلطة فواكه",
+        description: "Cocktail de fruits de saison fraîchement coupés.",
+        description_ar: "كوكتيل فواكه موسمية مقطعة طازجة.",
+        basePrice: 40,
+        image: "https://images.unsplash.com/photo-1490474418585-ba9f528d2981?w=800",
+        prepTime: "10 min",
+        available: true,
+        badge: "Frais",
+        isFeatured: true,
+        customizable: false,
+        customization: undefined
+    },
+    {
+        id: 1020,
+        category: "Desserts",
+        name: "Flan Amlou",
+        name_ar: "فلان بأملو",
+        description: "Flan onctueux parfumé à la pâte d'Amlou.",
+        description_ar: "فلان ناعم بنكهة عجينة أملو.",
+        basePrice: 15,
+        image: "https://images.unsplash.com/photo-1590080876477-d923a1a3debb?w=800",
+        prepTime: "5 min",
+        available: true,
+        badge: "Local",
+        isFeatured: false,
+        customizable: false,
+        customization: undefined
+    },
+    {
+        id: 1021,
+        category: "Desserts",
+        name: "Za3za3",
+        name_ar: "زعزع",
+        description: "Cocktail avocat, fruits, crème et fruits secs.",
+        description_ar: "كوكتيل أفوكادو، فواكه، كريمة وفواكه جافة.",
+        basePrice: 25,
+        image: "https://images.unsplash.com/photo-1551024601-bec78aea704b?w=800",
+        prepTime: "10 min",
+        available: true,
+        badge: "Énergie",
+        isFeatured: true,
+        customizable: false,
+        customization: undefined
     }
-];
-
-export const restaurantCategories = [
-    { id: "all", label: "Tout" },
-    { id: "Ftour", label: "Ftour (Ptit Déj)" },
-    { id: "Snacks", label: "Snacks & Pizza" },
-    { id: "Plats", label: "Plats & Beldi" },
-    { id: "Boissons", label: "Jus & Café" },
-    { id: "Desserts", label: "Desserts" }
 ];

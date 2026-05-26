@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Smartphone, Check, User, Loader2, ArrowRight, LogOut, Clock, Package, Wifi, Phone, Crown, QrCode, X, Moon, Waves, Trash2, UtensilsCrossed, AlertTriangle, Pencil, Save, Plus } from 'lucide-react';
+import { Smartphone, Check, User, Loader2, ArrowRight, LogOut, Clock, Package, Wifi, Phone, Crown, QrCode, X, Moon, Waves, Trash2, UtensilsCrossed, AlertTriangle, Pencil, Save, Plus, ChevronDown, Facebook, Mail, Shield } from 'lucide-react';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 import { useAuth } from '@/lib/state/AuthProvider';
@@ -1030,8 +1030,15 @@ function ProfileContent() {
                             </div>
                         </div>
 
-                        {/* LOGOUT BUTTON - Explicit */}
-                        <div className="mt-8 mb-4 px-4">
+                        {/* LOGOUT & ADMIN BUTTONS */}
+                        <div className="mt-8 mb-4 px-4 flex flex-col gap-3">
+                            <button
+                                onClick={() => router.push('/admin')}
+                                className="w-full py-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 font-bold hover:bg-amber-500 hover:text-black transition-all flex items-center justify-center gap-2 group"
+                            >
+                                <Shield className="w-5 h-5 text-amber-500 group-hover:text-black" />
+                                Espace Staff / Admin 🔐
+                            </button>
                             <button
                                 onClick={handleLogout}
                                 className="w-full py-4 rounded-xl bg-red-500/10 border border-red-500/20 text-red-500 font-bold hover:bg-red-500 hover:text-white transition-all flex items-center justify-center gap-2 group"

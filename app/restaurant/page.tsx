@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useMemo, useState, useEffect, useCallback } from "react";
-import { Plus, UtensilsCrossed, ChevronRight, Trash2, Clock, Check, Car, MapPin, Navigation, ShoppingBag } from "lucide-react";
+import { Plus, UtensilsCrossed, ChevronRight, Trash2, Clock, Check, Car, MapPin, Navigation, ShoppingBag, Filter, AlertTriangle, Camera, X } from "lucide-react";
+import { Scanner } from '@yudiel/react-qr-scanner';
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCart } from "@/lib/state/CartContext";
@@ -54,23 +55,69 @@ function calcPrice(item: MenuItem, selections: Record<string, unknown>): number 
 
 export default function RestaurantPage() {
     const router = useRouter();
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
     const { items, addItem, removeItem, clear, total, itemCount } = useCart();
 
     // UI States
     const [showSuccess, setShowSuccess] = useState<string | null>(null);
     const [activeCategory, setActiveCategory] = useState("all");
+    const [showFilters, setShowFilters] = useState(false);
     const [customizeItem, setCustomizeItem] = useState<MenuItem | null>(null);
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [selections, setSelections] = useState<Record<string, unknown>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    // Database States
+    const [dbItems, setDbItems] = useState<MenuItem[]>(COMPLETE_MENU);
+    const [dbCategories, setDbCategories] = useState<{id: string, label: string}[]>(restaurantCategories);
+    const [isLoadingMenu, setIsLoadingMenu] = useState(true);
+
+    useEffect(() => {
+        const loadMenuFromDB = async () => {
+            try {
+                const { data: cats, error: catErr } = await supabase.from('restaurant_categories').select('*').order('sort_order');
+                if (!catErr && cats && cats.length > 0) {
+                    setDbCategories([
+                        { id: 'all', label: 'Tout' },
+                        ...cats.map(c => ({ id: c.id, label: c.label_fr }))
+                    ]);
+                }
+
+                const { data: items, error: itemErr } = await supabase.from('restaurant_items').select('*');
+                if (!itemErr && items && items.length > 0) {
+                    const mappedItems: MenuItem[] = items.map(i => ({
+                        id: i.id as any,
+                        category: i.category_id,
+                        name: i.name_fr,
+                        description: i.description_fr,
+                        basePrice: Number(i.base_price),
+                        image: i.image_url,
+                        prepTime: i.prep_time,
+                        available: i.is_available,
+                        badge: i.badge,
+                        isFeatured: i.is_featured,
+                        customizable: i.customization_json != null,
+                        customization: i.customization_json
+                    }));
+                    setDbItems(mappedItems);
+                }
+            } catch (err) {
+                console.error("No database connection yet, falling back to static menu");
+            } finally {
+                // Simulate a slight delay for visual smoothness before removing skeleton
+                setTimeout(() => setIsLoadingMenu(false), 500);
+            }
+        };
+        loadMenuFromDB();
+    }, []);
+
     // --- "L'Âme du Projet" : Business Logic State ---
     const [locationType, setLocationType] = useState<'on_site' | 'on_way'>('on_site');
     
     // On-Site State
-    const [onSiteLocation, setOnSiteLocation] = useState<'table' | 'pump' | 'pool' | 'room'>('table');
+    const [onSiteLocation, setOnSiteLocation] = useState<'table' | 'pool' | 'room'>('table');
     const [locationDetail, setLocationDetail] = useState(""); 
+    const [isScanning, setIsScanning] = useState(false);
     
     // On-Way State
     const [arrivalTime, setArrivalTime] = useState<string>("15 min");
@@ -105,9 +152,9 @@ export default function RestaurantPage() {
     }, [items.length]);
 
     const displayItems = useMemo(() => {
-        if (activeCategory === "all") return COMPLETE_MENU;
-        return COMPLETE_MENU.filter(i => i.category === activeCategory);
-    }, [activeCategory]);
+        if (activeCategory === "all") return dbItems;
+        return dbItems.filter(i => i.category === activeCategory);
+    }, [activeCategory, dbItems]);
 
     const handleItemClick = (item: MenuItem) => {
         if (!item.available) return;
@@ -142,6 +189,7 @@ export default function RestaurantPage() {
         addItem({
             id: `${customizeItem.id}-${Date.now()}`,
             name: customizeItem.name,
+            name_ar: customizeItem.name_ar,
             image: customizeItem.image,
             basePrice: customizeItem.basePrice,
             price: customizationPrice,
@@ -277,34 +325,76 @@ export default function RestaurantPage() {
                     </motion.div>
                 </div>
 
-                <div className="overflow-x-auto scrollbar-hide -mx-4 px-4 pb-2 max-w-7xl mx-auto">
-                    <div className="flex gap-3 min-w-max">
-                        {restaurantCategories.map(cat => (
-                            <button
-                                key={cat.id}
-                                onClick={() => setActiveCategory(cat.id)}
-                                className={`px-6 py-2.5 rounded-full text-sm font-bold transition-all duration-300 ${activeCategory === cat.id
-                                    ? "bg-gradient-to-r from-red-600 to-orange-500 text-white shadow-[0_0_20px_rgba(220,38,38,0.4)] scale-105"
-                                    : "bg-[#1E293B]/50 text-gray-400 border border-white/5 hover:bg-white/10"
-                                    }`}
-                            >
-                                {cat.label}
-                            </button>
-                        ))}
+                <div className="max-w-7xl mx-auto pb-2 relative z-40">
+                    <div className="relative inline-block">
+                        <button 
+                            onClick={() => setShowFilters(!showFilters)}
+                            className={`inline-flex items-center gap-4 px-4 py-2 rounded-xl font-bold transition-all duration-300 ${showFilters ? 'bg-[#1E293B] border border-white/20 text-white shadow-xl' : 'bg-[#0F172A] border border-white/5 text-gray-300 hover:bg-[#1E293B]'}`}
+                        >
+                            <div className="flex items-center gap-2">
+                                <Filter className="w-4 h-4 text-orange-500" />
+                                <span className="text-sm">
+                                    {activeCategory === "all" ? "Tout" : dbCategories.find(c => c.id === activeCategory)?.label || "Tout"}
+                                </span>
+                            </div>
+                            <ChevronRight className={`w-4 h-4 transition-transform duration-300 ${showFilters ? 'rotate-90 text-orange-500' : 'text-gray-500'}`} />
+                        </button>
+
+                        <AnimatePresence>
+                            {showFilters && (
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 10, scale: 0.95 }} 
+                                    animate={{ opacity: 1, y: 0, scale: 1 }} 
+                                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                                    transition={{ duration: 0.15 }}
+                                    className="absolute left-0 top-full mt-2 w-64 bg-[#1E293B] border border-white/10 rounded-xl shadow-2xl overflow-y-auto z-50 flex flex-col py-2 max-h-[60vh] scrollbar-hide"
+                                >
+                                    {dbCategories.map(cat => (
+                                        <button
+                                            key={cat.id}
+                                            onClick={() => { setActiveCategory(cat.id); setShowFilters(false); }}
+                                            className={`w-full text-left px-5 py-3.5 text-base font-bold transition-all ${activeCategory === cat.id ? "bg-red-500/20 text-red-500 border-l-4 border-red-500" : "text-gray-300 hover:bg-white/5 hover:text-white border-l-4 border-transparent"}`}
+                                        >
+                                            {cat.label}
+                                        </button>
+                                    ))}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                 </div>
             </div>
 
             {/* Animated Grid */}
-            <motion.div layout className="p-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-7xl mx-auto mt-4">
+            <motion.div layout className="p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 max-w-7xl mx-auto mt-4">
                 <AnimatePresence>
-                    {displayItems.length === 0 && (
+                    {isLoadingMenu ? (
+                        Array(4).fill(0).map((_, idx) => (
+                            <motion.div
+                                key={`skeleton-${idx}`}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="bg-[#111827] border border-white/5 rounded-2xl md:rounded-[2rem] overflow-hidden flex flex-col shadow-xl h-64 md:h-72 animate-pulse"
+                            >
+                                <div className="h-32 md:h-40 bg-white/5 w-full relative">
+                                    <div className="absolute bottom-3 left-3 w-16 h-6 bg-white/10 rounded" />
+                                    <div className="absolute bottom-3 right-3 w-8 h-8 rounded-full bg-white/10" />
+                                </div>
+                                <div className="p-3 md:p-4 pt-4 flex-1 space-y-3">
+                                    <div className="h-4 bg-white/10 rounded w-3/4" />
+                                    <div className="h-3 bg-white/5 rounded w-full" />
+                                    <div className="h-3 bg-white/5 rounded w-5/6" />
+                                </div>
+                            </motion.div>
+                        ))
+                    ) : displayItems.length === 0 ? (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="col-span-full text-center py-20 text-gray-500 font-bold">
                             {t('restaurant.empty')}
                         </motion.div>
-                    )}
-                    {displayItems.map((item, idx) => (
-                        <motion.button
+                    ) : (
+                        displayItems.map((item, idx) => (
+                            <motion.button
                             layout
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -312,9 +402,9 @@ export default function RestaurantPage() {
                             transition={{ delay: idx * 0.05 }}
                             key={item.id}
                             onClick={() => handleItemClick(item)}
-                            className="group bg-[#111827] border border-white/5 rounded-[2rem] overflow-hidden text-left flex flex-col hover:border-white/20 transition-all shadow-xl hover:shadow-2xl"
+                            className="group bg-[#111827] border border-white/5 rounded-2xl md:rounded-[2rem] overflow-hidden text-left flex flex-col hover:border-white/20 transition-all shadow-xl hover:shadow-2xl relative"
                         >
-                            <div className={`relative overflow-hidden w-full ${item.name.includes("Couscous") ? "h-64" : "h-56"}`}>
+                            <div className={`relative overflow-hidden w-full ${item.name.includes("Couscous") ? "h-40" : "h-32 md:h-40"}`}>
                                 <Image
                                     src={item.image || "/image/cepsa-hero.jpg"}
                                     alt={item.name}
@@ -322,29 +412,29 @@ export default function RestaurantPage() {
                                     className={`object-cover transition duration-700 group-hover:scale-110 ${item.name.includes("Couscous") ? "object-bottom" : "object-center"}`}
                                 />
                                 {item.badge && (
-                                    <div className="absolute top-4 left-4 bg-red-600 text-white text-[10px] font-black px-3 py-1.5 rounded-full shadow-lg uppercase tracking-wider">
+                                    <div className="absolute top-2 left-2 bg-red-600 text-white text-[9px] font-black px-2 py-1 rounded-full shadow-lg uppercase tracking-wider z-20">
                                         {item.badge}
                                     </div>
                                 )}
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#111827] via-transparent to-transparent opacity-90" />
-                                <div className="absolute bottom-4 left-5 right-5 flex justify-between items-end z-10">
-                                    <div className="text-3xl font-black text-white drop-shadow-md">{formatDh(item.basePrice)}</div>
-                                    <div className="w-10 h-10 rounded-full bg-white text-black flex items-center justify-center shadow-[0_10px_20px_rgba(255,255,255,0.2)] group-hover:bg-red-500 group-hover:text-white transition-colors">
-                                        <Plus className="w-6 h-6" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#111827] via-[#111827]/40 to-transparent opacity-95" />
+                                <div className="absolute bottom-3 left-3 right-3 flex justify-between items-end z-10">
+                                    <div className="text-lg md:text-xl font-black text-white drop-shadow-md">{formatDh(item.basePrice)}</div>
+                                    <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-white text-black flex items-center justify-center shadow-lg group-hover:bg-red-500 group-hover:text-white transition-colors shrink-0">
+                                        <Plus className="w-4 h-4 md:w-5 md:h-5" />
                                     </div>
                                 </div>
                             </div>
-                            <div className="p-6 pt-2 flex-1 flex flex-col">
-                                <h3 className="text-xl font-bold text-white leading-tight mb-2 group-hover:text-red-400 transition-colors">{item.name}</h3>
-                                <p className="text-sm text-gray-400 line-clamp-2 leading-relaxed">{item.description}</p>
+                            <div className="p-3 md:p-4 pt-1 flex-1 flex flex-col">
+                                <h3 className="text-sm md:text-base font-bold text-white leading-tight mb-1 group-hover:text-red-400 transition-colors line-clamp-2">{language === "ar" ? (item.name_ar || item.name) : item.name}</h3>
+                                <p className="text-[11px] md:text-xs text-gray-400 line-clamp-2 leading-relaxed">{language === "ar" ? (item.description_ar || item.description) : item.description}</p>
                             </div>
                         </motion.button>
-                    ))}
+                    )))}
                 </AnimatePresence>
             </motion.div>
 
             {/* Customization Sheet */}
-            <DarkSheet open={!!customizeItem} onClose={() => setCustomizeItem(null)} title={customizeItem?.name || "Personnaliser"}>
+            <DarkSheet open={!!customizeItem} onClose={() => setCustomizeItem(null)} title={(language === "ar" && customizeItem?.name_ar) ? customizeItem.name_ar : (customizeItem?.name || "Personnaliser")}>
                 {customizeItem && (
                     <div className="flex flex-col h-full bg-[#070A13]">
                         <div className="p-6 pb-40 space-y-8 overflow-y-auto custom-scrollbar">
@@ -478,7 +568,7 @@ export default function RestaurantPage() {
                                     <Image src={item.image || "/image/cepsa-hero.jpg"} alt={item.name} fill className="object-cover" />
                                 </div>
                                 <div className="flex-1 min-w-0 flex flex-col justify-center">
-                                    <div className="font-bold text-white text-lg truncate">{item.name}</div>
+                                    <div className="font-bold text-white text-lg truncate">{language === "ar" ? (item.name_ar || item.name) : item.name}</div>
                                     <p className="text-xs text-gray-400 line-clamp-1 my-1">{item.meta}</p>
                                     <div className="text-amber-500 font-black text-lg mt-1">{formatDh(item.price! * 1)}</div>
                                 </div>
@@ -525,17 +615,16 @@ export default function RestaurantPage() {
                                 {locationType === 'on_site' ? (
                                     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                                         <h4 className="text-gray-400 font-bold text-sm mb-4 uppercase tracking-wider">{t('cart.where_exact')}</h4>
-                                        <div className="grid grid-cols-2 gap-3 mb-4">
+                                        <div className="grid grid-cols-3 gap-3 mb-4">
                                             {[
-                                                { id: 'table', icon: <UtensilsCrossed className="w-4 h-4"/>, label: "{t('cart.loc.table')}" },
-                                                { id: 'pump', icon: <Car className="w-4 h-4"/>, label: "{t('cart.loc.pump')}" },
-                                                { id: 'pool', icon: <UtensilsCrossed className="w-4 h-4"/>, label: "{t('cart.loc.pool')}" },
-                                                { id: 'room', icon: <MapPin className="w-4 h-4"/>, label: "{t('cart.loc.room')}" }
+                                                { id: 'table', icon: <UtensilsCrossed className="w-4 h-4"/>, label: t('cart.loc.table') },
+                                                { id: 'pool', icon: <UtensilsCrossed className="w-4 h-4"/>, label: t('cart.loc.pool') },
+                                                { id: 'room', icon: <MapPin className="w-4 h-4"/>, label: t('cart.loc.room') }
                                             ].map(loc => (
                                                 <button
                                                     key={loc.id}
                                                     onClick={() => setOnSiteLocation(loc.id as any)}
-                                                    className={`py-3 px-2 rounded-xl text-xs font-bold border flex items-center justify-center gap-2 transition-all ${onSiteLocation === loc.id
+                                                    className={`py-3 px-2 rounded-xl text-[11px] font-bold border flex items-center justify-center gap-1.5 transition-all ${onSiteLocation === loc.id
                                                         ? 'bg-blue-600/20 border-blue-500 text-blue-400'
                                                         : 'bg-white/5 border-transparent text-gray-400 hover:bg-white/10'
                                                     }`}
@@ -544,12 +633,25 @@ export default function RestaurantPage() {
                                                 </button>
                                             ))}
                                         </div>
+                                        {(onSiteLocation === 'table' || onSiteLocation === 'pool') && (
+                                            <button 
+                                                onClick={() => setIsScanning(true)}
+                                                className="w-full text-sm text-blue-400 mb-3 bg-blue-500/10 hover:bg-blue-500/20 active:scale-95 transition-all p-3 rounded-xl border border-blue-500/30 flex items-center justify-center gap-3 font-bold"
+                                            >
+                                                <Camera className="w-5 h-5"/>
+                                                Scanner le QR Code {onSiteLocation === 'table' ? 'sur votre table' : 'à votre place'}
+                                            </button>
+                                        )}
                                         <input
                                             type="text"
                                             value={locationDetail}
                                             onChange={(e) => setLocationDetail(e.target.value)}
-                                            placeholder={t('cart.loc.placeholder')}
-                                            className="w-full bg-[#1E293B] border border-white/10 rounded-xl p-4 text-white font-bold text-lg outline-none focus:border-blue-500 transition-colors"
+                                            placeholder={
+                                                onSiteLocation === 'table' ? "Saisir le N° de Table" : 
+                                                onSiteLocation === 'pool' ? "Saisir le N° de Place" : 
+                                                "Votre N° de Chambre (Ex: 104)"
+                                            }
+                                            className="w-full bg-[#1E293B] border border-white/10 rounded-xl p-4 text-white font-bold text-lg outline-none focus:border-blue-500 transition-colors text-center"
                                         />
                                         <p className="text-xs text-green-400 mt-4 flex items-center gap-1 font-medium bg-green-500/10 p-3 rounded-xl border border-green-500/20">
                                             <Check className="w-4 h-4"/>
@@ -609,10 +711,16 @@ export default function RestaurantPage() {
                                             </div>
                                         )}
 
-                                        <p className="text-xs text-amber-400 mt-4 flex items-center gap-2 font-medium bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
-                                            <Navigation className="w-4 h-4 shrink-0"/>
-                                            {t('cart.onway_note')}
-                                        </p>
+                                        <div className="mt-4 space-y-2">
+                                            <p className="text-xs text-amber-400 flex items-center gap-2 font-medium bg-amber-500/10 p-3 rounded-xl border border-amber-500/20">
+                                                <Navigation className="w-4 h-4 shrink-0"/>
+                                                {t('cart.onway_note')}
+                                            </p>
+                                            <p className="text-xs text-red-400 flex items-start gap-2 font-medium bg-red-500/10 p-3 rounded-xl border border-red-500/20">
+                                                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5"/>
+                                                {t('cart.cancel_policy')}
+                                            </p>
+                                        </div>
                                     </motion.div>
                                 )}
                             </div>
@@ -632,26 +740,65 @@ export default function RestaurantPage() {
                                 locationType === 'on_site' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 shadow-blue-500/30' : 'bg-gradient-to-r from-amber-500 to-orange-500 shadow-orange-500/30'
                             }`}
                         >
-                            {isSubmitting ? "Traitement..." : locationType === 'on_site' ? "{t('cart.btn.onsite')}" : "{t('cart.btn.onway')}"}
+                            {isSubmitting ? "Traitement..." : locationType === 'on_site' ? t('cart.btn.onsite') : t('cart.btn.onway')}
                         </button>
                     </div>
                 </div>
             </DarkSheet>
+
+            {/* Scanner Modal Overlay */}
+            <AnimatePresence>
+                {isScanning && (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center"
+                    >
+                        <div className="absolute top-8 left-8 right-8 flex justify-between items-center z-10">
+                            <p className="text-white font-bold text-lg">Scannez le QR Code</p>
+                            <button 
+                                onClick={() => setIsScanning(false)}
+                                className="p-3 bg-white/10 rounded-full text-white backdrop-blur-md"
+                            >
+                                <X className="w-6 h-6"/>
+                            </button>
+                        </div>
+                        <div className="w-full max-w-sm aspect-square bg-black/50 overflow-hidden rounded-2xl relative border-2 border-blue-500">
+                            <Scanner 
+                                onScan={(result) => {
+                                    if (result && result.length > 0) {
+                                        const raw = result[0].rawValue || (result[0] as any).text;
+                                        if (raw) {
+                                            setLocationDetail(raw);
+                                            setIsScanning(false);
+                                        }
+                                    }
+                                }}
+                                onError={(error) => console.log(error?.message)}
+                            />
+                        </div>
+                        <p className="text-gray-400 mt-8 text-center px-8 text-sm">
+                            {onSiteLocation === 'table' ? 'Visez le QR Code sur votre table' : onSiteLocation === 'pool' ? 'Visez le QR Code à votre place' : onSiteLocation === 'room' ? 'Visez le QR Code dans votre chambre' : 'Visez le QR Code'}
+                        </p>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* Floating Action Button for Cart */}
             {itemCount > 0 && !isCartOpen && !customizeItem && (
                 <div className="fixed bottom-[80px] right-4 z-50 animate-in slide-in-from-bottom-10 fade-in duration-500">
                     <button
                         onClick={() => setIsCartOpen(true)}
-                        className="bg-gradient-to-br from-red-600 to-orange-500 rounded-full p-4 shadow-[0_10px_30px_rgba(220,38,38,0.5)] active:scale-95 transition-all flex items-center gap-4 border border-white/20"
+                        className="bg-gradient-to-br from-red-600 to-orange-500 rounded-full px-5 py-3 shadow-[0_8px_20px_rgba(220,38,38,0.4)] active:scale-95 transition-all flex items-center gap-3 border border-white/20"
                     >
                         <div className="relative">
-                            <ShoppingBag className="w-6 h-6 text-white" />
-                            <div className="absolute -top-2 -right-2 bg-white text-red-600 w-5 h-5 rounded-full flex items-center justify-center font-black text-xs shadow-md">
+                            <ShoppingBag className="w-5 h-5 text-white" />
+                            <div className="absolute -top-1.5 -right-1.5 bg-white text-red-600 w-4 h-4 rounded-full flex items-center justify-center font-black text-[10px] shadow-sm">
                                 {itemCount}
                             </div>
                         </div>
-                        <span className="font-black text-white pr-2">{formatDh(total)}</span>
+                        <span className="font-black text-sm text-white">{formatDh(total)}</span>
                     </button>
                 </div>
             )}

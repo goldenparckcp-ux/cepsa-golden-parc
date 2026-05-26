@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Droplets, Waves, Fuel, ChevronRight, Zap } from 'lucide-react';
+import { Droplets, Waves, ShoppingBag, ChevronRight } from 'lucide-react';
 
 interface ServicesMenuModalProps {
     isOpen: boolean;
@@ -15,16 +15,6 @@ export function ServicesMenuModal({ isOpen, onClose }: ServicesMenuModalProps) {
     if (!isOpen) return null;
 
     const services = [
-        {
-            id: 'lavage',
-            name: 'Lavage Auto',
-            icon: Droplets,
-            description: 'Express • Complet • Vapeur',
-            color: 'text-red-400',
-            bg: 'bg-red-500/10',
-            border: 'border-red-500/20',
-            route: '/services/lavage'
-        },
         // Carburant removed as requested
         {
             id: 'pool',
@@ -35,6 +25,16 @@ export function ServicesMenuModal({ isOpen, onClose }: ServicesMenuModalProps) {
             bg: 'bg-purple-500/10',
             border: 'border-purple-500/20',
             route: '/services/pool'
+        },
+        {
+            id: 'boutique',
+            name: 'Boutique & Lubrifiants',
+            icon: ShoppingBag,
+            description: 'Snacks • Huiles • Accessoires',
+            color: 'text-amber-400',
+            bg: 'bg-amber-500/10',
+            border: 'border-amber-500/20',
+            route: '/services/lubrifiants'
         }
     ];
 
@@ -63,33 +63,6 @@ export function ServicesMenuModal({ isOpen, onClose }: ServicesMenuModalProps) {
                 </div>
 
                 <div className="p-6 space-y-6">
-
-                    {/* Fuel Price Widget (Premium Ticker) */}
-                    <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-[#1E293B]">
-                        <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-amber-500 via-orange-500 to-amber-500" />
-                        <div className="p-4 flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-amber-500/10 rounded-lg text-amber-500">
-                                    <Fuel className="w-6 h-6" />
-                                </div>
-                                <div>
-                                    <div className="text-[10px] uppercase font-black tracking-widest text-gray-400">Carburant</div>
-                                    <div className="text-sm font-bold text-white">Prix du Jour</div>
-                                </div>
-                            </div>
-                            <div className="flex gap-4 text-right">
-                                <div>
-                                    <div className="text-[10px] text-gray-500 font-bold">Gasoil</div>
-                                    <div className="text-lg font-black text-amber-400">12.50 <span className="text-[10px]">DH</span></div>
-                                </div>
-                                <div className="w-px bg-white/10 h-8 self-center" />
-                                <div>
-                                    <div className="text-[10px] text-gray-500 font-bold">Sans Plomb</div>
-                                    <div className="text-lg font-black text-green-400">14.20 <span className="text-[10px]">DH</span></div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
                     {/* Services Grid (Premium Design) */}
                     <div className="grid grid-cols-1 gap-3">
@@ -121,16 +94,6 @@ export function ServicesMenuModal({ isOpen, onClose }: ServicesMenuModalProps) {
                             </button>
                         ))}
 
-                        {/* Coming Soon Placeholder */}
-                        <div className="rounded-2xl p-4 border border-dashed border-white/10 bg-white/5 flex items-center gap-4 opacity-50">
-                            <div className="w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center">
-                                <Zap className="w-6 h-6 text-gray-500" />
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-bold text-gray-400">Plus de services...</h3>
-                                <p className="text-[10px] text-gray-600">Bientôt disponible</p>
-                            </div>
-                        </div>
                     </div>
 
                 </div>

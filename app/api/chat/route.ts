@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     try {
         const { messages, language } = await req.json();
 
-        const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+        const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
         const systemInstruction = `Tu es l'assistant virtuel intelligent de "Cepsa Golden Parc", une station-service premium située à Outat El Haj, sur la Route Nationale 15, au Maroc. 
 Ton rôle EST STRICTEMENT LIMITÉ à répondre aux questions concernant la station, ses services, son hôtel (Hôtel l'Escale), son restaurant, sa piscine, et son service de lavage. 
