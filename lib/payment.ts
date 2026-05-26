@@ -4,8 +4,8 @@ import paypal from '@paypal/checkout-server-sdk';
 import dayjs from 'dayjs';
 import { supabase } from './supabase';
 
-// Initialize SDKs (Credentials should be in .env.local)
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+// Initialize SDKs (Credentials should be in .env.local, fallbacks protect Vercel static build evaluation)
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_51PdummySecretKeyPlaceholder', {
     apiVersion: '2026-02-25.clover',
 });
 
