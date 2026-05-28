@@ -209,7 +209,13 @@ const dictionaries: Record<Language, Dictionary> = {
         'home.hero.badge': 'STATION PREMIUM CEPSA',
         'home.eta.title': 'Temps de trajet estimé',
         'home.eta.distance': 'Distance',
-        'home.service.lube.title': 'Lubrifiants'
+        'home.service.lube.title': 'Lubrifiants',
+        'menu.services.title': 'Nos Services',
+        'menu.services.detente.title': 'Espace Détente',
+        'menu.services.detente.desc': 'Piscine • Spa • Relaxation',
+        'menu.services.boutique.title': 'Boutique & Lubrifiants',
+        'menu.services.boutique.desc': 'Snacks • Huiles • Accessoires',
+        'menu.services.footer': 'Services disponibles 24/7 sur place'
     },
     en: {
         'nav.restaurant': 'Restaurant',
@@ -417,7 +423,13 @@ const dictionaries: Record<Language, Dictionary> = {
         'home.hero.badge': 'PREMIUM CEPSA STATION',
         'home.eta.title': 'Estimated travel time',
         'home.eta.distance': 'Distance',
-        'home.service.lube.title': 'Lubricants'
+        'home.service.lube.title': 'Lubricants',
+        'menu.services.title': 'Our Services',
+        'menu.services.detente.title': 'Relaxation Area',
+        'menu.services.detente.desc': 'Pool • Spa • Relaxation',
+        'menu.services.boutique.title': 'Shop & Lubricants',
+        'menu.services.boutique.desc': 'Snacks • Oils • Accessories',
+        'menu.services.footer': 'Services available 24/7 on site'
     },
     es: {
         'nav.restaurant': 'Restaurante',
@@ -625,7 +637,13 @@ const dictionaries: Record<Language, Dictionary> = {
         'home.hero.badge': 'ESTACIÓN PREMIUM CEPSA',
         'home.eta.title': 'Tiempo estimado de viaje',
         'home.eta.distance': 'Distancia',
-        'home.service.lube.title': 'Lubricantes'
+        'home.service.lube.title': 'Lubricantes',
+        'menu.services.title': 'Nuestros Servicios',
+        'menu.services.detente.title': 'Zona de Relajación',
+        'menu.services.detente.desc': 'Piscina • Spa • Relajación',
+        'menu.services.boutique.title': 'Tienda y Lubricantes',
+        'menu.services.boutique.desc': 'Snacks • Aceites • Accesorios',
+        'menu.services.footer': 'Servicios disponibles 24/7 en el lugar'
     },
     ar: {
         'nav.restaurant': 'المطعم',
@@ -833,7 +851,13 @@ const dictionaries: Record<Language, Dictionary> = {
         'home.hero.badge': 'محطة سيبسا الممتازة',
         'home.eta.title': 'الوقت المقدر للوصول',
         'home.eta.distance': 'المسافة',
-        'home.service.lube.title': 'زيوت المحركات'
+        'home.service.lube.title': 'زيوت المحركات',
+        'menu.services.title': 'خدماتنا',
+        'menu.services.detente.title': 'مساحة الاسترخاء',
+        'menu.services.detente.desc': 'مسبح • سبا • استرخاء',
+        'menu.services.boutique.title': 'المتجر وزيوت المحركات',
+        'menu.services.boutique.desc': 'وجبات خفيفة • زيوت • إكسسوارات',
+        'menu.services.footer': 'الخدمات متوفرة 24/7 في عين المكان'
     }
 };
 

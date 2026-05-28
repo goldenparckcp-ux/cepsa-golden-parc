@@ -3,6 +3,7 @@
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Droplets, Waves, ShoppingBag, ChevronRight } from 'lucide-react';
+import { useTranslation } from "@/lib/state/LanguageContext";
 
 interface ServicesMenuModalProps {
     isOpen: boolean;
@@ -11,6 +12,7 @@ interface ServicesMenuModalProps {
 
 export function ServicesMenuModal({ isOpen, onClose }: ServicesMenuModalProps) {
     const router = useRouter();
+    const { t } = useTranslation();
 
     if (!isOpen) return null;
 
@@ -18,9 +20,9 @@ export function ServicesMenuModal({ isOpen, onClose }: ServicesMenuModalProps) {
         // Carburant removed as requested
         {
             id: 'pool',
-            name: 'Espace Détente',
+            name: t('menu.services.detente.title') || 'Espace Détente',
             icon: Waves,
-            description: 'Piscine • Spa • Relaxation',
+            description: t('menu.services.detente.desc') || 'Piscine • Spa • Relaxation',
             color: 'text-purple-400',
             bg: 'bg-purple-500/10',
             border: 'border-purple-500/20',
@@ -28,9 +30,9 @@ export function ServicesMenuModal({ isOpen, onClose }: ServicesMenuModalProps) {
         },
         {
             id: 'boutique',
-            name: 'Boutique & Lubrifiants',
+            name: t('menu.services.boutique.title') || 'Boutique & Lubrifiants',
             icon: ShoppingBag,
-            description: 'Snacks • Huiles • Accessoires',
+            description: t('menu.services.boutique.desc') || 'Snacks • Huiles • Accessoires',
             color: 'text-amber-400',
             bg: 'bg-amber-500/10',
             border: 'border-amber-500/20',
@@ -51,7 +53,9 @@ export function ServicesMenuModal({ isOpen, onClose }: ServicesMenuModalProps) {
                 {/* Header */}
                 <div className="sticky top-0 bg-[#0F172A]/90 backdrop-blur-xl p-6 border-b border-white/10 flex items-center justify-between z-10">
                     <div>
-                        <h2 className="text-white text-2xl font-black tracking-tight">Nos Services</h2>
+                        <h2 className="text-white text-2xl font-black tracking-tight">
+                            {t('menu.services.title') || "Nos Services"}
+                        </h2>
                         <p className="text-xs text-gray-400 font-medium">Cepsa Golden Parc</p>
                     </div>
                     <button
@@ -102,7 +106,7 @@ export function ServicesMenuModal({ isOpen, onClose }: ServicesMenuModalProps) {
                 <div className="p-6 border-t border-white/5 bg-[#0A0F1C]">
                     <p className="text-gray-500 text-center text-xs font-medium flex items-center justify-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-                        Services disponibles 24/7 sur place
+                        {t('menu.services.footer') || "Services disponibles 24/7 sur place"}
                     </p>
                 </div>
 
