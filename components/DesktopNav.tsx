@@ -11,8 +11,8 @@ export default function DesktopNav() {
     const pathname = usePathname();
     const { t } = useTranslation();
 
-    // Hide desktop nav on admin pages
-    if (pathname?.startsWith('/admin')) return null;
+    // Hide desktop nav on admin and staff pages
+    if (pathname?.startsWith('/admin') || pathname?.startsWith('/staff')) return null;
 
     const LINKS = [
         { href: '/', label: 'Home', icon: Home },

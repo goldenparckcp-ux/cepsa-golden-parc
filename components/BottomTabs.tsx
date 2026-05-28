@@ -43,8 +43,8 @@ export default function BottomTabs() {
     const { t } = useTranslation();
     const [showServicesMenu, setShowServicesMenu] = useState(false);
 
-    // Hide bottom tabs on admin pages
-    if (pathname?.startsWith('/admin')) return null;
+    // Hide bottom tabs on admin and staff pages
+    if (pathname?.startsWith('/admin') || pathname?.startsWith('/staff')) return null;
 
     const isHomeActive = pathname === '/';
     const isRestaurantActive = pathname === '/restaurant';
