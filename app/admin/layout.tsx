@@ -31,7 +31,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         const stored = localStorage.getItem("staff_session");
         if (stored) {
             try {
-                setSession(JSON.parse(stored));
+                const parsed = JSON.parse(stored);
+                if (parsed.role && parsed.role !== "admin") {
+                    // Send staff members to their dedicated standalone views
+                    if (parsed.role === "hotel") router.push("/staff/hotel");
+                    else if (parsed.role === "kitchen") router.push("/staff/restaurant");
+                    else if (parsed.role === "services") router.push("/staff/pool-services");
+                    else router.push("/staff");
+                } else {
+                    setSession(parsed);
+                }
             } catch (e) {
                 localStorage.removeItem("staff_session");
             }
@@ -245,19 +254,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             href: "/admin/restaurant",
             label: "Cuisine (Resto)",
             icon: Utensils,
-            roles: ["admin", "kitchen"]
+            roles: ["admin"]
         },
         {
             href: "/admin/hotel",
             label: "Hôtel",
             icon: Bed,
-            roles: ["admin", "hotel"]
+            roles: ["admin"]
         },
         {
             href: "/admin/pool-services",
             label: "Piscine & Services",
             icon: Ticket,
-            roles: ["admin", "services"]
+            roles: ["admin"]
         },
         {
             href: "/admin/prices",

@@ -30,9 +30,9 @@ export default function AdminDashboardPage() {
             const session = JSON.parse(stored);
             if (session.role !== "admin") {
                 // Redirect staff to their specific portal
-                if (session.role === "hotel") router.push("/admin/hotel");
-                else if (session.role === "kitchen") router.push("/admin/restaurant");
-                else if (session.role === "services") router.push("/admin/pool-services");
+                if (session.role === "hotel") router.push("/staff/hotel");
+                else if (session.role === "kitchen") router.push("/staff/restaurant");
+                else if (session.role === "services") router.push("/staff/pool-services");
                 return;
             }
         } else {

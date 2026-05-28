@@ -21,9 +21,9 @@ export default function StaffLoginPage() {
         if (stored) {
             try {
                 const session = JSON.parse(stored);
-                if (session.role === "hotel") router.push("/admin/hotel");
-                else if (session.role === "kitchen") router.push("/admin/restaurant");
-                else if (session.role === "services") router.push("/admin/pool-services");
+                if (session.role === "hotel") router.push("/staff/hotel");
+                else if (session.role === "kitchen") router.push("/staff/restaurant");
+                else if (session.role === "services") router.push("/staff/pool-services");
                 else if (session.role === "admin") router.push("/admin");
             } catch (e) {
                 localStorage.removeItem("staff_session");
@@ -78,9 +78,9 @@ export default function StaffLoginPage() {
             setPin("");
             
             // Redirect based on role
-            if (resolvedSession.role === "hotel") router.push("/admin/hotel");
-            else if (resolvedSession.role === "kitchen") router.push("/admin/restaurant");
-            else if (resolvedSession.role === "services") router.push("/admin/pool-services");
+            if (resolvedSession.role === "hotel") router.push("/staff/hotel");
+            else if (resolvedSession.role === "kitchen") router.push("/staff/restaurant");
+            else if (resolvedSession.role === "services") router.push("/staff/pool-services");
         } else {
             setErrorMsg("Code PIN incorrect. Veuillez contacter l'administrateur.");
             setPin("");
