@@ -100,8 +100,7 @@ export default function AdminPoolAndServicesPage() {
         try {
             const updates = {
                 status: "checked_in",
-                checked_in_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
+                checked_in_at: new Date().toISOString()
             };
 
             const { error } = await supabase
@@ -121,8 +120,7 @@ export default function AdminPoolAndServicesPage() {
         try {
             const updates = {
                 status: "completed",
-                completed_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
+                completed_at: new Date().toISOString()
             };
 
             const { error } = await supabase

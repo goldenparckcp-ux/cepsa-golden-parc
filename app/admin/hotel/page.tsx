@@ -97,8 +97,7 @@ export default function AdminHotelReservationsPage() {
             const updates = {
                 status: "checked_in",
                 room_number: roomNum,
-                checked_in_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
+                checked_in_at: new Date().toISOString()
             };
 
             const { error } = await supabase
@@ -123,8 +122,7 @@ export default function AdminHotelReservationsPage() {
         try {
             const updates = {
                 status: "completed",
-                checked_out_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
+                checked_out_at: new Date().toISOString()
             };
 
             const { error } = await supabase
@@ -146,8 +144,7 @@ export default function AdminHotelReservationsPage() {
 
         try {
             const updates = {
-                status: "cancelled",
-                updated_at: new Date().toISOString()
+                status: "cancelled"
             };
 
             const { error } = await supabase

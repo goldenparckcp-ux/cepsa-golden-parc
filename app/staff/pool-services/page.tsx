@@ -86,8 +86,7 @@ export default function StaffPoolServicesPage() {
         try {
             const updates = {
                 status: "checked_in",
-                checked_in_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
+                checked_in_at: new Date().toISOString()
             };
 
             const { error } = await supabase
