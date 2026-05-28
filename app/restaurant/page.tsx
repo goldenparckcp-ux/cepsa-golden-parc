@@ -66,6 +66,7 @@ export default function RestaurantPage() {
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [selections, setSelections] = useState<Record<string, unknown>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [policyAccepted, setPolicyAccepted] = useState(false);
 
     // Database States
     const [dbItems, setDbItems] = useState<MenuItem[]>(COMPLETE_MENU);
@@ -729,14 +730,34 @@ export default function RestaurantPage() {
 
                     {/* Bottom Validation Bar */}
                     <div className="fixed bottom-0 left-0 right-0 bg-[#070A13]/95 backdrop-blur-xl p-4 md:p-6 border-t border-white/10 z-50">
+                        {/* Cancellation Policy Checkbox */}
+                        <div className="mb-4 px-2">
+                            <label className="flex items-start gap-3 cursor-pointer group select-none">
+                                <div className="relative flex items-center mt-0.5">
+                                    <input
+                                        type="checkbox"
+                                        checked={policyAccepted}
+                                        onChange={(e) => setPolicyAccepted(e.target.checked)}
+                                        className="sr-only peer"
+                                    />
+                                    <div className="w-5 h-5 border border-white/20 rounded bg-white/5 transition-all duration-300 flex items-center justify-center group-hover:border-amber-500 peer-checked:bg-amber-500 peer-checked:border-amber-500">
+                                        {policyAccepted && <Check className="w-3.5 h-3.5 text-black stroke-[4px]" />}
+                                    </div>
+                                </div>
+                                <span className={`text-[10px] sm:text-xs font-semibold leading-relaxed transition-colors duration-300 ${policyAccepted ? 'text-gray-200' : 'text-gray-400 group-hover:text-gray-300'}`}>
+                                    {t('cart.cancel_checkbox')}
+                                </span>
+                            </label>
+                        </div>
+
                         <div className="flex justify-between items-center mb-4 px-2">
                             <span className="text-gray-400 font-bold uppercase tracking-widest">{t('restaurant.cart.total')}</span>
                             <span className="text-3xl font-black text-white">{formatDh(total)}</span>
                         </div>
                         <button
                             onClick={handleCheckout}
-                            disabled={isSubmitting || items.length === 0}
-                            className={`w-full py-5 rounded-2xl font-black text-lg text-white shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-3 ${
+                            disabled={isSubmitting || items.length === 0 || !policyAccepted}
+                            className={`w-full py-5 rounded-2xl font-black text-lg text-white shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed disabled:pointer-events-none ${
                                 locationType === 'on_site' ? 'bg-gradient-to-r from-blue-600 to-cyan-500 shadow-blue-500/30' : 'bg-gradient-to-r from-amber-500 to-orange-500 shadow-orange-500/30'
                             }`}
                         >
