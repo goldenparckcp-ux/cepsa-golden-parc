@@ -190,7 +190,7 @@ function ProfileContent() {
                         ? (x.service_name || 'Lavage Auto').replace(/\b\w/g, (l: string) => l.toUpperCase())
                         : (x.service_name || 'Lavage Auto'),
                 details: (x.service_type === 'lavage')
-                    ? `Le ${new Date(x.scheduled_date || x.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} • ${x.time_slot || 'En attente'}`
+                    ? `Le ${new Date(x.scheduled_date || x.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })} • ${x.time_slot || 'En attente'}${x.vehicle_info ? ` • ${x.vehicle_info}` : ''}`
                     : ((x.service_type === 'pool' || (x.service_name || '').toLowerCase().includes('piscine'))
                         ? (x.service_name || '').replace(/^Piscine\s*/i, '')
                         : 'Service sur demande'),

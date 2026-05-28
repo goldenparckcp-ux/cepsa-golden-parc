@@ -116,6 +116,8 @@ const dictionaries: Record<Language, Dictionary> = {
         'lavage.book.btn': 'Réserver Lavage',
         'lavage.success.title': 'Lavage Confirmé!',
         'lavage.success.desc': 'Votre réservation {id} a été enregistrée.',
+        'lavage.vehicle_info': 'Informations du Véhicule',
+        'lavage.vehicle_info_placeholder': 'Marque, Couleur & Matricule (ex: Dacia Logan Noire - 12-A-3456)',
 
         // Services
         'services.title': 'Services Internes',
@@ -316,6 +318,8 @@ const dictionaries: Record<Language, Dictionary> = {
         'lavage.book.btn': 'Book Wash',
         'lavage.success.title': 'Wash Confirmed!',
         'lavage.success.desc': 'Your booking {id} has been recorded.',
+        'lavage.vehicle_info': 'Vehicle Information',
+        'lavage.vehicle_info_placeholder': 'Brand, Color & License Plate (e.g. Black Dacia Logan - 12-A-3456)',
 
         // Services
         'services.title': 'Internal Services',
@@ -516,6 +520,8 @@ const dictionaries: Record<Language, Dictionary> = {
         'lavage.book.btn': 'Reservar Lavado',
         'lavage.success.title': '¡Lavado Confirmado!',
         'lavage.success.desc': 'Su reserva {id} ha sido registrada.',
+        'lavage.vehicle_info': 'Información del Vehículo',
+        'lavage.vehicle_info_placeholder': 'Marca, Color y Matrícula (ej: Dacia Logan Negro - 12-A-3456)',
 
         // Services
         'services.title': 'Servicios Internos',
@@ -716,6 +722,8 @@ const dictionaries: Record<Language, Dictionary> = {
         'lavage.book.btn': 'حجز غسيل',
         'lavage.success.title': 'تم تأكيد الغسيل!',
         'lavage.success.desc': 'تم تسجيل الحجز رقم {id}.',
+        'lavage.vehicle_info': 'معلومات السيارة',
+        'lavage.vehicle_info_placeholder': 'النوع، اللون واللوحة (مثال: داسيا لوغان سوداء - 3456-أ-12)',
 
         // Services
         'services.title': 'الخدمات الداخلية',

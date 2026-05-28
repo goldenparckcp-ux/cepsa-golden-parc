@@ -479,7 +479,7 @@ export default function AdminPoolAndServicesPage() {
                                         </div>
 
                                         <div className="flex gap-2">
-                                            {wash.status === "scheduled" && (
+                                            {(wash.status === "scheduled" || wash.status === "pending") && (
                                                 <>
                                                     <button
                                                         onClick={() => handleWashCancel(wash.id)}
