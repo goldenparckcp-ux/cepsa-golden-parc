@@ -105,28 +105,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             let resolvedSession: StaffSession | null = null;
             if (enteredPin === "7777") {
                 resolvedSession = { role: "admin", name: "Directeur" };
-            } else if (enteredPin === "1111") {
-                resolvedSession = { role: "hotel", name: "Réception Hôtel" };
-            } else if (enteredPin === "2222") {
-                resolvedSession = { role: "kitchen", name: "Chef Cuisine" };
-            } else if (enteredPin === "3333") {
-                resolvedSession = { role: "services", name: "Staff Piscine & Services" };
+            } else if (["1111", "2222", "3333"].includes(enteredPin)) {
+                setErrorMsg("Accès Admin réservé. Veuillez utiliser le portail Staff (/staff) pour vous connecter.");
+                setPin("");
+                setIsChecking(false);
+                return;
             }
 
             if (resolvedSession) {
                 localStorage.setItem("staff_session", JSON.stringify(resolvedSession));
                 setSession(resolvedSession);
                 setPin("");
-                // Re-route appropriately if user is logged in
-                if (resolvedSession.role !== "admin") {
-                    if (resolvedSession.role === "hotel") router.push("/admin/hotel");
-                    else if (resolvedSession.role === "kitchen") router.push("/admin/restaurant");
-                    else if (resolvedSession.role === "services") router.push("/admin/pool-services");
-                } else {
-                    router.push("/admin");
-                }
+                router.push("/admin");
             } else {
-                setErrorMsg("Code PIN incorrect. Veuillez réessayer.");
+                setErrorMsg("Code PIN incorrect ou réservé aux administrateurs.");
                 setPin("");
             }
         } catch (err) {
