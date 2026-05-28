@@ -11,6 +11,9 @@ export default function DesktopNav() {
     const pathname = usePathname();
     const { t } = useTranslation();
 
+    // Hide desktop nav on admin pages
+    if (pathname?.startsWith('/admin')) return null;
+
     const LINKS = [
         { href: '/', label: 'Home', icon: Home },
         { href: '/restaurant', label: t('nav.restaurant'), icon: UtensilsCrossed },

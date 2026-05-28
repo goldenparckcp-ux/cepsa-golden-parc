@@ -16,11 +16,13 @@ function ServicesContent() {
 
     useEffect(() => {
         if (type === "pool") router.replace("/pool");
-        if (type === "wash") router.replace("/services/lavage");
+        // Lavage Auto temporarily disabled
+        // if (type === "wash") router.replace("/services/lavage");
         if (type === "auto") router.replace("/services");
     }, [type, router]);
 
     const tiles = [
+        /* Lavage Auto temporarily disabled
         {
             key: "wash",
             title: t('services.wash.title') || "Lavage",
@@ -30,6 +32,7 @@ function ServicesContent() {
             image: "https://images.unsplash.com/photo-1487754180451-c456f719a1fc?w=1200",
             badge: "Popular"
         },
+        */
         {
             key: "hotel",
             title: t('services.hotel.title') || "Hotel",
@@ -157,7 +160,7 @@ function ServicesContent() {
                 })}
             </div>
 
-            {/* Enhanced Fuel Prices Section */}
+            {/* Fuel Prices Section temporarily disabled as requested
             <div className="rounded-3xl border border-white/10 p-6 backdrop-blur-sm bg-[linear-gradient(135deg,#1e293b_0%,#334155_100%)] shadow-[0_4px_20px_rgba(30,41,59,0.3)]">
                 <div className="flex flex-row-reverse rtl:flex-row items-center gap-3 mb-4 rtl:justify-end">
                     <div className="text-xl font-extrabold text-white">{t('services.fuel.title')}</div>
@@ -177,6 +180,7 @@ function ServicesContent() {
                     {fuelPrices.lastUpdate} (mock)
                 </div>
             </div>
+            */}
         </div>
     );
 }
