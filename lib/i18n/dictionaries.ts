@@ -203,7 +203,13 @@ const dictionaries: Record<Language, Dictionary> = {
         'home.info.time.station': 'Station & Carburant',
         'home.info.time.open': '24/7 Ouvert',
         'home.info.time.resto': 'Restaurant & Café',
-        'home.info.time.lube': 'Lubrifiants & Boutique'
+        'home.info.time.lube': 'Lubrifiants & Boutique',
+        'nav.home': 'Accueil',
+        'nav.services': 'Services',
+        'home.hero.badge': 'STATION PREMIUM CEPSA',
+        'home.eta.title': 'Temps de trajet estimé',
+        'home.eta.distance': 'Distance',
+        'home.service.lube.title': 'Lubrifiants'
     },
     en: {
         'nav.restaurant': 'Restaurant',
@@ -405,7 +411,13 @@ const dictionaries: Record<Language, Dictionary> = {
         'home.info.time.station': 'Station & Fuel',
         'home.info.time.open': '24/7 Open',
         'home.info.time.resto': 'Restaurant & Cafe',
-        'home.info.time.lube': 'Lubricants & Shop'
+        'home.info.time.lube': 'Lubricants & Shop',
+        'nav.home': 'Home',
+        'nav.services': 'Services',
+        'home.hero.badge': 'PREMIUM CEPSA STATION',
+        'home.eta.title': 'Estimated travel time',
+        'home.eta.distance': 'Distance',
+        'home.service.lube.title': 'Lubricants'
     },
     es: {
         'nav.restaurant': 'Restaurante',
@@ -607,7 +619,13 @@ const dictionaries: Record<Language, Dictionary> = {
         'home.info.time.station': 'Estación y Combustible',
         'home.info.time.open': 'Abierto 24/7',
         'home.info.time.resto': 'Restaurante y Cafetería',
-        'home.info.time.lube': 'Lubricantes y Tienda'
+        'home.info.time.lube': 'Lubricantes y Tienda',
+        'nav.home': 'Inicio',
+        'nav.services': 'Servicios',
+        'home.hero.badge': 'ESTACIÓN PREMIUM CEPSA',
+        'home.eta.title': 'Tiempo estimado de viaje',
+        'home.eta.distance': 'Distancia',
+        'home.service.lube.title': 'Lubricantes'
     },
     ar: {
         'nav.restaurant': 'المطعم',
@@ -809,7 +827,13 @@ const dictionaries: Record<Language, Dictionary> = {
         'home.info.time.station': 'المحطة والوقود',
         'home.info.time.open': 'مفتوح 24/7',
         'home.info.time.resto': 'المطعم والمقهى',
-        'home.info.time.lube': 'زيوت التشحيم والمتجر'
+        'home.info.time.lube': 'زيوت التشحيم والمتجر',
+        'nav.home': 'الرئيسية',
+        'nav.services': 'الخدمات',
+        'home.hero.badge': 'محطة سيبسا الممتازة',
+        'home.eta.title': 'الوقت المقدر للوصول',
+        'home.eta.distance': 'المسافة',
+        'home.service.lube.title': 'زيوت المحركات'
     }
 };
 
