@@ -281,34 +281,44 @@ export default function AdminPriceModifierPage() {
         setDragOverIndex(null);
         if (draggedIndex === null || draggedIndex === targetIndex) return;
 
+        // Get the original global sort_orders of the filtered items (sorted)
+        const originalOrders = filteredRestoItems
+            .map(item => item.sort_order || 0)
+            .sort((a, b) => a - b);
+
         // Reorder locally in the current category list
         const updatedFiltered = [...filteredRestoItems];
         const [movedItem] = updatedFiltered.splice(draggedIndex, 1);
         updatedFiltered.splice(targetIndex, 0, movedItem);
 
-        // Map the new sort_orders sequentially to the items in the current filtered list
-        // and merge them back into the main menuItems array
+        // Assign the original sort_orders to the new ordered filtered items
+        const updatedFilteredWithOrders = updatedFiltered.map((item, idx) => ({
+            ...item,
+            sort_order: originalOrders[idx]
+        }));
+
+        // Merge back into the main menuItems array
         const updatedAll = menuItems.map(item => {
-            const newIndex = updatedFiltered.findIndex(x => x.id === item.id);
-            if (newIndex !== -1) {
-                return { ...item, sort_order: newIndex + 1 };
+            const match = updatedFilteredWithOrders.find(x => x.id === item.id);
+            if (match) {
+                return match;
             }
             return item;
         });
 
-        // Sort the entire list by sort_order
+        // Sort the entire list globally by sort_order
         const sortedAll = updatedAll.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
         setMenuItems(sortedAll);
         setDraggedIndex(null);
 
         // Save new order to Supabase
         try {
-            const updates = updatedFiltered.map((item, idx) => {
-                const newOrder = idx + 1;
-                if (item.sort_order !== newOrder) {
+            const updates = updatedFilteredWithOrders.map((item) => {
+                const originalItem = menuItems.find(x => x.id === item.id);
+                if (originalItem && originalItem.sort_order !== item.sort_order) {
                     return supabase
                         .from("restaurant_items")
-                        .update({ sort_order: newOrder })
+                        .update({ sort_order: item.sort_order })
                         .eq("id", item.id);
                 }
                 return null;
@@ -683,7 +693,7 @@ export default function AdminPriceModifierPage() {
                             Aucun plat dans cette catégorie. Cliquez sur "Ajouter Plat" pour commencer.
                         </div>
                     ) : (
-                        <div>
+                        <div className="h-[68vh] lg:h-[calc(100vh-280px)] overflow-y-auto pr-2 custom-scrollbar">
                             <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <AnimatePresence mode="popLayout">
                                     {filteredRestoItems.map((item, idx) => {
