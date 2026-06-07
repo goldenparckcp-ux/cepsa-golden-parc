@@ -84,7 +84,7 @@ export default function RestaurantPage() {
                     ]);
                 }
 
-                const { data: items, error: itemErr } = await supabase.from('restaurant_items').select('*');
+                const { data: items, error: itemErr } = await supabase.from('restaurant_items').select('*').order('sort_order', { ascending: true });
                 if (!itemErr && items && items.length > 0) {
                     const mappedItems: MenuItem[] = items.map(i => ({
                         id: i.id as any,

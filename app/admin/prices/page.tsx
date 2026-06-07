@@ -1,17 +1,46 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { DollarSign, Save, RefreshCw, Sparkles, AlertCircle, CheckCircle2, Utensils, Bed, Ticket } from "lucide-react";
+import { 
+    DollarSign, Save, RefreshCw, Sparkles, AlertCircle, CheckCircle2, 
+    Utensils, Bed, Ticket, Plus, Trash2, ArrowUp, ArrowDown, Edit3, 
+    Camera, ToggleLeft, ToggleRight, X, Heart, Star, ChevronUp, ChevronDown, 
+    ImageIcon, Eye, EyeOff, LayoutGrid 
+} from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { DarkSheet } from "@/components/ui/DarkSheet";
+import Image from "next/image";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function AdminPriceModifierPage() {
     const [loading, setLoading] = useState(true);
     const [saving, setSaving] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState("");
+    const [errorMessage, setErrorMessage] = useState("");
 
     // Restaurant Items state
     const [menuItems, setMenuItems] = useState<any[]>([]);
     const [activeCategory, setActiveCategory] = useState("all");
+
+    // Drawer / Modal states
+    const [isAddDrawerOpen, setIsAddDrawerOpen] = useState(false);
+    const [editingItem, setEditingItem] = useState<any | null>(null);
+
+    // Form fields state
+    const [formData, setFormData] = useState({
+        name_fr: "",
+        name_ar: "",
+        category_id: "FastFood",
+        base_price: "",
+        description_fr: "",
+        description_ar: "",
+        image_url: "",
+        prep_time: "15 min",
+        badge: "",
+        is_featured: false,
+        is_available: true,
+        customization_json: ""
+    });
 
     // Hotel Room Prices (Local State settings)
     const [hotelPrices, setHotelPrices] = useState({
@@ -33,6 +62,16 @@ export default function AdminPriceModifierPage() {
         fullday_child: 40
     });
 
+    // Selection of quick Unsplash image templates for premium styling
+    const IMAGE_TEMPLATES = [
+        { name: "Burger", url: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=800" },
+        { name: "Pizza", url: "https://images.unsplash.com/photo-1513104890138-7c749659a591?w=800" },
+        { name: "Plat Beldi", url: "https://images.unsplash.com/photo-1541518763669-27fef04b14ea?w=800" },
+        { name: "Salade", url: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=800" },
+        { name: "Café / Jus", url: "https://images.unsplash.com/photo-1497034825429-c343d7c6a68f?w=800" },
+        { name: "Dessert", url: "https://images.unsplash.com/photo-1551024601-bec78aea704b?w=800" }
+    ];
+
     useEffect(() => {
         // Enforce Admin Access
         const stored = localStorage.getItem("staff_session");
@@ -52,12 +91,42 @@ export default function AdminPriceModifierPage() {
 
     const loadData = async () => {
         setLoading(true);
+        setErrorMessage("");
         try {
             // Load restaurant items from DB
             const { data, error } = await supabase.from("restaurant_items").select("*");
             if (error) throw error;
             if (data) {
-                setMenuItems(data);
+                // Sort by sort_order ascending, then category weight
+                const categoryWeights: Record<string, number> = { Ftour: 1, Snacks: 2, Plats: 3, Boissons: 4, Desserts: 5 };
+                const sorted = [...data].sort((a, b) => {
+                    if ((a.sort_order || 0) !== (b.sort_order || 0)) {
+                        return (a.sort_order || 0) - (b.sort_order || 0);
+                    }
+                    const wA = categoryWeights[a.category_id] || 99;
+                    const wB = categoryWeights[b.category_id] || 99;
+                    if (wA !== wB) return wA - wB;
+                    return a.name_fr.localeCompare(b.name_fr);
+                });
+
+                // Resequence locally to ensure valid, clean sort_order values (1, 2, 3...)
+                const resequenced = sorted.map((item, idx) => ({
+                    ...item,
+                    sort_order: item.sort_order || (idx + 1)
+                }));
+                
+                setMenuItems(resequenced);
+
+                // Auto-sync missing sort_orders to database in background
+                const needsMigration = data.some(item => !item.sort_order);
+                if (needsMigration) {
+                    console.log("Migrating sort_orders in database in background...");
+                    for (let i = 0; i < resequenced.length; i++) {
+                        if (!data.find(x => x.id === resequenced[i].id)?.sort_order) {
+                            supabase.from("restaurant_items").update({ sort_order: resequenced[i].sort_order }).eq("id", resequenced[i].id).then();
+                        }
+                    }
+                }
             }
 
             // Load Hotel/Pool prices from localStorage if customized
@@ -67,17 +136,19 @@ export default function AdminPriceModifierPage() {
             const savedPool = localStorage.getItem("custom_pool_prices");
             if (savedPool) setPoolPrices(JSON.parse(savedPool));
 
-        } catch (err) {
+        } catch (err: any) {
             console.error("Failed to load prices dynamically:", err);
+            setErrorMessage("Erreur de chargement: " + err.message);
         } finally {
             setLoading(false);
         }
     };
 
-    // Update restaurant item price in DB
-    const handleSaveRestoPrice = async (itemId: number, newPrice: number) => {
-        setSaving(`resto-${itemId}`);
+    // Update restaurant item price inline
+    const handleSaveRestoPriceInline = async (itemId: string, newPrice: number) => {
+        setSaving(`resto-price-${itemId}`);
         setSuccessMessage("");
+        setErrorMessage("");
 
         try {
             const { error } = await supabase
@@ -89,12 +160,231 @@ export default function AdminPriceModifierPage() {
 
             // Update local state
             setMenuItems(prev => prev.map(item => item.id === itemId ? { ...item, base_price: newPrice } : item));
-            
-            showSuccess("Prix du plat mis à jour avec succès side-client !");
-        } catch (err) {
-            alert("Erreur lors de la mise à jour du tarif restaurant.");
+            showSuccess("Prix du plat mis à jour avec succès !");
+        } catch (err: any) {
+            setErrorMessage("Erreur: " + err.message);
         } finally {
             setSaving(null);
+        }
+    };
+
+    // Toggle restaurant item availability directly
+    const handleToggleAvailability = async (item: any) => {
+        setSaving(`resto-avail-${item.id}`);
+        setSuccessMessage("");
+        setErrorMessage("");
+        const nextState = !item.is_available;
+
+        try {
+            const { error } = await supabase
+                .from("restaurant_items")
+                .update({ is_available: nextState })
+                .eq("id", item.id);
+
+            if (error) throw error;
+
+            // Update local state
+            setMenuItems(prev => prev.map(x => x.id === item.id ? { ...x, is_available: nextState } : x));
+            showSuccess(`Le plat est maintenant ${nextState ? "Disponible" : "Indisponible"}`);
+        } catch (err: any) {
+            setErrorMessage("Erreur: " + err.message);
+        } finally {
+            setSaving(null);
+        }
+    };
+
+    // Reorder Menu Item (Move Up / Down) with fluid Framer Motion layout
+    const handleMoveItem = async (direction: "up" | "down", index: number) => {
+        const currentItem = filteredRestoItems[index];
+        const targetIndex = direction === "up" ? index - 1 : index + 1;
+        
+        if (targetIndex < 0 || targetIndex >= filteredRestoItems.length) return;
+        
+        const neighborItem = filteredRestoItems[targetIndex];
+        
+        const currentOrder = currentItem.sort_order || 0;
+        const neighborOrder = neighborItem.sort_order || 0;
+        
+        let newCurrentOrder = neighborOrder;
+        let newNeighborOrder = currentOrder;
+
+        // If orders are identical, do a clean resequencing first
+        if (currentOrder === neighborOrder) {
+            const sortedAll = [...menuItems].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+            for (let i = 0; i < sortedAll.length; i++) {
+                sortedAll[i].sort_order = i + 1;
+            }
+            
+            const curIdxInAll = sortedAll.findIndex(item => item.id === currentItem.id);
+            const neighIdxInAll = direction === "up" ? curIdxInAll - 1 : curIdxInAll + 1;
+            
+            if (neighIdxInAll >= 0 && neighIdxInAll < sortedAll.length) {
+                const temp = sortedAll[curIdxInAll].sort_order;
+                sortedAll[curIdxInAll].sort_order = sortedAll[neighIdxInAll].sort_order;
+                sortedAll[neighIdxInAll].sort_order = temp;
+                
+                newCurrentOrder = sortedAll[curIdxInAll].sort_order;
+                newNeighborOrder = sortedAll[neighIdxInAll].sort_order;
+                
+                setMenuItems(sortedAll.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)));
+            }
+        } else {
+            // Standard swap
+            setMenuItems(prev => {
+                const updated = prev.map(item => {
+                    if (item.id === currentItem.id) return { ...item, sort_order: newCurrentOrder };
+                    if (item.id === neighborItem.id) return { ...item, sort_order: newNeighborOrder };
+                    return item;
+                });
+                return updated.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+            });
+        }
+
+        // Persist swap in Supabase database
+        try {
+            await Promise.all([
+                supabase.from("restaurant_items").update({ sort_order: newCurrentOrder }).eq("id", currentItem.id),
+                supabase.from("restaurant_items").update({ sort_order: newNeighborOrder }).eq("id", neighborItem.id)
+            ]);
+        } catch (err: any) {
+            console.error("DB reorder failed:", err);
+            setErrorMessage("Erreur de tri dans la base de données.");
+        }
+    };
+
+    // Open drawer to add a new item
+    const openAddDrawer = () => {
+        setFormData({
+            name_fr: "",
+            name_ar: "",
+            category_id: activeCategory === "all" ? "FastFood" : activeCategory,
+            base_price: "",
+            description_fr: "",
+            description_ar: "",
+            image_url: "",
+            prep_time: "15 min",
+            badge: "",
+            is_featured: false,
+            is_available: true,
+            customization_json: ""
+        });
+        setIsAddDrawerOpen(true);
+    };
+
+    // Open drawer to edit an existing item
+    const openEditDrawer = (item: any) => {
+        setEditingItem(item);
+        setFormData({
+            name_fr: item.name_fr || "",
+            name_ar: item.name_ar || "",
+            category_id: item.category_id || "FastFood",
+            base_price: String(item.base_price || ""),
+            description_fr: item.description_fr || "",
+            description_ar: item.description_ar || "",
+            image_url: item.image_url || "",
+            prep_time: item.prep_time || "15 min",
+            badge: item.badge || "",
+            is_featured: !!item.is_featured,
+            is_available: !!item.is_available,
+            customization_json: item.customization_json ? JSON.stringify(item.customization_json, null, 2) : ""
+        });
+    };
+
+    // Save added or edited item to DB
+    const handleSaveItemForm = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setErrorMessage("");
+        
+        if (!formData.name_fr || !formData.base_price || !formData.description_fr) {
+            setErrorMessage("Veuillez remplir le nom, le prix et la description en Français.");
+            return;
+        }
+
+        let parsedCustomization = null;
+        if (formData.customization_json.trim()) {
+            try {
+                parsedCustomization = JSON.parse(formData.customization_json);
+            } catch (err) {
+                setErrorMessage("JSON de personnalisation invalide. Veuillez vérifier le format.");
+                return;
+            }
+        }
+
+        setLoading(true);
+
+        const payload: any = {
+            name_fr: formData.name_fr,
+            name_ar: formData.name_ar || null,
+            category_id: formData.category_id,
+            base_price: Number(formData.base_price),
+            description_fr: formData.description_fr,
+            description_ar: formData.description_ar || null,
+            image_url: formData.image_url || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800",
+            prep_time: formData.prep_time,
+            badge: formData.badge || null,
+            is_featured: formData.is_featured,
+            is_available: formData.is_available,
+            customization_json: parsedCustomization
+        };
+
+        try {
+            if (editingItem) {
+                // EDIT MODE
+                const { error } = await supabase
+                    .from("restaurant_items")
+                    .update(payload)
+                    .eq("id", editingItem.id);
+
+                if (error) throw error;
+                showSuccess(`Le plat "${formData.name_fr}" a été modifié avec succès !`);
+                setEditingItem(null);
+            } else {
+                // ADD MODE
+                // Define sort order as last item + 1
+                const maxSort = menuItems.reduce((max, item) => Math.max(max, item.sort_order || 0), 0);
+                payload.sort_order = maxSort + 1;
+                payload.created_at = new Date().toISOString();
+
+                const { data, error } = await supabase
+                    .from("restaurant_items")
+                    .insert([payload])
+                    .select();
+
+                if (error) throw error;
+                showSuccess(`Le plat "${formData.name_fr}" a été ajouté avec succès !`);
+                setIsAddDrawerOpen(false);
+            }
+
+            // Reload all items to sync UI
+            await loadData();
+        } catch (err: any) {
+            setErrorMessage("Erreur lors de la sauvegarde: " + err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // Delete item with confirmation
+    const handleDeleteItem = async (itemId: string, name: string) => {
+        const confirmDelete = window.confirm(`Voulez-vous vraiment supprimer le plat "${name}" du menu ? Cette action est irréversible.`);
+        if (!confirmDelete) return;
+
+        setLoading(true);
+        setErrorMessage("");
+
+        try {
+            const { error } = await supabase
+                .from("restaurant_items")
+                .delete()
+                .eq("id", itemId);
+
+            if (error) throw error;
+
+            showSuccess(`Le plat "${name}" a été supprimé du menu.`);
+            await loadData();
+        } catch (err: any) {
+            setErrorMessage("Erreur lors de la suppression: " + err.message);
+            setLoading(false);
         }
     };
 
@@ -134,8 +424,10 @@ export default function AdminPriceModifierPage() {
     const categories = [
         { id: "all", label: "Tout" },
         { id: "FastFood", label: "Fast Food" },
-        { id: "Plats", label: "Plats" },
+        { id: "Plats", label: "Plats & Beldi" },
         { id: "Ftour", label: "Ftour" },
+        { id: "Salades", label: "Salades" },
+        { id: "Desserts", label: "Desserts" },
         { id: "Boissons", label: "Boissons" }
     ];
 
@@ -147,27 +439,29 @@ export default function AdminPriceModifierPage() {
     return (
         <div className="space-y-8 pb-16 animate-fade-in">
             {/* Header */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#1E293B]/40 p-6 rounded-3xl border border-white/5 relative overflow-hidden backdrop-blur-md">
                 <div className="flex items-center gap-3">
-                    <div className="p-3 bg-gradient-to-tr from-amber-500 to-amber-600 rounded-2xl shadow-lg shadow-amber-500/10">
-                        <DollarSign className="w-6 h-6 text-black" />
+                    <div className="p-3 bg-gradient-to-tr from-[#EA580C] to-amber-500 rounded-2xl shadow-lg shadow-amber-500/10">
+                        <DollarSign className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-2xl font-black text-white">Modification des Prix</h1>
-                        <p className="text-xs text-gray-400 font-medium">Ajustement en direct des grilles tarifaires de l'établissement</p>
+                        <h1 className="text-2xl font-black text-white">Modification des Prix & Menu</h1>
+                        <p className="text-xs text-gray-400 font-medium">Ajustement en direct des tarifs et agencement visuel du restaurant</p>
                     </div>
                 </div>
 
-                <button
-                    onClick={loadData}
-                    className="bg-[#1E293B] hover:bg-[#1E293B]/80 text-gray-300 text-xs font-bold px-4 py-2.5 rounded-xl border border-white/5 flex items-center gap-2 transition-all"
-                >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    Recharger
-                </button>
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={loadData}
+                        className="bg-[#1E293B] hover:bg-[#1E293B]/80 text-gray-300 text-xs font-bold px-4 py-2.5 rounded-xl border border-white/5 flex items-center gap-2 transition-all"
+                    >
+                        <RefreshCw className="w-3.5 h-3.5" />
+                        Recharger
+                    </button>
+                </div>
             </div>
 
-            {/* Global feedback message */}
+            {/* Success feedback message */}
             {successMessage && (
                 <div className="bg-green-500/10 border border-green-500/30 rounded-2xl p-4 flex items-center gap-3 text-green-400 font-bold text-sm animate-shake">
                     <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
@@ -175,23 +469,42 @@ export default function AdminPriceModifierPage() {
                 </div>
             )}
 
+            {/* Error feedback message */}
+            {errorMessage && (
+                <div className="bg-red-500/10 border border-red-500/30 rounded-2xl p-4 flex items-center gap-3 text-red-400 font-bold text-sm animate-shake">
+                    <AlertCircle className="w-5 h-5 text-red-500 shrink-0" />
+                    <span>{errorMessage}</span>
+                </div>
+            )}
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* 1. RESTAURANT PRICING CARD (DB-CONNECTED) */}
+                {/* 1. VISUAL RESTAURANT MENU MANAGER */}
                 <div className="bg-[#1E293B] border border-white/10 rounded-3xl p-6 lg:col-span-2 space-y-6">
-                    <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                        <Utensils className="w-4 h-4 text-orange-500" />
-                        Grille Restaurant (Plats en Direct)
-                    </h3>
+                    <div className="flex justify-between items-center">
+                        <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+                            <Utensils className="w-4 h-4 text-orange-500" />
+                            Grille Restaurant (Visual Manager)
+                        </h3>
+
+                        {/* Quick Add "+" Button */}
+                        <button
+                            onClick={openAddDrawer}
+                            className="bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 text-white font-black text-xs px-4 py-2.5 rounded-xl flex items-center gap-2 shadow-lg shadow-orange-500/20 active:scale-95 transition-all"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Ajouter Plat
+                        </button>
+                    </div>
 
                     {/* Category Selector */}
-                    <div className="flex bg-[#0F172A] p-1 rounded-xl border border-white/5 overflow-x-auto scrollbar-hide">
+                    <div className="flex bg-[#0F172A] p-1.5 rounded-2xl border border-white/5 overflow-x-auto scrollbar-hide">
                         {categories.map(cat => (
                             <button
                                 key={cat.id}
                                 onClick={() => setActiveCategory(cat.id)}
-                                className={`px-4 py-2 rounded-lg font-bold text-xs shrink-0 transition-all ${
+                                className={`px-4 py-2 rounded-xl font-bold text-xs shrink-0 transition-all ${
                                     activeCategory === cat.id
-                                        ? "bg-[#1E293B] text-white shadow-sm"
+                                        ? "bg-gradient-to-r from-orange-600 to-orange-500 text-white shadow-md"
                                         : "text-gray-400 hover:text-white"
                                 }`}
                             >
@@ -200,43 +513,168 @@ export default function AdminPriceModifierPage() {
                         ))}
                     </div>
 
-                    {/* Items pricing list */}
+                    {/* Visual Card Grid with animations */}
                     {loading ? (
-                        <div className="text-center py-6 text-xs text-gray-500">Chargement du menu...</div>
+                        <div className="text-center py-20 text-xs text-gray-500 flex flex-col items-center gap-3">
+                            <RefreshCw className="w-8 h-8 text-orange-500 animate-spin" />
+                            Chargement du menu visuel...
+                        </div>
                     ) : filteredRestoItems.length === 0 ? (
-                        <div className="text-center py-6 text-xs text-gray-500">Aucun plat dans cette catégorie.</div>
+                        <div className="text-center py-20 text-xs text-gray-500 bg-[#0F172A] rounded-2xl border border-dashed border-white/5">
+                            Aucun plat dans cette catégorie. Cliquez sur "Ajouter Plat" pour commencer.
+                        </div>
                     ) : (
-                        <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                            {filteredRestoItems.map(item => (
-                                <div key={item.id} className="bg-[#0F172A] border border-white/5 rounded-2xl p-4 flex items-center justify-between gap-4">
-                                    <div className="min-w-0">
-                                        <div className="font-bold text-white text-sm truncate">{item.name_fr}</div>
-                                        <span className="text-[10px] text-gray-500 uppercase font-bold">{item.category_id}</span>
-                                    </div>
+                        <div className="max-h-[700px] overflow-y-auto pr-2 custom-scrollbar">
+                            <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <AnimatePresence mode="popLayout">
+                                    {filteredRestoItems.map((item, idx) => (
+                                        <motion.div
+                                            layout
+                                            initial={{ opacity: 0, scale: 0.9 }}
+                                            animate={{ opacity: 1, scale: 1 }}
+                                            exit={{ opacity: 0, scale: 0.9 }}
+                                            transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                                            key={item.id}
+                                            className={`group bg-[#0F172A] border rounded-2xl overflow-hidden flex flex-col justify-between transition-all shadow-md ${
+                                                item.is_available 
+                                                    ? "border-white/5 hover:border-white/20" 
+                                                    : "border-red-950/40 opacity-75 grayscale hover:grayscale-0"
+                                            }`}
+                                        >
+                                            {/* Item Image with Actions */}
+                                            <div className="h-32 relative bg-[#1E293B] overflow-hidden shrink-0">
+                                                <Image 
+                                                    src={item.image_url || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800"} 
+                                                    alt={item.name_fr}
+                                                    fill
+                                                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                                />
+                                                <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-transparent to-black/30" />
 
-                                    {/* Action Price Input */}
-                                    <div className="flex items-center gap-3 shrink-0">
-                                        <div className="relative">
-                                            <input
-                                                type="number"
-                                                defaultValue={item.base_price}
-                                                onBlur={(e) => {
-                                                    const val = Number(e.target.value);
-                                                    if (val > 0 && val !== Number(item.base_price)) {
-                                                        handleSaveRestoPrice(item.id, val);
-                                                    }
-                                                }}
-                                                className="bg-[#1E293B] border border-white/10 rounded-xl py-2 px-3 pl-8 text-sm text-amber-500 font-black w-24 text-right outline-none focus:border-amber-500 transition-colors"
-                                            />
-                                            <span className="text-gray-400 text-xs font-bold absolute left-3 top-2.5">DH</span>
-                                        </div>
+                                                {/* Header Badges */}
+                                                <div className="absolute top-2 left-2 flex flex-col gap-1.5 z-10">
+                                                    <span className="bg-[#1E293B]/80 backdrop-blur-sm border border-white/10 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg uppercase">
+                                                        {item.category_id}
+                                                    </span>
+                                                    {item.badge && (
+                                                        <span className="bg-red-600 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-lg uppercase tracking-wider">
+                                                            {item.badge}
+                                                        </span>
+                                                    )}
+                                                    {item.is_featured && (
+                                                        <span className="bg-amber-500 text-black text-[8px] font-black px-2 py-0.5 rounded-full shadow-lg uppercase tracking-wider flex items-center gap-0.5">
+                                                            <Star className="w-2.5 h-2.5 fill-black" /> Vedette
+                                                        </span>
+                                                    )}
+                                                </div>
 
-                                        {saving === `resto-${item.id}` && (
-                                            <RefreshCw className="w-4 h-4 text-amber-500 animate-spin" />
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
+                                                {/* Edit / Delete overlays */}
+                                                <div className="absolute top-2 right-2 flex gap-1 z-10">
+                                                    <button
+                                                        onClick={() => openEditDrawer(item)}
+                                                        className="p-1.5 bg-[#1E293B]/80 backdrop-blur-sm hover:bg-orange-600 text-white rounded-lg transition-colors border border-white/10 hover:border-orange-500 shadow-md"
+                                                        title="Modifier le plat"
+                                                    >
+                                                        <Edit3 className="w-3.5 h-3.5" />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteItem(item.id, item.name_fr)}
+                                                        className="p-1.5 bg-[#1E293B]/80 backdrop-blur-sm hover:bg-red-600 text-red-400 hover:text-white rounded-lg transition-colors border border-white/10 hover:border-red-500 shadow-md"
+                                                        title="Supprimer du menu"
+                                                    >
+                                                        <Trash2 className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
+
+                                                {/* Availability indicator */}
+                                                <div className="absolute bottom-2 left-2 z-10 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-lg border border-white/5">
+                                                    <button 
+                                                        onClick={() => handleToggleAvailability(item)}
+                                                        className="flex items-center gap-1 text-[9px] font-bold text-gray-300"
+                                                    >
+                                                        {item.is_available ? (
+                                                            <>
+                                                                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                                                                En Vente
+                                                            </>
+                                                        ) : (
+                                                            <>
+                                                                <span className="w-1.5 h-1.5 bg-red-500 rounded-full" />
+                                                                Masqué
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                </div>
+
+                                                {/* Prep time display */}
+                                                {item.prep_time && (
+                                                    <div className="absolute bottom-2 right-2 z-10 text-[9px] font-bold text-gray-300 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-lg border border-white/5">
+                                                        ⏳ {item.prep_time}
+                                                    </div>
+                                                )}
+                                            </div>
+
+                                            {/* Item Info & Reordering */}
+                                            <div className="p-3.5 flex-1 flex flex-col justify-between gap-3 bg-[#0F172A]">
+                                                <div>
+                                                    <div className="flex justify-between items-start gap-2">
+                                                        <h4 className="font-bold text-white text-sm leading-tight line-clamp-1">{item.name_fr}</h4>
+                                                        {item.name_ar && (
+                                                            <span className="font-semibold text-gray-400 text-xs text-right leading-none truncate font-arabic">{item.name_ar}</span>
+                                                        )}
+                                                    </div>
+                                                    <p className="text-[10px] text-gray-500 line-clamp-1 leading-relaxed mt-1">{item.description_fr}</p>
+                                                </div>
+
+                                                {/* Bottom bar - Price & Arrows */}
+                                                <div className="flex items-center justify-between border-t border-white/5 pt-2.5">
+                                                    {/* Price Modifier Input */}
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="relative">
+                                                            <input
+                                                                type="number"
+                                                                defaultValue={item.base_price}
+                                                                onBlur={(e) => {
+                                                                    const val = Number(e.target.value);
+                                                                    if (val > 0 && val !== Number(item.base_price)) {
+                                                                        handleSaveRestoPriceInline(item.id, val);
+                                                                    }
+                                                                }}
+                                                                className="bg-[#1E293B] border border-white/5 rounded-lg py-1 px-2 pl-6 text-xs text-amber-500 font-black w-20 text-right outline-none focus:border-amber-500 transition-colors"
+                                                            />
+                                                            <span className="text-gray-500 text-[10px] font-black absolute left-2 top-1.5">DH</span>
+                                                        </div>
+                                                        {saving === `resto-price-${item.id}` && (
+                                                            <RefreshCw className="w-3.5 h-3.5 text-amber-500 animate-spin" />
+                                                        )}
+                                                    </div>
+
+                                                    {/* Arrow Reordering Buttons */}
+                                                    <div className="flex bg-[#1E293B] rounded-lg p-0.5 border border-white/5 shrink-0 select-none">
+                                                        <button
+                                                            disabled={idx === 0}
+                                                            onClick={() => handleMoveItem("up", idx)}
+                                                            className="p-1 hover:bg-[#0F172A] hover:text-orange-500 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-500 rounded-md text-gray-400 transition-all"
+                                                            title="Monter d'un rang"
+                                                        >
+                                                            <ChevronUp className="w-4 h-4" />
+                                                        </button>
+                                                        <div className="w-[1px] bg-white/5 self-stretch" />
+                                                        <button
+                                                            disabled={idx === filteredRestoItems.length - 1}
+                                                            onClick={() => handleMoveItem("down", idx)}
+                                                            className="p-1 hover:bg-[#0F172A] hover:text-orange-500 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-500 rounded-md text-gray-400 transition-all"
+                                                            title="Descendre d'un rang"
+                                                        >
+                                                            <ChevronDown className="w-4 h-4" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </motion.div>
+                                    ))}
+                                </AnimatePresence>
+                            </motion.div>
                         </div>
                     )}
                 </div>
@@ -415,6 +853,238 @@ export default function AdminPriceModifierPage() {
                     </div>
                 </div>
             </div>
+
+            {/* ADD / EDIT DRAWER SHEET */}
+            <DarkSheet 
+                open={isAddDrawerOpen || !!editingItem} 
+                onClose={() => { setIsAddDrawerOpen(false); setEditingItem(null); setErrorMessage(""); }}
+                title={editingItem ? `Modifier : ${formData.name_fr}` : "Ajouter un nouveau plat au Restaurant"}
+            >
+                <form onSubmit={handleSaveItemForm} className="p-6 pb-24 space-y-6">
+                    {/* Error within Drawer */}
+                    {errorMessage && (
+                        <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-3 flex items-center gap-3 text-red-400 font-bold text-xs">
+                            <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                            <span>{errorMessage}</span>
+                        </div>
+                    )}
+
+                    {/* Nom Français */}
+                    <div>
+                        <label htmlFor="name_fr" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Nom en Français <span className="text-red-500">*</span></label>
+                        <input
+                            id="name_fr"
+                            type="text"
+                            required
+                            value={formData.name_fr}
+                            onChange={(e) => setFormData({ ...formData, name_fr: e.target.value })}
+                            placeholder="Ex: Tajine Kefta"
+                            className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors h-[48px]"
+                        />
+                    </div>
+
+                    {/* Nom Arabe */}
+                    <div>
+                        <label htmlFor="name_ar" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Nom en Arabe</label>
+                        <input
+                            id="name_ar"
+                            type="text"
+                            value={formData.name_ar}
+                            onChange={(e) => setFormData({ ...formData, name_ar: e.target.value })}
+                            placeholder="Ex: طاجين كفتة"
+                            className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors text-right h-[48px] font-arabic"
+                        />
+                    </div>
+
+                    {/* Prix de Base & Temps */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label htmlFor="base_price" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Prix de Base (DH) <span className="text-red-500">*</span></label>
+                            <input
+                                id="base_price"
+                                type="number"
+                                required
+                                min="1"
+                                value={formData.base_price}
+                                onChange={(e) => setFormData({ ...formData, base_price: e.target.value })}
+                                placeholder="Ex: 35"
+                                className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-amber-500 font-black placeholder-gray-600 outline-none focus:border-amber-500 transition-colors h-[48px]"
+                            />
+                        </div>
+                        <div>
+                            <label htmlFor="prep_time" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Temps de Préparation</label>
+                            <input
+                                id="prep_time"
+                                type="text"
+                                value={formData.prep_time}
+                                onChange={(e) => setFormData({ ...formData, prep_time: e.target.value })}
+                                placeholder="Ex: 15 min"
+                                className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors h-[48px]"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Catégorie & Badge */}
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label htmlFor="category_id" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Catégorie</label>
+                            <select
+                                id="category_id"
+                                value={formData.category_id}
+                                onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                                className="w-full bg-[#0F172A] border border-white/10 rounded-xl px-3 text-sm text-white font-bold outline-none focus:border-amber-500 transition-colors h-[48px]"
+                            >
+                                <option value="FastFood">🍔 Fast Food / Snacks</option>
+                                <option value="Plats">🍲 Plats & Beldi</option>
+                                <option value="Ftour">🍳 Ftour (Ptit Déj)</option>
+                                <option value="Salades">🥗 Salades</option>
+                                <option value="Desserts">🍰 Desserts</option>
+                                <option value="Boissons">🍹 Boissons</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label htmlFor="badge" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Badge (Optionnel)</label>
+                            <input
+                                id="badge"
+                                type="text"
+                                value={formData.badge}
+                                onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
+                                placeholder="Ex: Populaire, Nouveau"
+                                className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors h-[48px]"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Description Française */}
+                    <div>
+                        <label htmlFor="description_fr" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Description en Français <span className="text-red-500">*</span></label>
+                        <textarea
+                            id="description_fr"
+                            rows={3}
+                            required
+                            value={formData.description_fr}
+                            onChange={(e) => setFormData({ ...formData, description_fr: e.target.value })}
+                            placeholder="Description alléchante..."
+                            className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors resize-none"
+                        />
+                    </div>
+
+                    {/* Description Arabe */}
+                    <div>
+                        <label htmlFor="description_ar" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Description en Arabe</label>
+                        <textarea
+                            id="description_ar"
+                            rows={3}
+                            value={formData.description_ar}
+                            onChange={(e) => setFormData({ ...formData, description_ar: e.target.value })}
+                            placeholder="وصف الطبق باللغة العربية..."
+                            className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors text-right resize-none font-arabic"
+                        />
+                    </div>
+
+                    {/* Image URL & Preview */}
+                    <div>
+                        <label htmlFor="image_url" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">URL de l'Image</label>
+                        <div className="relative mb-2">
+                            <ImageIcon className="w-4 h-4 text-gray-500 absolute left-4 top-3.5" />
+                            <input
+                                id="image_url"
+                                type="text"
+                                value={formData.image_url}
+                                onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
+                                placeholder="Collez le lien de votre image"
+                                className="w-full bg-[#0F172A] border border-white/10 rounded-xl py-3 pl-11 pr-4 text-sm text-white placeholder-gray-600 outline-none focus:border-amber-500 transition-colors h-[48px]"
+                            />
+                        </div>
+
+                        {/* Premium image templates */}
+                        <div className="mb-3">
+                            <span className="text-[8px] font-black text-gray-500 uppercase tracking-wider block mb-1.5">Gabarits Rapides d'Images Unsplash</span>
+                            <div className="flex flex-wrap gap-1.5">
+                                {IMAGE_TEMPLATES.map(temp => (
+                                    <button
+                                        key={temp.name}
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, image_url: temp.url })}
+                                        className={`px-2 py-1 rounded-lg border text-[10px] font-bold transition-all ${
+                                            formData.image_url === temp.url
+                                                ? "bg-orange-500 border-orange-500 text-white shadow"
+                                                : "bg-[#0F172A] border-white/5 text-gray-400 hover:border-white/10 hover:text-white"
+                                        }`}
+                                    >
+                                        {temp.name}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Image Preview Window */}
+                        {formData.image_url && (
+                            <div className="h-28 relative rounded-xl overflow-hidden border border-white/10 bg-[#0F172A]">
+                                <Image 
+                                    src={formData.image_url} 
+                                    alt="Aperçu du plat"
+                                    fill
+                                    className="object-cover"
+                                    unoptimized
+                                />
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Customization JSON Field */}
+                    <div>
+                        <label htmlFor="customization_json" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">JSON de Personnalisation (Optionnel)</label>
+                        <textarea
+                            id="customization_json"
+                            rows={4}
+                            value={formData.customization_json}
+                            onChange={(e) => setFormData({ ...formData, customization_json: e.target.value })}
+                            placeholder='Ex: {"sauce": {"label": "Sauce", "type": "radio", "options": [{"id": "alg", "label": "Algérienne"}]}}'
+                            className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-xs text-white placeholder-gray-600 outline-none focus:border-amber-500 transition-colors font-mono resize-y"
+                        />
+                        <span className="text-[9px] text-gray-500 mt-1 block">Permet de définir des suppléments, sauces, cuissons ou variantes (Format JSON brut).</span>
+                    </div>
+
+                    {/* Featured & Available Toggles */}
+                    <div className="bg-[#0F172A] border border-white/5 rounded-2xl p-4 space-y-4">
+                        <label className="flex items-center gap-3 cursor-pointer select-none">
+                            <input
+                                type="checkbox"
+                                checked={formData.is_featured}
+                                onChange={(e) => setFormData({ ...formData, is_featured: e.target.checked })}
+                                className="w-5 h-5 rounded border-white/10 bg-[#1E293B] text-orange-500 focus:ring-0 cursor-pointer"
+                            />
+                            <div>
+                                <span className="text-xs font-bold text-white block">Plat Vedette (Featured)</span>
+                                <span className="text-[9px] text-gray-500 block">Sera mis en valeur en haut du menu</span>
+                            </div>
+                        </label>
+                        <label className="flex items-center gap-3 cursor-pointer select-none">
+                            <input
+                                type="checkbox"
+                                checked={formData.is_available}
+                                onChange={(e) => setFormData({ ...formData, is_available: e.target.checked })}
+                                className="w-5 h-5 rounded border-white/10 bg-[#1E293B] text-orange-500 focus:ring-0 cursor-pointer"
+                            />
+                            <div>
+                                <span className="text-xs font-bold text-white block">Disponible Immédiatement</span>
+                                <span className="text-[9px] text-gray-500 block">Visible et commandable directement par le client</span>
+                            </div>
+                        </label>
+                    </div>
+
+                    {/* Submit Section inside Drawer */}
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="w-full py-4 bg-gradient-to-r from-orange-600 to-amber-500 hover:from-orange-500 hover:to-amber-400 disabled:opacity-50 text-white font-black text-sm rounded-xl shadow-lg flex items-center justify-center gap-2 transition-all"
+                    >
+                        {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                        {editingItem ? "Mettre à jour le plat" : "Ajouter le plat au Restaurant"}
+                    </button>
+                </form>
+            </DarkSheet>
         </div>
     );
 }
