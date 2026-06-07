@@ -3,14 +3,26 @@
 import React, { useState, useEffect } from "react";
 import { 
     DollarSign, Save, RefreshCw, Sparkles, AlertCircle, CheckCircle2, 
-    Utensils, Bed, Ticket, Plus, Trash2, ArrowUp, ArrowDown, Edit3, 
-    Camera, ToggleLeft, ToggleRight, X, Heart, Star, ChevronUp, ChevronDown, 
-    ImageIcon, Eye, EyeOff, LayoutGrid 
+    Utensils, Bed, Ticket, Plus, Trash2, Edit3, Camera, X, Star, 
+    ImageIcon, Eye, EyeOff, LayoutGrid, GripVertical, PlusCircle, Trash
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { DarkSheet } from "@/components/ui/DarkSheet";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+
+interface CustomizationOption {
+    id: string;
+    label: string;
+    price: number;
+}
+
+interface CustomizationGroup {
+    id: string;
+    label: string;
+    type: "radio" | "checkbox";
+    options: CustomizationOption[];
+}
 
 export default function AdminPriceModifierPage() {
     const [loading, setLoading] = useState(true);
@@ -21,6 +33,10 @@ export default function AdminPriceModifierPage() {
     // Restaurant Items state
     const [menuItems, setMenuItems] = useState<any[]>([]);
     const [activeCategory, setActiveCategory] = useState("all");
+
+    // Drag and Drop states
+    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
     // Drawer / Modal states
     const [isAddDrawerOpen, setIsAddDrawerOpen] = useState(false);
@@ -41,6 +57,10 @@ export default function AdminPriceModifierPage() {
         is_available: true,
         customization_json: ""
     });
+
+    // Visual Customizations state (For the builder)
+    const [visualCustomizations, setVisualCustomizations] = useState<CustomizationGroup[]>([]);
+    const [isJsonMode, setIsJsonMode] = useState(false);
 
     // Hotel Room Prices (Local State settings)
     const [hotelPrices, setHotelPrices] = useState({
@@ -89,6 +109,53 @@ export default function AdminPriceModifierPage() {
         loadData();
     }, []);
 
+    // Helper: Deserialize JSON into Visual Customization Groups
+    const deserializeCustomizations = (jsonObj: any): CustomizationGroup[] => {
+        if (!jsonObj || typeof jsonObj !== "object") return [];
+        try {
+            return Object.entries(jsonObj).map(([groupId, groupData]: [string, any]) => {
+                const optionsList = Array.isArray(groupData.options) 
+                    ? groupData.options.map((opt: any, idx: number) => ({
+                        id: opt.id || `opt_${idx}_${Date.now()}`,
+                        label: opt.label || "",
+                        price: Number(opt.price || 0)
+                      }))
+                    : [];
+                return {
+                    id: groupId,
+                    label: groupData.label || "",
+                    type: groupData.type === "checkbox" || groupData.type === "checkbox-group" ? "checkbox" : "radio",
+                    options: optionsList
+                };
+            });
+        } catch (err) {
+            console.error("Failed to deserialize customizations:", err);
+            return [];
+        }
+    };
+
+    // Helper: Serialize Visual Customization Groups into JSON Object
+    const serializeCustomizations = (groups: CustomizationGroup[]): any => {
+        const out: any = {};
+        groups.forEach(group => {
+            if (!group.label.trim()) return; // Skip unnamed groups
+            const cleanOptions = group.options
+                .filter(opt => opt.label.trim())
+                .map(opt => ({
+                    id: opt.id || opt.label.toLowerCase().replace(/[^a-z0-9]/g, "_"),
+                    label: opt.label,
+                    price: Number(opt.price || 0)
+                }));
+
+            out[group.id] = {
+                label: group.label,
+                type: group.type,
+                options: cleanOptions
+            };
+        });
+        return Object.keys(out).length > 0 ? out : null;
+    };
+
     const loadData = async () => {
         setLoading(true);
         setErrorMessage("");
@@ -120,7 +187,6 @@ export default function AdminPriceModifierPage() {
                 // Auto-sync missing sort_orders to database in background
                 const needsMigration = data.some(item => !item.sort_order);
                 if (needsMigration) {
-                    console.log("Migrating sort_orders in database in background...");
                     for (let i = 0; i < resequenced.length; i++) {
                         if (!data.find(x => x.id === resequenced[i].id)?.sort_order) {
                             supabase.from("restaurant_items").update({ sort_order: resequenced[i].sort_order }).eq("id", resequenced[i].id).then();
@@ -193,63 +259,74 @@ export default function AdminPriceModifierPage() {
         }
     };
 
-    // Reorder Menu Item (Move Up / Down) with fluid Framer Motion layout
-    const handleMoveItem = async (direction: "up" | "down", index: number) => {
-        const currentItem = filteredRestoItems[index];
-        const targetIndex = direction === "up" ? index - 1 : index + 1;
-        
-        if (targetIndex < 0 || targetIndex >= filteredRestoItems.length) return;
-        
-        const neighborItem = filteredRestoItems[targetIndex];
-        
-        const currentOrder = currentItem.sort_order || 0;
-        const neighborOrder = neighborItem.sort_order || 0;
-        
-        let newCurrentOrder = neighborOrder;
-        let newNeighborOrder = currentOrder;
+    // DRAG AND DROP HANDLERS
+    const handleDragStart = (e: React.DragEvent, index: number) => {
+        setDraggedIndex(index);
+        e.dataTransfer.effectAllowed = "move";
+    };
 
-        // If orders are identical, do a clean resequencing first
-        if (currentOrder === neighborOrder) {
-            const sortedAll = [...menuItems].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-            for (let i = 0; i < sortedAll.length; i++) {
-                sortedAll[i].sort_order = i + 1;
-            }
-            
-            const curIdxInAll = sortedAll.findIndex(item => item.id === currentItem.id);
-            const neighIdxInAll = direction === "up" ? curIdxInAll - 1 : curIdxInAll + 1;
-            
-            if (neighIdxInAll >= 0 && neighIdxInAll < sortedAll.length) {
-                const temp = sortedAll[curIdxInAll].sort_order;
-                sortedAll[curIdxInAll].sort_order = sortedAll[neighIdxInAll].sort_order;
-                sortedAll[neighIdxInAll].sort_order = temp;
-                
-                newCurrentOrder = sortedAll[curIdxInAll].sort_order;
-                newNeighborOrder = sortedAll[neighIdxInAll].sort_order;
-                
-                setMenuItems(sortedAll.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)));
-            }
-        } else {
-            // Standard swap
-            setMenuItems(prev => {
-                const updated = prev.map(item => {
-                    if (item.id === currentItem.id) return { ...item, sort_order: newCurrentOrder };
-                    if (item.id === neighborItem.id) return { ...item, sort_order: newNeighborOrder };
-                    return item;
-                });
-                return updated.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-            });
+    const handleDragOver = (e: React.DragEvent, index: number) => {
+        e.preventDefault();
+        if (draggedIndex !== index) {
+            setDragOverIndex(index);
         }
+    };
 
-        // Persist swap in Supabase database
+    const handleDragLeave = () => {
+        setDragOverIndex(null);
+    };
+
+    const handleDrop = async (e: React.DragEvent, targetIndex: number) => {
+        e.preventDefault();
+        setDragOverIndex(null);
+        if (draggedIndex === null || draggedIndex === targetIndex) return;
+
+        // Reorder locally in the current category list
+        const updatedFiltered = [...filteredRestoItems];
+        const [movedItem] = updatedFiltered.splice(draggedIndex, 1);
+        updatedFiltered.splice(targetIndex, 0, movedItem);
+
+        // Map the new sort_orders sequentially to the items in the current filtered list
+        // and merge them back into the main menuItems array
+        const updatedAll = menuItems.map(item => {
+            const newIndex = updatedFiltered.findIndex(x => x.id === item.id);
+            if (newIndex !== -1) {
+                return { ...item, sort_order: newIndex + 1 };
+            }
+            return item;
+        });
+
+        // Sort the entire list by sort_order
+        const sortedAll = updatedAll.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+        setMenuItems(sortedAll);
+        setDraggedIndex(null);
+
+        // Save new order to Supabase
         try {
-            await Promise.all([
-                supabase.from("restaurant_items").update({ sort_order: newCurrentOrder }).eq("id", currentItem.id),
-                supabase.from("restaurant_items").update({ sort_order: newNeighborOrder }).eq("id", neighborItem.id)
-            ]);
+            const updates = updatedFiltered.map((item, idx) => {
+                const newOrder = idx + 1;
+                if (item.sort_order !== newOrder) {
+                    return supabase
+                        .from("restaurant_items")
+                        .update({ sort_order: newOrder })
+                        .eq("id", item.id);
+                }
+                return null;
+            }).filter(Boolean);
+
+            if (updates.length > 0) {
+                await Promise.all(updates);
+                showSuccess("Ordre du menu enregistré avec succès !");
+            }
         } catch (err: any) {
             console.error("DB reorder failed:", err);
             setErrorMessage("Erreur de tri dans la base de données.");
         }
+    };
+
+    const handleDragEnd = () => {
+        setDraggedIndex(null);
+        setDragOverIndex(null);
     };
 
     // Open drawer to add a new item
@@ -268,12 +345,15 @@ export default function AdminPriceModifierPage() {
             is_available: true,
             customization_json: ""
         });
+        setVisualCustomizations([]);
+        setIsJsonMode(false);
         setIsAddDrawerOpen(true);
     };
 
     // Open drawer to edit an existing item
     const openEditDrawer = (item: any) => {
         setEditingItem(item);
+        const jsonStr = item.customization_json ? JSON.stringify(item.customization_json, null, 2) : "";
         setFormData({
             name_fr: item.name_fr || "",
             name_ar: item.name_ar || "",
@@ -286,8 +366,13 @@ export default function AdminPriceModifierPage() {
             badge: item.badge || "",
             is_featured: !!item.is_featured,
             is_available: !!item.is_available,
-            customization_json: item.customization_json ? JSON.stringify(item.customization_json, null, 2) : ""
+            customization_json: jsonStr
         });
+        
+        // Parse into visual customization state
+        const parsedVisual = deserializeCustomizations(item.customization_json);
+        setVisualCustomizations(parsedVisual);
+        setIsJsonMode(false);
     };
 
     // Save added or edited item to DB
@@ -300,14 +385,19 @@ export default function AdminPriceModifierPage() {
             return;
         }
 
+        // Get customization json payload based on current mode
         let parsedCustomization = null;
-        if (formData.customization_json.trim()) {
-            try {
-                parsedCustomization = JSON.parse(formData.customization_json);
-            } catch (err) {
-                setErrorMessage("JSON de personnalisation invalide. Veuillez vérifier le format.");
-                return;
+        if (isJsonMode) {
+            if (formData.customization_json.trim()) {
+                try {
+                    parsedCustomization = JSON.parse(formData.customization_json);
+                } catch (err) {
+                    setErrorMessage("Format de personnalisation (JSON brut) invalide.");
+                    return;
+                }
             }
+        } else {
+            parsedCustomization = serializeCustomizations(visualCustomizations);
         }
 
         setLoading(true);
@@ -340,15 +430,13 @@ export default function AdminPriceModifierPage() {
                 setEditingItem(null);
             } else {
                 // ADD MODE
-                // Define sort order as last item + 1
                 const maxSort = menuItems.reduce((max, item) => Math.max(max, item.sort_order || 0), 0);
                 payload.sort_order = maxSort + 1;
                 payload.created_at = new Date().toISOString();
 
-                const { data, error } = await supabase
+                const { error } = await supabase
                     .from("restaurant_items")
-                    .insert([payload])
-                    .select();
+                    .insert([payload]);
 
                 if (error) throw error;
                 showSuccess(`Le plat "${formData.name_fr}" a été ajouté avec succès !`);
@@ -386,6 +474,71 @@ export default function AdminPriceModifierPage() {
             setErrorMessage("Erreur lors de la suppression: " + err.message);
             setLoading(false);
         }
+    };
+
+    // Customization Builder Actions
+    const addCustomizationGroup = () => {
+        const newGroup: CustomizationGroup = {
+            id: `group_${Date.now()}`,
+            label: "Nouveau Groupe (ex: Suppléments)",
+            type: "checkbox",
+            options: [{ id: `opt_${Date.now()}_0`, label: "Option 1", price: 0 }]
+        };
+        setVisualCustomizations([...visualCustomizations, newGroup]);
+    };
+
+    const removeCustomizationGroup = (groupId: string) => {
+        setVisualCustomizations(visualCustomizations.filter(g => g.id !== groupId));
+    };
+
+    const updateGroupLabel = (groupId: string, label: string) => {
+        setVisualCustomizations(visualCustomizations.map(g => g.id === groupId ? { ...g, label } : g));
+    };
+
+    const updateGroupType = (groupId: string, type: "radio" | "checkbox") => {
+        setVisualCustomizations(visualCustomizations.map(g => g.id === groupId ? { ...g, type } : g));
+    };
+
+    const addOptionToGroup = (groupId: string) => {
+        setVisualCustomizations(visualCustomizations.map(g => {
+            if (g.id === groupId) {
+                return {
+                    ...g,
+                    options: [...g.options, { id: `opt_${Date.now()}_${g.options.length}`, label: "Nouvelle option", price: 0 }]
+                };
+            }
+            return g;
+        }));
+    };
+
+    const removeOptionFromGroup = (groupId: string, optionId: string) => {
+        setVisualCustomizations(visualCustomizations.map(g => {
+            if (g.id === groupId) {
+                return {
+                    ...g,
+                    options: g.options.filter(o => o.id !== optionId)
+                };
+            }
+            return g;
+        }));
+    };
+
+    const updateOptionData = (groupId: string, optionId: string, field: "label" | "price", value: any) => {
+        setVisualCustomizations(visualCustomizations.map(g => {
+            if (g.id === groupId) {
+                const updatedOptions = g.options.map(o => {
+                    if (o.id === optionId) {
+                        return {
+                            ...o,
+                            [field]: field === "price" ? Number(value) : value
+                        };
+                    }
+                    return o;
+                });
+                return { ...g, options: updatedOptions };
+            }
+            return g;
+        }));
     };
 
     // Update Hotel Room Prices in LocalStorage (Shared setting simulation)
@@ -446,7 +599,7 @@ export default function AdminPriceModifierPage() {
                     </div>
                     <div>
                         <h1 className="text-2xl font-black text-white">Modification des Prix & Menu</h1>
-                        <p className="text-xs text-gray-400 font-medium">Ajustement en direct des tarifs et agencement visuel du restaurant</p>
+                        <p className="text-xs text-gray-400 font-medium">Glissez-déposez pour réordonner le menu restaurant, et modifiez les tarifs en direct</p>
                     </div>
                 </div>
 
@@ -483,7 +636,7 @@ export default function AdminPriceModifierPage() {
                     <div className="flex justify-between items-center">
                         <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
                             <Utensils className="w-4 h-4 text-orange-500" />
-                            Grille Restaurant (Visual Manager)
+                            Grille Restaurant (Visual Menu Editor)
                         </h3>
 
                         {/* Quick Add "+" Button */}
@@ -513,7 +666,13 @@ export default function AdminPriceModifierPage() {
                         ))}
                     </div>
 
-                    {/* Visual Card Grid with animations */}
+                    {/* Drag and Drop instructions */}
+                    <div className="text-[10px] text-gray-500 font-bold bg-[#0F172A]/50 px-4 py-2 rounded-xl border border-white/5 inline-flex items-center gap-2">
+                        <GripVertical className="w-3.5 h-3.5 text-orange-500" />
+                        Glissez-déposez n'importe quelle carte pour la réordonner dans le menu (b7al tele).
+                    </div>
+
+                    {/* Visual Card Grid (Scroll cut off removed for natural scrolling) */}
                     {loading ? (
                         <div className="text-center py-20 text-xs text-gray-500 flex flex-col items-center gap-3">
                             <RefreshCw className="w-8 h-8 text-orange-500 animate-spin" />
@@ -524,155 +683,154 @@ export default function AdminPriceModifierPage() {
                             Aucun plat dans cette catégorie. Cliquez sur "Ajouter Plat" pour commencer.
                         </div>
                     ) : (
-                        <div className="max-h-[700px] overflow-y-auto pr-2 custom-scrollbar">
+                        <div>
                             <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <AnimatePresence mode="popLayout">
-                                    {filteredRestoItems.map((item, idx) => (
-                                        <motion.div
-                                            layout
-                                            initial={{ opacity: 0, scale: 0.9 }}
-                                            animate={{ opacity: 1, scale: 1 }}
-                                            exit={{ opacity: 0, scale: 0.9 }}
-                                            transition={{ type: "spring", stiffness: 300, damping: 25 }}
-                                            key={item.id}
-                                            className={`group bg-[#0F172A] border rounded-2xl overflow-hidden flex flex-col justify-between transition-all shadow-md ${
-                                                item.is_available 
-                                                    ? "border-white/5 hover:border-white/20" 
-                                                    : "border-red-950/40 opacity-75 grayscale hover:grayscale-0"
-                                            }`}
-                                        >
-                                            {/* Item Image with Actions */}
-                                            <div className="h-32 relative bg-[#1E293B] overflow-hidden shrink-0">
-                                                <Image 
-                                                    src={item.image_url || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800"} 
-                                                    alt={item.name_fr}
-                                                    fill
-                                                    className="object-cover transition-transform duration-500 group-hover:scale-105"
-                                                />
-                                                <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-transparent to-black/30" />
+                                    {filteredRestoItems.map((item, idx) => {
+                                        const isDragging = idx === draggedIndex;
+                                        const isDragOver = idx === dragOverIndex;
 
-                                                {/* Header Badges */}
-                                                <div className="absolute top-2 left-2 flex flex-col gap-1.5 z-10">
-                                                    <span className="bg-[#1E293B]/80 backdrop-blur-sm border border-white/10 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg uppercase">
-                                                        {item.category_id}
-                                                    </span>
-                                                    {item.badge && (
-                                                        <span className="bg-red-600 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-lg uppercase tracking-wider">
-                                                            {item.badge}
-                                                        </span>
-                                                    )}
-                                                    {item.is_featured && (
-                                                        <span className="bg-amber-500 text-black text-[8px] font-black px-2 py-0.5 rounded-full shadow-lg uppercase tracking-wider flex items-center gap-0.5">
-                                                            <Star className="w-2.5 h-2.5 fill-black" /> Vedette
-                                                        </span>
-                                                    )}
-                                                </div>
+                                        return (
+                                            <div
+                                                key={item.id}
+                                                draggable={true}
+                                                onDragStart={(e) => handleDragStart(e, idx)}
+                                                onDragOver={(e) => handleDragOver(e, idx)}
+                                                onDragLeave={handleDragLeave}
+                                                onDragEnd={handleDragEnd}
+                                                onDrop={(e) => handleDrop(e, idx)}
+                                                className={`group bg-[#0F172A] border rounded-2xl overflow-hidden flex flex-col justify-between transition-all duration-300 shadow-md cursor-grab active:cursor-grabbing ${
+                                                    isDragging ? "opacity-30 border-orange-500/30 scale-95" : ""
+                                                } ${
+                                                    isDragOver 
+                                                        ? "border-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.25)] scale-[1.03]" 
+                                                        : item.is_available 
+                                                            ? "border-white/5 hover:border-white/20" 
+                                                            : "border-red-950/40 opacity-75 grayscale hover:grayscale-0"
+                                                }`}
+                                            >
+                                                {/* Item Image with Actions */}
+                                                <div className="h-32 relative bg-[#1E293B] overflow-hidden shrink-0">
+                                                    <Image 
+                                                        src={item.image_url || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800"} 
+                                                        alt={item.name_fr}
+                                                        fill
+                                                        className="object-cover transition-transform duration-500 group-hover:scale-105"
+                                                    />
+                                                    <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-transparent to-black/30" />
 
-                                                {/* Edit / Delete overlays */}
-                                                <div className="absolute top-2 right-2 flex gap-1 z-10">
-                                                    <button
-                                                        onClick={() => openEditDrawer(item)}
-                                                        className="p-1.5 bg-[#1E293B]/80 backdrop-blur-sm hover:bg-orange-600 text-white rounded-lg transition-colors border border-white/10 hover:border-orange-500 shadow-md"
-                                                        title="Modifier le plat"
-                                                    >
-                                                        <Edit3 className="w-3.5 h-3.5" />
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteItem(item.id, item.name_fr)}
-                                                        className="p-1.5 bg-[#1E293B]/80 backdrop-blur-sm hover:bg-red-600 text-red-400 hover:text-white rounded-lg transition-colors border border-white/10 hover:border-red-500 shadow-md"
-                                                        title="Supprimer du menu"
-                                                    >
-                                                        <Trash2 className="w-3.5 h-3.5" />
-                                                    </button>
-                                                </div>
-
-                                                {/* Availability indicator */}
-                                                <div className="absolute bottom-2 left-2 z-10 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-lg border border-white/5">
-                                                    <button 
-                                                        onClick={() => handleToggleAvailability(item)}
-                                                        className="flex items-center gap-1 text-[9px] font-bold text-gray-300"
-                                                    >
-                                                        {item.is_available ? (
-                                                            <>
-                                                                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                                                                En Vente
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <span className="w-1.5 h-1.5 bg-red-500 rounded-full" />
-                                                                Masqué
-                                                            </>
-                                                        )}
-                                                    </button>
-                                                </div>
-
-                                                {/* Prep time display */}
-                                                {item.prep_time && (
-                                                    <div className="absolute bottom-2 right-2 z-10 text-[9px] font-bold text-gray-300 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-lg border border-white/5">
-                                                        ⏳ {item.prep_time}
-                                                    </div>
-                                                )}
-                                            </div>
-
-                                            {/* Item Info & Reordering */}
-                                            <div className="p-3.5 flex-1 flex flex-col justify-between gap-3 bg-[#0F172A]">
-                                                <div>
-                                                    <div className="flex justify-between items-start gap-2">
-                                                        <h4 className="font-bold text-white text-sm leading-tight line-clamp-1">{item.name_fr}</h4>
-                                                        {item.name_ar && (
-                                                            <span className="font-semibold text-gray-400 text-xs text-right leading-none truncate font-arabic">{item.name_ar}</span>
-                                                        )}
-                                                    </div>
-                                                    <p className="text-[10px] text-gray-500 line-clamp-1 leading-relaxed mt-1">{item.description_fr}</p>
-                                                </div>
-
-                                                {/* Bottom bar - Price & Arrows */}
-                                                <div className="flex items-center justify-between border-t border-white/5 pt-2.5">
-                                                    {/* Price Modifier Input */}
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="relative">
-                                                            <input
-                                                                type="number"
-                                                                defaultValue={item.base_price}
-                                                                onBlur={(e) => {
-                                                                    const val = Number(e.target.value);
-                                                                    if (val > 0 && val !== Number(item.base_price)) {
-                                                                        handleSaveRestoPriceInline(item.id, val);
-                                                                    }
-                                                                }}
-                                                                className="bg-[#1E293B] border border-white/5 rounded-lg py-1 px-2 pl-6 text-xs text-amber-500 font-black w-20 text-right outline-none focus:border-amber-500 transition-colors"
-                                                            />
-                                                            <span className="text-gray-500 text-[10px] font-black absolute left-2 top-1.5">DH</span>
+                                                    {/* Drag Indicator Overlay */}
+                                                    <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5">
+                                                        <div className="p-1 bg-[#1E293B]/90 backdrop-blur-sm border border-white/10 rounded-lg text-gray-400 group-hover:text-white transition-colors cursor-grab">
+                                                            <GripVertical className="w-3.5 h-3.5" />
                                                         </div>
-                                                        {saving === `resto-price-${item.id}` && (
-                                                            <RefreshCw className="w-3.5 h-3.5 text-amber-500 animate-spin" />
+                                                        <span className="bg-[#1E293B]/80 backdrop-blur-sm border border-white/10 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg uppercase">
+                                                            {item.category_id}
+                                                        </span>
+                                                    </div>
+
+                                                    {/* Header Badges */}
+                                                    <div className="absolute top-9 left-2 flex flex-col gap-1.5 z-10">
+                                                        {item.badge && (
+                                                            <span className="bg-red-600 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-lg uppercase tracking-wider">
+                                                                {item.badge}
+                                                            </span>
+                                                        )}
+                                                        {item.is_featured && (
+                                                            <span className="bg-amber-500 text-black text-[8px] font-black px-2 py-0.5 rounded-full shadow-lg uppercase tracking-wider flex items-center gap-0.5">
+                                                                <Star className="w-2.5 h-2.5 fill-black" /> Vedette
+                                                            </span>
                                                         )}
                                                     </div>
 
-                                                    {/* Arrow Reordering Buttons */}
-                                                    <div className="flex bg-[#1E293B] rounded-lg p-0.5 border border-white/5 shrink-0 select-none">
+                                                    {/* Edit / Delete overlays */}
+                                                    <div className="absolute top-2 right-2 flex gap-1 z-10">
                                                         <button
-                                                            disabled={idx === 0}
-                                                            onClick={() => handleMoveItem("up", idx)}
-                                                            className="p-1 hover:bg-[#0F172A] hover:text-orange-500 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-500 rounded-md text-gray-400 transition-all"
-                                                            title="Monter d'un rang"
+                                                            onClick={(e) => { e.stopPropagation(); openEditDrawer(item); }}
+                                                            className="p-1.5 bg-[#1E293B]/80 backdrop-blur-sm hover:bg-orange-600 text-white rounded-lg transition-colors border border-white/10 hover:border-orange-500 shadow-md"
+                                                            title="Modifier le plat"
                                                         >
-                                                            <ChevronUp className="w-4 h-4" />
+                                                            <Edit3 className="w-3.5 h-3.5" />
                                                         </button>
-                                                        <div className="w-[1px] bg-white/5 self-stretch" />
                                                         <button
-                                                            disabled={idx === filteredRestoItems.length - 1}
-                                                            onClick={() => handleMoveItem("down", idx)}
-                                                            className="p-1 hover:bg-[#0F172A] hover:text-orange-500 disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-gray-500 rounded-md text-gray-400 transition-all"
-                                                            title="Descendre d'un rang"
+                                                            onClick={(e) => { e.stopPropagation(); handleDeleteItem(item.id, item.name_fr); }}
+                                                            className="p-1.5 bg-[#1E293B]/80 backdrop-blur-sm hover:bg-red-600 text-red-400 hover:text-white rounded-lg transition-colors border border-white/10 hover:border-red-500 shadow-md"
+                                                            title="Supprimer du menu"
                                                         >
-                                                            <ChevronDown className="w-4 h-4" />
+                                                            <Trash2 className="w-3.5 h-3.5" />
                                                         </button>
+                                                    </div>
+
+                                                    {/* Availability indicator */}
+                                                    <div className="absolute bottom-2 left-2 z-10 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-lg border border-white/5">
+                                                        <button 
+                                                            onClick={(e) => { e.stopPropagation(); handleToggleAvailability(item); }}
+                                                            className="flex items-center gap-1 text-[9px] font-bold text-gray-300"
+                                                        >
+                                                            {item.is_available ? (
+                                                                <>
+                                                                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                                                                    En Vente
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <span className="w-1.5 h-1.5 bg-red-500 rounded-full" />
+                                                                    Masqué
+                                                                </>
+                                                            )}
+                                                        </button>
+                                                    </div>
+
+                                                    {/* Prep time display */}
+                                                    {item.prep_time && (
+                                                        <div className="absolute bottom-2 right-2 z-10 text-[9px] font-bold text-gray-300 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-lg border border-white/5">
+                                                            ⏳ {item.prep_time}
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Item Info & Price */}
+                                                <div className="p-3.5 flex-1 flex flex-col justify-between gap-3 bg-[#0F172A]">
+                                                    <div>
+                                                        <div className="flex justify-between items-start gap-2">
+                                                            <h4 className="font-bold text-white text-sm leading-tight line-clamp-1">{item.name_fr}</h4>
+                                                            {item.name_ar && (
+                                                                <span className="font-semibold text-gray-400 text-xs text-right leading-none truncate font-arabic">{item.name_ar}</span>
+                                                            )}
+                                                        </div>
+                                                        <p className="text-[10px] text-gray-500 line-clamp-1 leading-relaxed mt-1">{item.description_fr}</p>
+                                                    </div>
+
+                                                    {/* Bottom bar - Price */}
+                                                    <div className="flex items-center justify-between border-t border-white/5 pt-2.5">
+                                                        <div className="flex items-center gap-2">
+                                                            <div className="relative">
+                                                                <input
+                                                                    type="number"
+                                                                    defaultValue={item.base_price}
+                                                                    onBlur={(e) => {
+                                                                        const val = Number(e.target.value);
+                                                                        if (val > 0 && val !== Number(item.base_price)) {
+                                                                            handleSaveRestoPriceInline(item.id, val);
+                                                                        }
+                                                                    }}
+                                                                    className="bg-[#1E293B] border border-white/5 rounded-lg py-1 px-2 pl-6 text-xs text-amber-500 font-black w-20 text-right outline-none focus:border-amber-500 transition-colors"
+                                                                />
+                                                                <span className="text-gray-500 text-[10px] font-black absolute left-2 top-1.5">DH</span>
+                                                            </div>
+                                                            {saving === `resto-price-${item.id}` && (
+                                                                <RefreshCw className="w-3.5 h-3.5 text-amber-500 animate-spin" />
+                                                            )}
+                                                        </div>
+
+                                                        <span className="text-[9px] font-bold text-gray-600 bg-white/5 px-2 py-1 rounded-md">
+                                                            Pos: #{item.sort_order}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </motion.div>
-                                    ))}
+                                        );
+                                    })}
                                 </AnimatePresence>
                             </motion.div>
                         </div>
@@ -1032,18 +1190,141 @@ export default function AdminPriceModifierPage() {
                         )}
                     </div>
 
-                    {/* Customization JSON Field */}
-                    <div>
-                        <label htmlFor="customization_json" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">JSON de Personnalisation (Optionnel)</label>
-                        <textarea
-                            id="customization_json"
-                            rows={4}
-                            value={formData.customization_json}
-                            onChange={(e) => setFormData({ ...formData, customization_json: e.target.value })}
-                            placeholder='Ex: {"sauce": {"label": "Sauce", "type": "radio", "options": [{"id": "alg", "label": "Algérienne"}]}}'
-                            className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-xs text-white placeholder-gray-600 outline-none focus:border-amber-500 transition-colors font-mono resize-y"
-                        />
-                        <span className="text-[9px] text-gray-500 mt-1 block">Permet de définir des suppléments, sauces, cuissons ou variantes (Format JSON brut).</span>
+                    {/* VISUAL CUSTOMIZATION OPTIONS BUILDER */}
+                    <div className="border-t border-white/5 pt-4 space-y-4">
+                        <div className="flex justify-between items-center">
+                            <span className="text-[10px] text-gray-400 font-black uppercase tracking-wider block">Option & Suppléments</span>
+                            <button
+                                type="button"
+                                onClick={() => setIsJsonMode(!isJsonMode)}
+                                className="text-[9px] font-black text-orange-400 hover:text-orange-300 uppercase tracking-wider"
+                            >
+                                {isJsonMode ? "Mode Visuel (Facile)" : "Mode Expert (JSON)"}
+                            </button>
+                        </div>
+
+                        {isJsonMode ? (
+                            // Expert JSON mode
+                            <div>
+                                <textarea
+                                    id="customization_json"
+                                    rows={4}
+                                    value={formData.customization_json}
+                                    onChange={(e) => setFormData({ ...formData, customization_json: e.target.value })}
+                                    placeholder='Ex: {"sauce": {"label": "Sauce", "type": "radio", "options": [{"id": "alg", "label": "Algérienne"}]}}'
+                                    className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-xs text-white placeholder-gray-600 outline-none focus:border-amber-500 transition-colors font-mono resize-y"
+                                />
+                                <span className="text-[9px] text-gray-500 mt-1 block">Format JSON brut pour les configurations complexes.</span>
+                            </div>
+                        ) : (
+                            // Visual builder mode
+                            <div className="space-y-4">
+                                {visualCustomizations.length === 0 ? (
+                                    <div className="text-center py-4 bg-[#0F172A] rounded-2xl border border-white/5 text-[10px] text-gray-500 font-bold">
+                                        Aucun supplément / option pour le moment.
+                                    </div>
+                                ) : (
+                                    <div className="space-y-4">
+                                        {visualCustomizations.map((group, groupIdx) => (
+                                            <div key={group.id} className="bg-[#0F172A] border border-white/5 rounded-2xl p-4 space-y-3 relative">
+                                                {/* Group Header */}
+                                                <div className="flex justify-between items-center gap-2">
+                                                    <input
+                                                        type="text"
+                                                        value={group.label}
+                                                        onChange={(e) => updateGroupLabel(group.id, e.target.value)}
+                                                        placeholder="Nom du groupe (ex: Sauce, Suppléments...)"
+                                                        className="bg-transparent border-b border-white/10 font-bold text-xs text-white pb-1 outline-none focus:border-orange-500 flex-1"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeCustomizationGroup(group.id)}
+                                                        className="text-red-500 hover:text-red-400 p-1"
+                                                        title="Supprimer ce groupe"
+                                                    >
+                                                        <Trash className="w-3.5 h-3.5" />
+                                                    </button>
+                                                </div>
+
+                                                {/* Group Settings */}
+                                                <div className="flex items-center gap-4 text-[10px]">
+                                                    <span className="text-gray-500 font-bold uppercase">Type de sélection:</span>
+                                                    <label className="flex items-center gap-1.5 cursor-pointer text-white">
+                                                        <input
+                                                            type="radio"
+                                                            name={`group_type_${group.id}`}
+                                                            checked={group.type === "radio"}
+                                                            onChange={() => updateGroupType(group.id, "radio")}
+                                                            className="w-3.5 h-3.5 text-orange-500 bg-[#1E293B] border-white/10"
+                                                        />
+                                                        Choix Unique (Radio)
+                                                    </label>
+                                                    <label className="flex items-center gap-1.5 cursor-pointer text-white">
+                                                        <input
+                                                            type="radio"
+                                                            name={`group_type_${group.id}`}
+                                                            checked={group.type === "checkbox"}
+                                                            onChange={() => updateGroupType(group.id, "checkbox")}
+                                                            className="w-3.5 h-3.5 text-orange-500 bg-[#1E293B] border-white/10"
+                                                        />
+                                                        Choix Multiples (Checkboxes)
+                                                    </label>
+                                                </div>
+
+                                                {/* Options List */}
+                                                <div className="space-y-2 pt-2 border-t border-white/5">
+                                                    {group.options.map((option, optionIdx) => (
+                                                        <div key={option.id} className="flex items-center gap-2">
+                                                            {/* Option label input */}
+                                                            <input
+                                                                type="text"
+                                                                value={option.label}
+                                                                onChange={(e) => updateOptionData(group.id, option.id, "label", e.target.value)}
+                                                                placeholder="Option (ex: Fromage, Ketchup)"
+                                                                className="bg-[#1E293B] border border-white/5 rounded-lg py-1.5 px-3 text-xs text-white outline-none focus:border-orange-500 flex-1"
+                                                            />
+                                                            {/* Option price input */}
+                                                            <div className="relative w-20">
+                                                                <input
+                                                                    type="number"
+                                                                    value={option.price || ""}
+                                                                    onChange={(e) => updateOptionData(group.id, option.id, "price", e.target.value)}
+                                                                    placeholder="0"
+                                                                    className="bg-[#1E293B] border border-white/5 rounded-lg py-1.5 px-2 pl-6 text-xs text-amber-500 font-bold w-full text-right outline-none focus:border-orange-500"
+                                                                />
+                                                                <span className="text-gray-500 text-[10px] absolute left-2 top-2">DH</span>
+                                                            </div>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => removeOptionFromGroup(group.id, option.id)}
+                                                                className="text-gray-500 hover:text-red-400 p-1"
+                                                            >
+                                                                <X className="w-3.5 h-3.5" />
+                                                            </button>
+                                                        </div>
+                                                    ))}
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => addOptionToGroup(group.id)}
+                                                        className="text-[10px] font-bold text-orange-500 hover:text-orange-400 flex items-center gap-1 mt-1"
+                                                    >
+                                                        <PlusCircle className="w-3.5 h-3.5" /> Ajouter une option
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={addCustomizationGroup}
+                                    className="w-full py-2.5 bg-[#0F172A] border border-dashed border-white/10 hover:border-white/20 text-[10px] font-black text-orange-500 hover:text-orange-400 rounded-xl flex items-center justify-center gap-2 uppercase tracking-wider transition-all"
+                                >
+                                    <PlusCircle className="w-4 h-4" />
+                                    Créer un groupe de suppléments
+                                </button>
+                            </div>
+                        )}
                     </div>
 
                     {/* Featured & Available Toggles */}
