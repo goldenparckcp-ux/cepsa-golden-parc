@@ -1255,7 +1255,7 @@ export const COMPLETE_MENU: MenuItem[] = [
         description: "Cocktail avocat, fruits, crème et fruits secs.",
         description_ar: "كوكتيل أفوكادو، فواكه، كريمة وفواكه جافة.",
         basePrice: 25,
-        image: "https://images.unsplash.com/photo-1551024601-bec78aea704b?w=800",
+        image: "/image/za3za3.png",
         prepTime: "10 min",
         available: true,
         badge: "Énergie",
