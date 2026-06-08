@@ -158,11 +158,6 @@ export default function StaffLoginPage() {
                     </button>
                 </div>
 
-                {/* Help Links */}
-                <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/5 border border-white/5 text-[10px] font-bold text-gray-400">
-                    <Users className="w-3.5 h-3.5 text-red-500" />
-                    <span>Hôtel (1111) · Cuisine (2222) · Services (3333)</span>
-                </div>
             </div>
         </div>
     );
