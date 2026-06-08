@@ -46,11 +46,12 @@ export function GoogleTranslate() {
 
         win.googleTranslateElementInit = () => {
             if (win.google?.translate) {
+                const InlineLayout = win.google.translate.InlineLayout;
                 new win.google.translate.TranslateElement(
                     {
                         pageLanguage: "fr",
                         includedLanguages: "fr,en,es,ar",
-                        layout: win.google.translate.InlineLayout.SIMPLE,
+                        layout: InlineLayout ? InlineLayout.SIMPLE : undefined,
                         autoDisplay: false,
                     },
                     "google_translate_element"

@@ -414,11 +414,9 @@ export default function AdminPriceModifierPage() {
 
         const payload: any = {
             name_fr: formData.name_fr,
-            name_ar: formData.name_ar || null,
             category_id: formData.category_id,
             base_price: Number(formData.base_price),
             description_fr: formData.description_fr,
-            description_ar: formData.description_ar || null,
             image_url: formData.image_url || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800",
             prep_time: formData.prep_time,
             badge: formData.badge || null,
@@ -442,7 +440,6 @@ export default function AdminPriceModifierPage() {
                 // ADD MODE
                 const maxSort = menuItems.reduce((max, item) => Math.max(max, item.sort_order || 0), 0);
                 payload.sort_order = maxSort + 1;
-                payload.created_at = new Date().toISOString();
 
                 const { error } = await supabase
                     .from("restaurant_items")

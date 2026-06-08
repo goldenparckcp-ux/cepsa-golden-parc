@@ -61,17 +61,14 @@ export default function AdminContentAdditionPage() {
         // Final payload to Supabase
         const payload = {
             name_fr: formData.name_fr,
-            name_ar: formData.name_ar || null,
             category_id: formData.category_id,
             base_price: Number(formData.base_price),
             description_fr: formData.description_fr,
-            description_ar: formData.description_ar || null,
             image_url: formData.image_url || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800",
             prep_time: formData.prep_time,
             badge: formData.badge || null,
             is_featured: formData.is_featured,
-            is_available: formData.is_available,
-            created_at: new Date().toISOString()
+            is_available: formData.is_available
         };
 
         try {

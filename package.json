@@ -28,6 +28,7 @@
     "stripe": "^20.4.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
