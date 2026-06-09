@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createStripeDeposit, createPayPalOrder, calculateArboun } from '@/lib/payment';
+import { supabase } from '@/lib/supabase';
 
 export async function POST(req: Request) {
     try {
@@ -9,8 +10,35 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Missing Required Fields' }, { status: 400 });
         }
 
-        // Logic: Calculate the Deposit if not provided
-        const depositAmount = amount || calculateArboun(100, serviceType);
+        // Fetch total price f database for security verification
+        let dbTotalPrice = 0;
+        
+        try {
+            const { data: hotel } = await supabase.from('hotel_reservations').select('total_price').eq('id', bookingId).maybeSingle();
+            if (hotel?.total_price) {
+                dbTotalPrice = hotel.total_price;
+            } else {
+                const { data: pool } = await supabase.from('pool_bookings').select('total_price').eq('id', bookingId).maybeSingle();
+                if (pool?.total_price) {
+                    dbTotalPrice = pool.total_price;
+                } else {
+                    const { data: service } = await supabase.from('service_bookings').select('price').eq('id', bookingId).maybeSingle();
+                    if (service?.price) {
+                        dbTotalPrice = service.price;
+                    } else {
+                        const { data: resto } = await supabase.from('restaurant_orders').select('total_price').eq('id', bookingId).maybeSingle();
+                        if (resto?.total_price) {
+                            dbTotalPrice = resto.total_price;
+                        }
+                    }
+                }
+            }
+        } catch (dbErr) {
+            console.warn("DB price fetch warning:", dbErr);
+        }
+
+        const totalOrder = dbTotalPrice || amount || 0;
+        const depositAmount = calculateArboun(totalOrder, serviceType);
 
         if (gateway === 'stripe') {
             const intent = await createStripeDeposit(bookingId, depositAmount);

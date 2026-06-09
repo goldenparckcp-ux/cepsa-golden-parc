@@ -211,8 +211,8 @@ export default function HotelPage() {
         if (error || !data) {
             alert("Erreur: " + error?.message);
         } else {
-            // Hotel Arboun calculation (20% or 20 DH min)
-            const arboun = Math.max(20, Math.round(totalPrice * 0.20));
+            // Hotel Arboun calculation (30% or 20 DH min)
+            const arboun = Math.max(20, Math.round(totalPrice * 0.30));
             setPendingPayment({
                 id: data.id,
                 amount: arboun,

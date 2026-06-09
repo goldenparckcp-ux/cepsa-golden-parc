@@ -4,7 +4,56 @@ test.describe('Client Services Checkout E2E Flows', () => {
 
     test.beforeEach(async ({ page }) => {
         page.on('console', msg => console.log(`BROWSER CONSOLE [${msg.type()}]: ${msg.text()}`));
-        page.on('pageerror', err => console.log(`BROWSER ERROR: ${err.message}`));
+        page.on('pageerror', err => console.log(`BROWSER ERROR STACK: ${err.stack || err.message}`));
+
+        // Mock PayPal SDK Script
+        await page.route('**/sdk/js?**', async route => {
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/javascript',
+                body: `
+                    window.paypal = {
+                        Buttons: function(options) {
+                            return {
+                                isEligible: function() { return true; },
+                                close: function() { return Promise.resolve(); },
+                                render: function(selector) {
+                                    // Support both string selectors and raw DOM nodes passed by @paypal/react-paypal-js
+                                    const container = (typeof selector === 'string')
+                                        ? document.querySelector(selector)
+                                        : selector;
+                                    if (container) {
+                                        container.innerHTML = '<button id="mock-paypal-button" style="width:100%; padding:12px; background:#eab308; color:black; font-weight:900; border-radius:12px; border:none; cursor:pointer;">Pay with PayPal (Mock)</button>';
+                                        container.querySelector('#mock-paypal-button').addEventListener('click', async () => {
+                                            try {
+                                                const orderId = await options.createOrder();
+                                                await options.onApprove({ orderID: orderId }, {
+                                                    order: {
+                                                        capture: async () => {
+                                                            return {
+                                                                id: 'mock-capture-id-123',
+                                                                purchase_units: [{
+                                                                    payments: {
+                                                                        captures: [{ id: 'mock-capture-id-123' }]
+                                                                    }
+                                                                }]
+                                                            };
+                                                        }
+                                                    }
+                                                });
+                                            } catch (err) {
+                                                console.error("Mock PayPal Button Error:", err);
+                                            }
+                                        });
+                                    }
+                                    return Promise.resolve();
+                                }
+                            };
+                        }
+                    };
+                `
+            });
+        });
 
         // Mock Supabase Auth network call
         await page.route('**/auth/v1/user', async route => {
@@ -143,7 +192,7 @@ test.describe('Client Services Checkout E2E Flows', () => {
         await page.click('button:has-text("Fermer")');
     });
 
-    test('2. Hotel Room Booking Flow (Night + Wallet Payment)', async ({ page }) => {
+    test('2. Hotel Room Booking Flow (Night + PayPal Payment)', async ({ page }) => {
         console.log("Starting Hotel Booking E2E...");
         await page.goto('/hotel');
 
@@ -156,11 +205,10 @@ test.describe('Client Services Checkout E2E Flows', () => {
         console.log("Clicking book button...");
         await page.click('button:has-text("Réserver Nuitée")');
 
-        // Secure payment modal should appear, choose wallet
-        console.log("Paying with wallet...");
+        // Secure payment modal should appear, pay with PayPal
+        console.log("Paying with PayPal...");
         await page.waitForSelector('text=Paiement Sécurisé');
-        await page.click('text=Golden Wallet');
-        await page.click('button:has-text("Confirmer & Payer")');
+        await page.click('button:has-text("Pay with PayPal (Mock)")');
 
         // Success dialog check
         console.log("Verifying hotel booking success...");
@@ -168,7 +216,7 @@ test.describe('Client Services Checkout E2E Flows', () => {
         await page.click('button:has-text("Fermer")');
     });
 
-    test('3. Pool Ticket Booking Flow (Full Day + Wallet Payment)', async ({ page }) => {
+    test('3. Pool Ticket Booking Flow (Full Day + PayPal Payment)', async ({ page }) => {
         console.log("Starting Pool Booking E2E...");
         await page.goto('/services/pool');
 
@@ -186,11 +234,10 @@ test.describe('Client Services Checkout E2E Flows', () => {
         console.log("Clicking pool book button...");
         await page.click('button:has-text("Réserver Ticket")');
 
-        // Secure payment modal should appear, choose wallet
-        console.log("Paying with wallet...");
+        // Secure payment modal should appear, pay with PayPal
+        console.log("Paying with PayPal...");
         await page.waitForSelector('text=Paiement Sécurisé');
-        await page.click('text=Golden Wallet');
-        await page.click('button:has-text("Confirmer & Payer")');
+        await page.click('button:has-text("Pay with PayPal (Mock)")');
 
         // Success dialog check
         console.log("Verifying pool booking success...");

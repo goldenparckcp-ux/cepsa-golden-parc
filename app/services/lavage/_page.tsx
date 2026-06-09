@@ -229,8 +229,8 @@ export default function LavagePage() {
             if (error || !data) {
                 alert("Erreur: " + error?.message);
             } else {
-                // Arboun pour le lavage : min 20 DH ou 20%
-                const arboun = Math.max(20, Math.round(selectedPrice * 0.20));
+                // Arboun pour le lavage : min 20 DH ou 30%
+                const arboun = Math.max(20, Math.round(selectedPrice * 0.30));
                 setPendingPayment({
                     id: data.id,
                     amount: arboun,

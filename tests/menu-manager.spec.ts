@@ -98,6 +98,6 @@ test('Visual Menu Manager E2E Flow (Add, Verify Client, Edit Price, Verify Clien
 
     // Verify it is gone from Admin view
     await page.waitForTimeout(1000); // Wait briefly for state update
-    await expect(page.locator(`text=${uniqueName}`)).not.toBeVisible();
+    await expect(page.locator(`div.group`, { has: page.locator(`h4:has-text("${uniqueName}")`) }).first()).not.toBeVisible();
     console.log("E2E Test Flow completed successfully and cleaned up!");
 });

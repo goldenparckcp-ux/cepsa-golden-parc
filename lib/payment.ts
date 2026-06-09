@@ -19,15 +19,10 @@ const paypalClient = new paypal.core.PayPalHttpClient(PayPalEnvironment);
 /**
  * Logic to calculate the Arboun (Deposit)
  */
-export const calculateArboun = (totalPrice: number, serviceType: string) => {
-    // 20% Deposit, but never less than 20 MAD
-    const dynamicDeposit = totalPrice * 0.20;
-    const fixedFee = 20; // MAD
-
-    // Choose policy based on service
-    if (serviceType === 'lavage') return Math.max(fixedFee, dynamicDeposit);
-    if (serviceType === 'hotel') return dynamicDeposit; // Usually higher for hotels
-    return fixedFee;
+export const calculateArboun = (totalPrice: number, _serviceType?: string) => {
+    // 30% Deposit, but never less than 20 MAD
+    const calculatedDeposit = totalPrice * 0.30;
+    return calculatedDeposit < 20 ? 20 : calculatedDeposit;
 };
 
 /**
@@ -61,14 +56,16 @@ export const createStripeDeposit = async (bookingId: string, amount: number, cus
  * Create a PayPal Order for the Deposit
  */
 export const createPayPalOrder = async (bookingId: string, amount: number) => {
+    // 10 MAD = $1 USD for simulation purposes
+    const usdAmount = amount / 10;
     const request = new paypal.orders.OrdersCreateRequest();
     request.prefer("return=representation");
     request.requestBody({
         intent: 'CAPTURE',
         purchase_units: [{
             amount: {
-                currency_code: 'MAD',
-                value: amount.toFixed(2)
+                currency_code: 'USD',
+                value: usdAmount.toFixed(2)
             },
             custom_id: bookingId
         }]

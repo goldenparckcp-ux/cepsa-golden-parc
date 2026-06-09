@@ -147,8 +147,8 @@ export default function PoolPage() {
         if (error || !data) {
             alert("Erreur: " + error?.message);
         } else {
-            // Arboun minimum = 20 DH
-            const arboun = Math.max(20, Math.round(totalPrice * 0.20));
+            // Arboun minimum = 20 DH (30% deposit)
+            const arboun = Math.max(20, Math.round(totalPrice * 0.30));
             setPendingPayment({
                 id: data.id,
                 amount: arboun,

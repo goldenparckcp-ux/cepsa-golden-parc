@@ -103,7 +103,6 @@ function ProfileContent() {
 
     // Cancel Order Handler
     const handleCancelOrder = async (orderId: string, table: string, scheduledAt?: string, depositAmount?: number, depositPaid?: boolean) => {
-        let isRefundable = true;
         let refundMsg = "";
 
         if (scheduledAt && depositPaid && depositAmount) {
@@ -113,7 +112,6 @@ function ProfileContent() {
             const diffMins = Math.floor(diffMs / 60000);
 
             if (diffMins <= 45) {
-                isRefundable = false;
                 refundMsg = "\n⚠️ Attention: Annulation à moins de 45min. Le dépôt ne sera pas remboursé.";
             } else {
                 refundMsg = `\n✅ Remboursable: ${depositAmount - 10} DH seront crédités sur votre Wallet (Frais 10 DH).`;
@@ -124,35 +122,29 @@ function ProfileContent() {
 
         setIsLoading(true);
 
-        // 1. If Refundable, Credit Wallet (Simulation or API Call)
-        if (isRefundable && depositPaid && depositAmount && userId) {
-            const refundValue = Math.max(0, depositAmount - 10);
-
-            // Increment wallet balance
-            const { data: profile } = await supabase.from('profiles').select('wallet_balance').eq('id', userId).single();
-            await supabase.from('profiles').update({
-                wallet_balance: (profile?.wallet_balance || 0) + refundValue
-            }).eq('id', userId);
-
-            // Log Wallet Transaction
-            await supabase.from('wallet_transactions').insert({
-                user_id: userId,
-                amount: refundValue,
-                type: 'refund',
-                description: `Annulation Booking #${orderId.slice(0, 5)}`,
-                status: 'completed'
+        try {
+            const res = await fetch('/api/bookings/cancel', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ bookingId: orderId, tableName: table })
             });
-        }
 
-        const { error } = await supabase.from(table).update({ status: 'cancelled' }).eq('id', orderId);
+            const result = await res.json();
 
-        if (error) {
-            alert("Erreur lors de l'annulation");
-        } else {
-            // Update UI
+            if (!res.ok) {
+                throw new Error(result.error || "Erreur lors de l'annulation");
+            }
+
+            alert(result.message || "Annulation effectuée.");
+
+            // Update UI by removing order f list
             setOrders(prev => prev.filter(o => o.id !== orderId));
+        } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : String(err);
+            alert(message);
+        } finally {
+            setIsLoading(false);
         }
-        setIsLoading(false);
     };
 
     // Fetch Orders - Updated to work with both phone and Google users
