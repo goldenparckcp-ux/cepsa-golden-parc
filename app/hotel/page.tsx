@@ -129,7 +129,7 @@ export default function HotelPage() {
 
             const bookingNum = `HOTEL-${Date.now().toString().slice(-6)}`;
 
-            const { error } = await supabase.from('hotel_bookings').insert({
+            const { data, error } = await supabase.from('hotel_reservations').insert({
                 booking_number: bookingNum,
                 customer_phone: profile.phone,
                 room_type: bookingData.roomType,
@@ -141,10 +141,15 @@ export default function HotelPage() {
                 total_price: bookingData.totalPrice,
                 status: 'pending',
                 user_id: user.id
-            });
+            }).select().single();
 
-            if (!error) {
-                setShowSuccess(bookingNum);
+            if (!error && data) {
+                const arboun = Math.max(20, Math.round(bookingData.totalPrice * 0.30));
+                setPendingPayment({
+                    id: data.id,
+                    amount: arboun,
+                    num: bookingNum
+                });
                 localStorage.removeItem('pendingHotelBooking');
             }
             setLoading(false);

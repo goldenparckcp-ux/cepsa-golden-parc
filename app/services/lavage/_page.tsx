@@ -160,7 +160,7 @@ export default function LavagePage() {
             setLoading(true);
             const bookingNum = `WASH-${Date.now().toString().slice(-6)}`;
 
-            const { error } = await supabase.from('service_bookings').insert({
+            const { data, error } = await supabase.from('service_bookings').insert({
                 booking_number: bookingNum,
                 customer_phone: profile.phone,
                 service_type: 'lavage',
@@ -171,10 +171,15 @@ export default function LavagePage() {
                 status: 'pending',
                 user_id: user.id,
                 vehicle_info: bookingData.vehicleInfo || null
-            });
+            }).select().single();
 
-            if (!error) {
-                setShowSuccess(bookingNum);
+            if (!error && data) {
+                const arboun = Math.max(20, Math.round(bookingData.price * 0.30));
+                setPendingPayment({
+                    id: data.id,
+                    amount: arboun,
+                    num: bookingNum
+                });
                 localStorage.removeItem('pendingLavageBooking');
             }
             setLoading(false);

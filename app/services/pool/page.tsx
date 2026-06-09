@@ -63,7 +63,6 @@ export default function PoolPage() {
     // --- AUTO-BOOKING ---
     useEffect(() => {
         const attemptAutoBook = async () => {
-            // ... existing auto-book logic ...
             const pending = localStorage.getItem('pendingPoolBooking');
             if (!pending) return;
 
@@ -76,9 +75,7 @@ export default function PoolPage() {
             setLoading(true);
             const bookingNum = `POOL-${Date.now().toString().slice(-6)}`;
 
-
-
-            const { error } = await supabase.from('pool_bookings').insert({
+            const { data, error } = await supabase.from('pool_bookings').insert({
                 booking_number: bookingNum,
                 customer_phone: profile.phone,
                 booking_date: bookingData.date,
@@ -89,10 +86,15 @@ export default function PoolPage() {
                 total_price: bookingData.totalPrice,
                 status: 'pending',
                 user_id: user.id
-            });
+            }).select().single();
 
-            if (!error) {
-                setShowSuccess(bookingNum);
+            if (!error && data) {
+                const arboun = Math.max(20, Math.round(bookingData.totalPrice * 0.30));
+                setPendingPayment({
+                    id: data.id,
+                    amount: arboun,
+                    num: bookingNum
+                });
                 localStorage.removeItem('pendingPoolBooking');
             }
             setLoading(false);

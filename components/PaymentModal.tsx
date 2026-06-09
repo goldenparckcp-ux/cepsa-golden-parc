@@ -121,6 +121,20 @@ export default function PaymentModal({ bookingId, amount, serviceType, tableName
                                     </div>
                                 </div>
 
+                                {serviceType !== 'topup' && (
+                                    <div className="mb-6 bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 flex gap-3 text-left">
+                                        <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                                        <div className="text-[11px] text-gray-300 leading-relaxed">
+                                            <p className="font-bold text-amber-500 mb-1">
+                                                * Conditions d&apos;Acompte & Annulation
+                                            </p>
+                                            Le montant à régler correspond à un acompte obligatoire de <span className="text-white font-bold">30%</span> (minimum 20 MAD).
+                                            <br />
+                                            En cas d&apos;annulation <span className="text-white font-bold">&gt; 45 minutes</span> avant l&apos;heure prévue, le dépôt sera remboursé sur votre portefeuille local moins <span className="text-white font-bold">10 MAD</span> de frais de dossier. Moins de 45 minutes, l&apos;acompte est non-remboursable (perdu).
+                                        </div>
+                                    </div>
+                                )}
+
                                 {error && (
                                     <div className="mb-4 bg-red-500/10 border border-red-500/50 rounded-xl p-3 flex items-start gap-3 animate-shake">
                                         <AlertTriangle className="w-5 h-5 text-red-500 shrink-0" />
