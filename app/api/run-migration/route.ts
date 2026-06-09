@@ -9,35 +9,28 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  const connectionString = 'postgresql://postgres:EgBovcTTPMqZga5W@db.vktqecgylkjogquhsymz.supabase.co:5432/postgres';
-  const client = new Client({ connectionString });
+  // Use the IPv4 pooler connection string
+  const connectionString = 'postgresql://postgres.vktqecgylkjogquhsymz:EgBovcTTPMqZga5W@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?sslmode=require';
+  const client = new Client({
+    connectionString,
+    ssl: { rejectUnauthorized: false }
+  });
   
   try {
     await client.connect();
     
     // Check current columns
-    const initialColumns = await client.query(`
-      SELECT column_name FROM information_schema.columns WHERE table_name = 'restaurant_orders';
-    `);
-
-    // Run migration
-    await client.query(`
-      ALTER TABLE public.restaurant_orders ADD COLUMN IF NOT EXISTS deposit_amount NUMERIC DEFAULT 0;
-      ALTER TABLE public.restaurant_orders ADD COLUMN IF NOT EXISTS deposit_paid BOOLEAN DEFAULT FALSE;
-      ALTER TABLE public.restaurant_orders ADD COLUMN IF NOT EXISTS payment_intent_id TEXT;
-      NOTIFY pgrst, 'reload schema';
-    `);
-
-    // Check columns again
-    const finalColumns = await client.query(`
-      SELECT column_name FROM information_schema.columns WHERE table_name = 'restaurant_orders';
+    const columns = await client.query(`
+      SELECT column_name, data_type 
+      FROM information_schema.columns 
+      WHERE table_name = 'restaurant_orders' 
+        AND column_name IN ('deposit_amount', 'deposit_paid', 'payment_intent_id');
     `);
 
     await client.end();
     return NextResponse.json({
       success: true,
-      initial: initialColumns.rows.map((r: any) => r.column_name),
-      final: finalColumns.rows.map((r: any) => r.column_name)
+      columns: columns.rows
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
