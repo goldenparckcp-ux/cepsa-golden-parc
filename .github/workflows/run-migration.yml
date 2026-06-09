@@ -23,4 +23,14 @@ jobs:
         run: npm install pg
 
       - name: Execute Migration Script
-        run: node scripts/run_migration_direct.js
+        run: |
+          node scripts/run_migration_direct.js > migration_output.txt 2>&1 || true
+          cat migration_output.txt
+
+      - name: Commit and Push Output
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add migration_output.txt
+          git commit -m "chore: save migration output [skip ci]" || true
+          git push origin main
