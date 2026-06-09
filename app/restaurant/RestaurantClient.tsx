@@ -75,7 +75,7 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [policyAccepted, setPolicyAccepted] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('card');
-    const [isDepositMode, setIsDepositMode] = useState(false);
+    const [isDepositMode, setIsDepositMode] = useState(true);
     const [pendingPayment, setPendingPayment] = useState<{ id: string; amount: number; num: string } | null>(null);
 
     // Database States (Pre-loaded from Server)
@@ -731,7 +731,46 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                                     <span className="text-white font-black text-lg">{t('cart.total')}</span>
                                     <span className="text-amber-500 font-black text-2xl">{formatDh(total)}</span>
                                 </div>
+
+                                {isDepositMode && (
+                                    <>
+                                        <div className="flex justify-between items-center text-amber-500 px-2 pt-2 border-t border-dashed border-white/10 animate-in fade-in">
+                                            <span className="text-sm font-bold flex items-center gap-1">✨ {language === 'ar' ? 'مبلغ التسبيق (30%)' : 'Acompte (30% obligatoire)'}</span>
+                                            <span className="text-xl font-black">{formatDh(Math.min(total, Math.max(20, Math.round(total * 0.3))))}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-gray-400 text-xs px-2 animate-in fade-in">
+                                            <span>{language === 'ar' ? 'الباقي عند الوصول (70%)' : 'Reste à régler sur place (70%)'}</span>
+                                            <span>{formatDh(total - Math.min(total, Math.max(20, Math.round(total * 0.3))))}</span>
+                                        </div>
+                                    </>
+                                )}
                             </div>
+
+                            {/* CANCELLATION TERMS DISCLAIMER CARD */}
+                            {isDepositMode && (
+                                <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 flex gap-3 text-left animate-in fade-in slide-in-from-top-2">
+                                    <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                                    <div className="text-[11px] text-gray-300 leading-relaxed">
+                                        <p className="font-bold text-amber-500 mb-1">
+                                            {language === 'ar' ? '* شروط الإلغاء والتسبيق' : "* Conditions d'Acompte & Annulation"}
+                                        </p>
+                                        {language === 'ar' ? (
+                                            <>
+                                                المبلغ المستحق يمثل تسبيقاً إلزامياً بنسبة <span className="text-white font-bold">30%</span> (20 درهم كحد أدنى).
+                                                <br />
+                                                في حالة الإلغاء <span className="text-white font-bold">لأكثر من 45 دقيقة</span> قبل الوقت المحدد، سيتم استرداد مبلغ التسبيق في حسابك البنكي ناقص <span className="text-white font-bold">10 دراهم</span> كرسوم معالجة.
+                                            </>
+                                        ) : (
+                                            <>
+                                                Le montant à régler correspond à un acompte obligatoire de <span className="text-white font-bold">30%</span> (minimum 20 MAD).
+                                                <br />
+                                                En cas d&apos;annulation <span className="text-white font-bold">&gt; 45 minutes</span> avant l&apos;heure prévue, le dépôt sera remboursé directement sur votre carte moins <span className="text-white font-bold">10 MAD</span> de frais de dossier.
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
 
                             {/* CHECKBOX AND SUBMIT BUTTON */}
                             <div className="pt-2 space-y-3">
