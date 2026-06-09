@@ -11,53 +11,34 @@ export async function GET(request: Request) {
 
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
-  const regions = [
-    'eu-central-1',
-    'eu-west-1',
-    'eu-west-2',
-    'eu-west-3',
-    'us-east-1',
-    'us-east-2',
-    'us-west-1',
-    'us-west-2',
-    'ap-southeast-1',
-    'ap-southeast-2',
-    'ap-northeast-1',
-    'ap-northeast-2',
-    'ca-central-1',
-    'sa-east-1',
-    'ap-south-1'
-  ];
-
-  const results: Record<string, string> = {};
-
-  for (const region of regions) {
-    const connectionString = `postgresql://postgres.vktqecgylkjogquhsymz:EgBovcTTPMqZga5W@aws-0-${region}.pooler.supabase.com:6543/postgres`;
-    const client = new Client({
-      connectionString,
-      ssl: { rejectUnauthorized: false }
-    });
-
-    try {
-      // Set a short timeout for the connection
-      await Promise.race([
-        client.connect(),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout after 4s')), 4000))
-      ]);
-      results[region] = 'SUCCESS';
-      await client.end();
-      // If we find the correct region, we can stop early!
-      break;
-    } catch (error: any) {
-      results[region] = error.message;
-      try {
-        await client.end();
-      } catch (e) {}
-    }
-  }
-
-  return NextResponse.json({
-    success: true,
-    results
+  // Use the raw IPv6 address directly as host
+  const client = new Client({
+    host: '2a05:d018:65a:e202:51ae:29f1:5502:5fd',
+    port: 5432,
+    user: 'postgres',
+    password: 'EgBovcTTPMqZga5W',
+    database: 'postgres',
+    ssl: { rejectUnauthorized: false }
   });
+  
+  try {
+    await client.connect();
+    
+    // Check current columns
+    const columns = await client.query(`
+      SELECT column_name, data_type 
+      FROM information_schema.columns 
+      WHERE table_name = 'restaurant_orders' 
+        AND column_name IN ('deposit_amount', 'deposit_paid', 'payment_intent_id');
+    `);
+
+    await client.end();
+    return NextResponse.json({
+      success: true,
+      direct_ipv6: true,
+      columns: columns.rows
+    });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }
