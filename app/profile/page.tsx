@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Smartphone, Check, User, Loader2, ArrowRight, LogOut, Clock, Package, Wifi, Phone, Crown, QrCode, X, Moon, Waves, Trash2, UtensilsCrossed, AlertTriangle, Pencil, Save, ChevronLeft } from 'lucide-react';
+import { Smartphone, Check, User, Loader2, ArrowRight, LogOut, Clock, Package, Wifi, Phone, Crown, QrCode, X, Moon, Waves, Trash2, UtensilsCrossed, AlertTriangle, Pencil, Save, ChevronLeft, Mail } from 'lucide-react';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 import { useAuth } from '@/lib/state/AuthProvider';
@@ -17,7 +17,7 @@ function ProfileContent() {
     const { user: authUser, loading: authLoading } = useAuth(); // Global Auth
 
     // Auth States
-    const [step, setStep] = useState<'phone' | 'otp' | 'profile' | 'dashboard'>('phone');
+    const [step, setStep] = useState<'phone' | 'otp' | 'profile' | 'dashboard' | 'email' | 'email-sent'>('phone');
     const [phone, setPhone] = useState('');
     const [email, setEmail] = useState('');
     const [otp, setOtp] = useState('');
@@ -502,6 +502,26 @@ function ProfileContent() {
         const { error } = await supabase.auth.signInWithOtp({ phone: cleanPhone, options: { shouldCreateUser: true } });
         setIsLoading(false);
         if (error) { alert("Erreur: " + error.message); } else { setStep('otp'); }
+    };
+
+    const handleEmailLogin = async () => {
+        if (!email) return;
+        setIsLoading(true);
+        try {
+            const { error } = await supabase.auth.signInWithOtp({
+                email: email,
+                options: {
+                    emailRedirectTo: `${window.location.origin}/api/auth/callback?next=/profile`,
+                },
+            });
+
+            if (error) throw error;
+            setStep('email-sent');
+        } catch (err: unknown) {
+            alert(err instanceof Error ? err.message : 'Impossible d\'envoyer le lien de connexion.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleVerifyOtp = async () => {
@@ -1065,7 +1085,7 @@ function ProfileContent() {
                                             <div className="w-full border-t border-white/10" />
                                         </div>
                                         <div className="relative flex justify-center text-xs uppercase">
-                                            <span className="bg-[#1b2537] px-2 text-gray-500 font-medium">Ou continuer avec</span>
+                                            <span className="bg-[#1e293b] px-2 text-gray-500 font-bold">Ou continuer avec</span>
                                         </div>
                                     </div>
 
@@ -1083,9 +1103,14 @@ function ProfileContent() {
                                                     }
                                                 });
                                             }}
-                                            className="py-4 bg-white text-black rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-100 active:scale-[0.98] transition-all text-sm"
+                                            className="py-4 bg-white text-black rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-100 active:scale-[0.98] transition-all text-sm shadow-sm"
                                         >
-                                            <Image src="https://www.svgrepo.com/show/475656/google-color.svg" width={18} height={18} className="w-4.5 h-4.5" alt="Google" />
+                                            <svg className="w-4.5 h-4.5" viewBox="0 0 24 24">
+                                                <path fill="#EA4335" d="M12 5.04c1.66 0 3.12.57 4.3 1.7l3.21-3.21C17.56 1.76 14.99 1 12 1 7.37 1 3.4 3.66 1.52 7.57l3.92 3.04C6.39 7.6 8.96 5.04 12 5.04z" />
+                                                <path fill="#4285F4" d="M23.49 12.27c0-.82-.07-1.6-.21-2.36H12v4.51h6.47c-.28 1.48-1.12 2.73-2.38 3.58l3.7 2.87c2.16-1.99 3.7-4.92 3.7-8.6z" />
+                                                <path fill="#FBBC05" d="M5.44 14.61c-.24-.72-.38-1.49-.38-2.29s.14-1.57.38-2.29L1.52 6.99C.55 8.93 0 11.1 0 13.38c0 2.28.55 4.45 1.52 6.39l3.92-3.04z" />
+                                                <path fill="#34A853" d="M12 23c3.24 0 5.97-1.07 7.96-2.91l-3.7-2.87c-1.03.69-2.35 1.1-4.26 1.1-3.04 0-5.61-2.56-6.56-5.57l-3.92 3.04C3.4 20.34 7.37 23 12 23z" />
+                                            </svg>
                                             Google
                                         </button>
 
@@ -1102,12 +1127,73 @@ function ProfileContent() {
                                                     }
                                                 });
                                             }}
-                                            className="py-4 bg-[#1877F2] text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#166FE5] active:scale-[0.98] transition-all text-sm"
+                                            className="py-4 bg-[#1877F2] text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#166FE5] active:scale-[0.98] transition-all text-sm shadow-sm"
                                         >
-                                            <Image src="https://www.svgrepo.com/show/475700/facebook-color.svg" width={18} height={18} className="w-4.5 h-4.5 brightness-0 invert" alt="Facebook" />
+                                            <svg className="w-4.5 h-4.5 fill-current" viewBox="0 0 24 24">
+                                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+                                            </svg>
                                             Facebook
                                         </button>
                                     </div>
+
+                                    {/* E-mail / Gmail manually */}
+                                    <button
+                                        onClick={() => setStep('email')}
+                                        className="w-full py-4 bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-xl font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-all text-sm"
+                                    >
+                                        <Mail className="w-4.5 h-4.5 text-gray-400" />
+                                        E-mail / Gmail (Manuel)
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* E-mail Input Step */}
+                            {step === 'email' && (
+                                <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500 relative z-10">
+                                    <div className="text-center">
+                                        <h2 className="text-xl font-bold text-white mb-1">Connexion par E-mail</h2>
+                                        <p className="text-sm text-gray-400">Saisissez votre adresse Gmail ou E-mail pour continuer.</p>
+                                    </div>
+                                    <div className="flex items-center gap-3 bg-black/40 border border-white/10 p-4 rounded-2xl focus-within:border-amber-500/50 transition-colors">
+                                        <Mail className="text-gray-500 w-5 h-5" />
+                                        <input
+                                            type="email"
+                                            value={email}
+                                            onChange={e => setEmail(e.target.value)}
+                                            placeholder="votre.email@gmail.com"
+                                            className="bg-transparent outline-none text-white font-bold w-full text-lg placeholder:text-gray-600"
+                                            required
+                                            autoFocus
+                                        />
+                                    </div>
+                                    <button
+                                        onClick={handleEmailLogin}
+                                        disabled={isLoading || !email}
+                                        className="w-full py-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 rounded-xl font-black text-white shadow-lg shadow-red-600/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                                    >
+                                        {isLoading ? <Loader2 className="animate-spin" /> : "Envoyer le lien"}
+                                    </button>
+                                    <button onClick={() => setStep('phone')} className="text-xs text-gray-500 w-full text-center hover:text-white transition-colors">Retour au téléphone</button>
+                                </div>
+                            )}
+
+                            {/* E-mail Sent Step */}
+                            {step === 'email-sent' && (
+                                <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500 relative z-10 text-center py-4">
+                                    <div className="inline-block p-3 rounded-full bg-green-500/10 border border-green-500/20 mb-2">
+                                        <Check className="w-8 h-8 text-green-500" />
+                                    </div>
+                                    <h2 className="text-xl font-bold text-white">Vérifiez votre boîte mail</h2>
+                                    <p className="text-sm text-gray-400 leading-relaxed">
+                                        Un lien de connexion magique a été envoyé à <span className="font-bold text-white">{email}</span>. 
+                                        Veuillez cliquer sur le lien dans votre boîte de réception pour vous connecter.
+                                    </p>
+                                    <button
+                                        onClick={() => setStep('phone')}
+                                        className="w-full py-4 bg-white/5 border border-white/10 rounded-xl text-white font-bold hover:bg-white/10 transition-colors"
+                                    >
+                                        Retour à la connexion
+                                    </button>
                                 </div>
                             )}
 
