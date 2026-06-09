@@ -9,14 +9,16 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Bypass self-signed certificate error
+  // Bypass self-signed certificate error globally in this invocation
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
-  // Use the IPv4 pooler connection string
-  const connectionString = 'postgresql://postgres.vktqecgylkjogquhsymz:EgBovcTTPMqZga5W@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?sslmode=require';
+  // Use the IPv4 pooler connection string without sslmode parameter in URL
+  const connectionString = 'postgresql://postgres.vktqecgylkjogquhsymz:EgBovcTTPMqZga5W@aws-0-eu-west-1.pooler.supabase.com:6543/postgres';
   const client = new Client({
     connectionString,
-    ssl: { rejectUnauthorized: false }
+    ssl: {
+      rejectUnauthorized: false
+    }
   });
   
   try {
