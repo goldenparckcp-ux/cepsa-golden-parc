@@ -9,7 +9,7 @@ const supabaseAdmin = createClient(
 );
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-    apiVersion: '2026-02-25.clover' as any,
+    apiVersion: '2026-02-25.clover' as Stripe.StripeConfig['apiVersion'],
 });
 
 async function getPayPalAccessToken(): Promise<string> {
@@ -37,7 +37,7 @@ async function getPayPalAccessToken(): Promise<string> {
     return data.access_token;
 }
 
-async function refundPayPalCapture(captureId: string, amountUsd: number): Promise<any> {
+async function refundPayPalCapture(captureId: string, amountUsd: number): Promise<unknown> {
     const accessToken = await getPayPalAccessToken();
     const response = await fetch(`https://api-m.sandbox.paypal.com/v2/payments/captures/${captureId}/refund`, {
         method: 'POST',
@@ -61,7 +61,21 @@ async function refundPayPalCapture(captureId: string, amountUsd: number): Promis
     return data;
 }
 
-function parseScheduledTime(booking: any, tableName: string): Date {
+interface BookingData {
+    check_in?: string;
+    booking_date?: string;
+    time_slot?: string;
+    scheduled_date?: string;
+    created_at?: string;
+    scheduled_at?: string;
+    status?: string;
+    deposit_paid?: boolean;
+    deposit_amount?: number | string;
+    price?: number | string;
+    user_id?: string;
+}
+
+function parseScheduledTime(booking: BookingData, tableName: string): Date {
     if (tableName === 'hotel_reservations') {
         if (booking.check_in) {
             // Assume standard check-in at 14:00 local time
@@ -195,9 +209,9 @@ export async function POST(req: Request) {
                             });
 
                             refunded = true;
-                        } catch (err: any) {
+                        } catch (err) {
                             console.error("Gateway refund failed:", err);
-                            refundErrorMessage = err.message || String(err);
+                            refundErrorMessage = err instanceof Error ? err.message : String(err);
                         }
                     } else {
                         console.error("No transaction reference found for booking:", bookingId);

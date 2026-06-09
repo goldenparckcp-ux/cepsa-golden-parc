@@ -3,13 +3,12 @@
 import { useState, useEffect, Suspense, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Smartphone, Check, User, Loader2, ArrowRight, LogOut, Clock, Package, Wifi, Phone, Crown, QrCode, X, Moon, Waves, Trash2, UtensilsCrossed, AlertTriangle, Pencil, Save, Plus, ChevronLeft, ChevronDown, Facebook, Mail, Shield } from 'lucide-react';
+import { Smartphone, Check, User, Loader2, ArrowRight, LogOut, Clock, Package, Wifi, Phone, Crown, QrCode, X, Moon, Waves, Trash2, UtensilsCrossed, AlertTriangle, Pencil, Save, ChevronLeft } from 'lucide-react';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 import { useAuth } from '@/lib/state/AuthProvider';
 
 import Image from 'next/image';
-import PaymentModal from '@/components/PaymentModal';
 
 function ProfileContent() {
     const router = useRouter();
@@ -25,7 +24,6 @@ function ProfileContent() {
     const [fullName, setFullName] = useState('');
     const [isLoading, setIsLoading] = useState(true);
     const [userId, setUserId] = useState<string | null>(null);
-    const [walletBalance, setWalletBalance] = useState<number>(0);
 
     // Edit Profile State
     const [isEditing, setIsEditing] = useState(false);
@@ -57,12 +55,6 @@ function ProfileContent() {
 
     // QR Modal State
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
-
-    // Top-up Modal State
-    const [showTopUp, setShowTopUp] = useState(false); // Step 1: Amount picker
-    const [topUpAmount, setTopUpAmount] = useState<number | null>(null);
-    const [showTopUpPayment, setShowTopUpPayment] = useState(false); // Step 2: PaymentModal
-    const [topUpBookingId, setTopUpBookingId] = useState<string | null>(null);
 
     // Update Profile Handler
     const handleUpdateProfile = async () => {
@@ -431,7 +423,6 @@ function ProfileContent() {
             setFullName(profile.full_name || 'Client');
             setPhone(profile.phone || '');
             setEmail(profile.email || '');
-            setWalletBalance(profile.wallet_balance || 0);
             setUserId(uid);
 
             // Check if there's a redirect parameter
@@ -538,7 +529,6 @@ function ProfileContent() {
 
         if (profile) {
             setFullName(profile.full_name);
-            setWalletBalance(profile.wallet_balance || 0);
             setUserId(data.user.id);
 
             // Check if there's a redirect parameter

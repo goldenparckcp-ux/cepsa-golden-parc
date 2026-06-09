@@ -139,8 +139,9 @@ export default function PaymentModal({ bookingId, amount, serviceType, tableName
                                                     const data = await res.json();
                                                     if (!res.ok) throw new Error(data.error || 'PayPal order creation failed');
                                                     return data.order_id;
-                                                } catch (err: any) {
-                                                    setError(err.message || 'Error creating PayPal order');
+                                                } catch (err) {
+                                                    const msg = err instanceof Error ? err.message : 'Error creating PayPal order';
+                                                    setError(msg);
                                                     throw err;
                                                 }
                                             }}
@@ -150,9 +151,10 @@ export default function PaymentModal({ bookingId, amount, serviceType, tableName
                                                     const captureResult = await actions.order?.capture();
                                                     const captureId = captureResult?.purchase_units?.[0]?.payments?.captures?.[0]?.id || captureResult?.id || data.orderID;
                                                     await handleSuccessActions(captureId);
-                                                } catch (err: any) {
+                                                } catch (err) {
                                                     console.error("Capture error:", err);
-                                                    setError(err.message || 'Error capturing PayPal payment');
+                                                    const msg = err instanceof Error ? err.message : 'Error capturing PayPal payment';
+                                                    setError(msg);
                                                     setStep('selection');
                                                 }
                                             }}
