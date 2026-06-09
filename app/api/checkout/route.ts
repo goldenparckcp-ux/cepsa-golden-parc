@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 
 export async function POST(req: Request) {
     try {
-        const { bookingId, amount, serviceType, gateway } = await req.json();
+        const { bookingId, amount, serviceType, gateway, paymentType } = await req.json();
 
         if (!bookingId || !gateway) {
             return NextResponse.json({ error: 'Missing Required Fields' }, { status: 400 });
@@ -37,11 +37,22 @@ export async function POST(req: Request) {
             console.warn("DB price fetch warning:", dbErr);
         }
 
-        const totalOrder = dbTotalPrice || amount || 0;
-        const depositAmount = calculateArboun(totalOrder, serviceType);
+        let finalAmount = amount || 0;
+        if (dbTotalPrice) {
+            if (paymentType === 'full_discounted') {
+                finalAmount = Math.round(dbTotalPrice * 0.90);
+            } else if (paymentType === 'deposit') {
+                finalAmount = calculateArboun(dbTotalPrice, serviceType);
+            } else if (paymentType === 'full') {
+                finalAmount = dbTotalPrice;
+            } else {
+                // Retrocompatibility fallback
+                finalAmount = calculateArboun(dbTotalPrice, serviceType);
+            }
+        }
 
         if (gateway === 'stripe') {
-            const intent = await createStripeDeposit(bookingId, depositAmount);
+            const intent = await createStripeDeposit(bookingId, finalAmount);
             return NextResponse.json({
                 client_secret: intent.client_secret,
                 amount: intent.amount / 100,
@@ -50,10 +61,10 @@ export async function POST(req: Request) {
         }
 
         if (gateway === 'paypal') {
-            const order = await createPayPalOrder(bookingId, depositAmount);
+            const order = await createPayPalOrder(bookingId, finalAmount);
             return NextResponse.json({
                 order_id: order.id,
-                amount: depositAmount,
+                amount: finalAmount,
                 links: order.links
             });
         }

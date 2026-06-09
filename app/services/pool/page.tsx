@@ -40,7 +40,7 @@ const POOL_OPTIONS = [
 
 export default function PoolPage() {
     const router = useRouter();
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
     const [selectedOption, setSelectedOption] = useState<string | null>(null);
     const [category, setCategory] = useState('mixed');
     const [date, setDate] = useState<string>(new Date().toISOString().split('T')[0]);
@@ -51,7 +51,8 @@ export default function PoolPage() {
 
     const [loading, setLoading] = useState(false);
     const [showSuccess, setShowSuccess] = useState<string | null>(null);
-    const [pendingPayment, setPendingPayment] = useState<{ id: string, amount: number, num: string } | null>(null);
+    const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('card');
+    const [pendingPayment, setPendingPayment] = useState<{ id: string, amount: number, num: string, paymentType?: 'full_discounted' | 'deposit' | 'full' } | null>(null);
 
     const activeOption = useMemo(() => POOL_OPTIONS.find(o => o.id === selectedOption), [selectedOption]);
 
@@ -75,6 +76,9 @@ export default function PoolPage() {
             setLoading(true);
             const bookingNum = `POOL-${Date.now().toString().slice(-6)}`;
 
+            const isCard = bookingData.paymentMethod === 'card';
+            const finalPrice = isCard ? Math.round(bookingData.totalPrice * 0.90) : bookingData.totalPrice;
+
             const { data, error } = await supabase.from('pool_bookings').insert({
                 booking_number: bookingNum,
                 customer_phone: profile.phone,
@@ -83,18 +87,22 @@ export default function PoolPage() {
                 ambiance: bookingData.category,
                 adults: bookingData.adults,
                 children: bookingData.children,
-                total_price: bookingData.totalPrice,
+                total_price: finalPrice,
                 status: 'pending',
                 user_id: user.id
             }).select().single();
 
             if (!error && data) {
-                const arboun = Math.max(20, Math.round(bookingData.totalPrice * 0.30));
-                setPendingPayment({
-                    id: data.id,
-                    amount: arboun,
-                    num: bookingNum
-                });
+                if (isCard) {
+                    setPendingPayment({
+                        id: data.id,
+                        amount: finalPrice,
+                        num: bookingNum,
+                        paymentType: 'full_discounted'
+                    });
+                } else {
+                    setShowSuccess(bookingNum);
+                }
                 localStorage.removeItem('pendingPoolBooking');
             }
             setLoading(false);
@@ -108,6 +116,9 @@ export default function PoolPage() {
 
         const { data: { user } } = await supabase.auth.getUser();
 
+        const isCard = paymentMethod === 'card';
+        const finalPrice = isCard ? Math.round(totalPrice * 0.90) : totalPrice;
+
         if (!user) {
             // Only redirect if NOT logged in
             const bookingData = {
@@ -118,7 +129,8 @@ export default function PoolPage() {
                 timeSlot: activeOption?.hours,
                 adults,
                 children,
-                totalPrice
+                totalPrice,
+                paymentMethod
             };
             localStorage.setItem('pendingPoolBooking', JSON.stringify(bookingData));
             router.push('/profile?redirect=/services/pool');
@@ -141,7 +153,7 @@ export default function PoolPage() {
             ambiance: category,
             adults: adults,
             children: children,
-            total_price: totalPrice,
+            total_price: finalPrice,
             status: 'pending',
             user_id: user.id
         }).select().single();
@@ -149,16 +161,19 @@ export default function PoolPage() {
         if (error || !data) {
             alert("Erreur: " + error?.message);
         } else {
-            // Arboun minimum = 20 DH (30% deposit)
-            const arboun = Math.max(20, Math.round(totalPrice * 0.30));
-            setPendingPayment({
-                id: data.id,
-                amount: arboun,
-                num: bookingNum
-            });
+            if (isCard) {
+                setPendingPayment({
+                    id: data.id,
+                    amount: finalPrice,
+                    num: bookingNum,
+                    paymentType: 'full_discounted'
+                });
+            } else {
+                setShowSuccess(bookingNum);
+            }
         }
         setLoading(false);
-    }, [selectedOption, activeOption, category, date, adults, children, totalPrice, router, t]);
+    }, [selectedOption, activeOption, category, date, adults, children, totalPrice, paymentMethod, router, t]);
 
     return (
         <div className="min-h-screen pb-40 bg-[#0F172A]">
@@ -277,6 +292,57 @@ export default function PoolPage() {
                     </div>
                 </div>
 
+                {/* Mode de Paiement Selector */}
+                <div className="bg-[#1E293B] p-6 rounded-xl border border-white/10 space-y-4">
+                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">
+                        {language === 'ar' ? 'طريقة الدفع' : 'Mode de Paiement'}
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Cash Option */}
+                        <button
+                            onClick={() => setPaymentMethod('cash')}
+                            className={`relative p-4 rounded-xl border flex flex-col items-center gap-2 transition-all text-center ${paymentMethod === 'cash'
+                                ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400'
+                                : 'bg-[#0F172A] border-white/10 text-gray-500 hover:bg-white/5'
+                                }`}
+                        >
+                            <span className="text-xl">💵</span>
+                            <span className="text-xs font-bold">
+                                {language === 'ar' ? 'نقداً (في المحطة)' : 'Sur Place (Cash)'}
+                            </span>
+                            <span className="text-[10px] text-gray-400">
+                                {language === 'ar' ? 'السعر العادي' : 'Prix normal'}
+                            </span>
+                            {paymentMethod === 'cash' && (
+                                <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                            )}
+                        </button>
+
+                        {/* Card/PayPal Option */}
+                        <button
+                            onClick={() => setPaymentMethod('card')}
+                            className={`relative p-4 rounded-xl border flex flex-col items-center gap-2 transition-all text-center ${paymentMethod === 'card'
+                                ? 'bg-red-600/10 border-red-500 text-red-400'
+                                : 'bg-[#0F172A] border-white/10 text-gray-500 hover:bg-white/5'
+                                }`}
+                        >
+                            <span className="absolute -top-2 -right-2 bg-red-600 text-white font-black text-[9px] px-2 py-0.5 rounded-full shadow animate-pulse z-10">
+                                -10%
+                            </span>
+                            <span className="text-xl">💳</span>
+                            <span className="text-xs font-bold">
+                                {language === 'ar' ? 'دفع إلكتروني' : 'En ligne (-10%)'}
+                            </span>
+                            <span className="text-[10px] text-gray-400">
+                                {language === 'ar' ? 'تخفيض فوري 10%' : '10% de remise incluse'}
+                            </span>
+                            {paymentMethod === 'card' && (
+                                <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 shadow-[0_0_10px_rgba(220,38,38,0.5)]" />
+                            )}
+                        </button>
+                    </div>
+                </div>
+
                 {/* 3. Date & Guests Counters */}
                 <div className="bg-[#1E293B] p-6 rounded-xl border border-white/10 space-y-6">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -330,7 +396,15 @@ export default function PoolPage() {
                     >
                         {/* Price Right */}
                         <div className="flex items-center gap-2 pl-2">
-                            <span className="text-white font-black text-lg">{totalPrice} <span className="text-xs font-bold text-gray-400">DH</span></span>
+                            <span className="text-white font-black text-lg">
+                                {paymentMethod === 'card' ? Math.round(totalPrice * 0.90) : totalPrice}{' '}
+                                <span className="text-xs font-bold text-gray-400">DH</span>
+                                {paymentMethod === 'card' && totalPrice > 0 && (
+                                    <span className="text-[10px] text-red-500 font-bold ml-1.5 bg-red-500/10 px-1 rounded animate-pulse">
+                                        -10%
+                                    </span>
+                                )}
+                            </span>
                             <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white group-hover:bg-red-500 group-hover:text-black transition-colors rotate-180 rtl:rotate-0">←</div>
                         </div>
 
@@ -390,6 +464,7 @@ export default function PoolPage() {
                     amount={pendingPayment.amount}
                     serviceType="pool"
                     tableName="pool_bookings"
+                    paymentType={pendingPayment.paymentType}
                     onSuccess={() => {
                         setPendingPayment(null);
                         setShowSuccess(pendingPayment.num);

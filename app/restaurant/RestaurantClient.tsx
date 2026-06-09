@@ -75,8 +75,8 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [policyAccepted, setPolicyAccepted] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('card');
-    const [isDepositMode, setIsDepositMode] = useState(true);
-    const [pendingPayment, setPendingPayment] = useState<{ id: string; amount: number; num: string } | null>(null);
+    const [isDepositMode, setIsDepositMode] = useState(false);
+    const [pendingPayment, setPendingPayment] = useState<{ id: string; amount: number; num: string; paymentType: 'full_discounted' | 'deposit' | 'full' } | null>(null);
 
     // Database States (Pre-loaded from Server)
     const [dbItems, setDbItems] = useState<MenuItem[]>(initialItems);
@@ -198,9 +198,11 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
             { is_meta: true, ...deliveryInfo }
         ];
 
-        const requiresPayment = paymentMethod === 'card' || isDepositMode;
+        const requiresPayment = (paymentMethod === 'card' || isDepositMode);
         const depositAmount = Math.min(total, Math.max(20, Math.round(total * 0.3)));
-        const paymentAmount = isDepositMode ? depositAmount : total;
+        const paymentAmount = isDepositMode 
+            ? depositAmount 
+            : (paymentMethod === 'card' ? Math.round(total * 0.90) : total);
 
         const { data, error } = await supabase.from('restaurant_orders').insert({
             order_number: orderNum,
@@ -209,9 +211,9 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
             items: finalItems,
             status: requiresPayment ? 'pending_payment' : 'pending',
             subtotal: total,
-            total_price: total,
+            total_price: paymentMethod === 'card' && !isDepositMode ? Math.round(total * 0.90) : total,
             deposit_paid: false,
-            deposit_amount: isDepositMode ? depositAmount : 0,
+            deposit_amount: isDepositMode ? depositAmount : (paymentMethod === 'card' ? Math.round(total * 0.90) : 0),
             created_at: new Date().toISOString()
         }).select().single();
 
@@ -224,7 +226,8 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                 setPendingPayment({
                     id: data.id,
                     amount: paymentAmount,
-                    num: orderNum
+                    num: orderNum,
+                    paymentType: isDepositMode ? 'deposit' : 'full_discounted'
                 });
                 setIsSubmitting(false);
             } else {
@@ -705,17 +708,102 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                     {items.length > 0 && (
                         <div className="mt-8 border-t border-white/5 pt-6 space-y-6">
 
-                            {/* Trust Badges */}
-                            <div className="mt-4 p-3 bg-red-500/5 rounded-lg border border-red-500/10 flex flex-col items-center text-center animate-in fade-in slide-in-from-top-2">
-                                <p className="text-[10px] text-gray-400 mb-2">
-                                    {language === 'ar' ? 'دفع آمن بنسبة 100% عبر PayPal' : 'Paiement 100% sécurisé via PayPal'}
-                                </p>
-                                <div className="flex items-center gap-3 opacity-70 grayscale hover:grayscale-0 transition-all">
-                                    <div className="h-6 w-10 bg-white/10 rounded flex items-center justify-center text-[8px] font-bold text-white">VISA</div>
-                                    <div className="h-6 w-10 bg-white/10 rounded flex items-center justify-center text-[8px] font-bold text-white">MasterCard</div>
-                                    <div className="h-6 w-10 bg-white/10 rounded flex items-center justify-center text-[8px] font-bold text-white">PayPal</div>
+                            {/* --- PAYMENT OPTIONS SELECTOR --- */}
+                            <div className="space-y-3 px-2">
+                                <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                    {language === 'ar' ? 'طريقة الدفع' : 'Mode de Paiement'}
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                    {/* Cash Option */}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setPaymentMethod('cash');
+                                            setIsDepositMode(false);
+                                        }}
+                                        className={`relative p-3 rounded-2xl border flex flex-col items-start gap-1 transition-all text-left ${
+                                            paymentMethod === 'cash' && !isDepositMode
+                                                ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400'
+                                                : 'bg-[#1E293B] border-white/5 text-gray-400 hover:bg-white/5'
+                                        }`}
+                                    >
+                                        <div className="font-bold text-sm text-white">
+                                            {language === 'ar' ? 'نقداً (في المحطة)' : 'Sur Place (Cash)'}
+                                        </div>
+                                        <div className="text-[10px] text-gray-400">
+                                            {language === 'ar' ? 'الدفع في المحطة' : 'Régler à la station'}
+                                        </div>
+                                        {paymentMethod === 'cash' && !isDepositMode && (
+                                            <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                                        )}
+                                    </button>
+
+                                    {/* Arboune Option */}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setPaymentMethod('card');
+                                            setIsDepositMode(true);
+                                        }}
+                                        className={`relative p-3 rounded-2xl border flex flex-col items-start gap-1 transition-all text-left ${
+                                            isDepositMode
+                                                ? 'bg-amber-500/10 border-amber-500 text-amber-400'
+                                                : 'bg-[#1E293B] border-white/5 text-gray-400 hover:bg-white/5'
+                                        }`}
+                                    >
+                                        <div className="font-bold text-sm text-white">
+                                            {language === 'ar' ? 'عربون (30%)' : 'Arboune (30%)'}
+                                        </div>
+                                        <div className="text-[10px] text-gray-400">
+                                            {language === 'ar' ? 'تسبيق والباقي ف المحطة' : 'Acompte en ligne'}
+                                        </div>
+                                        {isDepositMode && (
+                                            <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
+                                        )}
+                                    </button>
+
+                                    {/* Online Option (10% Discount) */}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setPaymentMethod('card');
+                                            setIsDepositMode(false);
+                                        }}
+                                        className={`relative p-3 rounded-2xl border flex flex-col items-start gap-1 transition-all text-left ${
+                                            paymentMethod === 'card' && !isDepositMode
+                                                ? 'bg-red-500/10 border-red-500 text-red-400'
+                                                : 'bg-[#1E293B] border-white/5 text-gray-400 hover:bg-white/5'
+                                        }`}
+                                    >
+                                        <span className="absolute -top-2 -right-2 bg-red-600 text-white font-black text-[9px] px-2 py-0.5 rounded-full shadow animate-pulse">
+                                            -10%
+                                        </span>
+                                        <div className="font-bold text-sm text-white">
+                                            {language === 'ar' ? 'دفع إلكتروني كامل' : 'En ligne (-10%)'}
+                                        </div>
+                                        <div className="text-[10px] text-gray-400">
+                                            {language === 'ar' ? 'تخفيض فوري 10%' : '10% de remise incluse'}
+                                        </div>
+                                        {paymentMethod === 'card' && !isDepositMode && (
+                                            <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" />
+                                        )}
+                                    </button>
                                 </div>
                             </div>
+
+                            {/* Trust Badges */}
+                            {(paymentMethod === 'card' || isDepositMode) && (
+                                <div className="mt-4 p-3 bg-red-500/5 rounded-lg border border-red-500/10 flex flex-col items-center text-center animate-in fade-in slide-in-from-top-2">
+                                    <p className="text-[10px] text-gray-400 mb-2">
+                                        {language === 'ar' ? 'دفع آمن بنسبة 100% عبر PayPal' : 'Paiement 100% sécurisé via PayPal'}
+                                    </p>
+                                    <div className="flex items-center gap-3 opacity-70 grayscale hover:grayscale-0 transition-all">
+                                        <div className="h-6 w-10 bg-white/10 rounded flex items-center justify-center text-[8px] font-bold text-white">VISA</div>
+                                        <div className="h-6 w-10 bg-white/10 rounded flex items-center justify-center text-[8px] font-bold text-white">MasterCard</div>
+                                        <div className="h-6 w-10 bg-white/10 rounded flex items-center justify-center text-[8px] font-bold text-white">PayPal</div>
+                                    </div>
+                                </div>
+                            )}
 
                             {/* PRICING DETAILS */}
                             <div className="space-y-3 pt-4 border-t border-white/5">
@@ -727,9 +815,17 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                                     <span className="text-gray-400 text-sm font-bold">{t('cart.delivery')}</span>
                                     <span className="text-green-500 font-bold text-sm">{language === 'ar' ? 'مجاني' : 'Gratuit'}</span>
                                 </div>
+                                {paymentMethod === 'card' && !isDepositMode && (
+                                    <div className="flex justify-between items-center px-2 text-red-400 text-sm font-bold animate-in fade-in">
+                                        <span>🎁 {language === 'ar' ? 'خصم الدفع الإلكتروني (10%-)' : 'Remise En Ligne (-10%)'}</span>
+                                        <span>-{formatDh(Math.round(total * 0.10))}</span>
+                                    </div>
+                                )}
                                 <div className="flex justify-between items-center px-2 pt-2 border-t border-white/5">
                                     <span className="text-white font-black text-lg">{t('cart.total')}</span>
-                                    <span className="text-amber-500 font-black text-2xl">{formatDh(total)}</span>
+                                    <span className="text-amber-500 font-black text-2xl">
+                                        {formatDh(paymentMethod === 'card' && !isDepositMode ? Math.round(total * 0.90) : total)}
+                                    </span>
                                 </div>
 
                                 {isDepositMode && (
@@ -810,8 +906,8 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                                             <span>
                                                 {paymentMethod === 'card' || isDepositMode
                                                     ? (language === 'ar' 
-                                                        ? `دفع ${isDepositMode ? Math.min(total, Math.max(20, Math.round(total * 0.3))).toFixed(0) : total.toFixed(0)} درهم` 
-                                                        : `Payer ${isDepositMode ? Math.min(total, Math.max(20, Math.round(total * 0.3))).toFixed(0) : total.toFixed(0)} DH`)
+                                                        ? `دفع ${isDepositMode ? Math.min(total, Math.max(20, Math.round(total * 0.3))).toFixed(0) : Math.round(total * 0.90).toFixed(0)} درهم` 
+                                                        : `Payer ${isDepositMode ? Math.min(total, Math.max(20, Math.round(total * 0.3))).toFixed(0) : Math.round(total * 0.90).toFixed(0)} DH`)
                                                     : t('cart.btn.confirm')}
                                             </span>
                                             <div className="bg-white/20 rounded-full p-1.5">
@@ -905,6 +1001,7 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                     amount={pendingPayment.amount}
                     serviceType="restaurant"
                     tableName="restaurant_orders"
+                    paymentType={pendingPayment.paymentType}
                     onSuccess={() => {
                         setPendingPayment(null);
                         clear();

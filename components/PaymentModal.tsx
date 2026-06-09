@@ -11,11 +11,12 @@ interface PaymentModalProps {
     amount: number;
     serviceType: 'lavage' | 'hotel' | 'pool' | 'restaurant' | 'topup';
     tableName: string;
+    paymentType?: 'full_discounted' | 'deposit' | 'full';
     onSuccess: (method: string) => void;
     onClose: () => void;
 }
 
-export default function PaymentModal({ bookingId, amount, serviceType, tableName, onSuccess, onClose }: PaymentModalProps) {
+export default function PaymentModal({ bookingId, amount, serviceType, tableName, paymentType, onSuccess, onClose }: PaymentModalProps) {
     const { user } = useAuth();
     const [error, setError] = useState<string | null>(null);
     const [step, setStep] = useState<'selection' | 'processing' | 'success'>('selection');
@@ -67,11 +68,11 @@ export default function PaymentModal({ bookingId, amount, serviceType, tableName
                     <div className="p-6 pb-0 flex justify-between items-start relative z-10">
                         <div>
                             <h2 className="text-2xl font-black text-white mb-1 tracking-tight">
-                                {serviceType === 'topup' ? 'Recharger Wallet' : 'Paiement Sécurisé'}
+                                {serviceType === 'topup' ? 'Recharger Wallet' : (paymentType === 'full_discounted' ? 'Paiement Sécurisé' : 'Paiement Sécurisé')}
                             </h2>
                             <p className="text-gray-400 text-sm font-medium flex items-center gap-1">
                                 <ShieldCheck className="w-4 h-4 text-green-500" />
-                                {serviceType === 'topup' ? 'Ajout de solde via PayPal' : 'Garantie PayPal (Dépôt)'}
+                                {serviceType === 'topup' ? 'Ajout de solde via PayPal' : (paymentType === 'full_discounted' ? 'Paiement Intégral (-10% Inclus)' : 'Garantie PayPal (Dépôt)')}
                             </p>
                         </div>
                         <button title="Fermer" onClick={onClose} className="p-2 bg-white/5 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-colors">
@@ -101,12 +102,25 @@ export default function PaymentModal({ bookingId, amount, serviceType, tableName
                                     <div className="mb-6 bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 flex gap-3 text-left">
                                         <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                                         <div className="text-[11px] text-gray-300 leading-relaxed">
-                                            <p className="font-bold text-amber-500 mb-1">
-                                                * Conditions d&apos;Acompte & Annulation
-                                            </p>
-                                            Le montant à régler correspond à un acompte obligatoire de <span className="text-white font-bold">30%</span> (minimum 20 MAD).
-                                            <br />
-                                            En cas d&apos;annulation <span className="text-white font-bold">&gt; 45 minutes</span> avant l&apos;heure prévue, le dépôt sera remboursé sur votre portefeuille local moins <span className="text-white font-bold">10 MAD</span> de frais de dossier. Moins de 45 minutes, l&apos;acompte est non-remboursable (perdu).
+                                            {paymentType === 'full_discounted' ? (
+                                                <>
+                                                    <p className="font-bold text-amber-500 mb-1">
+                                                        * Conditions de Paiement & Annulation
+                                                    </p>
+                                                    Vous réglez la totalité en ligne avec une <span className="text-white font-bold">remise de 10% appliquée</span>.
+                                                    <br />
+                                                    En cas d&apos;annulation <span className="text-white font-bold">&gt; 45 minutes</span> avant l&apos;heure prévue, le montant sera remboursé directement sur votre compte moins <span className="text-white font-bold">10 MAD</span> de frais de dossier. Moins de 45 minutes, le paiement est non-remboursable.
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <p className="font-bold text-amber-500 mb-1">
+                                                        * Conditions d&apos;Acompte & Annulation
+                                                    </p>
+                                                    Le montant à régler correspond à un acompte obligatoire de <span className="text-white font-bold">30%</span> (minimum 20 MAD).
+                                                    <br />
+                                                    En cas d&apos;annulation <span className="text-white font-bold">&gt; 45 minutes</span> avant l&apos;heure prévue, le dépôt sera remboursé directement sur votre carte/compte moins <span className="text-white font-bold">10 MAD</span> de frais de dossier. Moins de 45 minutes, l&apos;acompte est perdu.
+                                                </>
+                                            )}
                                         </div>
                                     </div>
                                 )}
@@ -133,7 +147,8 @@ export default function PaymentModal({ bookingId, amount, serviceType, tableName
                                                             bookingId,
                                                             amount,
                                                             serviceType,
-                                                            gateway: 'paypal'
+                                                            gateway: 'paypal',
+                                                            paymentType
                                                         })
                                                     });
                                                     const data = await res.json();
