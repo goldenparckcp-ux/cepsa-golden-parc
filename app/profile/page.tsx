@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Smartphone, Check, User, Loader2, ArrowRight, LogOut, Clock, Package, Wifi, Phone, Crown, QrCode, X, Moon, Waves, Trash2, UtensilsCrossed, AlertTriangle, Pencil, Save, Plus, ChevronDown, Facebook, Mail, Shield } from 'lucide-react';
+import { Smartphone, Check, User, Loader2, ArrowRight, LogOut, Clock, Package, Wifi, Phone, Crown, QrCode, X, Moon, Waves, Trash2, UtensilsCrossed, AlertTriangle, Pencil, Save, Plus, ChevronLeft, ChevronDown, Facebook, Mail, Shield } from 'lucide-react';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 import { useAuth } from '@/lib/state/AuthProvider';
@@ -643,10 +643,30 @@ function ProfileContent() {
                 <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-red-500/10 rounded-full blur-[100px] opacity-30" />
             </div>
 
+            {/* Header / Back Navigation */}
+            <div className="sticky top-0 z-30 bg-[#0F172A]/90 backdrop-blur-xl border-b border-white/5 p-4 pt-6">
+                <div className="max-w-2xl mx-auto flex items-center justify-between">
+                    <button 
+                        onClick={() => {
+                            if (window.history.length > 1) {
+                                router.back();
+                            } else {
+                                router.push('/');
+                            }
+                        }} 
+                        className="p-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all font-bold" 
+                        aria-label="Retour"
+                    >
+                        <ChevronLeft className="w-5 h-5 text-white" />
+                    </button>
+                    <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">Golden Park</div>
+                </div>
+            </div>
+
             {/* --- DASHBOARD VIEW --- */}
             {
                 step === 'dashboard' ? (
-                    <div className="flex-1 pb-28 max-w-2xl mx-auto w-full pt-6 md:pt-32 px-4 md:px-0 relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <div className="flex-1 pb-28 max-w-2xl mx-auto w-full pt-6 px-4 md:px-0 relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
                         {/* ACCOUNT HEADER */}
                         <div className="flex items-center justify-between mb-8 px-2">
