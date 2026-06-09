@@ -123,6 +123,13 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
         void reset();
     }, [items.length]);
 
+    useEffect(() => {
+        if (locationType === 'on_way' && paymentMethod === 'cash') {
+            setPaymentMethod('card');
+            setIsDepositMode(false);
+        }
+    }, [locationType, paymentMethod]);
+
     const displayItems = useMemo(() => {
         if (activeCategory === "all") return dbItems;
         return dbItems.filter(i => i.category === activeCategory);
@@ -713,30 +720,32 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                                 <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
                                     {language === 'ar' ? 'طريقة الدفع' : 'Mode de Paiement'}
                                 </h4>
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                <div className={`grid gap-3 ${locationType === 'on_site' ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 md:grid-cols-2'}`}>
                                     {/* Cash Option */}
-                                    <button
-                                        type="button"
-                                        onClick={() => {
-                                            setPaymentMethod('cash');
-                                            setIsDepositMode(false);
-                                        }}
-                                        className={`relative p-3 rounded-2xl border flex flex-col items-start gap-1 transition-all text-left ${
-                                            paymentMethod === 'cash' && !isDepositMode
-                                                ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400'
-                                                : 'bg-[#1E293B] border-white/5 text-gray-400 hover:bg-white/5'
-                                        }`}
-                                    >
-                                        <div className="font-bold text-sm text-white">
-                                            {language === 'ar' ? 'نقداً (في المحطة)' : 'Sur Place (Cash)'}
-                                        </div>
-                                        <div className="text-[10px] text-gray-400">
-                                            {language === 'ar' ? 'الدفع في المحطة' : 'Régler à la station'}
-                                        </div>
-                                        {paymentMethod === 'cash' && !isDepositMode && (
-                                            <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-                                        )}
-                                    </button>
+                                    {locationType === 'on_site' && (
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setPaymentMethod('cash');
+                                                setIsDepositMode(false);
+                                            }}
+                                            className={`relative p-3 rounded-2xl border flex flex-col items-start gap-1 transition-all text-left ${
+                                                paymentMethod === 'cash' && !isDepositMode
+                                                    ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400'
+                                                    : 'bg-[#1E293B] border-white/5 text-gray-400 hover:bg-white/5'
+                                            }`}
+                                        >
+                                            <div className="font-bold text-sm text-white">
+                                                {language === 'ar' ? 'نقداً (في المحطة)' : 'Sur Place (Cash)'}
+                                            </div>
+                                            <div className="text-[10px] text-gray-400">
+                                                {language === 'ar' ? 'الدفع في المحطة' : 'Régler à la station'}
+                                            </div>
+                                            {paymentMethod === 'cash' && !isDepositMode && (
+                                                <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                                            )}
+                                        </button>
+                                    )}
 
                                     {/* Arboune Option */}
                                     <button
