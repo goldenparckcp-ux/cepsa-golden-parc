@@ -1142,7 +1142,7 @@ function ProfileContent() {
                                         className="w-full py-4 bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-xl font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-all text-sm"
                                     >
                                         <Mail className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                                        E-mail / Gmail (Manuel)
+                                        E-mail / Gmail
                                     </button>
                                 </div>
                             )}
