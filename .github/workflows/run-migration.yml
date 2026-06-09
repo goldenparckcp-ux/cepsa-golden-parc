@@ -1,0 +1,26 @@
+name: Run Supabase Migration
+
+on:
+  push:
+    paths:
+      - 'scripts/run_migration_direct.js'
+      - '.github/workflows/run-migration.yml'
+  workflow_dispatch:
+
+jobs:
+  run-migration:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm install pg
+
+      - name: Execute Migration Script
+        run: node scripts/run_migration_direct.js
