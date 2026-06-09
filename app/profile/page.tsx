@@ -114,7 +114,7 @@ function ProfileContent() {
             if (diffMins <= 45) {
                 refundMsg = "\n⚠️ Attention: Annulation à moins de 45min. Le dépôt ne sera pas remboursé.";
             } else {
-                refundMsg = `\n✅ Remboursable: ${depositAmount - 10} DH seront crédités sur votre Wallet (Frais 10 DH).`;
+                refundMsg = `\n✅ Remboursable: ${depositAmount - 10} DH seront recrédités sur votre compte bancaire (Frais de 10 DH déduits).`;
             }
         }
 
@@ -736,37 +736,8 @@ function ProfileContent() {
                             </div>
                         )}
 
-                        {/* WALLET BALANCE & DIGITAL MEMBER CARD */}
-                        <div className="grid grid-cols-1 gap-4 mb-6">
-                            {/* WALLET / SOLDE */}
-                            <div className="relative w-full rounded-3xl p-6 border border-amber-500/30 overflow-hidden group">
-                                <div className="absolute inset-0 bg-gradient-to-br from-amber-500/10 to-amber-900/5" />
-                                <div className="absolute -top-10 -right-10 w-32 h-32 bg-amber-500/20 blur-3xl rounded-full" />
-
-                                <div className="relative z-10 flex items-center justify-between">
-                                    <div>
-                                        <div className="text-amber-500/80 text-[10px] uppercase tracking-[0.2em] font-bold mb-1">Solde Wallet (Arboun)</div>
-                                        <div className="text-3xl font-black text-white tracking-tight flex items-baseline gap-1">
-                                            {walletBalance.toFixed(2)} <span className="text-xl text-amber-500">DH</span>
-                                        </div>
-                                    </div>
-                                    <div className="flex flex-col items-end gap-2">
-                                        <div className="w-12 h-12 rounded-full bg-amber-500/20 flex items-center justify-center border border-amber-500/30 shadow-inner relative overflow-hidden">
-                                            <Image src="https://cdn-icons-png.flaticon.com/512/8586/8586414.png" alt="Wallet" fill className="object-contain p-2 opacity-80 brightness-0 invert sepia saturate-[5] hue-rotate-[350deg]" />
-                                        </div>
-                                        <button
-                                            onClick={() => setShowTopUp(true)}
-                                            title="Recharger"
-                                            className="px-3 py-1.5 bg-amber-500/20 hover:bg-amber-500 border border-amber-500/50 rounded-lg text-amber-500 hover:text-black font-bold text-xs flex items-center gap-1 transition-all"
-                                        >
-                                            <Plus className="w-3 h-3" /> Recharger
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* DIGITAL MEMBER CARD - ULTRA PREMIUM */}
-                            <div className="relative w-full aspect-[1.7/1] rounded-[2rem] p-8 border border-white/10 shadow-2xl mb-10 overflow-hidden group transform hover:scale-[1.02] transition-transform duration-500">
+                        {/* DIGITAL MEMBER CARD - ULTRA PREMIUM */}
+                        <div className="relative w-full aspect-[1.7/1] rounded-[2rem] p-8 border border-white/10 shadow-2xl mb-10 overflow-hidden group transform hover:scale-[1.02] transition-transform duration-500">
 
                                 {/* Dynamic Background */}
                                 <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-[#0F172A] to-black" />
@@ -820,7 +791,6 @@ function ProfileContent() {
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
                         {/* WARNING: MISSING PHONE */}
                         {(!phone || phone === '0600000000') && (
@@ -1053,83 +1023,7 @@ function ProfileContent() {
                             </button>
                         </div>
 
-                        {/* AMOUNT PICKER MODAL - Step 1 */}
-                        {showTopUp && (
-                            <div className="fixed inset-0 z-[100] flex flex-col justify-end md:justify-center md:items-center p-0 md:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-                                <div className="bg-[#1E293B] w-full max-w-md rounded-t-[2rem] md:rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl relative animate-in slide-in-from-bottom-10 md:slide-in-from-bottom-4 duration-500">
-                                    <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 blur-[100px] pointer-events-none" />
 
-                                    <div className="p-6 pb-4 flex justify-between items-start relative z-10">
-                                        <div>
-                                            <h2 className="text-2xl font-black text-white tracking-tight">Recharger Wallet</h2>
-                                            <p className="text-gray-400 text-sm">Choisissez le montant à ajouter</p>
-                                        </div>
-                                        <button title="Fermer" onClick={() => setShowTopUp(false)} className="p-2 bg-white/5 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-colors">
-                                            <X className="w-5 h-5" />
-                                        </button>
-                                    </div>
-
-                                    <div className="p-6 relative z-10 pt-0">
-                                        <div className="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Sélectionnez un montant</div>
-                                        <div className="grid grid-cols-2 gap-3 mb-6">
-                                            {[50, 100, 200, 500].map(amt => (
-                                                <button
-                                                    key={amt}
-                                                    onClick={() => setTopUpAmount(amt)}
-                                                    className={`py-4 rounded-xl font-black text-lg border transition-all ${topUpAmount === amt
-                                                        ? 'bg-amber-500 text-black border-amber-500 shadow-lg shadow-amber-500/30'
-                                                        : 'bg-black/30 text-white border-white/10 hover:border-amber-500/50'
-                                                        }`}
-                                                >
-                                                    {amt} <span className="text-sm opacity-80">DH</span>
-                                                </button>
-                                            ))}
-                                        </div>
-
-                                        <button
-                                            onClick={() => {
-                                                if (!topUpAmount) return;
-                                                setTopUpBookingId(`topup-${authUser?.id?.slice(0, 8) || 'guest'}-${Date.now()}`);
-                                                setShowTopUp(false);
-                                                setShowTopUpPayment(true);
-                                            }}
-                                            disabled={!topUpAmount}
-                                            className={`w-full flex items-center justify-center gap-2 py-4 rounded-xl font-black text-lg transition-all ${!topUpAmount
-                                                ? 'bg-white/10 text-gray-500 cursor-not-allowed'
-                                                : 'bg-amber-500 text-black shadow-[0_0_30px_rgba(245,158,11,0.3)] hover:scale-[1.02]'
-                                                }`}
-                                        >
-                                            Continuer → Paiement
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* PAYMENT MODAL - Step 2 (Stripe / PayPal) */}
-                        {showTopUpPayment && topUpAmount && topUpBookingId && (
-                            <PaymentModal
-                                bookingId={topUpBookingId}
-                                amount={topUpAmount}
-                                serviceType="topup"
-                                tableName="profiles"
-                                onSuccess={async () => {
-                                    // Refresh wallet balance after success
-                                    if (authUser?.id) {
-                                        const { data } = await supabase.from('profiles').select('wallet_balance').eq('id', authUser.id).single();
-                                        if (data) setWalletBalance(data.wallet_balance || 0);
-                                    }
-                                    setShowTopUpPayment(false);
-                                    setTopUpAmount(null);
-                                    setTopUpBookingId(null);
-                                }}
-                                onClose={() => {
-                                    setShowTopUpPayment(false);
-                                    setTopUpAmount(null);
-                                    setTopUpBookingId(null);
-                                }}
-                            />
-                        )}
 
                     </div>
                 ) : (
@@ -1185,24 +1079,45 @@ function ProfileContent() {
                                         </div>
                                     </div>
 
-                                    <button
-                                        onClick={() => {
-                                            setIsLoading(true);
-                                            const callbackUrl = new URL('/api/auth/callback', window.location.origin);
-                                            callbackUrl.searchParams.set('next', '/profile');
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button
+                                            onClick={() => {
+                                                setIsLoading(true);
+                                                const callbackUrl = new URL('/api/auth/callback', window.location.origin);
+                                                callbackUrl.searchParams.set('next', '/profile');
 
-                                            supabase.auth.signInWithOAuth({
-                                                provider: 'google',
-                                                options: {
-                                                    redirectTo: callbackUrl.toString(),
-                                                }
-                                            });
-                                        }}
-                                        className="w-full py-4 bg-white text-black rounded-xl font-bold flex items-center justify-center gap-3 hover:bg-gray-100 active:scale-[0.98] transition-all"
-                                    >
-                                        <Image src="https://www.svgrepo.com/show/475656/google-color.svg" width={20} height={20} className="w-5 h-5" alt="Google" />
-                                        Google
-                                    </button>
+                                                supabase.auth.signInWithOAuth({
+                                                    provider: 'google',
+                                                    options: {
+                                                        redirectTo: callbackUrl.toString(),
+                                                    }
+                                                });
+                                            }}
+                                            className="py-4 bg-white text-black rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-gray-100 active:scale-[0.98] transition-all text-sm"
+                                        >
+                                            <Image src="https://www.svgrepo.com/show/475656/google-color.svg" width={18} height={18} className="w-4.5 h-4.5" alt="Google" />
+                                            Google
+                                        </button>
+
+                                        <button
+                                            onClick={() => {
+                                                setIsLoading(true);
+                                                const callbackUrl = new URL('/api/auth/callback', window.location.origin);
+                                                callbackUrl.searchParams.set('next', '/profile');
+
+                                                supabase.auth.signInWithOAuth({
+                                                    provider: 'facebook',
+                                                    options: {
+                                                        redirectTo: callbackUrl.toString(),
+                                                    }
+                                                });
+                                            }}
+                                            className="py-4 bg-[#1877F2] text-white rounded-xl font-bold flex items-center justify-center gap-2 hover:bg-[#166FE5] active:scale-[0.98] transition-all text-sm"
+                                        >
+                                            <Image src="https://www.svgrepo.com/show/475700/facebook-color.svg" width={18} height={18} className="w-4.5 h-4.5 brightness-0 invert" alt="Facebook" />
+                                            Facebook
+                                        </button>
+                                    </div>
                                 </div>
                             )}
 

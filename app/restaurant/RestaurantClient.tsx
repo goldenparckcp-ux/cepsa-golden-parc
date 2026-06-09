@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useMemo, useState, useEffect, useCallback } from "react";
-import { Plus, UtensilsCrossed, ChevronRight, Trash2, Clock, Check, Car, MapPin, Navigation, ShoppingBag, Filter, AlertTriangle, Camera, X } from "lucide-react";
+import { Plus, UtensilsCrossed, ChevronRight, Trash2, Clock, Check, Car, MapPin, Navigation, ShoppingBag, Filter, AlertTriangle, Camera, X, Banknote, CreditCard, Lock, ShieldCheck } from "lucide-react";
 import { Scanner } from '@yudiel/react-qr-scanner';
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -11,6 +11,7 @@ import { DarkSheet } from "@/components/ui/DarkSheet";
 import { supabase } from "@/lib/supabase";
 import { useTranslation } from "@/lib/state/LanguageContext";
 import { motion, AnimatePresence } from 'framer-motion';
+import PaymentModal from "@/components/PaymentModal";
 
 function formatDh(price: number) {
     return `${price.toFixed(2)} DH`;
@@ -72,6 +73,9 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
     const [selections, setSelections] = useState<Record<string, unknown>>({});
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [policyAccepted, setPolicyAccepted] = useState(false);
+    const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('card');
+    const [isDepositMode, setIsDepositMode] = useState(false);
+    const [pendingPayment, setPendingPayment] = useState<{ id: string; amount: number; num: string } | null>(null);
 
     // Database States (Pre-loaded from Server)
     const [dbItems, setDbItems] = useState<MenuItem[]>(initialItems);
@@ -193,28 +197,43 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
             { is_meta: true, ...deliveryInfo }
         ];
 
-        const { error } = await supabase.from('restaurant_orders').insert({
+        const requiresPayment = paymentMethod === 'card' || isDepositMode;
+        const depositAmount = Math.min(total, Math.max(20, Math.round(total * 0.3)));
+        const paymentAmount = isDepositMode ? depositAmount : total;
+
+        const { data, error } = await supabase.from('restaurant_orders').insert({
             order_number: orderNum,
             user_id: user.id,
             customer_phone: profile?.phone || profile?.email || user.email || null,
             items: finalItems,
-            status: 'pending',
+            status: requiresPayment ? 'pending_payment' : 'pending',
             subtotal: total,
             total_price: total,
+            deposit_paid: false,
+            deposit_amount: isDepositMode ? depositAmount : 0,
             created_at: new Date().toISOString()
-        });
+        }).select().single();
 
-        if (error) {
+        if (error || !data) {
             console.error(error);
-            alert("Erreur: " + error.message);
+            alert("Erreur: " + (error?.message || "Impossible de créer la commande"));
             setIsSubmitting(false);
         } else {
-            setShowSuccess(orderNum);
-            clear();
-            setIsCartOpen(false);
-            setIsSubmitting(false);
+            if (requiresPayment) {
+                setPendingPayment({
+                    id: data.id,
+                    amount: paymentAmount,
+                    num: orderNum
+                });
+                setIsSubmitting(false);
+            } else {
+                setShowSuccess(orderNum);
+                clear();
+                setIsCartOpen(false);
+                setIsSubmitting(false);
+            }
         }
-    }, [locationType, arrivalTime, showCustomTime, customHours, customMinutes, onSiteLocation, locationDetail, items, total, clear]);
+    }, [locationType, arrivalTime, showCustomTime, customHours, customMinutes, onSiteLocation, locationDetail, items, total, clear, paymentMethod, isDepositMode]);
 
     const handleCheckout = async () => {
         if (items.length === 0) return;
@@ -683,21 +702,150 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
 
                     {/* 3. Summary & Payment */}
                     {items.length > 0 && (
-                        <div className="mt-8 border-t border-white/5 pt-6 space-y-4">
-                            <div className="flex justify-between items-center px-2">
-                                <span className="text-gray-400 text-sm font-bold">{t('cart.subtotal')}</span>
-                                <span className="text-white font-bold text-lg">{formatDh(total)}</span>
-                            </div>
-                            <div className="flex justify-between items-center px-2">
-                                <span className="text-gray-400 text-sm font-bold">{t('cart.delivery')}</span>
-                                <span className="text-green-500 font-bold text-sm">Gratuit</span>
-                            </div>
-                            <div className="flex justify-between items-center px-2 pt-2 border-t border-white/5">
-                                <span className="text-white font-black text-lg">{t('cart.total')}</span>
-                                <span className="text-amber-500 font-black text-2xl">{formatDh(total)}</span>
+                        <div className="mt-8 border-t border-white/5 pt-6 space-y-6">
+                            
+                            {/* MODE ARBOUNE TOGGLE */}
+                            <div className="bg-gradient-to-br from-[#1E293B] to-[#0F172A] p-4 rounded-xl border border-white/10 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-red-600/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+
+                                <div className="flex items-center justify-between mb-2 relative z-10">
+                                    <div className="flex items-center gap-2">
+                                        <div className="bg-amber-500/20 p-1.5 rounded-lg text-amber-500">
+                                            <Banknote className="w-4 h-4" />
+                                        </div>
+                                        <span className="font-bold text-white">
+                                            {language === 'ar' ? 'دفع تسبيق (30%)' : 'Mode Arboune (30%)'}
+                                        </span>
+                                    </div>
+
+                                    {/* IOS Style Toggle */}
+                                    <button
+                                        onClick={() => setIsDepositMode(!isDepositMode)}
+                                        aria-label={language === 'ar' ? 'تفعيل دفع التسبيق' : 'Activer le mode acompte Arboune'}
+                                        className={`w-12 h-7 rounded-full transition-colors relative ${isDepositMode ? 'bg-amber-500' : 'bg-gray-700'}`}
+                                    >
+                                        <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-transform ${isDepositMode ? 'left-6' : 'left-1'}`} />
+                                    </button>
+                                </div>
+                                <p className="text-xs text-gray-400 leading-relaxed relative z-10">
+                                    {language === 'ar' 
+                                        ? 'ادفع 30% الآن لتأكيد الطلب والباقي عند الوصول. ممتاز للطلبات الكبيرة.' 
+                                        : 'Payez 30% maintenant pour confirmer, et le reste sur place. Idéal pour les grosses commandes.'}
+                                </p>
                             </div>
 
-                            <div className="pt-4 space-y-3">
+                            {/* PAYMENT METHOD SELECTOR */}
+                            <div>
+                                <h3 className="text-xs font-bold text-gray-400 mb-3 uppercase tracking-wider">
+                                    {language === 'ar' ? 'طريقة الدفع' : 'Mode de Paiement'}
+                                </h3>
+                                <div className="grid grid-cols-2 gap-3">
+                                    {/* Cash Option */}
+                                    <button
+                                        onClick={() => setPaymentMethod('cash')}
+                                        className={`relative p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${paymentMethod === 'cash'
+                                            ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400'
+                                            : 'bg-[#0F172A] border-white/10 text-gray-500 hover:bg-white/5'
+                                            }`}
+                                    >
+                                        <div className="bg-emerald-500/20 p-2 rounded-full">
+                                            <Banknote className="w-5 h-5" />
+                                        </div>
+                                        <span className="text-xs font-bold">{language === 'ar' ? 'عن قرب' : 'Sur Place'}</span>
+                                        {paymentMethod === 'cash' && (
+                                            <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                                        )}
+                                    </button>
+
+                                    {/* Card Option */}
+                                    <button
+                                        onClick={() => setPaymentMethod('card')}
+                                        className={`relative p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${paymentMethod === 'card'
+                                            ? 'bg-red-600/10 border-red-500 text-red-400'
+                                            : 'bg-[#0F172A] border-white/10 text-gray-500 hover:bg-white/5'
+                                            }`}
+                                    >
+                                        <div className="bg-red-500/20 p-2 rounded-full">
+                                            <CreditCard className="w-5 h-5" />
+                                        </div>
+                                        <span className="text-xs font-bold">{language === 'ar' ? 'بطاقة بنكية' : 'Carte Bancaire'}</span>
+                                        {paymentMethod === 'card' && (
+                                            <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" />
+                                        )}
+                                    </button>
+                                </div>
+
+                                {/* Trust Badges */}
+                                {paymentMethod === 'card' && (
+                                    <div className="mt-4 p-3 bg-red-500/5 rounded-lg border border-red-500/10 flex flex-col items-center text-center animate-in fade-in slide-in-from-top-2">
+                                        <p className="text-[10px] text-gray-400 mb-2">
+                                            {language === 'ar' ? 'دفع آمن بنسبة 100% عبر PayPal' : 'Paiement 100% sécurisé via PayPal'}
+                                        </p>
+                                        <div className="flex items-center gap-3 opacity-70 grayscale hover:grayscale-0 transition-all">
+                                            <div className="h-6 w-10 bg-white/10 rounded flex items-center justify-center text-[8px] font-bold text-white">VISA</div>
+                                            <div className="h-6 w-10 bg-white/10 rounded flex items-center justify-center text-[8px] font-bold text-white">MasterCard</div>
+                                            <div className="h-6 w-10 bg-white/10 rounded flex items-center justify-center text-[8px] font-bold text-white">PayPal</div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* CANCELLATION TERMS DISCLAIMER CARD */}
+                            {(paymentMethod === 'card' || isDepositMode) && (
+                                <div className="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 flex gap-3 text-left animate-in fade-in slide-in-from-top-2">
+                                    <AlertTriangle className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
+                                    <div className="text-[11px] text-gray-300 leading-relaxed">
+                                        <p className="font-bold text-amber-500 mb-1">
+                                            {language === 'ar' ? '* شروط الإلغاء والتسبيق' : "* Conditions d'Acompte & Annulation"}
+                                        </p>
+                                        {language === 'ar' ? (
+                                            <>
+                                                المبلغ المستحق يمثل تسبيقاً إلزامياً بنسبة <span className="text-white font-bold">30%</span> (20 درهم كحد أدنى).
+                                                <br />
+                                                في حالة الإلغاء <span className="text-white font-bold">لأكثر من 45 دقيقة</span> قبل الوقت المحدد، سيتم استرداد مبلغ التسبيق في محفظتك المحلية ناقص <span className="text-white font-bold">10 دراهم</span> كرسوم معالجة. أقل من 45 دقيقة، التسبيق غير قابل للاسترداد.
+                                            </>
+                                        ) : (
+                                            <>
+                                                Le montant à régler correspond à un acompte obligatoire de <span className="text-white font-bold">30%</span> (minimum 20 MAD).
+                                                <br />
+                                                En cas d&apos;annulation <span className="text-white font-bold">&gt; 45 minutes</span> avant l&apos;heure prévue, le dépôt sera remboursé sur votre portefeuille local moins <span className="text-white font-bold">10 MAD</span> de frais de dossier. Moins de 45 minutes, l&apos;acompte est non-remboursable (perdu).
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* PRICING DETAILS */}
+                            <div className="space-y-3 pt-4 border-t border-white/5">
+                                <div className="flex justify-between items-center px-2">
+                                    <span className="text-gray-400 text-sm font-bold">{t('cart.subtotal')}</span>
+                                    <span className="text-white font-bold text-lg">{formatDh(total)}</span>
+                                </div>
+                                <div className="flex justify-between items-center px-2">
+                                    <span className="text-gray-400 text-sm font-bold">{t('cart.delivery')}</span>
+                                    <span className="text-green-500 font-bold text-sm">{language === 'ar' ? 'مجاني' : 'Gratuit'}</span>
+                                </div>
+                                <div className="flex justify-between items-center px-2 pt-2 border-t border-white/5">
+                                    <span className="text-white font-black text-lg">{t('cart.total')}</span>
+                                    <span className="text-amber-500 font-black text-2xl">{formatDh(total)}</span>
+                                </div>
+
+                                {isDepositMode && (
+                                    <>
+                                        <div className="flex justify-between items-center text-amber-500 px-2 pt-2 border-t border-dashed border-white/10">
+                                            <span className="text-sm font-bold flex items-center gap-1">✨ {language === 'ar' ? 'مبلغ التسبيق (30%)' : 'Acompte (30%)'}</span>
+                                            <span className="text-xl font-black">{formatDh(Math.min(total, Math.max(20, Math.round(total * 0.3))))}</span>
+                                        </div>
+                                        <div className="flex justify-between items-center text-gray-500 text-xs px-2">
+                                            <span>{language === 'ar' ? 'الباقي عند الوصول (70%)' : 'Reste à payer sur place (70%)'}</span>
+                                            <span>{formatDh(total - Math.min(total, Math.max(20, Math.round(total * 0.3))))}</span>
+                                        </div>
+                                    </>
+                                )}
+                            </div>
+
+                            {/* CHECKBOX AND SUBMIT BUTTON */}
+                            <div className="pt-2 space-y-3">
                                 <label className="flex items-start gap-3 px-2 cursor-pointer select-none">
                                     <input 
                                         type="checkbox" 
@@ -706,22 +854,38 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                                         className="w-5 h-5 rounded border-white/10 bg-[#1E293B] text-red-500 focus:ring-0 cursor-pointer mt-0.5"
                                     />
                                     <span className="text-xs text-gray-500 leading-relaxed font-bold">
-                                        J'accepte le règlement direct sur place (ou à l'arrivée) en espèces ou par carte bancaire.
+                                        {language === 'ar' 
+                                            ? "أوافق على دفع قيمة الطلب بالكامل أو دفع التسبيق المحدد حسب الشروط المعمول بها."
+                                            : "J'accepte le règlement direct sur place (ou à l'arrivée) ou le paiement en ligne de l'acompte selon les conditions."}
                                     </span>
                                 </label>
 
                                 <button
                                     onClick={handleCheckout}
                                     disabled={isSubmitting || !policyAccepted}
-                                    className="w-full py-5 bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-500 hover:to-orange-400 disabled:opacity-30 rounded-2xl font-black text-xl text-white shadow-[0_10px_25px_rgba(220,38,38,0.3)] active:scale-[0.98] transition-all flex items-center justify-center gap-3 mt-4"
+                                    className={`w-full py-5 rounded-2xl font-black text-xl text-white active:scale-[0.98] transition-all flex items-center justify-center gap-3 mt-4 shadow-lg ${
+                                        isDepositMode 
+                                            ? 'bg-gradient-to-r from-amber-500 to-amber-700 shadow-amber-500/20' 
+                                            : 'bg-gradient-to-r from-red-600 to-orange-500 shadow-[0_10px_25px_rgba(220,38,38,0.3)]'
+                                    }`}
                                 >
                                     {isSubmitting ? (
-                                        <span>Envoi en cours...</span>
+                                        <span>{language === 'ar' ? 'جاري الإرسال...' : 'Envoi en cours...'}</span>
                                     ) : (
                                         <>
-                                            <span>{t('cart.btn.confirm')}</span>
+                                            <span>
+                                                {paymentMethod === 'card' || isDepositMode
+                                                    ? (language === 'ar' 
+                                                        ? `دفع ${isDepositMode ? Math.min(total, Math.max(20, Math.round(total * 0.3))).toFixed(0) : total.toFixed(0)} درهم` 
+                                                        : `Payer ${isDepositMode ? Math.min(total, Math.max(20, Math.round(total * 0.3))).toFixed(0) : total.toFixed(0)} DH`)
+                                                    : t('cart.btn.confirm')}
+                                            </span>
                                             <div className="bg-white/20 rounded-full p-1.5">
-                                                <ChevronRight className="w-5 h-5 text-white" />
+                                                {paymentMethod === 'card' || isDepositMode ? (
+                                                    <Lock className="w-5 h-5 text-white" />
+                                                ) : (
+                                                    <ChevronRight className="w-5 h-5 text-white" />
+                                                )}
                                             </div>
                                         </>
                                     )}
@@ -799,6 +963,22 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                         <span className="font-black text-sm text-white">{formatDh(total)}</span>
                     </button>
                 </div>
+            )}
+
+            {pendingPayment && (
+                <PaymentModal
+                    bookingId={pendingPayment.id}
+                    amount={pendingPayment.amount}
+                    serviceType="restaurant"
+                    tableName="restaurant_orders"
+                    onSuccess={() => {
+                        setPendingPayment(null);
+                        clear();
+                        setIsCartOpen(false);
+                        setShowSuccess(pendingPayment.num);
+                    }}
+                    onClose={() => setPendingPayment(null)}
+                />
             )}
         </div>
     );

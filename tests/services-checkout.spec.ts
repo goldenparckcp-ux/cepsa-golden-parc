@@ -179,6 +179,10 @@ test.describe('Client Services Checkout E2E Flows', () => {
         console.log("Setting dine-in details...");
         await page.fill('input[placeholder*="N° de Table"]', '42');
 
+        // Select Cash payment method explicitly
+        console.log("Selecting Cash payment...");
+        await page.locator('button:has-text("Sur Place")').last().click();
+
         // Check Direct Payment Terms Checkbox (make sure we click the last one inside cart sheet)
         await page.locator('input[type="checkbox"]').last().check();
 

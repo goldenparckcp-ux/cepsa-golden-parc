@@ -44,7 +44,7 @@ export default function AdminRestaurantOrdersPage() {
 
     // Check if new orders arrived to play a bell sound
     useEffect(() => {
-        const pendingCount = orders.filter(o => o.status === "pending").length;
+        const pendingCount = orders.filter(o => o.status === "pending" || o.status === "confirmed").length;
         if (pendingCount > prevOrdersCountRef.current && prevOrdersCountRef.current !== 0) {
             if (soundEnabled && audioRef.current) {
                 audioRef.current.play().catch(e => console.log("Audio play blocked by browser rules"));
@@ -106,7 +106,7 @@ export default function AdminRestaurantOrdersPage() {
     const filteredOrders = orders.filter(order => {
         // 1. Filter by Tab status
         let matchesStatus = false;
-        if (activeTab === "pending") matchesStatus = order.status === "pending";
+        if (activeTab === "pending") matchesStatus = order.status === "pending" || order.status === "confirmed";
         else if (activeTab === "preparing") matchesStatus = order.status === "preparing";
         else if (activeTab === "ready") matchesStatus = order.status === "ready";
         else matchesStatus = order.status === "completed" || order.status === "cancelled";
@@ -187,7 +187,7 @@ export default function AdminRestaurantOrdersPage() {
                 {/* 2. Quick Tabs */}
                 <div className="md:col-span-2 bg-[#1E293B] p-1.5 rounded-xl border border-white/10 flex gap-1 h-[46px]">
                     {[
-                        { id: "pending", label: "Nouveaux", count: orders.filter(o => o.status === "pending").length, color: "bg-amber-500" },
+                        { id: "pending", label: "Nouveaux", count: orders.filter(o => o.status === "pending" || o.status === "confirmed").length, color: "bg-amber-500" },
                         { id: "preparing", label: "En Cuisine", count: orders.filter(o => o.status === "preparing").length, color: "bg-blue-500 animate-pulse" },
                         { id: "ready", label: "Prêts", count: orders.filter(o => o.status === "ready").length, color: "bg-green-500" },
                         { id: "archive", label: "Archive/Annulés", count: orders.filter(o => o.status === "completed" || o.status === "cancelled").length }
@@ -233,7 +233,7 @@ export default function AdminRestaurantOrdersPage() {
                             <div
                                 key={order.id}
                                 className={`bg-[#1E293B] border rounded-3xl p-5 flex flex-col justify-between relative overflow-hidden transition-all duration-300 shadow-xl ${
-                                    order.status === "pending"
+                                    (order.status === "pending" || order.status === "confirmed")
                                         ? "border-amber-500/40 shadow-amber-500/5 animate-pulse"
                                         : "border-white/10 hover:border-white/20"
                                 }`}
@@ -316,7 +316,7 @@ export default function AdminRestaurantOrdersPage() {
 
                                     {/* Action Buttons depending on status */}
                                     <div className="flex gap-2">
-                                        {order.status === "pending" && (
+                                        {(order.status === "pending" || order.status === "confirmed") && (
                                             <>
                                                 <button
                                                     onClick={() => updateOrderStatus(order.id, "cancelled")}

@@ -20,9 +20,10 @@ const paypalClient = new paypal.core.PayPalHttpClient(PayPalEnvironment);
  * Logic to calculate the Arboun (Deposit)
  */
 export const calculateArboun = (totalPrice: number, _serviceType?: string) => {
-    // 30% Deposit, but never less than 20 MAD
+    // 30% Deposit, but never less than 20 MAD (unless total price is less than 20)
     const calculatedDeposit = totalPrice * 0.30;
-    return calculatedDeposit < 20 ? 20 : calculatedDeposit;
+    const minDeposit = calculatedDeposit < 20 ? 20 : calculatedDeposit;
+    return Math.min(totalPrice, minDeposit);
 };
 
 /**
@@ -75,27 +76,4 @@ export const createPayPalOrder = async (bookingId: string, amount: number) => {
     return order.result;
 };
 
-/**
- * Standard Refund/Wallet Credit Logic
- */
-export const processSmartRefund = async (userId: string, bookingId: string, depositAmount: number) => {
-    const CANCELLATION_FEE = 10; // MAD
-    const refundToWallet = Math.max(0, depositAmount - CANCELLATION_FEE);
 
-    // 1. Credit User Wallet
-    const { data: profile } = await supabase.from('profiles').select('wallet_balance').eq('id', userId).single();
-    const newBalance = (profile?.wallet_balance || 0) + refundToWallet;
-
-    await supabase.from('profiles').update({ wallet_balance: newBalance }).eq('id', userId);
-
-    // 2. Log Transaction
-    await supabase.from('wallet_transactions').insert({
-        user_id: userId,
-        amount: refundToWallet,
-        type: 'refund',
-        description: `Annulation Booking #${bookingId.slice(0, 5)} - Credit Wallet`,
-        status: 'completed'
-    });
-
-    return refundToWallet;
-};

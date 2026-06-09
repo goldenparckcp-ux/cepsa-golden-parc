@@ -28,35 +28,11 @@ export default function PaymentModal({ bookingId, amount, serviceType, tableName
 
     const handleSuccessActions = async (captureId: string) => {
         try {
-            if (serviceType === 'topup') {
-                // Increment Wallet Balance in local database
-                const { data: profile } = await supabase
-                    .from('profiles')
-                    .select('wallet_balance')
-                    .eq('id', user?.id)
-                    .single();
-                
-                const newBalance = (profile?.wallet_balance || 0) + amount;
-                await supabase
-                    .from('profiles')
-                    .update({ wallet_balance: newBalance })
-                    .eq('id', user?.id);
-
-                // Log Wallet Transaction
-                await supabase.from('wallet_transactions').insert({
-                    user_id: user?.id,
-                    amount: amount,
-                    type: 'deposit',
-                    description: `Recharge Wallet via PayPal`,
-                    status: 'completed'
-                });
-            } else {
-                // Standard Booking Checkout - Flip status to confirmed and deposit paid
-                await supabase
-                    .from(tableName)
-                    .update({ deposit_paid: true, deposit_amount: amount, status: 'confirmed' })
-                    .eq('id', bookingId);
-            }
+            // Standard Booking Checkout - Flip status to confirmed and deposit paid
+            await supabase
+                .from(tableName)
+                .update({ deposit_paid: true, deposit_amount: amount, status: 'confirmed' })
+                .eq('id', bookingId);
 
             // Log General Transaction
             await supabase.from('transactions').insert({
@@ -66,7 +42,7 @@ export default function PaymentModal({ bookingId, amount, serviceType, tableName
                 amount,
                 gateway: 'paypal',
                 gateway_reference: captureId,
-                type: serviceType === 'topup' ? 'recharge' : 'deposit',
+                type: 'deposit',
                 status: 'completed'
             });
 

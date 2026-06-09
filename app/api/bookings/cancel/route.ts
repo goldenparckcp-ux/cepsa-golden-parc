@@ -1,11 +1,65 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import Stripe from 'stripe';
 
 // Initialize Supabase admin client to bypass RLS for secure state changes
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
     process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
+    apiVersion: '2026-02-25.clover' as any,
+});
+
+async function getPayPalAccessToken(): Promise<string> {
+    const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || process.env.PAYPAL_CLIENT_ID;
+    const clientSecret = process.env.PAYPAL_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+        throw new Error("Missing PayPal Credentials");
+    }
+
+    const auth = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+    const response = await fetch('https://api-m.sandbox.paypal.com/v1/oauth2/token', {
+        method: 'POST',
+        headers: {
+            'Authorization': `Basic ${auth}`,
+            'Content-Type': 'application/x-www-form-urlencoded'
+        },
+        body: 'grant_type=client_credentials'
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.error_description || 'Failed to get PayPal access token');
+    }
+    return data.access_token;
+}
+
+async function refundPayPalCapture(captureId: string, amountUsd: number): Promise<any> {
+    const accessToken = await getPayPalAccessToken();
+    const response = await fetch(`https://api-m.sandbox.paypal.com/v2/payments/captures/${captureId}/refund`, {
+        method: 'POST',
+        headers: {
+            'Authorization': `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'return=representation'
+        },
+        body: JSON.stringify({
+            amount: {
+                value: amountUsd.toFixed(2),
+                currency_code: 'USD'
+            }
+        })
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+        throw new Error(data.message || JSON.stringify(data) || 'Failed to refund PayPal capture');
+    }
+    return data;
+}
 
 function parseScheduledTime(booking: any, tableName: string): Date {
     if (tableName === 'hotel_reservations') {
@@ -99,48 +153,56 @@ export async function POST(req: Request) {
 
             let refunded = false;
             let refundAmount = 0;
+            let refundErrorMessage = null;
 
-            // 2. Refund to User Local Wallet if deposit was paid
+            // 2. Refund directly to bank account if deposit was paid
             if (depositPaid && depositAmount > 0 && userId) {
                 refundAmount = Math.max(0, depositAmount - 10); // Deduct 10 MAD processing fee
                 
                 if (refundAmount > 0) {
-                    // Get current balance
-                    const { data: profile } = await supabaseAdmin
-                        .from('profiles')
-                        .select('wallet_balance')
-                        .eq('id', userId)
+                    // Find the payment transaction to get the gateway capture ID
+                    const { data: tx } = await supabaseAdmin
+                        .from('transactions')
+                        .select('*')
+                        .eq('booking_id', bookingId)
+                        .eq('status', 'completed')
+                        .or('type.eq.deposit,type.eq.recharge')
                         .maybeSingle();
-                    
-                    const newBalance = (profile?.wallet_balance || 0) + refundAmount;
 
-                    // Update wallet
-                    await supabaseAdmin
-                        .from('profiles')
-                        .update({ wallet_balance: newBalance })
-                        .eq('id', userId);
+                    if (tx && tx.gateway_reference) {
+                        try {
+                            if (tx.gateway === 'paypal') {
+                                // Convert refund amount in MAD to USD (10 MAD = 1 USD)
+                                const usdRefund = refundAmount / 10;
+                                await refundPayPalCapture(tx.gateway_reference, usdRefund);
+                            } else if (tx.gateway === 'stripe') {
+                                await stripe.refunds.create({
+                                    charge: tx.gateway_reference,
+                                    amount: Math.round(refundAmount * 100) // cents
+                                });
+                            }
 
-                    // Log wallet transaction
-                    await supabaseAdmin.from('wallet_transactions').insert({
-                        user_id: userId,
-                        amount: refundAmount,
-                        type: 'refund',
-                        description: `Remboursement Annulation #${booking.booking_number || bookingId.slice(0, 5)}`,
-                        status: 'completed'
-                    });
+                            // Log refund transaction in the database
+                            await supabaseAdmin.from('transactions').insert({
+                                user_id: userId,
+                                booking_id: bookingId,
+                                booking_table: tableName,
+                                amount: refundAmount,
+                                gateway: tx.gateway,
+                                gateway_reference: tx.gateway_reference,
+                                type: 'refund',
+                                status: 'completed'
+                            });
 
-                    // Log in transactions table
-                    await supabaseAdmin.from('transactions').insert({
-                        user_id: userId,
-                        booking_id: bookingId,
-                        booking_table: tableName,
-                        amount: refundAmount,
-                        gateway: 'wallet',
-                        type: 'refund',
-                        status: 'completed'
-                    });
-
-                    refunded = true;
+                            refunded = true;
+                        } catch (err: any) {
+                            console.error("Gateway refund failed:", err);
+                            refundErrorMessage = err.message || String(err);
+                        }
+                    } else {
+                        console.error("No transaction reference found for booking:", bookingId);
+                        refundErrorMessage = "Aucune référence de transaction bancaire trouvée pour effectuer le remboursement.";
+                    }
                 }
             }
 
@@ -149,8 +211,10 @@ export async function POST(req: Request) {
                 refunded,
                 refundAmount,
                 message: refunded 
-                    ? `Réservation annulée. Un remboursement de ${refundAmount} DH (frais de 10 DH déduits) a été crédité sur votre Wallet.`
-                    : 'Réservation annulée avec succès.'
+                    ? `Réservation annulée. Un remboursement de ${refundAmount} DH (frais de 10 DH déduits) a été recrédité sur votre compte bancaire.`
+                    : refundErrorMessage 
+                        ? `Réservation annulée mais le remboursement automatique a échoué : ${refundErrorMessage}`
+                        : 'Réservation annulée avec succès.'
             });
 
         } else {
