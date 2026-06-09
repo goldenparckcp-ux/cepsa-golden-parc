@@ -9,35 +9,55 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
-  // Bypass self-signed certificate error globally in this invocation
   process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
-  // Use the IPv4 pooler connection string without sslmode parameter in URL
-  const connectionString = 'postgresql://postgres.vktqecgylkjogquhsymz:EgBovcTTPMqZga5W@aws-0-eu-west-1.pooler.supabase.com:6543/postgres';
-  const client = new Client({
-    connectionString,
-    ssl: {
-      rejectUnauthorized: false
-    }
-  });
-  
-  try {
-    await client.connect();
-    
-    // Check current columns
-    const columns = await client.query(`
-      SELECT column_name, data_type 
-      FROM information_schema.columns 
-      WHERE table_name = 'restaurant_orders' 
-        AND column_name IN ('deposit_amount', 'deposit_paid', 'payment_intent_id');
-    `);
+  const regions = [
+    'eu-central-1',
+    'eu-west-1',
+    'eu-west-2',
+    'eu-west-3',
+    'us-east-1',
+    'us-east-2',
+    'us-west-1',
+    'us-west-2',
+    'ap-southeast-1',
+    'ap-southeast-2',
+    'ap-northeast-1',
+    'ap-northeast-2',
+    'ca-central-1',
+    'sa-east-1',
+    'ap-south-1'
+  ];
 
-    await client.end();
-    return NextResponse.json({
-      success: true,
-      columns: columns.rows
+  const results: Record<string, string> = {};
+
+  for (const region of regions) {
+    const connectionString = `postgresql://postgres.vktqecgylkjogquhsymz:EgBovcTTPMqZga5W@aws-0-${region}.pooler.supabase.com:6543/postgres`;
+    const client = new Client({
+      connectionString,
+      ssl: { rejectUnauthorized: false }
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+
+    try {
+      // Set a short timeout for the connection
+      await Promise.race([
+        client.connect(),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout after 4s')), 4000))
+      ]);
+      results[region] = 'SUCCESS';
+      await client.end();
+      // If we find the correct region, we can stop early!
+      break;
+    } catch (error: any) {
+      results[region] = error.message;
+      try {
+        await client.end();
+      } catch (e) {}
+    }
   }
+
+  return NextResponse.json({
+    success: true,
+    results
+  });
 }
