@@ -63,7 +63,7 @@ function LineChart({ data, labels, color = "#10B981" }: { data: number[]; labels
     if (data.length < 2) return <div className="flex items-center justify-center h-full text-gray-600 text-xs">Pas assez de données</div>;
     const [hover, setHover] = useState<number | null>(null);
     const w = 600, h = 180, px = 16, py = 16;
-    const max = Math.max(...data, 1);
+    const max = Math.max(...data, 1) * 1.25;
     const pts = data.map((v, i) => [px + (i / (data.length - 1)) * (w - 2 * px), h - py - (v / max) * (h - 2 * py)]);
     const line = pts.map(([x, y], i) => (i === 0 ? `M${x},${y}` : `L${x},${y}`)).join(" ");
     const area = [...pts.map(([x, y], i) => (i === 0 ? `M${x},${y}` : `L${x},${y}`)), `L${pts[pts.length - 1][0]},${h - py}`, `L${pts[0][0]},${h - py}`, "Z"].join(" ");
