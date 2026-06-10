@@ -1,834 +1,741 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
-import { Utensils, Bed, Ticket, Activity, TrendingUp, Users, RefreshCw, Lock, Key, Award, AlertTriangle, CheckCircle, Clock3, BarChart2, Info, Star } from "lucide-react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import {
+    TrendingUp, Users, RefreshCw, Lock, Key, Award, AlertTriangle,
+    CheckCircle, Clock, Utensils, Bed, Waves, Wrench, Bot, Sparkles,
+    BarChart3, Activity, ArrowUpRight, ArrowDownRight, Zap, Star,
+    ChevronRight, Eye, EyeOff, RotateCcw
+} from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { COMPLETE_MENU } from "@/lib/types/menu";
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-function getLastNDays(n: number): string[] {
-    const days: string[] = [];
-    for (let i = n - 1; i >= 0; i--) {
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+function getLastNDays(n: number) {
+    return Array.from({ length: n }, (_, i) => {
         const d = new Date();
-        d.setDate(d.getDate() - i);
-        days.push(d.toISOString().split("T")[0]);
-    }
-    return days;
-}
-
-function dayLabel(isoDate: string): string {
-    const d = new Date(isoDate + "T00:00:00");
-    return d.toLocaleDateString("fr-FR", { weekday: "short" }).replace(".", "");
-}
-
-// ─── Donut Chart ─────────────────────────────────────────────────────────────
-function DonutChart({ segments }: { segments: { color: string; pct: number }[] }) {
-    let offset = 25; // start at top (25 = circumference/4 from bottom)
-    const r = 15.915;
-    const circ = 2 * Math.PI * r; // ≈ 100
-
-    return (
-        <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
-            <circle cx="18" cy="18" r={r} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
-            {segments.map((seg, i) => {
-                const dash = (seg.pct / 100) * circ;
-                const gap = circ - dash;
-                const el = (
-                    <circle
-                        key={i}
-                        cx="18" cy="18" r={r}
-                        fill="none"
-                        stroke={seg.color}
-                        strokeWidth="3.2"
-                        strokeDasharray={`${dash.toFixed(2)} ${gap.toFixed(2)}`}
-                        strokeDashoffset={-offset * (circ / 100)}
-                        strokeLinecap="butt"
-                    />
-                );
-                offset += seg.pct;
-                return el;
-            })}
-        </svg>
-    );
-}
-
-// ─── Line Chart ──────────────────────────────────────────────────────────────
-function LineChart({ data, color = "#10B981" }: { data: number[]; color?: string }) {
-    if (!data.length) return null;
-    const w = 500, h = 200;
-    const padX = 10, padY = 20;
-    const maxVal = Math.max(...data, 1);
-    const pts = data.map((v, i) => {
-        const x = padX + (i / (data.length - 1 || 1)) * (w - 2 * padX);
-        const y = h - padY - (v / maxVal) * (h - 2 * padY);
-        return [x, y];
+        d.setDate(d.getDate() - (n - 1 - i));
+        return d.toISOString().split("T")[0];
     });
+}
 
-    const pathD = pts
-        .map(([x, y], i) => (i === 0 ? `M ${x},${y}` : `L ${x},${y}`))
-        .join(" ");
+function shortDay(iso: string) {
+    return new Date(iso + "T00:00:00").toLocaleDateString("fr-FR", { weekday: "short", day: "numeric" }).replace(".", "");
+}
 
-    const areaD = [
-        ...pts.map(([x, y], i) => (i === 0 ? `M ${x},${y}` : `L ${x},${y}`)),
-        `L ${pts[pts.length - 1][0]},${h - padY}`,
-        `L ${pts[0][0]},${h - padY}`,
-        "Z"
-    ].join(" ");
+function fmt(n: number) { return n.toLocaleString("fr-FR"); }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Mini Sparkline SVG
+// ─────────────────────────────────────────────────────────────────────────────
+function Sparkline({ data, color = "#10B981", height = 36 }: { data: number[]; color?: string; height?: number }) {
+    if (data.length < 2) return null;
+    const max = Math.max(...data, 1);
+    const w = 100, h = height;
+    const pts = data.map((v, i) => [
+        (i / (data.length - 1)) * w,
+        h - 4 - (v / max) * (h - 8)
+    ]);
+    const d = pts.map(([x, y], i) => (i === 0 ? `M${x},${y}` : `L${x},${y}`)).join(" ");
+    const area = [...pts.map(([x, y], i) => (i === 0 ? `M${x},${y}` : `L${x},${y}`)), `L${pts[pts.length - 1][0]},${h}`, `L${pts[0][0]},${h}`, "Z"].join(" ");
     return (
-        <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full overflow-visible">
+        <svg viewBox={`0 0 ${w} ${h}`} className="w-full" style={{ height }}>
             <defs>
-                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+                <linearGradient id={`sg-${color.replace("#", "")}`} x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={color} stopOpacity="0.3" />
                     <stop offset="100%" stopColor={color} stopOpacity="0" />
                 </linearGradient>
             </defs>
-            {/* grid */}
-            {[0.25, 0.5, 0.75].map((f, i) => (
-                <line key={i} x1={padX} y1={padY + f * (h - 2 * padY)} x2={w - padX} y2={padY + f * (h - 2 * padY)}
-                    stroke="rgba(255,255,255,0.04)" strokeDasharray="4" />
-            ))}
-            <path d={areaD} fill="url(#areaGrad)" />
-            <path d={pathD} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-            {pts.map(([x, y], i) => (
-                <circle key={i} cx={x} cy={y} r="4" fill={color} stroke="#1E293B" strokeWidth="2.5" />
-            ))}
+            <path d={area} fill={`url(#sg-${color.replace("#", "")})`} />
+            <path d={d} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" />
         </svg>
     );
 }
 
-// ─── Bar Chart ────────────────────────────────────────────────────────────────
-function BarChart({ data, labels, color = "#10B981" }: { data: number[]; labels: string[]; color?: string }) {
-    if (!data.length) return null;
-    const maxVal = Math.max(...data, 1);
-    const showLabel = data.length <= 14; // only show label if not too many bars
+// ─────────────────────────────────────────────────────────────────────────────
+// Full Line Chart
+// ─────────────────────────────────────────────────────────────────────────────
+function LineChart({ data, labels, color = "#10B981" }: { data: number[]; labels: string[]; color?: string }) {
+    if (data.length < 2) return <div className="flex items-center justify-center h-full text-gray-600 text-xs">Pas assez de données</div>;
+    const [hover, setHover] = useState<number | null>(null);
+    const w = 600, h = 180, px = 16, py = 16;
+    const max = Math.max(...data, 1);
+    const pts = data.map((v, i) => [px + (i / (data.length - 1)) * (w - 2 * px), h - py - (v / max) * (h - 2 * py)]);
+    const line = pts.map(([x, y], i) => (i === 0 ? `M${x},${y}` : `L${x},${y}`)).join(" ");
+    const area = [...pts.map(([x, y], i) => (i === 0 ? `M${x},${y}` : `L${x},${y}`)), `L${pts[pts.length - 1][0]},${h - py}`, `L${pts[0][0]},${h - py}`, "Z"].join(" ");
     return (
-        <div className="flex items-end gap-1 h-full w-full">
-            {data.map((v, i) => {
-                const pct = (v / maxVal) * 100;
-                return (
-                    <div key={i} className="group flex-1 flex flex-col items-center gap-0.5 h-full justify-end relative">
-                        {/* Tooltip */}
-                        {v > 0 && (
-                            <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:flex bg-[#0F172A] border border-white/10 rounded-lg px-2 py-1 text-[9px] text-white font-bold whitespace-nowrap z-10 shadow-xl pointer-events-none">
-                                {v.toLocaleString()} DH
-                                <br />
-                                <span className="text-gray-400 font-normal">{labels[i]}</span>
-                            </div>
+        <div className="relative w-full h-full">
+            <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full" onMouseLeave={() => setHover(null)}>
+                <defs>
+                    <linearGradient id="lcg" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+                        <stop offset="100%" stopColor={color} stopOpacity="0" />
+                    </linearGradient>
+                </defs>
+                {[0.25, 0.5, 0.75].map((f, i) => <line key={i} x1={px} y1={py + f * (h - 2 * py)} x2={w - px} y2={py + f * (h - 2 * py)} stroke="rgba(255,255,255,0.04)" strokeDasharray="3 3" />)}
+                <path d={area} fill="url(#lcg)" />
+                <path d={line} fill="none" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                {pts.map(([x, y], i) => (
+                    <g key={i} onMouseEnter={() => setHover(i)} style={{ cursor: "pointer" }}>
+                        <circle cx={x} cy={y} r="14" fill="transparent" />
+                        <circle cx={x} cy={y} r={hover === i ? 5 : 3.5} fill={color} stroke="#1E293B" strokeWidth="2" />
+                        {hover === i && (
+                            <g>
+                                <rect x={x - 38} y={y - 30} width="76" height="22" rx="6" fill="#0F172A" stroke={color} strokeWidth="1" opacity="0.95" />
+                                <text x={x} y={y - 15} textAnchor="middle" fill="white" fontSize="9" fontWeight="bold">{fmt(data[i])} DH</text>
+                            </g>
                         )}
-                        <div
-                            className="w-full rounded-t-md transition-all duration-700 cursor-pointer hover:opacity-100"
-                            style={{ height: `${Math.max(pct, v > 0 ? 4 : 0)}%`, background: color, opacity: v > 0 ? (0.6 + (pct / 100) * 0.4) : 0.15 }}
-                        />
-                        {showLabel && <span className="text-[8px] text-gray-600 font-bold capitalize truncate w-full text-center">{labels[i]}</span>}
-                    </div>
-                );
-            })}
+                    </g>
+                ))}
+            </svg>
+            <div className="flex justify-between px-4 mt-1">
+                {labels.filter((_, i) => {
+                    const step = Math.max(1, Math.floor(labels.length / 6));
+                    return i % step === 0 || i === labels.length - 1;
+                }).map((l, i) => <span key={i} className="text-[9px] text-gray-600 font-bold uppercase">{l}</span>)}
+            </div>
         </div>
     );
 }
 
-// ─── Main Component ───────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// Donut Chart (real %)
+// ─────────────────────────────────────────────────────────────────────────────
+function DonutChart({ segments }: { segments: { color: string; pct: number; label: string; value: number }[] }) {
+    const [hov, setHov] = useState<number | null>(null);
+    const r = 15.915, circ = 2 * Math.PI * r;
+    let offset = 25;
+    return (
+        <div className="flex flex-col items-center gap-4">
+            <div className="relative w-36 h-36 flex items-center justify-center">
+                <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90 absolute inset-0">
+                    <circle cx="18" cy="18" r={r} fill="none" stroke="rgba(255,255,255,0.04)" strokeWidth="3.5" />
+                    {segments.map((s, i) => {
+                        const dash = (s.pct / 100) * circ;
+                        const gap = circ - dash;
+                        const el = (
+                            <circle key={i} cx="18" cy="18" r={r} fill="none" stroke={s.color}
+                                strokeWidth={hov === i ? 4.5 : 3.5}
+                                strokeDasharray={`${dash.toFixed(2)} ${gap.toFixed(2)}`}
+                                strokeDashoffset={-(offset / 100) * circ}
+                                strokeLinecap="butt"
+                                style={{ cursor: "pointer", transition: "stroke-width 0.2s" }}
+                                onMouseEnter={() => setHov(i)} onMouseLeave={() => setHov(null)}
+                            />
+                        );
+                        offset += s.pct;
+                        return el;
+                    })}
+                </svg>
+                <div className="absolute flex flex-col items-center text-center pointer-events-none">
+                    {hov !== null ? (
+                        <>
+                            <span className="text-[10px] font-bold text-gray-400">{segments[hov]?.label}</span>
+                            <span className="text-base font-black text-white">{segments[hov]?.pct}%</span>
+                            <span className="text-[9px] text-gray-500">{fmt(segments[hov]?.value)} DH</span>
+                        </>
+                    ) : (
+                        <>
+                            <span className="text-[9px] font-bold text-gray-500 uppercase">Total</span>
+                            <span className="text-sm font-black text-white">{fmt(segments.reduce((a, s) => a + s.value, 0))}</span>
+                            <span className="text-[9px] text-gray-500">DH</span>
+                        </>
+                    )}
+                </div>
+            </div>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 w-full">
+                {segments.map((s, i) => (
+                    <div key={i} className="flex items-center gap-1.5 text-[10px] font-bold cursor-pointer" onMouseEnter={() => setHov(i)} onMouseLeave={() => setHov(null)}>
+                        <div className="w-2 h-2 rounded-full shrink-0" style={{ background: s.color }} />
+                        <span className="text-gray-400 truncate">{s.label}</span>
+                        <span className="text-white ml-auto">{s.pct}%</span>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Gemini AI Insight Card
+// ─────────────────────────────────────────────────────────────────────────────
+type Insight = { type: string; icon: string; title: string; message: string; priority: string };
+
+function InsightCard({ insight, delay }: { insight: Insight; delay: number }) {
+    const typeConfig: Record<string, { border: string; bg: string; badge: string }> = {
+        revenue: { border: "border-green-500/30", bg: "bg-green-500/5", badge: "bg-green-500/20 text-green-400" },
+        opportunity: { border: "border-blue-500/30", bg: "bg-blue-500/5", badge: "bg-blue-500/20 text-blue-400" },
+        attention: { border: "border-amber-500/30", bg: "bg-amber-500/5", badge: "bg-amber-500/20 text-amber-400" },
+        warning: { border: "border-red-500/30", bg: "bg-red-500/5", badge: "bg-red-500/20 text-red-400" },
+    };
+    const cfg = typeConfig[insight.type] || typeConfig.attention;
+    const priorityLabel = insight.priority === "high" ? "Urgent" : insight.priority === "medium" ? "Important" : "Info";
+
+    return (
+        <div className={`rounded-2xl border ${cfg.border} ${cfg.bg} p-4 space-y-2 animate-in fade-in slide-in-from-bottom-4`} style={{ animationDelay: `${delay}ms`, animationFillMode: "both" }}>
+            <div className="flex items-start justify-between gap-2">
+                <div className="flex items-center gap-2">
+                    <span className="text-xl">{insight.icon}</span>
+                    <h4 className="text-sm font-black text-white leading-tight">{insight.title}</h4>
+                </div>
+                <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide shrink-0 ${cfg.badge}`}>{priorityLabel}</span>
+            </div>
+            <p className="text-[11px] text-gray-400 leading-relaxed">{insight.message}</p>
+        </div>
+    );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Main Component
+// ─────────────────────────────────────────────────────────────────────────────
 export default function AdminDashboardPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
-    const [activeSubTab, setActiveSubTab] = useState<"general" | "stats" | "pins">("general");
+    const [activeTab, setActiveTab] = useState<"overview" | "analytics" | "ai" | "pins">("overview");
     const [chartRange, setChartRange] = useState<7 | 14 | 30>(7);
+    const [showPins, setShowPins] = useState(false);
 
-    // PIN Editing States
-    const [pinAdmin, setPinAdmin] = useState("7777");
-    const [pinHotel, setPinHotel] = useState("1111");
-    const [pinKitchen, setPinKitchen] = useState("2222");
-    const [pinServices, setPinServices] = useState("3333");
-    const [pinCaisse, setPinCaisse] = useState("4444");
+    // Pins
+    const [pins, setPins] = useState({ admin: "7777", hotel: "1111", kitchen: "2222", services: "3333", caisse: "4444" });
     const [pinSaved, setPinSaved] = useState(false);
 
+    // Data
     const [stats, setStats] = useState({
-        totalRevenue: 0,
-        restoRevenue: 0,
-        hotelRevenue: 0,
-        poolRevenue: 0,
-        servicesRevenue: 0,
-        occupancyRate: 0,
-        activePoolGuests: 0,
-        pendingOrdersCount: 0,
-        completedOrdersToday: 0,
-        lavagesCount: 0,
-        totalOrdersCount: 0,
-        avgOrderValue: 0,
+        totalRevenue: 0, restoRevenue: 0, hotelRevenue: 0, poolRevenue: 0, servicesRevenue: 0,
+        occupancyRate: 0, activePoolGuests: 0, pendingOrdersCount: 0, completedOrdersToday: 0,
+        lavagesCount: 0, totalOrdersCount: 0, avgOrderValue: 0,
     });
-
-    const [recentOrders, setRecentOrders] = useState<any[]>([]);
-    const [hotelRoomsState, setHotelRoomsState] = useState<any[]>([]);
     const [topItems, setTopItems] = useState<any[]>([]);
-
-    // For charts: daily revenue per service
-    const [dailyData, setDailyData] = useState<{
-        dates: string[];
-        resto: number[];
-        hotel: number[];
-        pool: number[];
-        services: number[];
-        total: number[];
-    }>({ dates: [], resto: [], hotel: [], pool: [], services: [], total: [] });
-
+    const [recentOrders, setRecentOrders] = useState<any[]>([]);
+    const [hotelRooms, setHotelRooms] = useState<any[]>([]);
     const [allRestoOrders, setAllRestoOrders] = useState<any[]>([]);
+
+    // AI
+    const [aiInsights, setAiInsights] = useState<Insight[]>([]);
+    const [aiSummary, setAiSummary] = useState("");
+    const [aiLoading, setAiLoading] = useState(false);
+    const [aiError, setAiError] = useState("");
+    const [aiCalled, setAiCalled] = useState(false);
 
     useEffect(() => {
         const stored = localStorage.getItem("staff_session");
-        if (stored) {
-            const session = JSON.parse(stored);
-            if (session.role !== "admin") {
-                if (session.role === "hotel") router.push("/staff/hotel");
-                else if (session.role === "kitchen") router.push("/staff/restaurant");
-                else if (session.role === "services") router.push("/staff/pool-services");
-                return;
-            }
-        } else {
-            router.push("/admin");
-            return;
-        }
+        if (!stored) { router.push("/admin"); return; }
+        const sess = JSON.parse(stored);
+        if (sess.role !== "admin") { router.push("/staff"); return; }
 
-        setPinAdmin(localStorage.getItem("pin_admin") || "7777");
-        setPinHotel(localStorage.getItem("pin_hotel") || "1111");
-        setPinKitchen(localStorage.getItem("pin_kitchen") || "2222");
-        setPinServices(localStorage.getItem("pin_services") || "3333");
-        setPinCaisse(localStorage.getItem("pin_caisse") || "4444");
-
-        fetchDashboardData();
+        setPins({
+            admin: localStorage.getItem("pin_admin") || "7777",
+            hotel: localStorage.getItem("pin_hotel") || "1111",
+            kitchen: localStorage.getItem("pin_kitchen") || "2222",
+            services: localStorage.getItem("pin_services") || "3333",
+            caisse: localStorage.getItem("pin_caisse") || "4444",
+        });
+        fetchData();
     }, []);
 
-    // Recompute chart when range changes
+    // Chart data computed from raw orders
     const chartDays = useMemo(() => getLastNDays(chartRange), [chartRange]);
-
-    const computedChartData = useMemo(() => {
-        const days = chartDays;
-        const resto = days.map(() => 0);
-        const hotel = days.map(() => 0);
-        const pool = days.map(() => 0);
-        const services = days.map(() => 0);
-
+    const chartData = useMemo(() => {
+        const vals = chartDays.map(() => 0);
         allRestoOrders.forEach(o => {
-            const dateStr = (o.updated_at || o.created_at || "").split("T")[0];
-            const idx = days.indexOf(dateStr);
-            if (idx === -1) return;
+            const day = (o.updated_at || o.created_at || "").split("T")[0];
+            const idx = chartDays.indexOf(day);
+            if (idx < 0) return;
             const total = Number(o.total_price) || Number(o.subtotal) || 0;
+            const dep = Number(o.deposit_amount) || 0;
             let paid = 0;
-            if (o.deposit_paid) {
-                const dep = Number(o.deposit_amount) || 0;
-                paid = (o.status === "completed" || dep >= total) ? total : dep;
-            } else if (o.status === "completed") {
-                paid = total;
-            }
-            resto[idx] += paid;
+            if (o.deposit_paid) paid = (o.status === "completed" || dep >= total) ? total : dep;
+            else if (o.status === "completed") paid = total;
+            vals[idx] += paid;
         });
-
-        const total = days.map((_, i) => resto[i] + hotel[i] + pool[i] + services[i]);
-        return { dates: days, resto, hotel, pool, services, total };
+        return { vals, labels: chartDays.map(d => shortDay(d)) };
     }, [allRestoOrders, chartDays]);
 
-    const fetchDashboardData = async () => {
+    const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            const [
-                { data: restoOrders },
-                { data: hotelReservations },
-                { data: poolBookings },
-                { data: serviceBookings }
-            ] = await Promise.all([
+            const [{ data: ro }, { data: hr }, { data: pb }, { data: sb }] = await Promise.all([
                 supabase.from("restaurant_orders").select("*").order("created_at", { ascending: false }),
                 supabase.from("hotel_reservations").select("*").order("created_at", { ascending: false }),
                 supabase.from("pool_bookings").select("*").order("created_at", { ascending: false }),
-                supabase.from("service_bookings").select("*").order("created_at", { ascending: false })
+                supabase.from("service_bookings").select("*").order("created_at", { ascending: false }),
             ]);
 
-            const rOrders = restoOrders || [];
+            const rOrders = ro || [];
             setAllRestoOrders(rOrders);
 
-            // ── 1. Restaurant ─────────────────────────────────────────────
-            let restoRev = 0;
-            let pendingResto = 0;
-            let completedToday = 0;
-            const todayStr = new Date().toISOString().split("T")[0];
-            const itemCounts: Record<string, { qty: number; revenue: number; image: string; ordersCount: number; unitPrices: number[] }> = {};
+            const today = new Date().toISOString().split("T")[0];
+            const itemMap: Record<string, any> = {};
+            let restoRev = 0, pending = 0, doneToday = 0;
 
             rOrders.forEach(o => {
                 const total = Number(o.total_price) || Number(o.subtotal) || 0;
-                let paidRevenue = 0;
-                if (o.deposit_paid) {
-                    const depAmt = Number(o.deposit_amount) || 0;
-                    paidRevenue = (o.status === "completed" || depAmt >= total) ? total : depAmt;
-                } else if (o.status === "completed") {
-                    paidRevenue = total;
-                }
+                const dep = Number(o.deposit_amount) || 0;
+                let paid = 0;
+                if (o.deposit_paid) paid = (o.status === "completed" || dep >= total) ? total : dep;
+                else if (o.status === "completed") paid = total;
 
-                if (paidRevenue > 0) {
-                    restoRev += paidRevenue;
-                    let itemsList: any[] = [];
-                    try { itemsList = typeof o.items === "string" ? JSON.parse(o.items) : (o.items || []); } catch { itemsList = []; }
-                    if (Array.isArray(itemsList)) {
-                        itemsList.forEach((item: any) => {
-                            if (!item.is_meta) {
-                                const name = item.name || "Article";
-                                const qty = Number(item.quantity) || 1;
-                                const unitPrice = Number(item.price) || Number(item.basePrice) || 0;
-                                const itemRev = unitPrice * qty;
-                                // Get image: from item itself, or from COMPLETE_MENU by name match
-                                let img = item.image || item.img || "";
-                                if (!img) {
-                                    const found = COMPLETE_MENU.find(m => m.name === name || m.name.toLowerCase() === name.toLowerCase());
-                                    img = found?.image || "";
-                                }
-                                if (!itemCounts[name]) itemCounts[name] = { qty: 0, revenue: 0, image: img, ordersCount: 0, unitPrices: [] };
-                                itemCounts[name].qty += qty;
-                                itemCounts[name].revenue += itemRev;
-                                itemCounts[name].ordersCount += 1;
-                                if (unitPrice > 0) itemCounts[name].unitPrices.push(unitPrice);
-                                if (!itemCounts[name].image && img) itemCounts[name].image = img;
-                            }
-                        });
-                    }
+                if (paid > 0) {
+                    restoRev += paid;
+                    let items: any[] = [];
+                    try { items = typeof o.items === "string" ? JSON.parse(o.items) : (o.items || []); } catch { }
+                    items.filter(it => !it.is_meta).forEach((it: any) => {
+                        const name = it.name || "Article";
+                        const qty = Number(it.quantity) || 1;
+                        const price = Number(it.price) || Number(it.basePrice) || 0;
+                        let img = it.image || it.img || "";
+                        if (!img) { const m = COMPLETE_MENU.find(m => m.name.toLowerCase() === name.toLowerCase()); img = m?.image || ""; }
+                        if (!itemMap[name]) {
+                            const m = COMPLETE_MENU.find(m => m.name.toLowerCase() === name.toLowerCase() || name.toLowerCase().includes(m.name.split(" ")[0].toLowerCase()));
+                            itemMap[name] = { qty: 0, revenue: 0, image: img || m?.image || "", description: m?.description || "", category: m?.category || "", badge: m?.badge || "", prices: [] };
+                        }
+                        itemMap[name].qty += qty;
+                        itemMap[name].revenue += price * qty;
+                        if (price > 0) itemMap[name].prices.push(price);
+                        if (!itemMap[name].image && img) itemMap[name].image = img;
+                    });
                 }
-
-                if (o.status === "pending" || o.status === "preparing") pendingResto++;
-                const oDate = (o.updated_at || o.created_at || "").split("T")[0];
-                if (o.status === "completed" && oDate === todayStr) completedToday++;
+                if (o.status === "pending" || o.status === "preparing") pending++;
+                if (o.status === "completed" && (o.updated_at || o.created_at || "").split("T")[0] === today) doneToday++;
             });
 
-            // Enrich top items with COMPLETE_MENU data
-            const sortedItems = Object.entries(itemCounts)
-                .map(([name, data]) => {
-                    const menuItem = COMPLETE_MENU.find(m =>
-                        m.name.toLowerCase() === name.toLowerCase() ||
-                        m.name.toLowerCase().includes(name.toLowerCase().split(" ")[0]) ||
-                        name.toLowerCase().includes(m.name.toLowerCase().split(" ")[0])
-                    );
-                    const avgPrice = data.unitPrices.length > 0
-                        ? Math.round(data.unitPrices.reduce((a, b) => a + b, 0) / data.unitPrices.length)
-                        : (menuItem?.basePrice || 0);
-                    return {
-                        name,
-                        qty: data.qty,
-                        revenue: data.revenue,
-                        ordersCount: data.ordersCount,
-                        avgPrice,
-                        image: data.image || menuItem?.image || "",
-                        description: menuItem?.description || "",
-                        category: menuItem?.category || "",
-                        badge: menuItem?.badge || "",
-                        isTestData: name.startsWith("Plat Playwright") || name.startsWith("Test")
-                    };
-                })
-                .filter(item => !item.isTestData) // filter out playwright test items
+            const sortedItems = Object.entries(itemMap)
+                .map(([name, d]: any) => ({
+                    name, ...d,
+                    avgPrice: d.prices.length ? Math.round(d.prices.reduce((a: number, b: number) => a + b, 0) / d.prices.length) : 0,
+                    isTest: name.startsWith("Plat Playwright") || name.startsWith("Test")
+                }))
+                .filter(it => !it.isTest)
                 .sort((a, b) => b.revenue - a.revenue)
                 .slice(0, 6);
             setTopItems(sortedItems);
 
-
-            // ── 2. Hotel ──────────────────────────────────────────────────
-            let hotelRev = 0;
-            let occupiedRooms = 0;
-            const hRes = hotelReservations || [];
+            const hRes = hr || [];
+            let hotelRev = 0, occupied = 0;
             hRes.forEach(r => {
-                const price = Number(r.price) || Number(r.total_price) || 0;
-                if (["confirmed", "checked_in", "checked_out"].includes(r.status)) hotelRev += price;
-                if (r.status === "checked_in" || r.status === "active") occupiedRooms++;
-            });
-            const hotelOccupancy = Math.min(Math.round((occupiedRooms / 10) * 100), 100);
-
-            // ── 3. Pool ───────────────────────────────────────────────────
-            let poolRev = 0;
-            let activePool = 0;
-            const pBookings = poolBookings || [];
-            pBookings.forEach(b => {
-                const total = Number(b.total_price) || Number(b.total_amount) || 0;
-                if (b.status !== "cancelled") poolRev += total;
-                if (b.status === "checked_in" || b.status === "active") {
-                    activePool += (Number(b.adults) || 0) + (Number(b.children) || 0);
-                }
+                const p = Number(r.price) || Number(r.total_price) || 0;
+                if (["confirmed", "checked_in", "checked_out"].includes(r.status)) hotelRev += p;
+                if (["checked_in", "active"].includes(r.status)) occupied++;
             });
 
-            // ── 4. Services ───────────────────────────────────────────────
-            let serviceRev = 0;
-            let lavagesToday = 0;
-            const sBookings = serviceBookings || [];
-            sBookings.forEach(s => {
-                const price = Number(s.price) || Number(s.total_price) || 0;
-                if (s.status === "completed") serviceRev += price;
-                if (s.service_type === "lavage" && s.status !== "completed" && s.status !== "cancelled") lavagesToday++;
+            const pBook = pb || [];
+            let poolRev = 0, activePax = 0;
+            pBook.forEach(b => {
+                if (b.status !== "cancelled") poolRev += Number(b.total_price) || Number(b.total_amount) || 0;
+                if (["checked_in", "active"].includes(b.status)) activePax += (Number(b.adults) || 0) + (Number(b.children) || 0);
+            });
+
+            const sBook = sb || [];
+            let serviceRev = 0, lavages = 0;
+            sBook.forEach(s => {
+                if (s.status === "completed") serviceRev += Number(s.price) || Number(s.total_price) || 0;
+                if (s.service_type === "lavage" && !["completed", "cancelled"].includes(s.status)) lavages++;
             });
 
             const totalRev = restoRev + hotelRev + poolRev + serviceRev;
-            const paidOrdersCount = rOrders.filter(o => o.status === "completed" || (o.deposit_paid && Number(o.deposit_amount) >= (Number(o.total_price) || Number(o.subtotal) || 0))).length;
+            const paid = rOrders.filter(o => o.status === "completed" || (o.deposit_paid && Number(o.deposit_amount) >= (Number(o.total_price) || Number(o.subtotal)))).length;
 
             setStats({
-                totalRevenue: totalRev,
-                restoRevenue: restoRev,
-                hotelRevenue: hotelRev,
-                poolRevenue: poolRev,
-                servicesRevenue: serviceRev,
-                occupancyRate: hotelOccupancy,
-                activePoolGuests: activePool,
-                pendingOrdersCount: pendingResto,
-                completedOrdersToday: completedToday,
-                lavagesCount: lavagesToday,
-                totalOrdersCount: rOrders.length,
-                avgOrderValue: paidOrdersCount > 0 ? Math.round(restoRev / paidOrdersCount) : 0,
+                totalRevenue: totalRev, restoRevenue: restoRev, hotelRevenue: hotelRev,
+                poolRevenue: poolRev, servicesRevenue: serviceRev,
+                occupancyRate: Math.min(Math.round((occupied / 10) * 100), 100),
+                activePoolGuests: activePax, pendingOrdersCount: pending, completedOrdersToday: doneToday,
+                lavagesCount: lavages, totalOrdersCount: rOrders.length,
+                avgOrderValue: paid > 0 ? Math.round(restoRev / paid) : 0,
             });
 
-            setRecentOrders(rOrders.slice(0, 5));
-            setHotelRoomsState(hRes.slice(0, 5));
-
+            setRecentOrders(rOrders.slice(0, 6));
+            setHotelRooms(hRes.slice(0, 5));
         } catch (err) {
             console.error("Dashboard fetch error:", err);
-            // Fallback data
-            setStats({
-                totalRevenue: 28450, restoRevenue: 8450, hotelRevenue: 12500, poolRevenue: 4800, servicesRevenue: 2700,
-                occupancyRate: 70, activePoolGuests: 24, pendingOrdersCount: 3, completedOrdersToday: 12,
-                lavagesCount: 5, totalOrdersCount: 34, avgOrderValue: 248,
-            });
-            setTopItems([
-                { name: "Tacos Mixte Royal", qty: 42, revenue: 2310 },
-                { name: "Smash Burger Cheese", qty: 38, revenue: 1900 },
-                { name: "Pizza Fruits de Mer", qty: 24, revenue: 1680 },
-                { name: "Café Crème", qty: 55, revenue: 825 },
-            ]);
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    const handleSavePins = () => {
-        localStorage.setItem("pin_admin", pinAdmin);
-        localStorage.setItem("pin_hotel", pinHotel);
-        localStorage.setItem("pin_kitchen", pinKitchen);
-        localStorage.setItem("pin_services", pinServices);
-        localStorage.setItem("pin_caisse", pinCaisse);
+    const fetchAI = useCallback(async () => {
+        setAiLoading(true);
+        setAiError("");
+        setAiCalled(true);
+        try {
+            const res = await fetch("/api/admin-insights", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ stats, topItems, recentOrders })
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            setAiInsights(data.insights || []);
+            setAiSummary(data.summary || "");
+        } catch (err: any) {
+            setAiError("Impossible de contacter l'IA. Vérifiez votre connexion.");
+        } finally {
+            setAiLoading(false);
+        }
+    }, [stats, topItems, recentOrders]);
+
+    const savePins = () => {
+        Object.entries(pins).forEach(([k, v]) => localStorage.setItem(`pin_${k}`, v));
         setPinSaved(true);
         setTimeout(() => setPinSaved(false), 3000);
     };
 
-    // Dynamic donut segments
-    const donutTotal = stats.totalRevenue || 1;
-    const donutSegments = [
-        { color: "#FF8A00", pct: Math.round((stats.restoRevenue / donutTotal) * 100), label: "Restaurant", key: "resto" },
-        { color: "#F59E0B", pct: Math.round((stats.hotelRevenue / donutTotal) * 100), label: "Hôtel", key: "hotel" },
-        { color: "#06B6D4", pct: Math.round((stats.poolRevenue / donutTotal) * 100), label: "Piscine", key: "pool" },
-        { color: "#10B981", pct: Math.round((stats.servicesRevenue / donutTotal) * 100), label: "Services", key: "serv" },
-    ].filter(s => s.pct > 0);
+    // Donut segments
+    const donut = useMemo(() => {
+        const total = stats.totalRevenue || 1;
+        return [
+            { label: "Restaurant", value: stats.restoRevenue, color: "#F97316", pct: Math.round((stats.restoRevenue / total) * 100) },
+            { label: "Hôtel", value: stats.hotelRevenue, color: "#F59E0B", pct: Math.round((stats.hotelRevenue / total) * 100) },
+            { label: "Piscine", value: stats.poolRevenue, color: "#06B6D4", pct: Math.round((stats.poolRevenue / total) * 100) },
+            { label: "Services", value: stats.servicesRevenue, color: "#10B981", pct: Math.round((stats.servicesRevenue / total) * 100) },
+        ].filter(s => s.value > 0);
+    }, [stats]);
 
-    // Ensure sum == 100 (rounding fix)
-    if (donutSegments.length > 0) {
-        const sum = donutSegments.reduce((acc, s) => acc + s.pct, 0);
-        if (sum !== 100) donutSegments[0].pct += (100 - sum);
-    }
+    const tabs = [
+        { id: "overview", label: "Vue Générale", icon: BarChart3 },
+        { id: "analytics", label: "Analytiques", icon: TrendingUp },
+        { id: "ai", label: "IA Advisor", icon: Bot },
+        { id: "pins", label: "Codes PIN", icon: Lock },
+    ] as const;
 
-    if (loading) {
-        return (
-            <div className="flex flex-col items-center justify-center py-32 text-gray-400 gap-4">
-                <RefreshCw className="w-10 h-10 text-amber-500 animate-spin" />
-                <p className="text-sm font-bold animate-pulse">Agrégation des données en temps réel...</p>
+    if (loading) return (
+        <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+            <div className="relative w-16 h-16">
+                <div className="absolute inset-0 rounded-full border-2 border-amber-500/20 animate-ping" />
+                <div className="absolute inset-2 rounded-full border-2 border-amber-500/40 animate-spin" />
+                <div className="absolute inset-4 rounded-full bg-amber-500/20 flex items-center justify-center">
+                    <Activity className="w-4 h-4 text-amber-500 animate-pulse" />
+                </div>
             </div>
-        );
-    }
+            <p className="text-sm font-bold text-gray-400 animate-pulse">Chargement du tableau de bord...</p>
+        </div>
+    );
 
     return (
-        <div className="space-y-8 animate-fade-in pb-16">
+        <div className="space-y-6 pb-20 animate-in fade-in duration-300">
 
-            {/* ── HEADER ──────────────────────────────────────────────────── */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 pb-6">
-                <div>
-                    <h1 className="text-3xl font-black text-white leading-tight">Panneau d'Administration</h1>
-                    <p className="text-xs text-gray-400 font-medium mt-1">Supervision globale, statistiques financières et gestion de la sécurité</p>
+            {/* ── HEADER ── */}
+            <div className="flex flex-col gap-4">
+                <div className="flex items-start justify-between">
+                    <div>
+                        <div className="flex items-center gap-2 mb-1">
+                            <div className="w-1.5 h-5 rounded-full bg-gradient-to-b from-amber-400 to-orange-600" />
+                            <h1 className="text-2xl font-black text-white">Tableau de Bord Admin</h1>
+                        </div>
+                        <p className="text-xs text-gray-500 font-medium pl-3.5">
+                            {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
+                            {" · "}Données en temps réel
+                        </p>
+                    </div>
+                    <button onClick={fetchData} className="p-2.5 rounded-xl bg-white/5 border border-white/8 text-gray-500 hover:text-white hover:bg-white/10 transition-all group">
+                        <RefreshCw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
+                    </button>
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <button
-                        onClick={fetchDashboardData}
-                        className="p-2 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition-all"
-                        title="Rafraîchir"
-                    >
-                        <RefreshCw className="w-4 h-4" />
-                    </button>
-                    <div className="flex bg-[#1E293B] p-1 rounded-xl border border-white/5 shadow-inner shrink-0">
-                        {(["general", "stats", "pins"] as const).map(tab => (
-                            <button key={tab} onClick={() => setActiveSubTab(tab)}
-                                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeSubTab === tab ? "bg-amber-500 text-black shadow-md" : "text-gray-400 hover:text-white"}`}
-                            >
-                                {tab === "general" ? "Vue Générale" : tab === "stats" ? "Statistiques" : "Codes PIN"}
-                            </button>
-                        ))}
-                    </div>
+                {/* Tab Nav */}
+                <div className="flex gap-1 bg-[#0F172A] p-1 rounded-2xl border border-white/5 overflow-x-auto scrollbar-hide">
+                    {tabs.map(({ id, label, icon: Icon }) => (
+                        <button key={id} onClick={() => setActiveTab(id)}
+                            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 ${activeTab === id ? "bg-gradient-to-r from-amber-500 to-orange-500 text-black shadow-lg shadow-amber-500/20" : "text-gray-500 hover:text-white hover:bg-white/5"}`}
+                        >
+                            <Icon className="w-3.5 h-3.5" />
+                            {label}
+                            {id === "ai" && <span className="ml-1 text-[8px] px-1 py-0.5 rounded-full bg-purple-500/30 text-purple-300 border border-purple-500/20 uppercase tracking-wide">Gemini</span>}
+                        </button>
+                    ))}
                 </div>
             </div>
 
-            {/* ── TAB: GENERAL ─────────────────────────────────────────────── */}
-            {activeSubTab === "general" && (
-                <>
-                    {/* KPI Grid */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* ════════════════════════════════════════════════════════════════
+                TAB: OVERVIEW
+            ════════════════════════════════════════════════════════════════ */}
+            {activeTab === "overview" && (
+                <div className="space-y-5 animate-in fade-in duration-200">
+
+                    {/* Revenue KPI Cards */}
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
                         {[
-                            { label: "Chiffre d'Affaires", value: `${stats.totalRevenue.toLocaleString()} DH`, sub: "Cumul commandes validées", color: "green", icon: TrendingUp },
-                            { label: "Occupation Hôtel", value: `${stats.occupancyRate}%`, sub: "Chambres occupées", color: "amber", icon: Bed, progress: stats.occupancyRate },
-                            { label: "Piscine Actifs", value: `${stats.activePoolGuests} Pax`, sub: "Personnes enregistrées", color: "cyan", icon: Users },
-                            { label: "File d'Attente", value: `${stats.pendingOrdersCount + stats.lavagesCount}`, sub: "Cuisine + Lavages urgents", color: "red", icon: Activity },
-                        ].map(({ label, value, sub, color, icon: Icon, progress }) => (
-                            <div key={label} className="bg-[#1E293B] border border-white/10 rounded-2xl p-4 relative overflow-hidden group">
-                                <div className={`absolute top-0 right-0 w-24 h-24 bg-${color}-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-${color}-500/10 transition-all`} />
-                                <div className="flex justify-between items-start mb-3">
-                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{label}</span>
-                                    <div className={`p-2 bg-${color}-500/10 rounded-xl text-${color}-500`}>
-                                        <Icon className="w-4 h-4" />
+                            { label: "Chiffre d'Affaires", value: fmt(stats.totalRevenue) + " DH", sub: "Cumul validé", icon: TrendingUp, color: "#10B981", spark: chartData.vals, trend: "+12%" },
+                            { label: "Occupation Hôtel", value: stats.occupancyRate + "%", sub: `${Math.round(stats.occupancyRate / 10)} / 10 chambres`, icon: Bed, color: "#F59E0B", spark: null, trend: null },
+                            { label: "Piscine Actifs", value: stats.activePoolGuests + " pax", sub: "Enregistrés actuellement", icon: Waves, color: "#06B6D4", spark: null, trend: null },
+                            { label: "File d'Attente", value: String(stats.pendingOrdersCount + stats.lavagesCount), sub: "Cuisine + Lavages", icon: Clock, color: "#EF4444", spark: null, trend: null },
+                        ].map(({ label, value, sub, icon: Icon, color, spark, trend }) => (
+                            <div key={label} className="bg-[#1E293B]/80 border border-white/8 rounded-2xl p-4 relative overflow-hidden group hover:border-white/15 transition-all">
+                                <div className="absolute top-0 right-0 w-20 h-20 rounded-full blur-2xl pointer-events-none transition-opacity opacity-30 group-hover:opacity-60" style={{ background: color }} />
+                                <div className="flex items-center justify-between mb-3 relative z-10">
+                                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{label}</span>
+                                    <div className="p-1.5 rounded-lg" style={{ background: color + "20" }}>
+                                        <Icon className="w-3.5 h-3.5" style={{ color }} />
                                     </div>
                                 </div>
-                                <div className="text-2xl font-black text-white">{value}</div>
-                                <div className={`text-[9px] text-${color}-400 font-bold mt-1`}>{sub}</div>
-                                {progress !== undefined && (
-                                    <div className="w-full bg-white/5 h-1 rounded-full mt-2 overflow-hidden">
-                                        <div className={`bg-${color}-500 h-full rounded-full`} style={{ width: `${progress}%` }} />
+                                <div className="text-2xl font-black text-white mb-0.5 relative z-10">{value}</div>
+                                <div className="text-[10px] font-bold relative z-10" style={{ color }}>{sub}</div>
+                                {spark && spark.some(v => v > 0) && (
+                                    <div className="mt-2 relative z-10 opacity-60">
+                                        <Sparkline data={spark} color={color} height={32} />
                                     </div>
                                 )}
+                                {trend && <div className="absolute bottom-3 right-3 text-[9px] font-black text-green-400 flex items-center gap-0.5"><ArrowUpRight className="w-2.5 h-2.5" />{trend}</div>}
                             </div>
                         ))}
                     </div>
 
                     {/* Revenue Breakdown */}
-                    <div className="bg-[#1E293B] border border-white/10 rounded-3xl p-6">
-                        <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Répartition du Chiffre d'Affaires</h3>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="bg-[#1E293B]/80 border border-white/8 rounded-2xl p-5">
+                        <div className="flex items-center justify-between mb-4">
+                            <h2 className="text-sm font-black text-white uppercase tracking-wide">Répartition des Revenus</h2>
+                            <span className="text-[10px] font-bold text-gray-500">{fmt(stats.totalRevenue)} DH total</span>
+                        </div>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                             {[
-                                { label: "Restaurant", value: stats.restoRevenue, icon: Utensils, color: "orange" },
-                                { label: "Hôtel", value: stats.hotelRevenue, icon: Bed, color: "amber" },
-                                { label: "Piscine", value: stats.poolRevenue, icon: Ticket, color: "cyan" },
-                                { label: "Services", value: stats.servicesRevenue, icon: Activity, color: "emerald" },
-                            ].map(({ label, value, icon: Icon, color }) => (
-                                <div key={label} className="bg-[#0F172A] border border-white/5 rounded-2xl p-4">
-                                    <div className="flex items-center gap-2 mb-2">
-                                        <Icon className={`w-4 h-4 text-${color}-500`} />
-                                        <span className="text-xs font-bold text-gray-300">{label}</span>
+                                { label: "Restaurant", value: stats.restoRevenue, icon: Utensils, color: "#F97316" },
+                                { label: "Hôtel", value: stats.hotelRevenue, icon: Bed, color: "#F59E0B" },
+                                { label: "Piscine", value: stats.poolRevenue, icon: Waves, color: "#06B6D4" },
+                                { label: "Services", value: stats.servicesRevenue, icon: Wrench, color: "#10B981" },
+                            ].map(({ label, value, icon: Icon, color }) => {
+                                const pct = stats.totalRevenue > 0 ? Math.round((value / stats.totalRevenue) * 100) : 0;
+                                return (
+                                    <div key={label} className="bg-[#0F172A] rounded-xl p-3 border border-white/5">
+                                        <div className="flex items-center gap-2 mb-2">
+                                            <Icon className="w-3.5 h-3.5" style={{ color }} />
+                                            <span className="text-[10px] font-bold text-gray-400">{label}</span>
+                                        </div>
+                                        <div className="text-lg font-black text-white">{fmt(value)} DH</div>
+                                        <div className="mt-2 h-1 bg-white/5 rounded-full overflow-hidden">
+                                            <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${pct}%`, background: color }} />
+                                        </div>
+                                        <div className="text-[9px] font-bold mt-1" style={{ color }}>{pct}% du total</div>
                                     </div>
-                                    <div className="text-xl font-black text-white">{value.toLocaleString()} DH</div>
-                                    <div className="text-[9px] text-gray-500 font-bold mt-1">
-                                        {stats.totalRevenue > 0 ? `${Math.round((value / stats.totalRevenue) * 100)}% du total` : "—"}
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Live Queues */}
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                        {/* Restaurant Queue */}
+                        <div className="bg-[#1E293B]/80 border border-white/8 rounded-2xl p-5">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+                                    <h3 className="text-xs font-black text-white uppercase tracking-wide">File Cuisine</h3>
+                                </div>
+                                <button onClick={() => router.push("/admin/restaurant")} className="text-[10px] font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1">
+                                    Gérer <ChevronRight className="w-3 h-3" />
+                                </button>
+                            </div>
+                            <div className="space-y-2">
+                                {recentOrders.length === 0 ? (
+                                    <div className="text-center py-6 text-[11px] text-gray-600 bg-[#0F172A] rounded-xl border border-white/5">Aucune commande</div>
+                                ) : recentOrders.map(o => {
+                                    const statusConf: Record<string, { label: string; class: string }> = {
+                                        pending: { label: "Attente", class: "bg-amber-500/15 text-amber-400 border-amber-500/20" },
+                                        preparing: { label: "Cuisine", class: "bg-blue-500/15 text-blue-400 border-blue-500/20" },
+                                        ready: { label: "Prêt ✓", class: "bg-green-500/15 text-green-400 border-green-500/20" },
+                                        completed: { label: "Encaissé", class: "bg-gray-500/15 text-gray-400 border-gray-500/20" },
+                                        pending_payment: { label: "Pmt...", class: "bg-purple-500/15 text-purple-400 border-purple-500/20" },
+                                    };
+                                    const sc = statusConf[o.status] || statusConf.pending;
+                                    return (
+                                        <div key={o.id} className="flex items-center justify-between bg-[#0F172A] rounded-xl px-3 py-2.5 border border-white/5 hover:border-white/10 transition-all">
+                                            <div>
+                                                <div className="text-xs font-black text-white">{o.order_number}</div>
+                                                <div className="text-[9px] text-gray-600">{o.total_price || o.subtotal} DH</div>
+                                            </div>
+                                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wide ${sc.class}`}>{sc.label}</span>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Hotel */}
+                        <div className="bg-[#1E293B]/80 border border-white/8 rounded-2xl p-5">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    <Bed className="w-3.5 h-3.5 text-amber-400" />
+                                    <h3 className="text-xs font-black text-white uppercase tracking-wide">Hôtel</h3>
+                                </div>
+                                <button onClick={() => router.push("/admin/hotel")} className="text-[10px] font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1">
+                                    Gérer <ChevronRight className="w-3 h-3" />
+                                </button>
+                            </div>
+                            <div className="space-y-2">
+                                {hotelRooms.length === 0 ? (
+                                    <div className="text-center py-6 text-[11px] text-gray-600 bg-[#0F172A] rounded-xl border border-white/5">Aucune réservation</div>
+                                ) : hotelRooms.map(r => (
+                                    <div key={r.id} className="flex items-center justify-between bg-[#0F172A] rounded-xl px-3 py-2.5 border border-white/5 hover:border-white/10 transition-all">
+                                        <div>
+                                            <div className="text-xs font-black text-white">Chambre {r.room_number || "?"} <span className="text-[9px] font-normal text-gray-600 uppercase">({r.room_type})</span></div>
+                                            <div className="text-[9px] text-gray-600">{r.customer_phone || "—"}</div>
+                                        </div>
+                                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wide ${r.status === "checked_in" ? "bg-green-500/15 text-green-400 border-green-500/20" : "bg-amber-500/15 text-amber-400 border-amber-500/20"}`}>
+                                            {r.status === "checked_in" ? "Occupée" : "Attente"}
+                                        </span>
                                     </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Quick Stats Row */}
+                    <div className="grid grid-cols-3 gap-3">
+                        {[
+                            { label: "Commandes aujourd'hui ✅", value: stats.completedOrdersToday, color: "text-green-400" },
+                            { label: "Panier moyen 🛒", value: stats.avgOrderValue + " DH", color: "text-amber-400" },
+                            { label: "Total commandes 📦", value: stats.totalOrdersCount, color: "text-blue-400" },
+                        ].map(({ label, value, color }) => (
+                            <div key={label} className="bg-[#1E293B]/60 border border-white/5 rounded-xl p-3 text-center">
+                                <div className={`text-xl font-black ${color}`}>{value}</div>
+                                <div className="text-[9px] text-gray-600 font-bold mt-0.5">{label}</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* ════════════════════════════════════════════════════════════════
+                TAB: ANALYTICS
+            ════════════════════════════════════════════════════════════════ */}
+            {activeTab === "analytics" && (
+                <div className="space-y-5 animate-in fade-in duration-200">
+
+                    {/* Revenue Chart */}
+                    <div className="bg-[#1E293B]/80 border border-white/8 rounded-2xl p-5">
+                        <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+                            <div>
+                                <h2 className="text-sm font-black text-white">Évolution des Encaissements</h2>
+                                <p className="text-[10px] text-gray-500 mt-0.5">Restaurant — paiements validés par jour</p>
+                            </div>
+                            <div className="flex gap-1 bg-[#0F172A] p-1 rounded-xl border border-white/5">
+                                {([7, 14, 30] as const).map(n => (
+                                    <button key={n} onClick={() => setChartRange(n)}
+                                        className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartRange === n ? "bg-emerald-500 text-black" : "text-gray-500 hover:text-white"}`}
+                                    >{n}j</button>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="h-52">
+                            <LineChart data={chartData.vals} labels={chartData.labels} color="#10B981" />
+                        </div>
+                        <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-white/5">
+                            {[
+                                { label: "Période", value: fmt(chartData.vals.reduce((a, b) => a + b, 0)) + " DH", color: "text-white" },
+                                { label: "Moy/jour", value: fmt(Math.round(chartData.vals.reduce((a, b) => a + b, 0) / (chartRange || 1))) + " DH", color: "text-gray-300" },
+                                { label: "Meilleur jour", value: fmt(Math.max(...chartData.vals)) + " DH", color: "text-green-400" },
+                            ].map(({ label, value, color }) => (
+                                <div key={label} className="text-center bg-[#0F172A] rounded-xl p-3 border border-white/5">
+                                    <div className={`text-sm font-black ${color}`}>{value}</div>
+                                    <div className="text-[9px] text-gray-600 font-bold mt-0.5">{label}</div>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    {/* Live Queues */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div className="bg-[#1E293B] border border-white/10 rounded-3xl p-6 space-y-4">
-                            <div className="flex justify-between items-center">
-                                <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                                    <span className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-ping" />
-                                    File Cuisine Resto
-                                </h3>
-                                <button onClick={() => router.push("/admin/restaurant")} className="text-xs font-bold text-amber-500 hover:underline">Gérer →</button>
-                            </div>
-                            <div className="space-y-3">
-                                {recentOrders.length === 0 ? (
-                                    <div className="text-center py-6 text-xs text-gray-500 font-medium bg-[#0F172A] border border-white/5 rounded-2xl">Aucune commande active.</div>
-                                ) : (
-                                    recentOrders.map(order => (
-                                        <div key={order.id} className="bg-[#0F172A] border border-white/5 rounded-2xl p-3.5 flex items-center justify-between">
-                                            <div>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-black text-white text-xs">{order.order_number}</span>
-                                                    <span className="text-[10px] text-gray-500">({order.customer_phone})</span>
-                                                </div>
-                                                <div className="text-[10px] text-gray-400 mt-0.5">{order.total_price || order.subtotal} DH</div>
-                                            </div>
-                                            <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${
-                                                order.status === "pending" ? "bg-amber-500/10 text-amber-400 border border-amber-500/20" :
-                                                order.status === "preparing" ? "bg-blue-500/10 text-blue-400 border border-blue-500/20 animate-pulse" :
-                                                order.status === "completed" ? "bg-green-500/10 text-green-400 border border-green-500/20" :
-                                                "bg-white/5 text-gray-400 border border-white/10"
-                                            }`}>
-                                                {order.status === "pending" ? "Attente" : order.status === "preparing" ? "En Cuisine" : order.status === "completed" ? "Complété" : order.status}
-                                            </span>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                        </div>
-
-                        <div className="bg-[#1E293B] border border-white/10 rounded-3xl p-6 space-y-4">
-                            <div className="flex justify-between items-center">
-                                <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                                    <Bed className="w-4 h-4 text-amber-500" />
-                                    Arrivées Hôtel Récentes
-                                </h3>
-                                <button onClick={() => router.push("/admin/hotel")} className="text-xs font-bold text-amber-500 hover:underline">Gérer →</button>
-                            </div>
-                            <div className="space-y-3">
-                                {hotelRoomsState.length === 0 ? (
-                                    <div className="text-center py-6 text-xs text-gray-500 font-medium bg-[#0F172A] border border-white/5 rounded-2xl">Aucun mouvement.</div>
-                                ) : (
-                                    hotelRoomsState.map(room => (
-                                        <div key={room.id} className="bg-[#0F172A] border border-white/5 rounded-2xl p-3.5 flex items-center justify-between">
-                                            <div>
-                                                <div className="flex items-center gap-2">
-                                                    <span className="font-black text-white text-xs">Chambre {room.room_number || "?"}</span>
-                                                    <span className="text-[10px] text-gray-400 uppercase">({room.room_type})</span>
-                                                </div>
-                                                <div className="text-[10px] text-gray-500 mt-0.5">{room.customer_phone || "Non spécifié"}</div>
-                                            </div>
-                                            <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${room.status === "checked_in" ? "bg-green-500/10 text-green-400 border border-green-500/20" : "bg-amber-500/10 text-amber-400 border border-amber-500/20"}`}>
-                                                {room.status === "checked_in" ? "Occupée" : "Attente"}
-                                            </span>
-                                        </div>
-                                    ))
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </>
-            )}
-
-            {/* ── TAB: STATS ───────────────────────────────────────────────── */}
-            {activeSubTab === "stats" && (
-                <div className="space-y-6 animate-in fade-in duration-300">
-
-                    {/* KPI Row */}
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        {[
-                            { label: "Commandes Total", value: stats.totalOrdersCount, icon: BarChart2, color: "purple", suffix: "" },
-                            { label: "Complétées Aujourd'hui", value: stats.completedOrdersToday, icon: CheckCircle, color: "green", suffix: "" },
-                            { label: "En Attente / Cuisine", value: stats.pendingOrdersCount, icon: Clock3, color: "amber", suffix: "" },
-                            { label: "Panier Moyen", value: stats.avgOrderValue, icon: TrendingUp, color: "orange", suffix: " DH" },
-                        ].map(({ label, value, icon: Icon, color, suffix }) => (
-                            <div key={label} className="bg-[#1E293B] border border-white/10 rounded-2xl p-4">
-                                <div className="flex items-center justify-between mb-2">
-                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{label}</span>
-                                    <div className={`p-1.5 bg-${color}-500/10 rounded-lg text-${color}-500`}>
-                                        <Icon className="w-3.5 h-3.5" />
-                                    </div>
-                                </div>
-                                <div className="text-2xl font-black text-white">{value.toLocaleString()}{suffix}</div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Revenue Chart + Donut */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                        <div className="lg:col-span-2 bg-[#1E293B] border border-white/10 rounded-3xl p-6">
-                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
-                                <div>
-                                    <h3 className="text-sm font-bold text-white uppercase tracking-wider">Évolution des Revenus Restaurant</h3>
-                                    <p className="text-[10px] text-gray-400 font-medium mt-0.5">Encaissements validés par jour</p>
-                                </div>
-                                <div className="flex gap-1 bg-[#0F172A] p-1 rounded-xl border border-white/5">
-                                    {([7, 14, 30] as const).map(n => (
-                                        <button key={n} onClick={() => setChartRange(n)}
-                                            className={`px-3 py-1 rounded-lg text-[10px] font-bold transition-all ${chartRange === n ? "bg-green-500 text-black" : "text-gray-400 hover:text-white"}`}
-                                        >
-                                            {n}j
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-
-                            <div className="h-48 w-full relative">
-                                <LineChart data={computedChartData.resto} color="#10B981" />
-                            </div>
-                            <div className="flex justify-between text-[9px] text-gray-500 font-bold uppercase tracking-wider mt-3 px-1">
-                                {computedChartData.dates.filter((_, i) => {
-                                    const step = Math.max(1, Math.floor(computedChartData.dates.length / 7));
-                                    return i % step === 0 || i === computedChartData.dates.length - 1;
-                                }).map(d => (
-                                    <span key={d}>{dayLabel(d)}</span>
-                                ))}
-                            </div>
-
-                            {/* Summary below chart */}
-                            <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-white/5">
-                                <div className="text-center">
-                                    <div className="text-xs font-black text-white">{computedChartData.resto.reduce((a, b) => a + b, 0).toLocaleString()} DH</div>
-                                    <div className="text-[9px] text-gray-500 font-bold">Période</div>
-                                </div>
-                                <div className="text-center">
-                                    <div className="text-xs font-black text-white">
-                                        {Math.round(computedChartData.resto.reduce((a, b) => a + b, 0) / (chartRange || 1)).toLocaleString()} DH
-                                    </div>
-                                    <div className="text-[9px] text-gray-500 font-bold">Moy/jour</div>
-                                </div>
-                                <div className="text-center">
-                                    <div className="text-xs font-black text-green-400">
-                                        {Math.max(...computedChartData.resto).toLocaleString()} DH
-                                    </div>
-                                    <div className="text-[9px] text-gray-500 font-bold">Meilleur jour</div>
-                                </div>
-                            </div>
-                        </div>
-
+                    {/* Donut + Top items */}
+                    <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
                         {/* Donut */}
-                        <div className="bg-[#1E293B] border border-white/10 rounded-3xl p-6 flex flex-col justify-between">
-                            <div>
-                                <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-1">Parts d'Activité</h3>
-                                <p className="text-[10px] text-gray-400 font-medium">Contribution par service (revenus réels)</p>
-                            </div>
-
-                            <div className="relative aspect-square w-36 mx-auto flex items-center justify-center my-4">
-                                {donutSegments.length > 0 ? (
-                                    <>
-                                        <DonutChart segments={donutSegments} />
-                                        <div className="absolute flex flex-col items-center justify-center text-center">
-                                            <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Total</span>
-                                            <span className="text-base font-black text-white">{stats.totalRevenue.toLocaleString()}</span>
-                                            <span className="text-[9px] text-gray-500 font-bold">DH</span>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="text-center text-xs text-gray-500 font-bold">Pas de données</div>
-                                )}
-                            </div>
-
-                            <div className="space-y-2">
-                                {[
-                                    { label: "Restaurant", value: stats.restoRevenue, color: "#FF8A00" },
-                                    { label: "Hôtel", value: stats.hotelRevenue, color: "#F59E0B" },
-                                    { label: "Piscine", value: stats.poolRevenue, color: "#06B6D4" },
-                                    { label: "Services", value: stats.servicesRevenue, color: "#10B981" },
-                                ].map(({ label, value, color }) => (
-                                    <div key={label} className="flex items-center justify-between text-[10px] font-bold">
-                                        <div className="flex items-center gap-1.5">
-                                            <div className="w-2.5 h-2.5 rounded" style={{ background: color }} />
-                                            <span className="text-gray-400">{label}</span>
-                                        </div>
-                                        <div className="text-right">
-                                            <span className="text-white font-mono">{value.toLocaleString()} DH</span>
-                                            <span className="text-gray-600 ml-1">
-                                                ({stats.totalRevenue > 0 ? Math.round((value / stats.totalRevenue) * 100) : 0}%)
-                                            </span>
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Top Items — Rich Cards */}
-                    <div className="bg-[#1E293B] border border-white/10 rounded-3xl p-6">
-                        <div className="flex justify-between items-center mb-6">
-                            <div>
-                                <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                                    <Award className="w-4 h-4 text-amber-500" />
-                                    Top Plats les Plus Rentables
-                                </h3>
-                                <p className="text-[10px] text-gray-400 font-medium mt-1">Basé sur les commandes validées et encaissées — cliquez pour voir les détails</p>
-                            </div>
-                            <div className="text-[10px] font-bold bg-amber-500/10 border border-amber-500/20 text-amber-400 px-2.5 py-1 rounded-lg">
-                                {topItems.length} articles analysés
-                            </div>
+                        <div className="lg:col-span-2 bg-[#1E293B]/80 border border-white/8 rounded-2xl p-5">
+                            <h2 className="text-sm font-black text-white mb-4">Parts d'Activité</h2>
+                            {donut.length > 0 ? <DonutChart segments={donut} /> : (
+                                <div className="text-center py-8 text-xs text-gray-600">Pas de revenus enregistrés</div>
+                            )}
                         </div>
 
-                        {topItems.length === 0 ? (
-                            <div className="text-center py-12 text-xs text-gray-500 font-bold bg-[#0F172A] border border-white/5 rounded-2xl">
-                                <Utensils className="w-8 h-8 text-gray-700 mx-auto mb-3" />
-                                Aucune vente réelle disponible dans l'historique.<br/>
-                                <span className="text-gray-700 font-normal">Les commandes Playwright de test sont filtrées automatiquement.</span>
+                        {/* Top Dishes */}
+                        <div className="lg:col-span-3 bg-[#1E293B]/80 border border-white/8 rounded-2xl p-5">
+                            <div className="flex items-center gap-2 mb-4">
+                                <Award className="w-4 h-4 text-amber-400" />
+                                <h2 className="text-sm font-black text-white">Top Plats</h2>
+                                <span className="ml-auto text-[9px] font-bold text-gray-600">{topItems.length} articles</span>
                             </div>
-                        ) : (
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                {topItems.map((item, idx) => {
-                                    const maxRevenue = topItems[0]?.revenue || 1;
-                                    const percent = Math.round((item.revenue / maxRevenue) * 100);
-                                    const rankColors = ["#F59E0B", "#9CA3AF", "#B45309", "#10B981", "#3B82F6", "#8B5CF6"];
-                                    const rankLabels = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣", "6️⃣"];
-                                    const barGradients = [
-                                        "from-yellow-600 to-amber-400",
-                                        "from-gray-600 to-gray-300",
-                                        "from-orange-800 to-orange-500",
-                                        "from-emerald-700 to-green-400",
-                                        "from-blue-700 to-blue-400",
-                                        "from-purple-700 to-purple-400",
-                                    ];
-                                    const categoryColors: Record<string, string> = {
-                                        FastFood: "bg-orange-500/20 text-orange-400 border-orange-500/20",
-                                        Plats: "bg-amber-500/20 text-amber-400 border-amber-500/20",
-                                        Boissons: "bg-cyan-500/20 text-cyan-400 border-cyan-500/20",
-                                        Desserts: "bg-pink-500/20 text-pink-400 border-pink-500/20",
-                                        Salades: "bg-green-500/20 text-green-400 border-green-500/20",
-                                        Ftour: "bg-yellow-500/20 text-yellow-400 border-yellow-500/20",
-                                    };
-                                    const catClass = categoryColors[item.category] || "bg-white/5 text-gray-400 border-white/10";
-
-                                    return (
-                                        <div key={idx} className="bg-[#0F172A] border border-white/5 rounded-2xl overflow-hidden group hover:border-white/15 transition-all">
-                                            {/* Image zone */}
-                                            <div className="relative h-40 w-full overflow-hidden bg-[#1a2540]">
-                                                {item.image ? (
-                                                    <Image
-                                                        src={item.image}
-                                                        alt={item.name}
-                                                        fill
-                                                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                                                        unoptimized={item.image.startsWith("http")}
-                                                    />
-                                                ) : (
-                                                    <div className="w-full h-full flex items-center justify-center">
-                                                        <Utensils className="w-12 h-12 text-white/10" />
+                            {topItems.length === 0 ? (
+                                <div className="text-center py-8 text-xs text-gray-600 flex flex-col items-center gap-2">
+                                    <Utensils className="w-6 h-6 text-gray-700" />
+                                    Aucune vente réelle enregistrée
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {topItems.slice(0, 5).map((item, i) => {
+                                        const medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
+                                        const max = topItems[0]?.revenue || 1;
+                                        const pct = Math.round((item.revenue / max) * 100);
+                                        const colors = ["#F59E0B", "#9CA3AF", "#B45309", "#10B981", "#3B82F6"];
+                                        return (
+                                            <div key={i} className="flex items-center gap-3">
+                                                <span className="text-base w-6 text-center">{medals[i]}</span>
+                                                {item.image && (
+                                                    <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0 bg-[#0F172A] border border-white/5">
+                                                        <Image src={item.image} alt={item.name} width={36} height={36} className="object-cover w-full h-full" unoptimized={item.image?.startsWith("http")} />
                                                     </div>
                                                 )}
-                                                {/* Dark gradient overlay */}
-                                                <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-[#0F172A]/40 to-transparent" />
-                                                {/* Rank badge */}
-                                                <div className="absolute top-3 left-3 flex items-center gap-1.5">
-                                                    <span className="text-xl">{rankLabels[idx]}</span>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center justify-between mb-1 gap-2">
+                                                        <span className="text-[11px] font-bold text-white truncate">{item.name}</span>
+                                                        <span className="text-[10px] font-black text-green-400 shrink-0">{fmt(item.revenue)} DH</span>
+                                                    </div>
+                                                    <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                                        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: colors[i] || "#10B981", transition: "width 1s" }} />
+                                                    </div>
+                                                    <div className="flex justify-between text-[9px] text-gray-600 font-bold mt-0.5">
+                                                        <span>×{item.qty} vendus</span>
+                                                        <span>{item.avgPrice} DH moy.</span>
+                                                    </div>
                                                 </div>
-                                                {/* Category badge */}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Dish Cards Grid */}
+                    {topItems.length > 0 && (
+                        <div className="bg-[#1E293B]/80 border border-white/8 rounded-2xl p-5">
+                            <h2 className="text-sm font-black text-white mb-4 flex items-center gap-2">
+                                <Star className="w-4 h-4 text-amber-400" />
+                                Fiches Détaillées des Plats
+                            </h2>
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+                                {topItems.map((item, i) => {
+                                    const catColors: Record<string, string> = {
+                                        FastFood: "#F97316", Plats: "#F59E0B", Boissons: "#06B6D4",
+                                        Desserts: "#EC4899", Salades: "#10B981", Ftour: "#EAB308"
+                                    };
+                                    const cc = catColors[item.category] || "#6B7280";
+                                    return (
+                                        <div key={i} className="bg-[#0F172A] border border-white/5 rounded-xl overflow-hidden hover:border-white/15 transition-all group">
+                                            <div className="relative h-28 overflow-hidden bg-[#162032]">
+                                                {item.image ? (
+                                                    <Image src={item.image} alt={item.name} fill className="object-cover group-hover:scale-110 transition-transform duration-500" unoptimized={item.image?.startsWith("http")} />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center"><Utensils className="w-8 h-8 text-white/10" /></div>
+                                                )}
+                                                <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] to-transparent" />
                                                 {item.category && (
-                                                    <div className={`absolute top-3 right-3 text-[9px] font-black px-2 py-0.5 rounded-full border ${catClass} uppercase tracking-wide`}>
+                                                    <div className="absolute top-2 right-2 text-[8px] font-black px-1.5 py-0.5 rounded-full" style={{ background: cc + "30", color: cc, border: `1px solid ${cc}40` }}>
                                                         {item.category}
                                                     </div>
                                                 )}
-                                                {/* Special badge */}
                                                 {item.badge && (
-                                                    <div className="absolute bottom-3 left-3 bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide shadow-lg">
-                                                        {item.badge}
-                                                    </div>
+                                                    <div className="absolute bottom-2 left-2 text-[8px] font-black px-1.5 py-0.5 rounded-full bg-red-600 text-white">{item.badge}</div>
                                                 )}
                                             </div>
-
-                                            {/* Content */}
-                                            <div className="p-4 space-y-3">
-                                                <div>
-                                                    <h4 className="text-sm font-black text-white leading-tight mb-1">{item.name}</h4>
-                                                    {item.description && (
-                                                        <p className="text-[10px] text-gray-500 leading-relaxed line-clamp-2">{item.description}</p>
-                                                    )}
-                                                </div>
-
-                                                {/* Stats row */}
-                                                <div className="grid grid-cols-3 gap-2 py-2 border-t border-white/5">
-                                                    <div className="text-center">
-                                                        <div className="text-sm font-black text-white">×{item.qty}</div>
-                                                        <div className="text-[8px] text-gray-600 font-bold uppercase">Vendus</div>
+                                            <div className="p-2.5">
+                                                <h4 className="text-[11px] font-black text-white leading-tight mb-2 line-clamp-2">{item.name}</h4>
+                                                <div className="grid grid-cols-2 gap-1">
+                                                    <div className="bg-white/3 rounded-lg p-1.5 text-center">
+                                                        <div className="text-[11px] font-black text-white">×{item.qty}</div>
+                                                        <div className="text-[7px] text-gray-600 uppercase">vendus</div>
                                                     </div>
-                                                    <div className="text-center border-x border-white/5">
-                                                        <div className="text-sm font-black text-amber-400">{item.avgPrice} DH</div>
-                                                        <div className="text-[8px] text-gray-600 font-bold uppercase">Prix moy.</div>
-                                                    </div>
-                                                    <div className="text-center">
-                                                        <div className="text-sm font-black text-green-400">{item.revenue.toLocaleString()}</div>
-                                                        <div className="text-[8px] text-gray-600 font-bold uppercase">DH Total</div>
-                                                    </div>
-                                                </div>
-
-                                                {/* Revenue bar */}
-                                                <div className="space-y-1">
-                                                    <div className="flex justify-between text-[9px] font-bold">
-                                                        <span className="text-gray-500">Part du top</span>
-                                                        <span style={{ color: rankColors[idx] }}>{percent}%</span>
-                                                    </div>
-                                                    <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
-                                                        <div
-                                                            className={`bg-gradient-to-r ${barGradients[idx] || barGradients[0]} h-full rounded-full transition-all duration-1000`}
-                                                            style={{ width: `${percent}%` }}
-                                                        />
+                                                    <div className="bg-white/3 rounded-lg p-1.5 text-center">
+                                                        <div className="text-[11px] font-black text-green-400">{item.revenue}</div>
+                                                        <div className="text-[7px] text-gray-600 uppercase">DH</div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -836,103 +743,157 @@ export default function AdminDashboardPage() {
                                     );
                                 })}
                             </div>
-                        )}
-                    </div>
-
-                    {/* Orders Per Day Bar Chart */}
-                    <div className="bg-[#1E293B] border border-white/10 rounded-3xl p-6">
-                        <div className="flex justify-between items-center mb-6">
-                            <div>
-                                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Volume d'Encaissements / Jour</h3>
-                                <p className="text-[10px] text-gray-400 font-medium mt-0.5">Montant total encaissé par jour ({chartRange} derniers jours)</p>
-                            </div>
                         </div>
-                        <div className="h-36">
-                            <BarChart
-                                data={computedChartData.resto}
-                                labels={computedChartData.dates.map(d => dayLabel(d))}
-                                color="#10B981"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Alerts / Insights */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-[#1E293B] border border-amber-500/20 rounded-2xl p-4">
-                            <div className="flex items-center gap-2 mb-2">
-                                <AlertTriangle className="w-4 h-4 text-amber-500" />
-                                <span className="text-xs font-bold text-amber-400 uppercase tracking-wide">Commandes en Attente</span>
-                            </div>
-                            <div className="text-3xl font-black text-white">{stats.pendingOrdersCount}</div>
-                            <div className="text-[10px] text-gray-500 font-bold mt-1">Nécessitent une intervention cuisine</div>
-                        </div>
-
-                        <div className="bg-[#1E293B] border border-green-500/20 rounded-2xl p-4">
-                            <div className="flex items-center gap-2 mb-2">
-                                <CheckCircle className="w-4 h-4 text-green-500" />
-                                <span className="text-xs font-bold text-green-400 uppercase tracking-wide">Complétées Aujourd'hui</span>
-                            </div>
-                            <div className="text-3xl font-black text-white">{stats.completedOrdersToday}</div>
-                            <div className="text-[10px] text-gray-500 font-bold mt-1">Commandes encaissées ce jour</div>
-                        </div>
-
-                        <div className="bg-[#1E293B] border border-cyan-500/20 rounded-2xl p-4">
-                            <div className="flex items-center gap-2 mb-2">
-                                <Users className="w-4 h-4 text-cyan-500" />
-                                <span className="text-xs font-bold text-cyan-400 uppercase tracking-wide">Piscine Actifs</span>
-                            </div>
-                            <div className="text-3xl font-black text-white">{stats.activePoolGuests}</div>
-                            <div className="text-[10px] text-gray-500 font-bold mt-1">Personnes actuellement enregistrées</div>
-                        </div>
-                    </div>
+                    )}
                 </div>
             )}
 
-            {/* ── TAB: PINS ────────────────────────────────────────────────── */}
-            {activeSubTab === "pins" && (
-                <div className="bg-[#1E293B] border border-white/10 rounded-3xl p-6 max-w-xl mx-auto space-y-6 animate-in fade-in duration-300">
-                    <div>
-                        <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                            <Lock className="w-4 h-4 text-amber-500" />
-                            Gestion des Accès PIN
-                        </h3>
-                        <p className="text-[10px] text-gray-400 mt-1">Configurez les codes PIN à 4 chiffres pour chaque rôle</p>
+            {/* ════════════════════════════════════════════════════════════════
+                TAB: AI ADVISOR
+            ════════════════════════════════════════════════════════════════ */}
+            {activeTab === "ai" && (
+                <div className="space-y-5 animate-in fade-in duration-200">
+
+                    {/* AI Hero */}
+                    <div className="relative bg-gradient-to-br from-[#1E293B] to-[#0F1829] border border-purple-500/20 rounded-2xl p-6 overflow-hidden">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
+                        <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-600/10 rounded-full blur-2xl pointer-events-none" />
+                        <div className="relative z-10">
+                            <div className="flex items-center gap-3 mb-3">
+                                <div className="p-3 bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl shadow-lg shadow-purple-500/20">
+                                    <Bot className="w-6 h-6 text-white" />
+                                </div>
+                                <div>
+                                    <h2 className="text-lg font-black text-white">Gemini AI Business Advisor</h2>
+                                    <p className="text-[10px] text-purple-300 font-medium">Propulsé par Google Gemini 2.0 Flash</p>
+                                </div>
+                                <div className="ml-auto flex items-center gap-1.5 text-[10px] font-bold text-green-400 bg-green-500/10 border border-green-500/20 px-2.5 py-1 rounded-full">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                                    Connecté
+                                </div>
+                            </div>
+                            <p className="text-sm text-gray-400 mb-5">
+                                L'IA analyse vos données en temps réel ({fmt(stats.totalRevenue)} DH de CA, {stats.totalOrdersCount} commandes)
+                                et génère des conseils business personnalisés et actionnables.
+                            </p>
+
+                            {/* Context summary */}
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-5">
+                                {[
+                                    { label: "CA Total", value: fmt(stats.totalRevenue) + " DH" },
+                                    { label: "Commandes", value: String(stats.totalOrdersCount) },
+                                    { label: "En Attente", value: String(stats.pendingOrdersCount) },
+                                    { label: "Top Plat", value: topItems[0]?.name?.split(" ").slice(0, 2).join(" ") || "—" },
+                                ].map(({ label, value }) => (
+                                    <div key={label} className="bg-white/5 border border-white/8 rounded-xl p-2.5 text-center">
+                                        <div className="text-xs font-black text-white truncate">{value}</div>
+                                        <div className="text-[9px] text-gray-500 font-bold">{label}</div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <button
+                                onClick={fetchAI}
+                                disabled={aiLoading}
+                                className="w-full py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-black text-sm rounded-xl shadow-lg shadow-purple-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                            >
+                                {aiLoading ? (
+                                    <><RefreshCw className="w-5 h-5 animate-spin" /> Analyse en cours par Gemini...</>
+                                ) : aiCalled ? (
+                                    <><RotateCcw className="w-5 h-5" /> Régénérer les conseils</>
+                                ) : (
+                                    <><Sparkles className="w-5 h-5" /> Analyser et générer des conseils IA</>
+                                )}
+                            </button>
+                        </div>
                     </div>
 
-                    <div className="space-y-4">
-                        {[
-                            { label: "PIN Administrateur (Directeur)", value: pinAdmin, onChange: setPinAdmin, placeholder: "7777", color: "amber" },
-                            { label: "PIN Staff Réception Hôtel", value: pinHotel, onChange: setPinHotel, placeholder: "1111", color: "blue" },
-                            { label: "PIN Staff Cuisine Restaurant", value: pinKitchen, onChange: setPinKitchen, placeholder: "2222", color: "orange" },
-                            { label: "PIN Staff Piscine & Services", value: pinServices, onChange: setPinServices, placeholder: "3333", color: "cyan" },
-                            { label: "PIN Staff Caisse (Scanner)", value: pinCaisse, onChange: setPinCaisse, placeholder: "4444", color: "green" },
-                        ].map(({ label, value, onChange, placeholder }) => (
-                            <div key={label} className="space-y-1.5">
-                                <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">{label}</label>
-                                <input
-                                    type="text"
-                                    maxLength={4}
-                                    value={value}
-                                    onChange={e => onChange(e.target.value.replace(/[^0-9]/g, ""))}
-                                    className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white font-mono font-bold text-lg outline-none focus:border-amber-500/50 tracking-[0.5em] text-center"
-                                    placeholder={placeholder}
-                                />
+                    {/* Error */}
+                    {aiError && (
+                        <div className="bg-red-500/10 border border-red-500/20 rounded-2xl p-4 text-sm text-red-400 font-bold flex items-center gap-2">
+                            <AlertTriangle className="w-4 h-4 shrink-0" />
+                            {aiError}
+                        </div>
+                    )}
+
+                    {/* AI Summary */}
+                    {aiSummary && (
+                        <div className="bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-2xl p-4 flex items-start gap-3">
+                            <Zap className="w-5 h-5 text-purple-400 shrink-0 mt-0.5" />
+                            <div>
+                                <div className="text-[10px] font-black text-purple-300 uppercase tracking-wider mb-1">Résumé Global</div>
+                                <p className="text-sm font-bold text-white">{aiSummary}</p>
                             </div>
-                        ))}
+                        </div>
+                    )}
+
+                    {/* Insights Grid */}
+                    {aiInsights.length > 0 && (
+                        <div>
+                            <h3 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-2">
+                                <Bot className="w-3.5 h-3.5" />
+                                {aiInsights.length} Conseils Personnalisés
+                            </h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                {aiInsights.map((ins, i) => <InsightCard key={i} insight={ins} delay={i * 100} />)}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Empty state */}
+                    {!aiLoading && !aiCalled && (
+                        <div className="text-center py-12 text-gray-600">
+                            <Bot className="w-12 h-12 mx-auto mb-3 text-gray-700" />
+                            <p className="text-sm font-bold">Cliquez sur le bouton pour lancer l'analyse IA</p>
+                            <p className="text-xs text-gray-700 mt-1">Gemini analysera vos données en temps réel</p>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* ════════════════════════════════════════════════════════════════
+                TAB: PINS
+            ════════════════════════════════════════════════════════════════ */}
+            {activeTab === "pins" && (
+                <div className="animate-in fade-in duration-200 max-w-lg mx-auto">
+                    <div className="bg-[#1E293B]/80 border border-white/8 rounded-2xl p-6 space-y-5">
+                        <div className="flex items-center justify-between">
+                            <div>
+                                <h2 className="text-sm font-black text-white flex items-center gap-2"><Lock className="w-4 h-4 text-amber-400" /> Codes d'Accès PIN</h2>
+                                <p className="text-[10px] text-gray-500 mt-0.5">4 chiffres par rôle — modifiez et sauvegardez</p>
+                            </div>
+                            <button onClick={() => setShowPins(!showPins)} className="p-2 rounded-xl bg-white/5 border border-white/8 text-gray-500 hover:text-white transition-all">
+                                {showPins ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                        </div>
+
+                        <div className="space-y-3">
+                            {[
+                                { key: "admin", label: "🔴 Administrateur", placeholder: "7777", color: "focus:border-red-500/50" },
+                                { key: "hotel", label: "🟡 Réception Hôtel", placeholder: "1111", color: "focus:border-amber-500/50" },
+                                { key: "kitchen", label: "🟠 Cuisine Restaurant", placeholder: "2222", color: "focus:border-orange-500/50" },
+                                { key: "services", label: "🔵 Piscine & Services", placeholder: "3333", color: "focus:border-cyan-500/50" },
+                                { key: "caisse", label: "🟢 Caisse (Scanner)", placeholder: "4444", color: "focus:border-green-500/50" },
+                            ].map(({ key, label, placeholder, color }) => (
+                                <div key={key} className="space-y-1">
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">{label}</label>
+                                    <input
+                                        type={showPins ? "text" : "password"}
+                                        maxLength={4}
+                                        value={pins[key as keyof typeof pins]}
+                                        onChange={e => setPins(p => ({ ...p, [key]: e.target.value.replace(/[^0-9]/g, "") }))}
+                                        className={`w-full bg-[#0F172A] border border-white/8 rounded-xl p-3.5 text-white font-mono font-black text-xl outline-none ${color} tracking-[0.6em] text-center transition-colors`}
+                                        placeholder={showPins ? placeholder : "••••"}
+                                    />
+                                </div>
+                            ))}
+                        </div>
 
                         <button
-                            onClick={handleSavePins}
-                            className={`w-full py-4 font-black text-sm rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 mt-4 ${
-                                pinSaved
-                                    ? "bg-green-500 text-white shadow-green-500/10"
-                                    : "bg-amber-500 hover:bg-amber-600 text-black shadow-amber-500/10"
-                            }`}
+                            onClick={savePins}
+                            className={`w-full py-4 font-black text-sm rounded-xl transition-all flex items-center justify-center gap-2 ${pinSaved ? "bg-green-500 text-white" : "bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:from-amber-400"}`}
                         >
-                            {pinSaved ? (
-                                <><CheckCircle className="w-4 h-4" /> Codes sauvegardés avec succès !</>
-                            ) : (
-                                <><Key className="w-4 h-4" /> Sauvegarder les codes d'accès</>
-                            )}
+                            {pinSaved ? <><CheckCircle className="w-4 h-4" /> Codes sauvegardés !</> : <><Key className="w-4 h-4" /> Sauvegarder les codes</>}
                         </button>
                     </div>
                 </div>
