@@ -411,34 +411,31 @@ function ProfileContent() {
 
                 foodItems.forEach((item: Record<string, unknown>) => {
                     const itemName = item.name;
-                    const itemDetails: string[] = [];
+                    const itemQuantity = item.quantity || 1;
+                    let detailLine = `x${itemQuantity} ${itemName}`;
 
-                    // a) Parse Selections/Options (Radio, Checkbox)
-                    const sels = item.customizations || item.selections; // Handle both key names just in case
-                    if (sels) {
-                        // Filter out empty values and special keys like 'special_instructions'
-                        const visibleOpts = Object.entries(sels as Record<string, unknown>)
-                            .filter(([k, v]) => k !== 'special_instructions' && v && (Array.isArray(v) ? v.length > 0 : true))
-                            .map(([, v]) => {
-                                if (Array.isArray(v)) return v.join(', ');
-                                return `${v}`;
-                            });
-                        if (visibleOpts.length > 0) itemDetails.push(...visibleOpts);
-
-                        // b) Parse Item-Specific Note (e.g. "Sans Oignon")
-                        if ((sels as Record<string, unknown>).special_instructions) {
-                            itemDetails.push(`Note: ${(sels as Record<string, unknown>).special_instructions}`);
-                        }
-                    }
-
-                    if (itemDetails.length > 0) {
-                        fullDetailsArray.push(`${itemName} (${itemDetails.join(', ')})`);
+                    if (item.meta) {
+                        detailLine += ` (${item.meta})`;
                     } else {
-                        // Only show name if it's not redundant or if it's the only info
-                        if (foodItems.length > 1 || itemName !== mainName || fullDetailsArray.length === 0) {
-                            fullDetailsArray.push(itemName as string);
+                        const sels = item.customizations || item.selections;
+                        if (sels) {
+                            const itemDetails: string[] = [];
+                            const visibleOpts = Object.entries(sels as Record<string, unknown>)
+                                .filter(([k, v]) => k !== 'special_instructions' && v && (Array.isArray(v) ? v.length > 0 : true))
+                                .map(([, v]) => {
+                                    if (Array.isArray(v)) return v.join(', ');
+                                    return `${v}`;
+                                });
+                            if (visibleOpts.length > 0) itemDetails.push(...visibleOpts);
+                            if ((sels as Record<string, unknown>).special_instructions) {
+                                itemDetails.push(`Note: ${(sels as Record<string, unknown>).special_instructions}`);
+                            }
+                            if (itemDetails.length > 0) {
+                                detailLine += ` (${itemDetails.join(', ')})`;
+                            }
                         }
                     }
+                    fullDetailsArray.push(detailLine);
                 });
 
                 // c) Parse Global Order Note
@@ -453,11 +450,15 @@ function ProfileContent() {
                 let contextIcon = null;
 
                 if (metaItem) {
-                    if (metaItem.type === 'dine_in') {
-                        contextInfo = `Table ${metaItem.table_number}`;
+                    const locType = metaItem.location_type || metaItem.type;
+                    if (locType === 'on_site' || locType === 'dine_in') {
+                        const locDetail = metaItem.location_detail || metaItem.table_number;
+                        const locName = metaItem.on_site_location || 'table';
+                        const label = locName === 'table' ? 'Table' : locName === 'pool' ? 'Piscine Place' : 'Chambre';
+                        contextInfo = `${label} N° ${locDetail || '?'}`;
                         contextIcon = 'table';
-                    } else if (metaItem.type === 'takeout') {
-                        contextInfo = `Arrivée ${metaItem.arrival_time}`;
+                    } else if (locType === 'on_way' || locType === 'takeout') {
+                        contextInfo = `Arrivée ${metaItem.arrival_time || 'Bientôt'}`;
                         contextIcon = 'clock';
                     }
                 }
@@ -1099,7 +1100,7 @@ function ProfileContent() {
                                                     {getStatusChip(order.status)}
                                                 </div>
 
-                                                <p className="text-gray-400 text-xs font-medium line-clamp-1">
+                                                <p className="text-gray-400 text-xs font-medium whitespace-normal leading-relaxed mt-0.5">
                                                     {order.details}
                                                 </p>
 
@@ -1208,6 +1209,65 @@ function ProfileContent() {
                                         <div className="absolute top-3 right-3 w-4 h-4 border-t-2 border-r-2 border-black/20 rounded-tr-lg" />
                                         <div className="absolute bottom-3 left-3 w-4 h-4 border-b-2 border-l-2 border-black/20 rounded-bl-lg" />
                                         <div className="absolute bottom-3 right-3 w-4 h-4 border-b-2 border-r-2 border-black/20 rounded-br-lg" />
+                                    </div>
+
+                                    {/* Order Details Breakdown */}
+                                    <div className="mb-6 max-h-48 overflow-y-auto text-left bg-black/30 p-4 rounded-2xl border border-white/5 space-y-3 custom-scrollbar text-xs relative z-10">
+                                        <div className="text-[10px] text-gray-500 uppercase font-black tracking-wider border-b border-white/5 pb-1.5 flex justify-between items-center">
+                                            <span>Détails du Service</span>
+                                            <span className="text-amber-500 font-black">{selectedOrder.type}</span>
+                                        </div>
+                                        {selectedOrder.type === 'Restaurant' ? (
+                                            (() => {
+                                                let itemsList = [];
+                                                try {
+                                                    itemsList = typeof selectedOrder.rawItems === 'string' ? JSON.parse(selectedOrder.rawItems) : selectedOrder.rawItems;
+                                                } catch {
+                                                    itemsList = [];
+                                                }
+                                                const foodItems = Array.isArray(itemsList) ? itemsList.filter((i: any) => !i.is_meta) : [];
+                                                const metaItem = Array.isArray(itemsList) ? itemsList.find((i: any) => i.is_meta) : null;
+                                                return (
+                                                    <div className="space-y-2.5">
+                                                        {foodItems.map((item: any, idx: number) => (
+                                                            <div key={idx} className="space-y-0.5">
+                                                                <div className="font-bold text-white flex justify-between">
+                                                                    <span>x{item.quantity || 1} {item.name}</span>
+                                                                    <span className="text-amber-500 font-bold">{(item.price || item.basePrice || 0) * (item.quantity || 1)} DH</span>
+                                                                </div>
+                                                                {item.meta && <div className="text-[10px] text-gray-400 leading-normal">{item.meta}</div>}
+                                                            </div>
+                                                        ))}
+                                                        {metaItem && (
+                                                            <div className="pt-2 border-t border-white/5 flex flex-col gap-1 text-[10px] text-gray-400 font-semibold">
+                                                                <div>Mode: <span className="text-white">{metaItem.location_type === 'on_way' ? 'À emporter' : 'Sur Place'}</span></div>
+                                                                {metaItem.location_type === 'on_way' ? (
+                                                                    <div>Heure d&apos;arrivée: <span className="text-white">{metaItem.arrival_time || 'Bientôt'}</span></div>
+                                                                ) : (
+                                                                    <div>
+                                                                        Emplacement: <span className="text-white">
+                                                                            {metaItem.on_site_location === 'pool' ? 'Piscine' : metaItem.on_site_location === 'room' ? 'Chambre' : 'Table'} N° {metaItem.location_detail || '?'}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                                {metaItem.customer_notes && <div className="italic text-orange-400/80 mt-1">Note: {metaItem.customer_notes}</div>}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })()
+                                        ) : (
+                                            <div className="space-y-2">
+                                                <div className="font-bold text-white leading-snug">{selectedOrder.title}</div>
+                                                <div className="text-gray-400 leading-relaxed text-[11px]">{selectedOrder.details}</div>
+                                                {selectedOrder.amount && (
+                                                    <div className="pt-2 border-t border-white/5 flex justify-between text-xs font-black text-white">
+                                                        <span>Montant</span>
+                                                        <span className="text-amber-500">{selectedOrder.amount} DH</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
 
                                     <div className="bg-black/40 p-5 rounded-2xl border border-white/5 backdrop-blur-md relative z-10">

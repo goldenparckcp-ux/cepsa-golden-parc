@@ -400,7 +400,13 @@ export default function StaffRestaurantOrdersPage() {
                                                 <div className="text-left">
                                                     <span className="text-[9px] font-bold text-gray-500 block uppercase">Destination</span>
                                                     <span className="text-xs font-bold text-white leading-tight">
-                                                        {isEnRoute ? "En Route (À emporter)" : `Sur Place (${meta.on_site_location || "table"})`}
+                                                        {isEnRoute 
+                                                            ? "En Route (À emporter)" 
+                                                            : meta.on_site_location === "pool" 
+                                                                ? "Sur Place (Piscine)" 
+                                                                : meta.on_site_location === "room" 
+                                                                    ? "Sur Place (Chambre)" 
+                                                                    : "Sur Place (Table)"}
                                                     </span>
                                                 </div>
                                             </div>
@@ -408,7 +414,13 @@ export default function StaffRestaurantOrdersPage() {
                                             <div className="text-right">
                                                 <span className="text-[9px] font-bold text-gray-500 block uppercase">Détail</span>
                                                 <span className={`text-xs font-black ${isEnRoute ? "text-amber-500" : "text-blue-400"}`}>
-                                                    {isEnRoute ? (meta.arrival_time || "Bientôt") : (meta.location_detail || "N° ?")}
+                                                    {isEnRoute 
+                                                        ? (meta.arrival_time || "Bientôt") 
+                                                        : meta.on_site_location === "pool"
+                                                            ? `Place N° ${meta.location_detail || '?'}`
+                                                            : meta.on_site_location === "room"
+                                                                ? `Chambre N° ${meta.location_detail || '?'}`
+                                                                : `Table N° ${meta.location_detail || '?'}`}
                                                 </span>
                                             </div>
                                         </div>

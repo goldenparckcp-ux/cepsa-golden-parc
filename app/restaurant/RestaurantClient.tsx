@@ -120,7 +120,7 @@ function CartDrawerContent({
     onSuccess: (orderNum: string) => void;
 }) {
     const { t, language } = useTranslation();
-    const { items, removeItem, clear, total } = useCart();
+    const { items, removeItem, clear, total, setQuantity } = useCart();
     const router = useRouter();
 
     const [locationType, setLocationType] = useState<'on_site' | 'on_way'>('on_site');
@@ -267,23 +267,36 @@ function CartDrawerContent({
                         <div className="w-20 h-20 rounded-xl bg-black/40 overflow-hidden shrink-0 relative">
                             {item.image && <Image src={item.image} alt={item.name} fill className="object-cover" />}
                         </div>
-                        <div className="flex-1 min-w-0 flex flex-col justify-center">
-                            <div className="font-bold text-white text-lg truncate">{language === "ar" ? (item.name_ar || item.name) : item.name}</div>
-                            <p className="text-xs text-gray-400 line-clamp-1 my-1">{item.meta}</p>
-                            <div className="text-amber-500 font-black text-lg mt-1">
-                                {item.quantity && item.quantity > 1 ? (
-                                    <span className="flex items-center gap-1.5">
-                                        <span className="text-gray-400 text-sm font-normal">{item.quantity} x</span>
-                                        <span>{formatDh(item.price!)}</span>
-                                        <span className="text-white text-sm font-normal">({formatDh(item.price! * item.quantity)})</span>
-                                    </span>
-                                ) : (
-                                    formatDh(item.price! * 1)
-                                )}
+                        <div className="flex-1 min-w-0 flex flex-col justify-between pr-6">
+                            <div>
+                                <div className="font-bold text-white text-base truncate">{language === "ar" ? (item.name_ar || item.name) : item.name}</div>
+                                {item.meta && <p className="text-[11px] text-gray-400 line-clamp-1 mt-0.5">{item.meta}</p>}
+                            </div>
+                            <div className="flex justify-between items-center mt-2 flex-wrap gap-2">
+                                <div className="text-amber-500 font-black text-base">
+                                    {formatDh(item.price! * (item.quantity || 1))}
+                                </div>
+                                <div className="flex items-center gap-2 bg-[#1E293B] p-0.5 rounded-lg border border-white/5">
+                                    <button
+                                        type="button"
+                                        onClick={() => setQuantity(item.id!, Math.max(0, (item.quantity || 1) - 1))}
+                                        className="w-7 h-7 rounded bg-white/5 flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all text-white font-black text-sm"
+                                    >
+                                        -
+                                    </button>
+                                    <span className="font-black text-sm text-white w-5 text-center">{item.quantity || 1}</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setQuantity(item.id!, (item.quantity || 1) + 1)}
+                                        className="w-7 h-7 rounded bg-red-600 flex items-center justify-center hover:bg-red-500 active:scale-95 transition-all text-white font-black text-sm shadow-md"
+                                    >
+                                        +
+                                    </button>
+                                </div>
                             </div>
                         </div>
                         <button onClick={() => removeItem(item.id!)} className="absolute top-4 right-4 text-red-500 opacity-60 hover:opacity-100 transition-opacity">
-                            <Trash2 className="w-5 h-5" />
+                            <Trash2 className="w-4 h-4" />
                         </button>
                     </div>
                 ))}
