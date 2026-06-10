@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useCart } from "@/lib/state/CartContext";
 import { useUI } from "@/lib/state/UIContext";
 import { X, Trash2, ShoppingBag, Plus, Minus, ArrowRight, CheckCircle, Loader2, Utensils, Car, Clock, MapPin, CreditCard, Banknote, Lock } from "lucide-react";
@@ -25,12 +25,44 @@ export function CartDrawer() {
     // Deposit Mode (Arboune)
     const [isDepositMode, setIsDepositMode] = useState(false);
 
+    // QR scan state
+    const [isQrScan, setIsQrScan] = useState(false);
+
+    useEffect(() => {
+        if (typeof window !== "undefined" && isCartOpen) {
+            const scanLocRaw = sessionStorage.getItem("scan_location");
+            const scanPayment = sessionStorage.getItem("scan_payment");
+
+            if (scanLocRaw) {
+                try {
+                    const scanLoc = JSON.parse(scanLocRaw);
+                    setIsQrScan(true);
+                    if (scanLoc.type === "restaurant") {
+                        setServiceType("dine_in");
+                        setTableNumber(scanLoc.loc);
+                    }
+                } catch (e) {
+                    console.error("Error parsing scan_location", e);
+                }
+            }
+
+            if (scanPayment) {
+                setPaymentMethod(scanPayment === "online" ? "card" : "cash");
+            }
+        }
+    }, [isCartOpen]);
+
     if (!isCartOpen) return null;
 
     const handleCheckout = () => {
         // Validation
         if (serviceType === 'dine_in' && !tableNumber) {
             alert("Please enter your table number");
+            return;
+        }
+
+        if (isQrScan) {
+            submitOrder("QR_CUSTOMER");
             return;
         }
 
