@@ -44,8 +44,7 @@ ${topPlats}
 COMMANDES RECENTES:
 ${recentList}
 
-Génère 4 conseils business courts, précis et actionnables basés sur ces chiffres réels. Réponds UNIQUEMENT avec ce JSON (pas de markdown, pas d'explication):
-{"insights":[{"type":"revenue","icon":"💰","title":"Titre","message":"Conseil court","priority":"high"},{"type":"opportunity","icon":"🚀","title":"Titre","message":"Conseil court","priority":"medium"},{"type":"attention","icon":"⚠️","title":"Titre","message":"Conseil court","priority":"high"},{"type":"revenue","icon":"📈","title":"Titre","message":"Conseil court","priority":"medium"}],"summary":"Résumé en une phrase"}`;
+Génère 4 conseils business courts, précis et actionnables basés sur ces chiffres réels. Choisis des icônes emojis appropriées pour chaque conseil.`;
 
     let geminiRes: Response;
     try {
@@ -58,6 +57,28 @@ Génère 4 conseils business courts, précis et actionnables basés sur ces chif
                     contents: [{ parts: [{ text: prompt }] }],
                     generationConfig: {
                         temperature: 0.6,
+                        responseMimeType: "application/json",
+                        responseSchema: {
+                            type: "OBJECT",
+                            properties: {
+                                insights: {
+                                    type: "ARRAY",
+                                    items: {
+                                        type: "OBJECT",
+                                        properties: {
+                                            type: { type: "STRING", enum: ["revenue", "opportunity", "attention", "warning"] },
+                                            icon: { type: "STRING" },
+                                            title: { type: "STRING" },
+                                            message: { type: "STRING" },
+                                            priority: { type: "STRING", enum: ["high", "medium", "low"] }
+                                        },
+                                        required: ["type", "icon", "title", "message", "priority"]
+                                    }
+                                },
+                                summary: { type: "STRING" }
+                            },
+                            required: ["insights", "summary"]
+                        }
                     }
                 }),
                 signal: AbortSignal.timeout(20000)
