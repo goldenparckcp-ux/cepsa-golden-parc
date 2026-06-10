@@ -142,7 +142,7 @@ export default function AdminPoolPage() {
                 <div className="bg-gradient-to-br from-cyan-600/10 to-[#1E293B] border border-cyan-500/20 rounded-3xl p-5 flex items-center justify-between">
                     <div className="space-y-1">
                         <span className="text-[10px] text-cyan-400 font-black uppercase tracking-widest block">Baigneurs Actuels</span>
-                        <h3 className="text-3xl font-black text-white">{activeBathersCount} Pax</h3>
+                        <h3 className="text-3xl font-black text-white">{activeBathersCount} Personnes</h3>
                         <p className="text-[10px] text-gray-400">Présents actuellement dans la zone de baignade</p>
                     </div>
                     <div className="p-4 bg-cyan-500/10 rounded-2xl text-cyan-400">
@@ -216,7 +216,7 @@ export default function AdminPoolPage() {
                                                 </div>
                                                 <div className="flex justify-between items-center pt-2 border-t border-white/5">
                                                     <span className="text-cyan-400 font-black">Total Visiteurs</span>
-                                                    <span className="text-cyan-400 font-black text-sm">{totalPax} Pax</span>
+                                                    <span className="text-cyan-400 font-black text-sm">{totalPax} Personnes</span>
                                                 </div>
                                             </div>
 
