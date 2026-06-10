@@ -986,21 +986,42 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                         
                         <div className="w-72 h-72 rounded-3xl overflow-hidden border-4 border-blue-500/50 shadow-2xl relative">
                             <Scanner
-                                onScan={(result) => {
+                                onScan={async (result) => {
                                     if (result && result.length > 0) {
                                         const text = result[0].rawValue;
                                         // Attempt to parse QR code
-                                        // Expected URL formats: /restaurant?table=5 or /restaurant?pool=3
+                                        // Expected URL formats: /scan?t=TOKEN or /restaurant?table=5 or /restaurant?pool=3
                                         try {
                                             const url = new URL(text);
-                                            const table = url.searchParams.get('table');
-                                            const pool = url.searchParams.get('pool');
-                                            if (table) {
+                                            const tokenParam = url.searchParams.get('t');
+                                            const tableParam = url.searchParams.get('table');
+                                            const poolParam = url.searchParams.get('pool');
+                                            if (tokenParam) {
+                                                const { data } = await supabase
+                                                    .from('qr_locations')
+                                                    .select('type, label')
+                                                    .eq('token', tokenParam)
+                                                    .eq('is_active', true)
+                                                    .maybeSingle();
+                                                if (data) {
+                                                    if (data.type === 'restaurant') {
+                                                        setOnSiteLocation('table');
+                                                    } else if (data.type === 'pool') {
+                                                        setOnSiteLocation('pool');
+                                                    } else if (data.type === 'hotel') {
+                                                        setOnSiteLocation('room');
+                                                    }
+                                                    const numOnly = data.label.replace(/\D/g, '');
+                                                    setLocationDetail(numOnly || data.label);
+                                                }
+                                            } else if (tableParam) {
                                                 setOnSiteLocation('table');
-                                                setLocationDetail(table);
-                                            } else if (pool) {
+                                                setLocationDetail(tableParam);
+                                            } else if (poolParam) {
                                                 setOnSiteLocation('pool');
-                                                setLocationDetail(pool);
+                                                setLocationDetail(poolParam);
+                                            } else {
+                                                setLocationDetail(text);
                                             }
                                         } catch (e) {
                                             // Fallback: Use raw scanned text if not a valid URL
