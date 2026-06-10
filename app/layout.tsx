@@ -1,14 +1,10 @@
 import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
-import BottomTabs from "@/components/BottomTabs";
-import DesktopNav from "@/components/DesktopNav";
-import MobileHeader from "@/components/MobileHeader";
+import ClientShell from "@/components/ClientShell";
 import { CartProvider } from "@/lib/state/CartContext";
 import { UIProvider } from "@/lib/state/UIContext";
 import { AuthProvider } from "@/lib/state/AuthProvider";
 import { LanguageProvider } from "@/lib/state/LanguageContext";
-import { GoogleTranslate } from "@/components/GoogleTranslate";
-import { FuelPriceWidget } from "@/components/ui/FuelPriceWidget";
 import type { Metadata } from "next";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -32,12 +28,9 @@ export default function RootLayout({
           <AuthProvider>
             <UIProvider>
               <CartProvider>
-                <DesktopNav />
-                <MobileHeader />
-                <FuelPriceWidget />
-                <GoogleTranslate />
+                {/* ClientShell: nav + tabs + widgets — all lazy, client-only */}
+                <ClientShell />
                 {children}
-                <BottomTabs />
               </CartProvider>
             </UIProvider>
           </AuthProvider>

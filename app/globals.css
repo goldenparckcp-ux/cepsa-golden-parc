@@ -28,6 +28,18 @@ body {
   }
 }
 
+/* FuelPriceWidget drop-in animation */
+@keyframes slideDownFuel {
+  from {
+    transform: translateY(-60px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -146,3 +158,12 @@ iframe.goog-te-banner-frame {
 .VIpgJd-ZVi9od-ORHb-OEVmcd {
   display: none !important;
 }
+
+/* Scrollbar hide utility (used in carousels) */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

@@ -1,12 +1,15 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
-import { Car, Utensils, BedDouble, Waves, ChevronRight, Star, MapPin, Phone, Search, Wrench, ShoppingBag, Wind, Zap, Clock, Navigation, PhoneCall, Droplets } from "lucide-react";
+import { Car, Utensils, BedDouble, Waves, ChevronRight, Star, MapPin, Phone, Wrench, Wind, Zap, Clock, Navigation, PhoneCall } from "lucide-react";
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useTranslation } from '@/lib/state/LanguageContext';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import { Chatbot } from '@/components/ui/Chatbot';
+import dynamic from 'next/dynamic';
+
+// Lazy load Chatbot - heavy component, not needed immediately
+const Chatbot = dynamic(() => import('@/components/ui/Chatbot').then(m => ({ default: m.Chatbot })), { ssr: false, loading: () => null });
 
 // Coordonnées GPS de Cepsa Golden Parc
 const STATION_COORDS = {
@@ -87,6 +90,7 @@ export default function Home() {
             alt="Golden Parc Station"
             fill
             priority
+            sizes="100vw"
             className="object-cover opacity-50"
           />
         </motion.div>
@@ -187,7 +191,7 @@ export default function Home() {
               <h3 className="text-white font-black text-2xl md:text-3xl leading-tight mb-2">{t('home.promo1.title')}</h3>
               <p className="text-white/80 text-xs md:text-sm font-medium">{t('home.promo1.desc')}</p>
             </div>
-            <Image src="/image/cepsa-hero.jpg" alt="Promo" fill className="object-cover opacity-20 group-hover:opacity-30 transition-opacity mix-blend-overlay" />
+            <Image src="/image/cepsa-hero.jpg" alt="Promo" fill sizes="(max-width: 768px) 300px, 450px" className="object-cover opacity-20 group-hover:opacity-30 transition-opacity mix-blend-overlay" />
             <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-white/10 rounded-full blur-3xl" />
           </motion.div>
           
@@ -198,7 +202,7 @@ export default function Home() {
               <h3 className="text-white font-black text-2xl md:text-3xl leading-tight mb-2">{t('home.promo2.title')}</h3>
               <p className="text-white/90 text-xs md:text-sm font-medium">{t('home.promo2.desc')}</p>
             </div>
-            <Image src="/image/ftor complet.jpeg" alt="Ftour" fill className="object-cover opacity-30 group-hover:opacity-40 transition-opacity mix-blend-overlay" />
+            <Image src="/image/ftor complet.jpeg" alt="Ftour" fill sizes="(max-width: 768px) 300px, 450px" className="object-cover opacity-30 group-hover:opacity-40 transition-opacity mix-blend-overlay" />
             <div className="absolute -top-10 -right-10 w-48 h-48 bg-white/20 rounded-full blur-3xl" />
           </motion.div>
         </motion.div>
@@ -267,7 +271,8 @@ export default function Home() {
                   <Image 
                     src={service.image} 
                     alt={service.title} 
-                    fill 
+                    fill
+                    sizes="(max-width: 768px) 50vw, (max-width: 1024px) 33vw, 16vw"
                     className="object-cover opacity-20 mix-blend-luminosity group-hover:opacity-30 transition-all duration-500 group-hover:scale-110"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#070A13]/90 to-transparent" />
@@ -309,7 +314,8 @@ export default function Home() {
               <Image 
                 src="https://lh3.googleusercontent.com/gps-cs-s/APNQkAFdEGJrDvqy2Rsub4z3eT3VI4mbfz9dRLmE9bFoYDlGLmDWZ1RAWRIsARJJjIuHfI5wClt5JwwbVVeKIJeOpDGYKCVf8FMcaISw_OhywoLMmTs13UqBEnYqu8x28zDB_XL31LCJeK931Eht=s1600" 
                 alt="Map Background" 
-                fill 
+                fill
+                sizes="(max-width: 1024px) 100vw, 66vw"
                 className="object-cover opacity-40 group-hover:scale-105 transition-transform duration-1000"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#070A13] via-[#070A13]/50 to-transparent" />
