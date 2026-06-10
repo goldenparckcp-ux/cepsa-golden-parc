@@ -153,12 +153,13 @@ export async function POST(req: Request) {
       if (error) throw error;
     }
 
-    // 5) Hotel bookings (minimal)
+    // 5) Hotel reservations (minimal)
     for (const it of hotelItems) {
-      const { error } = await supabase.from('hotel_bookings').insert({
+      const { error } = await supabase.from('hotel_reservations').insert({
         customer_phone: body.customer_phone,
         total_price: it.price ?? it.totalPrice ?? 0,
-        status: 'active',
+        room_type: it.name || 'standard',
+        status: 'pending',
       });
       if (error) throw error;
     }

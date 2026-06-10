@@ -249,8 +249,8 @@ export default function AdminPoolAndServicesPage() {
                 </button>
             </div>
 
-            {/* TWO MAIN METRICS CARDS */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* MAIN METRIC CARD */}
+            <div className="max-w-md">
                 {/* 1. Pool Metrics */}
                 <div className="bg-gradient-to-br from-cyan-600/10 to-[#1E293B] border border-cyan-500/20 rounded-3xl p-5 flex items-center justify-between">
                     <div className="space-y-1">
@@ -262,44 +262,6 @@ export default function AdminPoolAndServicesPage() {
                         <Sun className="w-8 h-8 animate-spin-slow" />
                     </div>
                 </div>
-
-                {/* 2. Services Metrics */}
-                <div className="bg-gradient-to-br from-emerald-600/10 to-[#1E293B] border border-emerald-500/20 rounded-3xl p-5 flex items-center justify-between">
-                    <div className="space-y-1">
-                        <span className="text-[10px] text-emerald-400 font-black uppercase tracking-widest block">Travaux en cours</span>
-                        <h3 className="text-3xl font-black text-white">{activeWashesCount} Véhicules</h3>
-                        <p className="text-[10px] text-gray-400">Véhicules programmés ou en station de lavage</p>
-                    </div>
-                    <div className="p-4 bg-emerald-500/10 rounded-2xl text-emerald-400">
-                        <Car className="w-8 h-8" />
-                    </div>
-                </div>
-            </div>
-
-            {/* SELECTION DROPDOWN TABS */}
-            <div className="flex bg-[#1E293B] p-1.5 rounded-2xl border border-white/10 shadow-inner max-w-md">
-                <button
-                    onClick={() => { setActiveSubTab("pool"); setSearchQuery(""); }}
-                    className={`flex-1 py-3.5 rounded-xl font-black text-sm flex items-center justify-center gap-2.5 transition-all ${
-                        activeSubTab === "pool"
-                            ? "bg-cyan-500 text-black shadow-lg shadow-cyan-500/10"
-                            : "text-gray-400 hover:text-white"
-                    }`}
-                >
-                    <Ticket className="w-4 h-4" />
-                    Validation Piscine
-                </button>
-                <button
-                    onClick={() => { setActiveSubTab("wash"); setSearchQuery(""); }}
-                    className={`flex-1 py-3.5 rounded-xl font-black text-sm flex items-center justify-center gap-2.5 transition-all ${
-                        activeSubTab === "wash"
-                            ? "bg-emerald-500 text-black shadow-lg shadow-emerald-500/10"
-                            : "text-gray-400 hover:text-white"
-                    }`}
-                >
-                    <Car className="w-4 h-4" />
-                    Suivi Station Lavage
-                </button>
             </div>
 
             {/* SEARCH INPUT */}
@@ -309,7 +271,7 @@ export default function AdminPoolAndServicesPage() {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder={activeSubTab === "pool" ? "N° de billet pool, téléphone..." : "Véhicule, N° de ticket lavage, téléphone..."}
+                    placeholder="N° de billet pool, téléphone..."
                     className="w-full bg-[#1E293B] border border-white/10 rounded-xl py-3 pl-11 pr-4 text-sm text-white placeholder-gray-400 outline-none focus:border-amber-500 transition-colors h-[46px]"
                 />
             </div>

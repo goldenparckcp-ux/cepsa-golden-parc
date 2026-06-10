@@ -365,10 +365,10 @@ export const createPoolBooking = async (bookingData: {
 
 export const getHotelBooking = async (userId: string) => {
     const { data, error } = await supabase
-        .from('hotel_bookings')
+        .from('hotel_reservations')
         .select('*')
         .eq('user_id', userId)
-        .eq('status', 'active')
+        .eq('status', 'pending')
         .single();
 
     if (error) throw error;

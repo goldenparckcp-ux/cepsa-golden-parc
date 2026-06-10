@@ -470,7 +470,7 @@ export default function AdminDashboardPage() {
                             { label: "Chiffre d'Affaires", value: fmt(stats.totalRevenue) + " DH", sub: "Cumul validé", icon: TrendingUp, color: "#10B981", spark: chartData.vals, trend: "+12%" },
                             { label: "Occupation Hôtel", value: stats.occupancyRate + "%", sub: `${Math.round(stats.occupancyRate / 10)} / 10 chambres`, icon: Bed, color: "#F59E0B", spark: null, trend: null },
                             { label: "Piscine Actifs", value: stats.activePoolGuests + " pax", sub: "Enregistrés actuellement", icon: Waves, color: "#06B6D4", spark: null, trend: null },
-                            { label: "File d'Attente", value: String(stats.pendingOrdersCount + stats.lavagesCount), sub: "Cuisine + Lavages", icon: Clock, color: "#EF4444", spark: null, trend: null },
+                            { label: "File d'Attente", value: String(stats.pendingOrdersCount), sub: "Cuisine (Resto)", icon: Clock, color: "#EF4444", spark: null, trend: null },
                         ].map(({ label, value, sub, icon: Icon, color, spark, trend }) => (
                             <div key={label} className="bg-[#1E293B]/80 border border-white/8 rounded-2xl p-4 relative overflow-hidden group hover:border-white/15 transition-all">
                                 <div className="absolute top-0 right-0 w-20 h-20 rounded-full blur-2xl pointer-events-none transition-opacity opacity-30 group-hover:opacity-60" style={{ background: color }} />

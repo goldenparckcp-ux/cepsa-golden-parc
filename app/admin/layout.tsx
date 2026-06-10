@@ -270,7 +270,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         },
         {
             href: "/admin/pool-services",
-            label: "Piscine & Services",
+            label: "Piscine",
             icon: Ticket,
             roles: ["admin"]
         },
