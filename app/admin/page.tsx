@@ -213,6 +213,10 @@ export default function AdminDashboardPage() {
     const [recentOrders, setRecentOrders] = useState<any[]>([]);
     const [hotelRooms, setHotelRooms] = useState<any[]>([]);
     const [allRestoOrders, setAllRestoOrders] = useState<any[]>([]);
+    const [allHotelReservations, setAllHotelReservations] = useState<any[]>([]);
+    const [allPoolBookings, setAllPoolBookings] = useState<any[]>([]);
+    const [allServiceBookings, setAllServiceBookings] = useState<any[]>([]);
+    const [chartCategory, setChartCategory] = useState<"total" | "restaurant" | "hotel" | "pool">("total");
 
     // AI
     const [aiInsights, setAiInsights] = useState<Insight[]>([]);
@@ -237,23 +241,54 @@ export default function AdminDashboardPage() {
         fetchData();
     }, []);
 
-    // Chart data computed from raw orders
+    // Chart data computed from raw orders and bookings across all station spaces
     const chartDays = useMemo(() => getLastNDays(chartRange), [chartRange]);
     const chartData = useMemo(() => {
         const vals = chartDays.map(() => 0);
-        allRestoOrders.forEach(o => {
-            const day = (o.updated_at || o.created_at || "").split("T")[0];
-            const idx = chartDays.indexOf(day);
-            if (idx < 0) return;
-            const total = Number(o.total_price) || Number(o.subtotal) || 0;
-            const dep = Number(o.deposit_amount) || 0;
-            let paid = 0;
-            if (o.deposit_paid) paid = (o.status === "completed" || dep >= total) ? total : dep;
-            else if (o.status === "completed") paid = total;
-            vals[idx] += paid;
-        });
+        
+        // Sum Restaurant Orders
+        if (chartCategory === "total" || chartCategory === "restaurant") {
+            allRestoOrders.forEach(o => {
+                const day = (o.updated_at || o.created_at || "").split("T")[0];
+                const idx = chartDays.indexOf(day);
+                if (idx < 0) return;
+                const total = Number(o.total_price) || Number(o.subtotal) || 0;
+                const dep = Number(o.deposit_amount) || 0;
+                let paid = 0;
+                if (o.deposit_paid) paid = (o.status === "completed" || dep >= total) ? total : dep;
+                else if (o.status === "completed") paid = total;
+                vals[idx] += paid;
+            });
+        }
+
+        // Sum Hotel Reservations
+        if (chartCategory === "total" || chartCategory === "hotel") {
+            allHotelReservations.forEach(r => {
+                const day = (r.updated_at || r.created_at || "").split("T")[0];
+                const idx = chartDays.indexOf(day);
+                if (idx < 0) return;
+                if (r.status !== "cancelled") {
+                    const p = Number(r.price) || Number(r.total_price) || 0;
+                    vals[idx] += p;
+                }
+            });
+        }
+
+        // Sum Pool Bookings
+        if (chartCategory === "total" || chartCategory === "pool") {
+            allPoolBookings.forEach(b => {
+                const day = (b.updated_at || b.created_at || "").split("T")[0];
+                const idx = chartDays.indexOf(day);
+                if (idx < 0) return;
+                if (b.status !== "cancelled") {
+                    const p = Number(b.total_price) || Number(b.total_amount) || 0;
+                    vals[idx] += p;
+                }
+            });
+        }
+
         return { vals, labels: chartDays.map(d => shortDay(d)) };
-    }, [allRestoOrders, chartDays]);
+    }, [allRestoOrders, allHotelReservations, allPoolBookings, chartDays, chartCategory]);
 
     const fetchData = useCallback(async () => {
         setLoading(true);
@@ -350,6 +385,9 @@ export default function AdminDashboardPage() {
 
             setRecentOrders(rOrders.slice(0, 6));
             setHotelRooms(hRes.slice(0, 5));
+            setAllHotelReservations(hRes);
+            setAllPoolBookings(pBook);
+            setAllServiceBookings(sBook);
         } catch (err) {
             console.error("Dashboard fetch error:", err);
         } finally {
@@ -625,21 +663,61 @@ export default function AdminDashboardPage() {
 
                     {/* Revenue Chart */}
                     <div className="bg-[#1E293B]/80 border border-white/8 rounded-2xl p-5">
-                        <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+                        <div className="flex flex-wrap items-center justify-between gap-4 mb-5">
                             <div>
                                 <h2 className="text-sm font-black text-white">Évolution des Encaissements</h2>
-                                <p className="text-[10px] text-gray-500 mt-0.5">Restaurant — paiements validés par jour</p>
+                                <p className="text-[10px] text-gray-500 mt-0.5">
+                                    {chartCategory === "total" ? "Activité Globale" : chartCategory === "restaurant" ? "Restaurant" : chartCategory === "hotel" ? "Hôtel" : "Piscine"} — paiements validés par jour
+                                </p>
                             </div>
-                            <div className="flex gap-1 bg-[#0F172A] p-1 rounded-xl border border-white/5">
-                                {([7, 14, 30] as const).map(n => (
-                                    <button key={n} onClick={() => setChartRange(n)}
-                                        className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartRange === n ? "bg-emerald-500 text-black" : "text-gray-500 hover:text-white"}`}
-                                    >{n}j</button>
-                                ))}
+                            
+                            <div className="flex flex-wrap items-center gap-3">
+                                {/* Category Switcher */}
+                                <div className="flex gap-1 bg-[#0F172A] p-1 rounded-xl border border-white/5">
+                                    {[
+                                        { id: "total", label: "Global", colorClass: "text-[#3B82F6]" },
+                                        { id: "restaurant", label: "Resto", colorClass: "text-[#F97316]" },
+                                        { id: "hotel", label: "Hôtel", colorClass: "text-[#F59E0B]" },
+                                        { id: "pool", label: "Piscine", colorClass: "text-[#06B6D4]" }
+                                    ].map(cat => (
+                                        <button
+                                            key={cat.id}
+                                            onClick={() => setChartCategory(cat.id as any)}
+                                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${
+                                                chartCategory === cat.id
+                                                    ? "bg-white/10 text-white border border-white/10"
+                                                    : "text-gray-500 hover:text-white"
+                                            }`}
+                                        >
+                                            <span className={chartCategory === cat.id ? cat.colorClass : ""}>{cat.label}</span>
+                                        </button>
+                                    ))}
+                                </div>
+
+                                {/* Range Selector */}
+                                <div className="flex gap-1 bg-[#0F172A] p-1 rounded-xl border border-white/5">
+                                    {([7, 14, 30] as const).map(n => (
+                                        <button key={n} onClick={() => setChartRange(n)}
+                                            className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartRange === n ? "bg-emerald-500 text-black" : "text-gray-500 hover:text-white"}`}
+                                        >{n}j</button>
+                                    ))}
+                                </div>
                             </div>
                         </div>
                         <div className="h-52">
-                            <LineChart data={chartData.vals} labels={chartData.labels} color="#10B981" />
+                            <LineChart
+                                data={chartData.vals}
+                                labels={chartData.labels}
+                                color={
+                                    chartCategory === "total"
+                                        ? "#3B82F6"
+                                        : chartCategory === "restaurant"
+                                        ? "#F97316"
+                                        : chartCategory === "hotel"
+                                        ? "#F59E0B"
+                                        : "#06B6D4"
+                                }
+                            />
                         </div>
                         <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-white/5">
                             {[
