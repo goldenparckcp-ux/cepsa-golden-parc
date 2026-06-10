@@ -70,19 +70,36 @@ export default function StaffCaissePage() {
         if (!order) return;
         setLoading(true);
 
+        const total = order.total_price || order.subtotal || 0;
+        const isAlreadyPaid = order.deposit_paid && (order.deposit_amount >= total);
+
         try {
+            // If it's already ready or if it's already paid and we are just completing it, we set status to completed
+            const shouldComplete = order.status === "ready" || isAlreadyPaid;
+            
+            const updates: any = {
+                deposit_paid: true,
+                deposit_amount: total,
+                updated_at: new Date().toISOString()
+            };
+
+            if (shouldComplete) {
+                updates.status = "completed";
+                updates.completed_at = new Date().toISOString();
+            }
+
             const { error } = await supabase
                 .from("restaurant_orders")
-                .update({
-                    status: "completed",
-                    completed_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
-                })
+                .update(updates)
                 .eq("id", order.id);
 
             if (error) throw error;
 
-            setMessage({ type: 'success', text: `La commande #${order.order_number} a été encaissée et validée avec succès !` });
+            const msgText = shouldComplete
+                ? `La commande #${order.order_number} a été validée et clôturée avec succès !`
+                : `Le paiement de la commande #${order.order_number} a été enregistré ! (En cours de préparation en cuisine)`;
+
+            setMessage({ type: 'success', text: msgText });
             setOrder(null);
             setSearchQuery("");
         } catch (err: any) {
@@ -275,7 +292,9 @@ export default function StaffCaissePage() {
                             className="w-full py-4.5 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 text-white font-black text-base rounded-2xl shadow-xl shadow-green-500/10 transition-all flex items-center justify-center gap-2"
                         >
                             <ShieldCheck className="w-5 h-5" />
-                            Confirmer le Règlement & Valider
+                            {order.deposit_paid && (order.deposit_amount >= (order.total_price || order.subtotal))
+                                ? "Valider la Commande (Déjà Payée)" 
+                                : "Confirmer le Règlement & Valider"}
                         </button>
                     </div>
                 )}

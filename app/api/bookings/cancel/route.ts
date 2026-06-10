@@ -58,6 +58,8 @@ async function refundPayPalCapture(captureId: string, amountUsd: number): Promis
 
 interface BookingData {
     check_in?: string;
+    check_in_at?: string;
+    check_in_time?: string;
     booking_date?: string;
     time_slot?: string;
     scheduled_date?: string;
@@ -72,9 +74,13 @@ interface BookingData {
 
 function parseScheduledTime(booking: BookingData, tableName: string): Date {
     if (tableName === 'hotel_reservations') {
-        if (booking.check_in) {
-            // Assume standard check-in at 14:00 local time
-            return new Date(`${booking.check_in}T14:00:00`);
+        const checkIn = booking.check_in || booking.check_in_at || booking.check_in_time;
+        if (checkIn) {
+            const checkInStr = String(checkIn);
+            if (checkInStr.includes('T')) {
+                return new Date(checkInStr);
+            }
+            return new Date(`${checkInStr}T14:00:00`);
         }
     } else if (tableName === 'pool_bookings') {
         if (booking.booking_date) {
@@ -153,12 +159,20 @@ export async function POST(req: Request) {
         if (diffMins > 45) {
             // --- REFUND ROUTE ---
             // 1. Cancel the booking
+            // 1. Cancel the booking
             const { error: cancelError } = await supabaseAdmin
                 .from(tableName)
                 .update({ status: 'cancelled' })
                 .eq('id', bookingId);
 
-            if (cancelError) throw cancelError;
+            if (cancelError) {
+                console.warn(`Cancel update failed on ${tableName}, doing hard delete fallback:`, cancelError.message);
+                const { error: deleteError } = await supabaseAdmin
+                    .from(tableName)
+                    .delete()
+                    .eq('id', bookingId);
+                if (deleteError) throw deleteError;
+            }
 
             let refunded = false;
             let refundAmount = 0;
@@ -229,7 +243,14 @@ export async function POST(req: Request) {
                 .update({ status: 'forfeited' })
                 .eq('id', bookingId);
 
-            if (forfeitError) throw forfeitError;
+            if (forfeitError) {
+                console.warn(`Forfeit update failed on ${tableName}, doing hard delete fallback:`, forfeitError.message);
+                const { error: deleteError } = await supabaseAdmin
+                    .from(tableName)
+                    .delete()
+                    .eq('id', bookingId);
+                if (deleteError) throw deleteError;
+            }
 
             return NextResponse.json({
                 success: true,

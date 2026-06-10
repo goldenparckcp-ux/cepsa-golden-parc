@@ -61,15 +61,21 @@ export default function StaffLoginPage() {
 
         let resolvedSession: StaffSession | null = null;
 
-        if (enteredPin === "1111") {
+        const pinAdmin = localStorage.getItem("pin_admin") || "7777";
+        const pinHotel = localStorage.getItem("pin_hotel") || "1111";
+        const pinKitchen = localStorage.getItem("pin_kitchen") || "2222";
+        const pinServices = localStorage.getItem("pin_services") || "3333";
+        const pinCaisse = localStorage.getItem("pin_caisse") || "4444";
+
+        if (enteredPin === pinHotel) {
             resolvedSession = { role: "hotel", name: "Réception Hôtel" };
-        } else if (enteredPin === "2222") {
+        } else if (enteredPin === pinKitchen) {
             resolvedSession = { role: "kitchen", name: "Chef Cuisine" };
-        } else if (enteredPin === "3333") {
+        } else if (enteredPin === pinServices) {
             resolvedSession = { role: "services", name: "Staff Piscine & Services" };
-        } else if (enteredPin === "4444") {
+        } else if (enteredPin === pinCaisse) {
             resolvedSession = { role: "caisse", name: "Caisse Principale" };
-        } else if (enteredPin === "7777") {
+        } else if (enteredPin === pinAdmin) {
             setErrorMsg("Ce code PIN est réservé à l'administrateur. Veuillez utiliser le portail Admin (/admin).");
             setPin("");
             setIsChecking(false);

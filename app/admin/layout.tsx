@@ -112,9 +112,15 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
             // 2. Double-Safety Hardcoded fallbacks (Super Robust!)
             let resolvedSession: StaffSession | null = null;
-            if (enteredPin === "7777") {
+            const pinAdmin = localStorage.getItem("pin_admin") || "7777";
+            const pinHotel = localStorage.getItem("pin_hotel") || "1111";
+            const pinKitchen = localStorage.getItem("pin_kitchen") || "2222";
+            const pinServices = localStorage.getItem("pin_services") || "3333";
+            const pinCaisse = localStorage.getItem("pin_caisse") || "4444";
+
+            if (enteredPin === pinAdmin) {
                 resolvedSession = { role: "admin", name: "Directeur" };
-            } else if (["1111", "2222", "3333"].includes(enteredPin)) {
+            } else if ([pinHotel, pinKitchen, pinServices, pinCaisse].includes(enteredPin)) {
                 setErrorMsg("Accès Admin réservé. Veuillez utiliser le portail Staff (/staff) pour vous connecter.");
                 setPin("");
                 setIsChecking(false);

@@ -229,6 +229,24 @@ export default function AdminRestaurantOrdersPage() {
                         const { foodItems, meta } = parseOrder(order.items);
                         const isEnRoute = meta.location_type === "on_way";
 
+                        const totalVal = Number(order.total_price) || Number(order.subtotal) || 0;
+                        const isPaidFull = order.deposit_paid && (Number(order.deposit_amount) >= totalVal);
+                        const isPaidDeposit = order.deposit_paid && !isPaidFull;
+
+                        const paymentBadge = isPaidFull ? (
+                            <span className="px-2 py-0.5 rounded-full text-[9px] uppercase font-black tracking-wider bg-green-500/20 text-green-400 border border-green-500/30">
+                                💰 Payé
+                            </span>
+                        ) : isPaidDeposit ? (
+                            <span className="px-2 py-0.5 rounded-full text-[9px] uppercase font-black tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                                💰 Acompte ({order.deposit_amount} DH)
+                            </span>
+                        ) : (
+                            <span className="px-2 py-0.5 rounded-full text-[9px] uppercase font-black tracking-wider bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                                🪙 À Encaisser
+                            </span>
+                        );
+
                         return (
                             <div
                                 key={order.id}
@@ -243,7 +261,10 @@ export default function AdminRestaurantOrdersPage() {
                                     <div className="flex justify-between items-start">
                                         <div>
                                             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Commande</span>
-                                            <span className="text-lg font-black text-white">{order.order_number}</span>
+                                            <div className="flex flex-wrap items-center gap-2 mt-1">
+                                                <span className="text-lg font-black text-white">{order.order_number}</span>
+                                                {paymentBadge}
+                                            </div>
                                         </div>
                                         <div className="text-right">
                                             <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Passée il y a</span>
