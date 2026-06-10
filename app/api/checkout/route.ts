@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createStripeDeposit, createPayPalOrder, calculateArboun } from '@/lib/payment';
+import { createPayPalOrder, calculateArboun } from '@/lib/payment';
 import { supabase } from '@/lib/supabase';
 
 export async function POST(req: Request) {
@@ -49,15 +49,6 @@ export async function POST(req: Request) {
                 // Retrocompatibility fallback
                 finalAmount = calculateArboun(dbTotalPrice, serviceType);
             }
-        }
-
-        if (gateway === 'stripe') {
-            const intent = await createStripeDeposit(bookingId, finalAmount);
-            return NextResponse.json({
-                client_secret: intent.client_secret,
-                amount: intent.amount / 100,
-                id: intent.id
-            });
         }
 
         if (gateway === 'paypal') {

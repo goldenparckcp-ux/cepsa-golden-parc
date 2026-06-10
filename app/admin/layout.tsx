@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Lock, LayoutDashboard, Utensils, Bed, Ticket, DollarSign, PlusCircle, LogOut, ExternalLink, Menu, X, Shield, RefreshCw } from "lucide-react";
+import { Lock, LayoutDashboard, Utensils, Bed, Ticket, DollarSign, PlusCircle, LogOut, ExternalLink, Menu, X, Shield, RefreshCw, QrCode } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -278,6 +278,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             href: "/admin/content",
             label: "Ajouter Contenu",
             icon: PlusCircle,
+            roles: ["admin"]
+        },
+        {
+            href: "/admin/qrcodes",
+            label: "QR Codes",
+            icon: QrCode,
             roles: ["admin"]
         }
     ];

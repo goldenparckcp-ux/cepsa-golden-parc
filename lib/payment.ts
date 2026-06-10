@@ -1,13 +1,7 @@
-import Stripe from 'stripe';
 // @ts-expect-error - no types available
 import paypal from '@paypal/checkout-server-sdk';
 import dayjs from 'dayjs';
 import { supabase } from './supabase';
-
-// Initialize SDKs (Credentials should be in .env.local, fallbacks protect Vercel static build evaluation)
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_51PdummySecretKeyPlaceholder', {
-    apiVersion: '2026-02-25.clover',
-});
 
 // PayPal Config
 const PayPalEnvironment = new paypal.core.SandboxEnvironment(
@@ -41,19 +35,6 @@ export const checkCancellationWindow = (scheduledAt: string) => {
 };
 
 /**
- * Create a Stripe Payment Intent for the Deposit
- */
-export const createStripeDeposit = async (bookingId: string, amount: number, customerEmail?: string) => {
-    const paymentIntent = await stripe.paymentIntents.create({
-        amount: Math.round(amount * 100), // Stripe uses cents (100 = 1.00 MAD)
-        currency: 'mad',
-        metadata: { bookingId, type: 'arboun' },
-        receipt_email: customerEmail,
-    });
-    return paymentIntent;
-};
-
-/**
  * Create a PayPal Order for the Deposit
  */
 export const createPayPalOrder = async (bookingId: string, amount: number) => {
@@ -75,5 +56,3 @@ export const createPayPalOrder = async (bookingId: string, amount: number) => {
     const order = await paypalClient.execute(request);
     return order.result;
 };
-
-

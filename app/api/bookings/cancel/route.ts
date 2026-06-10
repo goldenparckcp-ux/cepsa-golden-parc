@@ -1,16 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import Stripe from 'stripe';
 
 // Initialize Supabase admin client to bypass RLS for secure state changes
 const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
     process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder', {
-    apiVersion: '2026-02-25.clover' as Stripe.StripeConfig['apiVersion'],
-});
 
 async function getPayPalAccessToken(): Promise<string> {
     const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID || process.env.PAYPAL_CLIENT_ID;
@@ -189,11 +184,6 @@ export async function POST(req: Request) {
                                 // Convert refund amount in MAD to USD (10 MAD = 1 USD)
                                 const usdRefund = refundAmount / 10;
                                 await refundPayPalCapture(tx.gateway_reference, usdRefund);
-                            } else if (tx.gateway === 'stripe') {
-                                await stripe.refunds.create({
-                                    charge: tx.gateway_reference,
-                                    amount: Math.round(refundAmount * 100) // cents
-                                });
                             }
 
                             // Log refund transaction in the database
