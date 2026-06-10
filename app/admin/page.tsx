@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useState, useEffect, useMemo } from "react";
-import { LayoutDashboard, Utensils, Bed, Ticket, Activity, TrendingUp, Users, RefreshCw, Lock, Key, DollarSign, Award, AlertTriangle, CheckCircle, Clock3, BarChart2 } from "lucide-react";
+import { Utensils, Bed, Ticket, Activity, TrendingUp, Users, RefreshCw, Lock, Key, Award, AlertTriangle, CheckCircle, Clock3, BarChart2, Info, Star } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { COMPLETE_MENU } from "@/lib/types/menu";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 function getLastNDays(n: number): string[] {
@@ -101,17 +103,26 @@ function LineChart({ data, color = "#10B981" }: { data: number[]; color?: string
 function BarChart({ data, labels, color = "#10B981" }: { data: number[]; labels: string[]; color?: string }) {
     if (!data.length) return null;
     const maxVal = Math.max(...data, 1);
+    const showLabel = data.length <= 14; // only show label if not too many bars
     return (
-        <div className="flex items-end gap-2 h-full w-full">
+        <div className="flex items-end gap-1 h-full w-full">
             {data.map((v, i) => {
                 const pct = (v / maxVal) * 100;
                 return (
-                    <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+                    <div key={i} className="group flex-1 flex flex-col items-center gap-0.5 h-full justify-end relative">
+                        {/* Tooltip */}
+                        {v > 0 && (
+                            <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover:flex bg-[#0F172A] border border-white/10 rounded-lg px-2 py-1 text-[9px] text-white font-bold whitespace-nowrap z-10 shadow-xl pointer-events-none">
+                                {v.toLocaleString()} DH
+                                <br />
+                                <span className="text-gray-400 font-normal">{labels[i]}</span>
+                            </div>
+                        )}
                         <div
-                            className="w-full rounded-t-lg transition-all duration-700"
-                            style={{ height: `${pct}%`, background: color, opacity: 0.7 + (pct / 100) * 0.3 }}
+                            className="w-full rounded-t-md transition-all duration-700 cursor-pointer hover:opacity-100"
+                            style={{ height: `${Math.max(pct, v > 0 ? 4 : 0)}%`, background: color, opacity: v > 0 ? (0.6 + (pct / 100) * 0.4) : 0.15 }}
                         />
-                        <span className="text-[9px] text-gray-500 font-bold capitalize">{labels[i]}</span>
+                        {showLabel && <span className="text-[8px] text-gray-600 font-bold capitalize truncate w-full text-center">{labels[i]}</span>}
                     </div>
                 );
             })}
@@ -241,7 +252,7 @@ export default function AdminDashboardPage() {
             let pendingResto = 0;
             let completedToday = 0;
             const todayStr = new Date().toISOString().split("T")[0];
-            const itemCounts: Record<string, { qty: number; revenue: number }> = {};
+            const itemCounts: Record<string, { qty: number; revenue: number; image: string; ordersCount: number; unitPrices: number[] }> = {};
 
             rOrders.forEach(o => {
                 const total = Number(o.total_price) || Number(o.subtotal) || 0;
@@ -262,10 +273,20 @@ export default function AdminDashboardPage() {
                             if (!item.is_meta) {
                                 const name = item.name || "Article";
                                 const qty = Number(item.quantity) || 1;
-                                const itemRev = (Number(item.price) || 0) * qty;
-                                if (!itemCounts[name]) itemCounts[name] = { qty: 0, revenue: 0 };
+                                const unitPrice = Number(item.price) || Number(item.basePrice) || 0;
+                                const itemRev = unitPrice * qty;
+                                // Get image: from item itself, or from COMPLETE_MENU by name match
+                                let img = item.image || item.img || "";
+                                if (!img) {
+                                    const found = COMPLETE_MENU.find(m => m.name === name || m.name.toLowerCase() === name.toLowerCase());
+                                    img = found?.image || "";
+                                }
+                                if (!itemCounts[name]) itemCounts[name] = { qty: 0, revenue: 0, image: img, ordersCount: 0, unitPrices: [] };
                                 itemCounts[name].qty += qty;
                                 itemCounts[name].revenue += itemRev;
+                                itemCounts[name].ordersCount += 1;
+                                if (unitPrice > 0) itemCounts[name].unitPrices.push(unitPrice);
+                                if (!itemCounts[name].image && img) itemCounts[name].image = img;
                             }
                         });
                     }
@@ -276,11 +297,35 @@ export default function AdminDashboardPage() {
                 if (o.status === "completed" && oDate === todayStr) completedToday++;
             });
 
+            // Enrich top items with COMPLETE_MENU data
             const sortedItems = Object.entries(itemCounts)
-                .map(([name, data]) => ({ name, ...data }))
+                .map(([name, data]) => {
+                    const menuItem = COMPLETE_MENU.find(m =>
+                        m.name.toLowerCase() === name.toLowerCase() ||
+                        m.name.toLowerCase().includes(name.toLowerCase().split(" ")[0]) ||
+                        name.toLowerCase().includes(m.name.toLowerCase().split(" ")[0])
+                    );
+                    const avgPrice = data.unitPrices.length > 0
+                        ? Math.round(data.unitPrices.reduce((a, b) => a + b, 0) / data.unitPrices.length)
+                        : (menuItem?.basePrice || 0);
+                    return {
+                        name,
+                        qty: data.qty,
+                        revenue: data.revenue,
+                        ordersCount: data.ordersCount,
+                        avgPrice,
+                        image: data.image || menuItem?.image || "",
+                        description: menuItem?.description || "",
+                        category: menuItem?.category || "",
+                        badge: menuItem?.badge || "",
+                        isTestData: name.startsWith("Plat Playwright") || name.startsWith("Test")
+                    };
+                })
+                .filter(item => !item.isTestData) // filter out playwright test items
                 .sort((a, b) => b.revenue - a.revenue)
-                .slice(0, 5);
+                .slice(0, 6);
             setTopItems(sortedItems);
+
 
             // ── 2. Hotel ──────────────────────────────────────────────────
             let hotelRev = 0;
@@ -553,7 +598,7 @@ export default function AdminDashboardPage() {
                             { label: "Commandes Total", value: stats.totalOrdersCount, icon: BarChart2, color: "purple", suffix: "" },
                             { label: "Complétées Aujourd'hui", value: stats.completedOrdersToday, icon: CheckCircle, color: "green", suffix: "" },
                             { label: "En Attente / Cuisine", value: stats.pendingOrdersCount, icon: Clock3, color: "amber", suffix: "" },
-                            { label: "Panier Moyen", value: stats.avgOrderValue, icon: DollarSign, color: "orange", suffix: " DH" },
+                            { label: "Panier Moyen", value: stats.avgOrderValue, icon: TrendingUp, color: "orange", suffix: " DH" },
                         ].map(({ label, value, icon: Icon, color, suffix }) => (
                             <div key={label} className="bg-[#1E293B] border border-white/10 rounded-2xl p-4">
                                 <div className="flex items-center justify-between mb-2">
@@ -665,7 +710,7 @@ export default function AdminDashboardPage() {
                         </div>
                     </div>
 
-                    {/* Top Items Table */}
+                    {/* Top Items — Rich Cards */}
                     <div className="bg-[#1E293B] border border-white/10 rounded-3xl p-6">
                         <div className="flex justify-between items-center mb-6">
                             <div>
@@ -673,7 +718,7 @@ export default function AdminDashboardPage() {
                                     <Award className="w-4 h-4 text-amber-500" />
                                     Top Plats les Plus Rentables
                                 </h3>
-                                <p className="text-[10px] text-gray-400 font-medium mt-1">Basé sur les commandes validées et encaissées</p>
+                                <p className="text-[10px] text-gray-400 font-medium mt-1">Basé sur les commandes validées et encaissées — cliquez pour voir les détails</p>
                             </div>
                             <div className="text-[10px] font-bold bg-amber-500/10 border border-amber-500/20 text-amber-400 px-2.5 py-1 rounded-lg">
                                 {topItems.length} articles analysés
@@ -681,36 +726,111 @@ export default function AdminDashboardPage() {
                         </div>
 
                         {topItems.length === 0 ? (
-                            <div className="text-center py-8 text-xs text-gray-500 font-bold bg-[#0F172A] border border-white/5 rounded-2xl">
-                                Aucune vente disponible dans l'historique.
+                            <div className="text-center py-12 text-xs text-gray-500 font-bold bg-[#0F172A] border border-white/5 rounded-2xl">
+                                <Utensils className="w-8 h-8 text-gray-700 mx-auto mb-3" />
+                                Aucune vente réelle disponible dans l'historique.<br/>
+                                <span className="text-gray-700 font-normal">Les commandes Playwright de test sont filtrées automatiquement.</span>
                             </div>
                         ) : (
-                            <div className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                 {topItems.map((item, idx) => {
                                     const maxRevenue = topItems[0]?.revenue || 1;
                                     const percent = Math.round((item.revenue / maxRevenue) * 100);
-                                    const colors = ["from-amber-600 to-yellow-400", "from-gray-500 to-gray-300", "from-orange-700 to-orange-500", "from-emerald-700 to-green-400", "from-blue-700 to-blue-400"];
-                                    const medalColors = ["text-yellow-400", "text-gray-300", "text-orange-400", "text-emerald-400", "text-blue-400"];
+                                    const rankColors = ["#F59E0B", "#9CA3AF", "#B45309", "#10B981", "#3B82F6", "#8B5CF6"];
+                                    const rankLabels = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣", "6️⃣"];
+                                    const barGradients = [
+                                        "from-yellow-600 to-amber-400",
+                                        "from-gray-600 to-gray-300",
+                                        "from-orange-800 to-orange-500",
+                                        "from-emerald-700 to-green-400",
+                                        "from-blue-700 to-blue-400",
+                                        "from-purple-700 to-purple-400",
+                                    ];
+                                    const categoryColors: Record<string, string> = {
+                                        FastFood: "bg-orange-500/20 text-orange-400 border-orange-500/20",
+                                        Plats: "bg-amber-500/20 text-amber-400 border-amber-500/20",
+                                        Boissons: "bg-cyan-500/20 text-cyan-400 border-cyan-500/20",
+                                        Desserts: "bg-pink-500/20 text-pink-400 border-pink-500/20",
+                                        Salades: "bg-green-500/20 text-green-400 border-green-500/20",
+                                        Ftour: "bg-yellow-500/20 text-yellow-400 border-yellow-500/20",
+                                    };
+                                    const catClass = categoryColors[item.category] || "bg-white/5 text-gray-400 border-white/10";
 
                                     return (
-                                        <div key={idx} className="space-y-1.5">
-                                            <div className="flex justify-between text-xs font-bold items-center">
-                                                <div className="flex items-center gap-2">
-                                                    <span className={`w-6 h-6 rounded-full bg-white/5 flex items-center justify-center text-[10px] font-mono ${medalColors[idx] || "text-gray-400"}`}>
-                                                        #{idx + 1}
-                                                    </span>
-                                                    <span className="text-white">{item.name}</span>
+                                        <div key={idx} className="bg-[#0F172A] border border-white/5 rounded-2xl overflow-hidden group hover:border-white/15 transition-all">
+                                            {/* Image zone */}
+                                            <div className="relative h-40 w-full overflow-hidden bg-[#1a2540]">
+                                                {item.image ? (
+                                                    <Image
+                                                        src={item.image}
+                                                        alt={item.name}
+                                                        fill
+                                                        className="object-cover group-hover:scale-105 transition-transform duration-500"
+                                                        unoptimized={item.image.startsWith("http")}
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center">
+                                                        <Utensils className="w-12 h-12 text-white/10" />
+                                                    </div>
+                                                )}
+                                                {/* Dark gradient overlay */}
+                                                <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-[#0F172A]/40 to-transparent" />
+                                                {/* Rank badge */}
+                                                <div className="absolute top-3 left-3 flex items-center gap-1.5">
+                                                    <span className="text-xl">{rankLabels[idx]}</span>
                                                 </div>
-                                                <div className="flex items-center gap-4 text-gray-400 font-mono text-right">
-                                                    <span>×{item.qty} ventes</span>
-                                                    <span className="text-green-400 font-bold font-sans">{item.revenue.toLocaleString()} DH</span>
-                                                </div>
+                                                {/* Category badge */}
+                                                {item.category && (
+                                                    <div className={`absolute top-3 right-3 text-[9px] font-black px-2 py-0.5 rounded-full border ${catClass} uppercase tracking-wide`}>
+                                                        {item.category}
+                                                    </div>
+                                                )}
+                                                {/* Special badge */}
+                                                {item.badge && (
+                                                    <div className="absolute bottom-3 left-3 bg-red-600 text-white text-[9px] font-black px-2 py-0.5 rounded-full uppercase tracking-wide shadow-lg">
+                                                        {item.badge}
+                                                    </div>
+                                                )}
                                             </div>
-                                            <div className="w-full bg-[#0F172A] h-2.5 rounded-full overflow-hidden border border-white/5">
-                                                <div
-                                                    className={`bg-gradient-to-r ${colors[idx] || "from-green-600 to-green-400"} h-full rounded-full transition-all duration-1000`}
-                                                    style={{ width: `${percent}%` }}
-                                                />
+
+                                            {/* Content */}
+                                            <div className="p-4 space-y-3">
+                                                <div>
+                                                    <h4 className="text-sm font-black text-white leading-tight mb-1">{item.name}</h4>
+                                                    {item.description && (
+                                                        <p className="text-[10px] text-gray-500 leading-relaxed line-clamp-2">{item.description}</p>
+                                                    )}
+                                                </div>
+
+                                                {/* Stats row */}
+                                                <div className="grid grid-cols-3 gap-2 py-2 border-t border-white/5">
+                                                    <div className="text-center">
+                                                        <div className="text-sm font-black text-white">×{item.qty}</div>
+                                                        <div className="text-[8px] text-gray-600 font-bold uppercase">Vendus</div>
+                                                    </div>
+                                                    <div className="text-center border-x border-white/5">
+                                                        <div className="text-sm font-black text-amber-400">{item.avgPrice} DH</div>
+                                                        <div className="text-[8px] text-gray-600 font-bold uppercase">Prix moy.</div>
+                                                    </div>
+                                                    <div className="text-center">
+                                                        <div className="text-sm font-black text-green-400">{item.revenue.toLocaleString()}</div>
+                                                        <div className="text-[8px] text-gray-600 font-bold uppercase">DH Total</div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Revenue bar */}
+                                                <div className="space-y-1">
+                                                    <div className="flex justify-between text-[9px] font-bold">
+                                                        <span className="text-gray-500">Part du top</span>
+                                                        <span style={{ color: rankColors[idx] }}>{percent}%</span>
+                                                    </div>
+                                                    <div className="w-full bg-white/5 h-1.5 rounded-full overflow-hidden">
+                                                        <div
+                                                            className={`bg-gradient-to-r ${barGradients[idx] || barGradients[0]} h-full rounded-full transition-all duration-1000`}
+                                                            style={{ width: `${percent}%` }}
+                                                        />
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                     );
