@@ -46,56 +46,70 @@ ${recentList}
 
 Génère 4 conseils business courts, précis et actionnables basés sur ces chiffres réels. Choisis des icônes emojis appropriées pour chaque conseil.`;
 
-    let geminiRes: Response;
-    try {
-        geminiRes = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
-                    generationConfig: {
-                        temperature: 0.6,
-                        responseMimeType: "application/json",
-                        responseSchema: {
-                            type: "OBJECT",
-                            properties: {
-                                insights: {
-                                    type: "ARRAY",
-                                    items: {
-                                        type: "OBJECT",
-                                        properties: {
-                                            type: { type: "STRING", enum: ["revenue", "opportunity", "attention", "warning"] },
-                                            icon: { type: "STRING" },
-                                            title: { type: "STRING" },
-                                            message: { type: "STRING" },
-                                            priority: { type: "STRING", enum: ["high", "medium", "low"] }
-                                        },
-                                        required: ["type", "icon", "title", "message", "priority"]
-                                    }
+    const models = ["gemini-2.5-flash", "gemini-3.5-flash", "gemini-flash-latest"];
+    let geminiRes: Response | null = null;
+    let lastErrorMsg = "";
+    let lastErrorStatus = 502;
+
+    for (const model of models) {
+        try {
+            geminiRes = await fetch(
+                `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+                {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: {
+                            temperature: 0.6,
+                            responseMimeType: "application/json",
+                            responseSchema: {
+                                type: "OBJECT",
+                                properties: {
+                                    insights: {
+                                        type: "ARRAY",
+                                        items: {
+                                            type: "OBJECT",
+                                            properties: {
+                                                type: { type: "STRING", enum: ["revenue", "opportunity", "attention", "warning"] },
+                                                icon: { type: "STRING" },
+                                                title: { type: "STRING" },
+                                                message: { type: "STRING" },
+                                                priority: { type: "STRING", enum: ["high", "medium", "low"] }
+                                            },
+                                            required: ["type", "icon", "title", "message", "priority"]
+                                        }
+                                    },
+                                    summary: { type: "STRING" }
                                 },
-                                summary: { type: "STRING" }
-                            },
-                            required: ["insights", "summary"]
+                                required: ["insights", "summary"]
+                            }
                         }
-                    }
-                }),
-                signal: AbortSignal.timeout(20000)
+                    }),
+                    signal: AbortSignal.timeout(20000)
+                }
+            );
+
+            if (geminiRes.ok) {
+                break;
+            } else {
+                const errBody = await geminiRes.text().catch(() => "unknown");
+                lastErrorMsg = `Gemini HTTP ${geminiRes.status}: ${errBody.slice(0, 300)}`;
+                lastErrorStatus = geminiRes.status;
+                geminiRes = null;
             }
-        );
-    } catch (fetchErr: any) {
-        return NextResponse.json({
-            error: `Erreur réseau vers Gemini: ${fetchErr.message}`
-        }, { status: 502 });
+        } catch (fetchErr: any) {
+            lastErrorMsg = `Erreur réseau vers Gemini (${model}): ${fetchErr.message}`;
+            lastErrorStatus = 502;
+            geminiRes = null;
+        }
     }
 
-    if (!geminiRes.ok) {
-        const errBody = await geminiRes.text().catch(() => "unknown");
+    if (!geminiRes) {
         return NextResponse.json({
-            error: `Gemini HTTP ${geminiRes.status}`,
-            detail: errBody.slice(0, 500)
-        }, { status: 502 });
+            error: "Tous les modèles Gemini ont échoué",
+            detail: lastErrorMsg
+        }, { status: lastErrorStatus });
     }
 
     let geminiData: any;
