@@ -318,7 +318,7 @@ export default function AdminDashboardPage() {
             let hotelRev = 0, occupied = 0;
             hRes.forEach(r => {
                 const p = Number(r.price) || Number(r.total_price) || 0;
-                if (["confirmed", "checked_in", "checked_out"].includes(r.status)) hotelRev += p;
+                if (r.status !== "cancelled") hotelRev += p;
                 if (["checked_in", "active"].includes(r.status)) occupied++;
             });
 
@@ -575,17 +575,28 @@ export default function AdminDashboardPage() {
                             <div className="space-y-2">
                                 {hotelRooms.length === 0 ? (
                                     <div className="text-center py-6 text-[11px] text-gray-600 bg-[#0F172A] rounded-xl border border-white/5">Aucune réservation</div>
-                                ) : hotelRooms.map(r => (
-                                    <div key={r.id} className="flex items-center justify-between bg-[#0F172A] rounded-xl px-3 py-2.5 border border-white/5 hover:border-white/10 transition-all">
-                                        <div>
-                                            <div className="text-xs font-black text-white">Chambre {r.room_number || "?"} <span className="text-[9px] font-normal text-gray-600 uppercase">({r.room_type})</span></div>
-                                            <div className="text-[9px] text-gray-600">{r.customer_phone || "—"}</div>
+                                ) : hotelRooms.map(r => {
+                                    const hStatusConf: Record<string, { label: string; class: string }> = {
+                                        pending: { label: "Attente", class: "bg-amber-500/15 text-amber-400 border-amber-500/20" },
+                                        reserved: { label: "Attente", class: "bg-amber-500/15 text-amber-400 border-amber-500/20" },
+                                        confirmed: { label: "Confirmée", class: "bg-blue-500/15 text-blue-400 border-blue-500/20" },
+                                        checked_in: { label: "Occupée", class: "bg-green-500/15 text-green-400 border-green-500/20" },
+                                        completed: { label: "Terminée", class: "bg-gray-500/15 text-gray-400 border-gray-500/20" },
+                                        cancelled: { label: "Annulée", class: "bg-red-500/15 text-red-400 border-red-500/20" },
+                                    };
+                                    const hsc = hStatusConf[r.status] || hStatusConf.pending;
+                                    return (
+                                        <div key={r.id} className="flex items-center justify-between bg-[#0F172A] rounded-xl px-3 py-2.5 border border-white/5 hover:border-white/10 transition-all">
+                                            <div>
+                                                <div className="text-xs font-black text-white">Chambre {r.room_number || "?"} <span className="text-[9px] font-normal text-gray-600 uppercase">({r.room_type})</span></div>
+                                                <div className="text-[9px] text-gray-600">{r.customer_phone || "—"}</div>
+                                            </div>
+                                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wide ${hsc.class}`}>
+                                                {hsc.label}
+                                            </span>
                                         </div>
-                                        <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wide ${r.status === "checked_in" ? "bg-green-500/15 text-green-400 border-green-500/20" : "bg-amber-500/15 text-amber-400 border-amber-500/20"}`}>
-                                            {r.status === "checked_in" ? "Occupée" : "Attente"}
-                                        </span>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>

@@ -169,7 +169,7 @@ export default function AdminHotelReservationsPage() {
 
     const filteredReservations = reservations.filter(res => {
         let matchesStatus = false;
-        if (activeTab === "pending") matchesStatus = res.status === "pending" || res.status === "confirmed";
+        if (activeTab === "pending") matchesStatus = res.status === "pending" || res.status === "confirmed" || res.status === "reserved";
         else if (activeTab === "checked_in") matchesStatus = res.status === "checked_in";
         else matchesStatus = res.status === "completed" || res.status === "cancelled";
 
@@ -273,7 +273,7 @@ export default function AdminHotelReservationsPage() {
                 {/* 2. Tabs */}
                 <div className="md:col-span-2 bg-[#1E293B] p-1.5 rounded-xl border border-white/10 flex gap-1 h-[46px]">
                     {[
-                        { id: "pending", label: "Arrivées (Attente)", count: reservations.filter(r => r.status === "pending" || r.status === "confirmed").length, color: "bg-amber-500" },
+                        { id: "pending", label: "Arrivées (Attente)", count: reservations.filter(r => r.status === "pending" || r.status === "confirmed" || r.status === "reserved").length, color: "bg-amber-500" },
                         { id: "checked_in", label: "Sur Place (Actifs)", count: reservations.filter(r => r.status === "checked_in").length, color: "bg-green-500 animate-pulse" },
                         { id: "archive", label: "Terminées / Historique", count: reservations.filter(r => r.status === "completed" || r.status === "cancelled").length }
                     ].map(tab => (
