@@ -623,26 +623,7 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                                                 </button>
                                             ))}
                                         </div>
-                                        {(onSiteLocation === 'table' || onSiteLocation === 'pool') && (
-                                            <button 
-                                                onClick={() => setIsScanning(true)}
-                                                className="w-full text-sm text-blue-400 mb-3 bg-blue-500/10 hover:bg-blue-500/20 active:scale-95 transition-all p-3 rounded-xl border border-blue-500/30 flex items-center justify-center gap-3 font-bold"
-                                            >
-                                                <Camera className="w-5 h-5"/>
-                                                Scanner le QR Code {onSiteLocation === 'table' ? 'sur votre table' : 'à votre place'}
-                                            </button>
-                                        )}
-                                        <input
-                                            type="text"
-                                            value={locationDetail}
-                                            onChange={(e) => setLocationDetail(e.target.value)}
-                                            placeholder={
-                                                onSiteLocation === 'table' ? "Saisir le N° de Table" : 
-                                                onSiteLocation === 'pool' ? "Saisir le N° de Place" : 
-                                                "Votre N° de Chambre (Ex: 104)"
-                                            }
-                                            className="w-full bg-[#1E293B] border border-white/10 rounded-xl p-4 text-white font-bold text-lg outline-none focus:border-blue-500 transition-colors text-center"
-                                        />
+
                                         <p className="text-xs text-green-400 mt-4 flex items-center gap-1 font-medium bg-green-500/10 p-3 rounded-xl border border-green-500/20">
                                             <Check className="w-4 h-4"/>
                                             {t('cart.onsite_note')}

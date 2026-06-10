@@ -353,32 +353,6 @@ export function CartDrawer() {
                     {items.length > 0 && (
                         <div className="px-6 pb-6 animate-fade-in border-t border-white/5 pt-6">
 
-                            {/* ARBOUNE (DEPOSIT) TOGGLE */}
-                            <div className="mb-6 bg-gradient-to-br from-[#1E293B] to-[#0F172A] p-4 rounded-xl border border-white/10 relative overflow-hidden group">
-                                <div className="absolute top-0 right-0 w-32 h-32 bg-red-600/5 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
-
-                                <div className="flex items-center justify-between mb-2 relative z-10">
-                                    <div className="flex items-center gap-2">
-                                        <div className="bg-amber-500/20 p-1.5 rounded-lg text-amber-500">
-                                            <Banknote className="w-4 h-4" />
-                                        </div>
-                                        <span className="font-bold text-white">Mode Arboune (30%)</span>
-                                    </div>
-
-                                    {/* IOS Style Toggle */}
-                                    <button
-                                        onClick={() => setIsDepositMode(!isDepositMode)}
-                                        aria-label="Activer le mode acompte Arboune"
-                                        className={`w-12 h-7 rounded-full transition-colors relative ${isDepositMode ? 'bg-amber-500' : 'bg-gray-700'}`}
-                                    >
-                                        <div className={`w-5 h-5 bg-white rounded-full absolute top-1 transition-transform ${isDepositMode ? 'left-6' : 'left-1'}`} />
-                                    </button>
-                                </div>
-                                <p className="text-xs text-gray-400 leading-relaxed relative z-10">
-                                    Payez <span className="text-amber-500 font-bold">30% maintenant</span> pour confirmer, et le reste sur place. Idéal pour les grosses commandes.
-                                </p>
-                            </div>
-
                             <h3 className="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Mode de Paiement</h3>
                             <div className="grid grid-cols-2 gap-3">
                                 {/* Cash Option */}
@@ -442,29 +416,15 @@ export function CartDrawer() {
                                 <span className="text-gray-400">Total Commande</span>
                                 <span className="text-xl font-bold text-white">{total.toFixed(0)} <span className="text-sm text-gray-500">DH</span></span>
                             </div>
-
-                            {isDepositMode && (
-                                <>
-                                    <div className="flex justify-between items-center text-amber-500">
-                                        <span className="text-sm font-bold flex items-center gap-1">✨ Acompte (30%)</span>
-                                        <span className="text-xl font-black">{(total * 0.3).toFixed(0)} DH</span>
-                                    </div>
-                                    <div className="flex justify-between items-center text-gray-500 text-sm">
-                                        <span>Reste à payer sur place (70%)</span>
-                                        <span>{(total * 0.7).toFixed(0)} DH</span>
-                                    </div>
-                                </>
-                            )}
                         </div>
 
                         <button
                             onClick={handleCheckout}
                             disabled={isSubmitting}
-                            className={`w-full text-white py-4 rounded-xl font-bold text-lg hover:brightness-110 transition shadow-lg flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed group ${isDepositMode
-                                ? 'bg-gradient-to-r from-amber-500 to-amber-700 shadow-amber-500/20'
-                                : (paymentMethod === 'card'
+                            className={`w-full text-white py-4 rounded-xl font-bold text-lg hover:brightness-110 transition shadow-lg flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed group ${
+                                paymentMethod === 'card'
                                     ? 'bg-gradient-to-r from-red-600 to-red-800 shadow-red-500/20' // Card
-                                    : 'bg-gradient-to-r from-red-600 to-red-700 shadow-red-500/20') // Cash
+                                    : 'bg-gradient-to-r from-red-600 to-red-700 shadow-red-500/20' // Cash
                                 }`}
                         >
                             {isSubmitting ? (
@@ -475,7 +435,7 @@ export function CartDrawer() {
                             ) : (
                                 <>
                                     {paymentMethod === 'card'
-                                        ? `Payer ${isDepositMode ? (total * 0.3).toFixed(0) : total.toFixed(0)} DH`
+                                        ? `Payer ${total.toFixed(0)} DH`
                                         : 'Confirmer la commande'}
                                     {paymentMethod === 'card' ? <Lock className="w-5 h-5" /> : <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition" />}
                                 </>
