@@ -1,14 +1,130 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { LayoutDashboard, Utensils, Bed, Ticket, Activity, TrendingUp, Users, ShieldAlert, Sparkles, RefreshCw, Lock, Key, BarChart3, ChevronRight, DollarSign } from "lucide-react";
+import React, { useState, useEffect, useMemo } from "react";
+import { LayoutDashboard, Utensils, Bed, Ticket, Activity, TrendingUp, Users, RefreshCw, Lock, Key, DollarSign, Award, AlertTriangle, CheckCircle, Clock3, BarChart2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function getLastNDays(n: number): string[] {
+    const days: string[] = [];
+    for (let i = n - 1; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        days.push(d.toISOString().split("T")[0]);
+    }
+    return days;
+}
+
+function dayLabel(isoDate: string): string {
+    const d = new Date(isoDate + "T00:00:00");
+    return d.toLocaleDateString("fr-FR", { weekday: "short" }).replace(".", "");
+}
+
+// ─── Donut Chart ─────────────────────────────────────────────────────────────
+function DonutChart({ segments }: { segments: { color: string; pct: number }[] }) {
+    let offset = 25; // start at top (25 = circumference/4 from bottom)
+    const r = 15.915;
+    const circ = 2 * Math.PI * r; // ≈ 100
+
+    return (
+        <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
+            <circle cx="18" cy="18" r={r} fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
+            {segments.map((seg, i) => {
+                const dash = (seg.pct / 100) * circ;
+                const gap = circ - dash;
+                const el = (
+                    <circle
+                        key={i}
+                        cx="18" cy="18" r={r}
+                        fill="none"
+                        stroke={seg.color}
+                        strokeWidth="3.2"
+                        strokeDasharray={`${dash.toFixed(2)} ${gap.toFixed(2)}`}
+                        strokeDashoffset={-offset * (circ / 100)}
+                        strokeLinecap="butt"
+                    />
+                );
+                offset += seg.pct;
+                return el;
+            })}
+        </svg>
+    );
+}
+
+// ─── Line Chart ──────────────────────────────────────────────────────────────
+function LineChart({ data, color = "#10B981" }: { data: number[]; color?: string }) {
+    if (!data.length) return null;
+    const w = 500, h = 200;
+    const padX = 10, padY = 20;
+    const maxVal = Math.max(...data, 1);
+    const pts = data.map((v, i) => {
+        const x = padX + (i / (data.length - 1 || 1)) * (w - 2 * padX);
+        const y = h - padY - (v / maxVal) * (h - 2 * padY);
+        return [x, y];
+    });
+
+    const pathD = pts
+        .map(([x, y], i) => (i === 0 ? `M ${x},${y}` : `L ${x},${y}`))
+        .join(" ");
+
+    const areaD = [
+        ...pts.map(([x, y], i) => (i === 0 ? `M ${x},${y}` : `L ${x},${y}`)),
+        `L ${pts[pts.length - 1][0]},${h - padY}`,
+        `L ${pts[0][0]},${h - padY}`,
+        "Z"
+    ].join(" ");
+
+    return (
+        <svg viewBox={`0 0 ${w} ${h}`} className="w-full h-full overflow-visible">
+            <defs>
+                <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={color} stopOpacity="0.25" />
+                    <stop offset="100%" stopColor={color} stopOpacity="0" />
+                </linearGradient>
+            </defs>
+            {/* grid */}
+            {[0.25, 0.5, 0.75].map((f, i) => (
+                <line key={i} x1={padX} y1={padY + f * (h - 2 * padY)} x2={w - padX} y2={padY + f * (h - 2 * padY)}
+                    stroke="rgba(255,255,255,0.04)" strokeDasharray="4" />
+            ))}
+            <path d={areaD} fill="url(#areaGrad)" />
+            <path d={pathD} fill="none" stroke={color} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+            {pts.map(([x, y], i) => (
+                <circle key={i} cx={x} cy={y} r="4" fill={color} stroke="#1E293B" strokeWidth="2.5" />
+            ))}
+        </svg>
+    );
+}
+
+// ─── Bar Chart ────────────────────────────────────────────────────────────────
+function BarChart({ data, labels, color = "#10B981" }: { data: number[]; labels: string[]; color?: string }) {
+    if (!data.length) return null;
+    const maxVal = Math.max(...data, 1);
+    return (
+        <div className="flex items-end gap-2 h-full w-full">
+            {data.map((v, i) => {
+                const pct = (v / maxVal) * 100;
+                return (
+                    <div key={i} className="flex-1 flex flex-col items-center gap-1 h-full justify-end">
+                        <div
+                            className="w-full rounded-t-lg transition-all duration-700"
+                            style={{ height: `${pct}%`, background: color, opacity: 0.7 + (pct / 100) * 0.3 }}
+                        />
+                        <span className="text-[9px] text-gray-500 font-bold capitalize">{labels[i]}</span>
+                    </div>
+                );
+            })}
+        </div>
+    );
+}
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 export default function AdminDashboardPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [activeSubTab, setActiveSubTab] = useState<"general" | "stats" | "pins">("general");
+    const [chartRange, setChartRange] = useState<7 | 14 | 30>(7);
 
     // PIN Editing States
     const [pinAdmin, setPinAdmin] = useState("7777");
@@ -16,6 +132,7 @@ export default function AdminDashboardPage() {
     const [pinKitchen, setPinKitchen] = useState("2222");
     const [pinServices, setPinServices] = useState("3333");
     const [pinCaisse, setPinCaisse] = useState("4444");
+    const [pinSaved, setPinSaved] = useState(false);
 
     const [stats, setStats] = useState({
         totalRevenue: 0,
@@ -26,17 +143,29 @@ export default function AdminDashboardPage() {
         occupancyRate: 0,
         activePoolGuests: 0,
         pendingOrdersCount: 0,
-        lavagesCount: 0
+        completedOrdersToday: 0,
+        lavagesCount: 0,
+        totalOrdersCount: 0,
+        avgOrderValue: 0,
     });
 
     const [recentOrders, setRecentOrders] = useState<any[]>([]);
     const [hotelRoomsState, setHotelRoomsState] = useState<any[]>([]);
-    
-    // Top profitable item tracking (Calculated dynamically)
     const [topItems, setTopItems] = useState<any[]>([]);
 
+    // For charts: daily revenue per service
+    const [dailyData, setDailyData] = useState<{
+        dates: string[];
+        resto: number[];
+        hotel: number[];
+        pool: number[];
+        services: number[];
+        total: number[];
+    }>({ dates: [], resto: [], hotel: [], pool: [], services: [], total: [] });
+
+    const [allRestoOrders, setAllRestoOrders] = useState<any[]>([]);
+
     useEffect(() => {
-        // Enforce admin check in client side
         const stored = localStorage.getItem("staff_session");
         if (stored) {
             const session = JSON.parse(stored);
@@ -51,7 +180,6 @@ export default function AdminDashboardPage() {
             return;
         }
 
-        // Load dynamic PINs
         setPinAdmin(localStorage.getItem("pin_admin") || "7777");
         setPinHotel(localStorage.getItem("pin_hotel") || "1111");
         setPinKitchen(localStorage.getItem("pin_kitchen") || "2222");
@@ -60,6 +188,35 @@ export default function AdminDashboardPage() {
 
         fetchDashboardData();
     }, []);
+
+    // Recompute chart when range changes
+    const chartDays = useMemo(() => getLastNDays(chartRange), [chartRange]);
+
+    const computedChartData = useMemo(() => {
+        const days = chartDays;
+        const resto = days.map(() => 0);
+        const hotel = days.map(() => 0);
+        const pool = days.map(() => 0);
+        const services = days.map(() => 0);
+
+        allRestoOrders.forEach(o => {
+            const dateStr = (o.updated_at || o.created_at || "").split("T")[0];
+            const idx = days.indexOf(dateStr);
+            if (idx === -1) return;
+            const total = Number(o.total_price) || Number(o.subtotal) || 0;
+            let paid = 0;
+            if (o.deposit_paid) {
+                const dep = Number(o.deposit_amount) || 0;
+                paid = (o.status === "completed" || dep >= total) ? total : dep;
+            } else if (o.status === "completed") {
+                paid = total;
+            }
+            resto[idx] += paid;
+        });
+
+        const total = days.map((_, i) => resto[i] + hotel[i] + pool[i] + services[i]);
+        return { dates: days, resto, hotel, pool, services, total };
+    }, [allRestoOrders, chartDays]);
 
     const fetchDashboardData = async () => {
         setLoading(true);
@@ -70,120 +227,96 @@ export default function AdminDashboardPage() {
                 { data: poolBookings },
                 { data: serviceBookings }
             ] = await Promise.all([
-                supabase.from("restaurant_orders").select("*"),
-                supabase.from("hotel_reservations").select("*"),
-                supabase.from("pool_bookings").select("*"),
-                supabase.from("service_bookings").select("*")
+                supabase.from("restaurant_orders").select("*").order("created_at", { ascending: false }),
+                supabase.from("hotel_reservations").select("*").order("created_at", { ascending: false }),
+                supabase.from("pool_bookings").select("*").order("created_at", { ascending: false }),
+                supabase.from("service_bookings").select("*").order("created_at", { ascending: false })
             ]);
 
-            // 1. Compute Restaurant Stats (Only count paid amounts or completed orders for actual revenue!)
+            const rOrders = restoOrders || [];
+            setAllRestoOrders(rOrders);
+
+            // ── 1. Restaurant ─────────────────────────────────────────────
             let restoRev = 0;
             let pendingResto = 0;
-            const rOrders = restoOrders || [];
-            
-            // Track item profitability
-            const itemCounts: Record<string, { qty: number; revenue: number; img: string }> = {};
+            let completedToday = 0;
+            const todayStr = new Date().toISOString().split("T")[0];
+            const itemCounts: Record<string, { qty: number; revenue: number }> = {};
 
             rOrders.forEach(o => {
                 const total = Number(o.total_price) || Number(o.subtotal) || 0;
-                
-                // Calculate exact paid revenue from this order
                 let paidRevenue = 0;
                 if (o.deposit_paid) {
                     const depAmt = Number(o.deposit_amount) || 0;
-                    // If it is completed or deposit matches total, it's fully paid
-                    if (o.status === "completed" || depAmt >= total) {
-                        paidRevenue = total;
-                    } else {
-                        paidRevenue = depAmt; // Only the deposit has been paid
-                    }
+                    paidRevenue = (o.status === "completed" || depAmt >= total) ? total : depAmt;
                 } else if (o.status === "completed") {
                     paidRevenue = total;
                 }
 
                 if (paidRevenue > 0) {
                     restoRev += paidRevenue;
-                    
-                    // Count items
-                    let itemsList = [];
-                    try {
-                        itemsList = typeof o.items === 'string' ? JSON.parse(o.items) : o.items;
-                    } catch {
-                        itemsList = [];
-                    }
+                    let itemsList: any[] = [];
+                    try { itemsList = typeof o.items === "string" ? JSON.parse(o.items) : (o.items || []); } catch { itemsList = []; }
                     if (Array.isArray(itemsList)) {
                         itemsList.forEach((item: any) => {
                             if (!item.is_meta) {
                                 const name = item.name || "Article";
                                 const qty = Number(item.quantity) || 1;
-                                // Apportion revenue based on paid ratio
-                                const itemFullRev = (Number(item.price) || 0) * qty;
-                                const ratio = total > 0 ? (paidRevenue / total) : 0;
-                                const itemRev = itemFullRev * ratio;
-                                
-                                if (!itemCounts[name]) {
-                                    itemCounts[name] = { qty: 0, revenue: 0, img: item.image || "" };
-                                }
+                                const itemRev = (Number(item.price) || 0) * qty;
+                                if (!itemCounts[name]) itemCounts[name] = { qty: 0, revenue: 0 };
                                 itemCounts[name].qty += qty;
                                 itemCounts[name].revenue += itemRev;
                             }
                         });
                     }
                 }
-                
+
                 if (o.status === "pending" || o.status === "preparing") pendingResto++;
+                const oDate = (o.updated_at || o.created_at || "").split("T")[0];
+                if (o.status === "completed" && oDate === todayStr) completedToday++;
             });
 
-            // Format top items
             const sortedItems = Object.entries(itemCounts)
                 .map(([name, data]) => ({ name, ...data }))
                 .sort((a, b) => b.revenue - a.revenue)
-                .slice(0, 4);
+                .slice(0, 5);
             setTopItems(sortedItems);
 
-            // 2. Compute Hotel Stats (Only count active occupancy and checked in/out/confirmed for revenue)
+            // ── 2. Hotel ──────────────────────────────────────────────────
             let hotelRev = 0;
             let occupiedRooms = 0;
             const hRes = hotelReservations || [];
             hRes.forEach(r => {
                 const price = Number(r.price) || Number(r.total_price) || 0;
-                // If it is confirmed, checked_in, or checked_out -> it generates actual revenue
-                if (["confirmed", "checked_in", "checked_out"].includes(r.status)) {
-                    hotelRev += price;
-                }
+                if (["confirmed", "checked_in", "checked_out"].includes(r.status)) hotelRev += price;
                 if (r.status === "checked_in" || r.status === "active") occupiedRooms++;
             });
-            const hotelOccupancy = hRes.length > 0 ? Math.round((occupiedRooms / 10) * 100) : 0;
+            const hotelOccupancy = Math.min(Math.round((occupiedRooms / 10) * 100), 100);
 
-            // 3. Compute Pool Stats (Paid entry)
+            // ── 3. Pool ───────────────────────────────────────────────────
             let poolRev = 0;
             let activePool = 0;
             const pBookings = poolBookings || [];
             pBookings.forEach(b => {
                 const total = Number(b.total_price) || Number(b.total_amount) || 0;
-                if (b.status !== "cancelled") {
-                    poolRev += total;
-                }
+                if (b.status !== "cancelled") poolRev += total;
                 if (b.status === "checked_in" || b.status === "active") {
                     activePool += (Number(b.adults) || 0) + (Number(b.children) || 0);
                 }
             });
 
-            // 4. Compute Services Stats (Lavage)
+            // ── 4. Services ───────────────────────────────────────────────
             let serviceRev = 0;
             let lavagesToday = 0;
             const sBookings = serviceBookings || [];
             sBookings.forEach(s => {
                 const price = Number(s.price) || Number(s.total_price) || 0;
-                if (s.status === "completed") {
-                    serviceRev += price;
-                }
-                if (s.service_type === "lavage" && s.status !== "completed" && s.status !== "cancelled") {
-                    lavagesToday++;
-                }
+                if (s.status === "completed") serviceRev += price;
+                if (s.service_type === "lavage" && s.status !== "completed" && s.status !== "cancelled") lavagesToday++;
             });
 
             const totalRev = restoRev + hotelRev + poolRev + serviceRev;
+            const paidOrdersCount = rOrders.filter(o => o.status === "completed" || (o.deposit_paid && Number(o.deposit_amount) >= (Number(o.total_price) || Number(o.subtotal) || 0))).length;
 
             setStats({
                 totalRevenue: totalRev,
@@ -191,47 +324,31 @@ export default function AdminDashboardPage() {
                 hotelRevenue: hotelRev,
                 poolRevenue: poolRev,
                 servicesRevenue: serviceRev,
-                occupancyRate: hotelOccupancy > 100 ? 100 : hotelOccupancy,
+                occupancyRate: hotelOccupancy,
                 activePoolGuests: activePool,
                 pendingOrdersCount: pendingResto,
-                lavagesCount: lavagesToday
+                completedOrdersToday: completedToday,
+                lavagesCount: lavagesToday,
+                totalOrdersCount: rOrders.length,
+                avgOrderValue: paidOrdersCount > 0 ? Math.round(restoRev / paidOrdersCount) : 0,
             });
 
-            const sortedResto = [...rOrders]
-                .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                .slice(0, 4);
-            setRecentOrders(sortedResto);
-
+            setRecentOrders(rOrders.slice(0, 5));
             setHotelRoomsState(hRes.slice(0, 5));
 
         } catch (err) {
-            console.error("Dashboard DB fetch failed, using fallbacks");
+            console.error("Dashboard fetch error:", err);
+            // Fallback data
             setStats({
-                totalRevenue: 28450,
-                restoRevenue: 8450,
-                hotelRevenue: 12500,
-                poolRevenue: 4800,
-                servicesRevenue: 2700,
-                occupancyRate: 70,
-                activePoolGuests: 24,
-                pendingOrdersCount: 3,
-                lavagesCount: 5
+                totalRevenue: 28450, restoRevenue: 8450, hotelRevenue: 12500, poolRevenue: 4800, servicesRevenue: 2700,
+                occupancyRate: 70, activePoolGuests: 24, pendingOrdersCount: 3, completedOrdersToday: 12,
+                lavagesCount: 5, totalOrdersCount: 34, avgOrderValue: 248,
             });
-
-            setRecentOrders([
-                { id: "1", order_number: "R-8245", customer_phone: "0661122334", total_price: 180, status: "pending", created_at: new Date().toISOString() },
-                { id: "2", order_number: "R-8244", customer_phone: "0667889900", total_price: 90, status: "preparing", created_at: new Date(Date.now() - 1000 * 60 * 15).toISOString() }
-            ]);
-
-            setHotelRoomsState([
-                { id: "101", room_number: 101, room_type: "deluxe", customer_phone: "0661122334", check_in_time: new Date().toISOString(), status: "checked_in" }
-            ]);
-
             setTopItems([
-                { name: "Tacos Mixte Royal", qty: 42, revenue: 2310, img: "" },
-                { name: "Smash Burger Cheese", qty: 38, revenue: 1900, img: "" },
-                { name: "Pizza Fruits de Mer", qty: 24, revenue: 1680, img: "" },
-                { name: "Café Crème", qty: 55, revenue: 825, img: "" }
+                { name: "Tacos Mixte Royal", qty: 42, revenue: 2310 },
+                { name: "Smash Burger Cheese", qty: 38, revenue: 1900 },
+                { name: "Pizza Fruits de Mer", qty: 24, revenue: 1680 },
+                { name: "Café Crème", qty: 55, revenue: 825 },
             ]);
         } finally {
             setLoading(false);
@@ -244,146 +361,119 @@ export default function AdminDashboardPage() {
         localStorage.setItem("pin_kitchen", pinKitchen);
         localStorage.setItem("pin_services", pinServices);
         localStorage.setItem("pin_caisse", pinCaisse);
-        alert("Codes PIN enregistrés avec succès !");
+        setPinSaved(true);
+        setTimeout(() => setPinSaved(false), 3000);
     };
+
+    // Dynamic donut segments
+    const donutTotal = stats.totalRevenue || 1;
+    const donutSegments = [
+        { color: "#FF8A00", pct: Math.round((stats.restoRevenue / donutTotal) * 100), label: "Restaurant", key: "resto" },
+        { color: "#F59E0B", pct: Math.round((stats.hotelRevenue / donutTotal) * 100), label: "Hôtel", key: "hotel" },
+        { color: "#06B6D4", pct: Math.round((stats.poolRevenue / donutTotal) * 100), label: "Piscine", key: "pool" },
+        { color: "#10B981", pct: Math.round((stats.servicesRevenue / donutTotal) * 100), label: "Services", key: "serv" },
+    ].filter(s => s.pct > 0);
+
+    // Ensure sum == 100 (rounding fix)
+    if (donutSegments.length > 0) {
+        const sum = donutSegments.reduce((acc, s) => acc + s.pct, 0);
+        if (sum !== 100) donutSegments[0].pct += (100 - sum);
+    }
 
     if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center py-20 text-gray-400">
-                <RefreshCw className="w-10 h-10 text-amber-500 animate-spin mb-4" />
-                <p className="text-sm font-bold animate-pulse">Agrégation des chiffres en temps réel...</p>
+            <div className="flex flex-col items-center justify-center py-32 text-gray-400 gap-4">
+                <RefreshCw className="w-10 h-10 text-amber-500 animate-spin" />
+                <p className="text-sm font-bold animate-pulse">Agrégation des données en temps réel...</p>
             </div>
         );
     }
 
     return (
         <div className="space-y-8 animate-fade-in pb-16">
-            {/* Header section */}
+
+            {/* ── HEADER ──────────────────────────────────────────────────── */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-white/5 pb-6">
                 <div>
                     <h1 className="text-3xl font-black text-white leading-tight">Panneau d'Administration</h1>
                     <p className="text-xs text-gray-400 font-medium mt-1">Supervision globale, statistiques financières et gestion de la sécurité</p>
                 </div>
-                
-                {/* Sub Tab Navigation */}
-                <div className="flex bg-[#1E293B] p-1 rounded-xl border border-white/5 shadow-inner shrink-0">
+
+                <div className="flex items-center gap-2">
                     <button
-                        onClick={() => setActiveSubTab("general")}
-                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeSubTab === "general" ? "bg-amber-500 text-black shadow-md" : "text-gray-400 hover:text-white"}`}
+                        onClick={fetchDashboardData}
+                        className="p-2 rounded-xl bg-white/5 border border-white/10 text-gray-400 hover:text-white hover:bg-white/10 transition-all"
+                        title="Rafraîchir"
                     >
-                        Vue Générale
+                        <RefreshCw className="w-4 h-4" />
                     </button>
-                    <button
-                        onClick={() => setActiveSubTab("stats")}
-                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeSubTab === "stats" ? "bg-amber-500 text-black shadow-md" : "text-gray-400 hover:text-white"}`}
-                    >
-                        Statistiques & Rentabilité
-                    </button>
-                    <button
-                        onClick={() => setActiveSubTab("pins")}
-                        className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeSubTab === "pins" ? "bg-amber-500 text-black shadow-md" : "text-gray-400 hover:text-white"}`}
-                    >
-                        Codes PIN
-                    </button>
+                    <div className="flex bg-[#1E293B] p-1 rounded-xl border border-white/5 shadow-inner shrink-0">
+                        {(["general", "stats", "pins"] as const).map(tab => (
+                            <button key={tab} onClick={() => setActiveSubTab(tab)}
+                                className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${activeSubTab === tab ? "bg-amber-500 text-black shadow-md" : "text-gray-400 hover:text-white"}`}
+                            >
+                                {tab === "general" ? "Vue Générale" : tab === "stats" ? "Statistiques" : "Codes PIN"}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
 
-            {/* Render Tab Contents */}
+            {/* ── TAB: GENERAL ─────────────────────────────────────────────── */}
             {activeSubTab === "general" && (
                 <>
-                    {/* KEY METRICS GRID */}
+                    {/* KPI Grid */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                        {/* 1. Global Revenue */}
-                        <div className="bg-[#1E293B] border border-white/10 rounded-2xl p-4 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-24 h-24 bg-green-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-green-500/10 transition-all" />
-                            <div className="flex justify-between items-start mb-3">
-                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Chiffre d'Affaires</span>
-                                <div className="p-2 bg-green-500/10 rounded-xl text-green-500">
-                                    <TrendingUp className="w-4 h-4" />
+                        {[
+                            { label: "Chiffre d'Affaires", value: `${stats.totalRevenue.toLocaleString()} DH`, sub: "Cumul commandes validées", color: "green", icon: TrendingUp },
+                            { label: "Occupation Hôtel", value: `${stats.occupancyRate}%`, sub: "Chambres occupées", color: "amber", icon: Bed, progress: stats.occupancyRate },
+                            { label: "Piscine Actifs", value: `${stats.activePoolGuests} Pax`, sub: "Personnes enregistrées", color: "cyan", icon: Users },
+                            { label: "File d'Attente", value: `${stats.pendingOrdersCount + stats.lavagesCount}`, sub: "Cuisine + Lavages urgents", color: "red", icon: Activity },
+                        ].map(({ label, value, sub, color, icon: Icon, progress }) => (
+                            <div key={label} className="bg-[#1E293B] border border-white/10 rounded-2xl p-4 relative overflow-hidden group">
+                                <div className={`absolute top-0 right-0 w-24 h-24 bg-${color}-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-${color}-500/10 transition-all`} />
+                                <div className="flex justify-between items-start mb-3">
+                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{label}</span>
+                                    <div className={`p-2 bg-${color}-500/10 rounded-xl text-${color}-500`}>
+                                        <Icon className="w-4 h-4" />
+                                    </div>
                                 </div>
+                                <div className="text-2xl font-black text-white">{value}</div>
+                                <div className={`text-[9px] text-${color}-400 font-bold mt-1`}>{sub}</div>
+                                {progress !== undefined && (
+                                    <div className="w-full bg-white/5 h-1 rounded-full mt-2 overflow-hidden">
+                                        <div className={`bg-${color}-500 h-full rounded-full`} style={{ width: `${progress}%` }} />
+                                    </div>
+                                )}
                             </div>
-                            <div className="text-2xl font-black text-white">{stats.totalRevenue.toLocaleString()} DH</div>
-                            <div className="text-[9px] text-green-400 font-bold mt-1">Cumulé (Commandes Validées)</div>
-                        </div>
-
-                        {/* 2. Hotel Occupancy */}
-                        <div className="bg-[#1E293B] border border-white/10 rounded-2xl p-4 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-amber-500/10 transition-all" />
-                            <div className="flex justify-between items-start mb-3">
-                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Occupation Hôtel</span>
-                                <div className="p-2 bg-amber-500/10 rounded-xl text-amber-500">
-                                    <Bed className="w-4 h-4" />
-                                </div>
-                            </div>
-                            <div className="text-2xl font-black text-white">{stats.occupancyRate}%</div>
-                            <div className="w-full bg-white/5 h-1 rounded-full mt-2 overflow-hidden">
-                                <div className="bg-amber-500 h-full rounded-full" style={{ width: `${stats.occupancyRate}%` }} />
-                            </div>
-                        </div>
-
-                        {/* 3. Pool Guests */}
-                        <div className="bg-[#1E293B] border border-white/10 rounded-2xl p-4 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/5 rounded-full blur-2xl pointer-events-none group-hover:bg-cyan-500/10 transition-all" />
-                            <div className="flex justify-between items-start mb-3">
-                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Piscine Actifs</span>
-                                <div className="p-2 bg-cyan-500/10 rounded-xl text-cyan-500">
-                                    <Users className="w-4 h-4" />
-                                </div>
-                            </div>
-                            <div className="text-2xl font-black text-white">{stats.activePoolGuests} Pax</div>
-                            <div className="text-[9px] text-cyan-400 font-bold mt-1">Personnes enregistrées</div>
-                        </div>
-
-                        {/* 4. Pending Tasks */}
-                        <div className="bg-[#1E293B] border border-white/10 rounded-2xl p-4 relative overflow-hidden group">
-                            <div className="absolute top-0 right-0 w-24 h-24 bg-red-600/5 rounded-full blur-2xl pointer-events-none group-hover:bg-red-600/10 transition-all" />
-                            <div className="flex justify-between items-start mb-3">
-                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">Tâches en Attente</span>
-                                <div className="p-2 bg-red-600/10 rounded-xl text-red-500">
-                                    <Activity className="w-4 h-4" />
-                                </div>
-                            </div>
-                            <div className="text-2xl font-black text-white">{stats.pendingOrdersCount + stats.lavagesCount} Actions</div>
-                            <div className="text-[9px] text-red-400 font-bold mt-1">Cuisine + Lavages urgents</div>
-                        </div>
+                        ))}
                     </div>
 
-                    {/* REVENUE BREAKDOWN BLOCK */}
+                    {/* Revenue Breakdown */}
                     <div className="bg-[#1E293B] border border-white/10 rounded-3xl p-6">
                         <h3 className="text-sm font-bold text-white mb-4 uppercase tracking-wider">Répartition du Chiffre d'Affaires</h3>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                            <div className="bg-[#0F172A] border border-white/5 rounded-2xl p-4 flex flex-col justify-between">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <Utensils className="w-4 h-4 text-orange-500" />
-                                    <span className="text-xs font-bold text-gray-300">Restaurant</span>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                            {[
+                                { label: "Restaurant", value: stats.restoRevenue, icon: Utensils, color: "orange" },
+                                { label: "Hôtel", value: stats.hotelRevenue, icon: Bed, color: "amber" },
+                                { label: "Piscine", value: stats.poolRevenue, icon: Ticket, color: "cyan" },
+                                { label: "Services", value: stats.servicesRevenue, icon: Activity, color: "emerald" },
+                            ].map(({ label, value, icon: Icon, color }) => (
+                                <div key={label} className="bg-[#0F172A] border border-white/5 rounded-2xl p-4">
+                                    <div className="flex items-center gap-2 mb-2">
+                                        <Icon className={`w-4 h-4 text-${color}-500`} />
+                                        <span className="text-xs font-bold text-gray-300">{label}</span>
+                                    </div>
+                                    <div className="text-xl font-black text-white">{value.toLocaleString()} DH</div>
+                                    <div className="text-[9px] text-gray-500 font-bold mt-1">
+                                        {stats.totalRevenue > 0 ? `${Math.round((value / stats.totalRevenue) * 100)}% du total` : "—"}
+                                    </div>
                                 </div>
-                                <div className="text-xl font-black text-white">{stats.restoRevenue.toLocaleString()} DH</div>
-                            </div>
-                            <div className="bg-[#0F172A] border border-white/5 rounded-2xl p-4 flex flex-col justify-between">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <Bed className="w-4 h-4 text-amber-500" />
-                                    <span className="text-xs font-bold text-gray-300">Hôtel</span>
-                                </div>
-                                <div className="text-xl font-black text-white">{stats.hotelRevenue.toLocaleString()} DH</div>
-                            </div>
-                            <div className="bg-[#0F172A] border border-white/5 rounded-2xl p-4 flex flex-col justify-between">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <Ticket className="w-4 h-4 text-cyan-500" />
-                                    <span className="text-xs font-bold text-gray-300">Piscine</span>
-                                </div>
-                                <div className="text-xl font-black text-white">{stats.poolRevenue.toLocaleString()} DH</div>
-                            </div>
-                            <div className="bg-[#0F172A] border border-white/5 rounded-2xl p-4 flex flex-col justify-between">
-                                <div className="flex items-center gap-2 mb-2">
-                                    <Activity className="w-4 h-4 text-emerald-500" />
-                                    <span className="text-xs font-bold text-gray-300">Services</span>
-                                </div>
-                                <div className="text-xl font-black text-white">{stats.servicesRevenue.toLocaleString()} DH</div>
-                            </div>
+                            ))}
                         </div>
                     </div>
 
-                    {/* LIVE QUEUES GRID */}
+                    {/* Live Queues */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                         <div className="bg-[#1E293B] border border-white/10 rounded-3xl p-6 space-y-4">
                             <div className="flex justify-between items-center">
@@ -391,23 +481,28 @@ export default function AdminDashboardPage() {
                                     <span className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-ping" />
                                     File Cuisine Resto
                                 </h3>
-                                <button onClick={() => router.push("/admin/restaurant")} className="text-xs font-bold text-amber-500 hover:underline">Gérer la cuisine →</button>
+                                <button onClick={() => router.push("/admin/restaurant")} className="text-xs font-bold text-amber-500 hover:underline">Gérer →</button>
                             </div>
                             <div className="space-y-3">
                                 {recentOrders.length === 0 ? (
                                     <div className="text-center py-6 text-xs text-gray-500 font-medium bg-[#0F172A] border border-white/5 rounded-2xl">Aucune commande active.</div>
                                 ) : (
                                     recentOrders.map(order => (
-                                        <div key={order.id} className="bg-[#0F172A] border border-white/5 rounded-2xl p-4 flex items-center justify-between">
+                                        <div key={order.id} className="bg-[#0F172A] border border-white/5 rounded-2xl p-3.5 flex items-center justify-between">
                                             <div>
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-black text-white text-xs">{order.order_number}</span>
                                                     <span className="text-[10px] text-gray-500">({order.customer_phone})</span>
                                                 </div>
-                                                <div className="text-[10px] text-gray-400 mt-1">Montant: {order.total_price || order.subtotal} DH</div>
+                                                <div className="text-[10px] text-gray-400 mt-0.5">{order.total_price || order.subtotal} DH</div>
                                             </div>
-                                            <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${order.status === "pending" ? "bg-amber-500/10 text-amber-400 border border-amber-500/20" : order.status === "preparing" ? "bg-blue-500/10 text-blue-400 border border-blue-500/20 animate-pulse" : "bg-green-500/10 text-green-400 border border-green-500/20"}`}>
-                                                {order.status === "pending" ? "Attente" : order.status === "preparing" ? "En Cuisine" : "Prêt"}
+                                            <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${
+                                                order.status === "pending" ? "bg-amber-500/10 text-amber-400 border border-amber-500/20" :
+                                                order.status === "preparing" ? "bg-blue-500/10 text-blue-400 border border-blue-500/20 animate-pulse" :
+                                                order.status === "completed" ? "bg-green-500/10 text-green-400 border border-green-500/20" :
+                                                "bg-white/5 text-gray-400 border border-white/10"
+                                            }`}>
+                                                {order.status === "pending" ? "Attente" : order.status === "preparing" ? "En Cuisine" : order.status === "completed" ? "Complété" : order.status}
                                             </span>
                                         </div>
                                     ))
@@ -421,20 +516,20 @@ export default function AdminDashboardPage() {
                                     <Bed className="w-4 h-4 text-amber-500" />
                                     Arrivées Hôtel Récentes
                                 </h3>
-                                <button onClick={() => router.push("/admin/hotel")} className="text-xs font-bold text-amber-500 hover:underline">Gérer l'hôtel →</button>
+                                <button onClick={() => router.push("/admin/hotel")} className="text-xs font-bold text-amber-500 hover:underline">Gérer →</button>
                             </div>
                             <div className="space-y-3">
                                 {hotelRoomsState.length === 0 ? (
                                     <div className="text-center py-6 text-xs text-gray-500 font-medium bg-[#0F172A] border border-white/5 rounded-2xl">Aucun mouvement.</div>
                                 ) : (
                                     hotelRoomsState.map(room => (
-                                        <div key={room.id} className="bg-[#0F172A] border border-white/5 rounded-2xl p-4 flex items-center justify-between">
+                                        <div key={room.id} className="bg-[#0F172A] border border-white/5 rounded-2xl p-3.5 flex items-center justify-between">
                                             <div>
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-black text-white text-xs">Chambre {room.room_number || "?"}</span>
                                                     <span className="text-[10px] text-gray-400 uppercase">({room.room_type})</span>
                                                 </div>
-                                                <div className="text-[10px] text-gray-500 mt-1">Client: {room.customer_phone || "Non spécifié"}</div>
+                                                <div className="text-[10px] text-gray-500 mt-0.5">{room.customer_phone || "Non spécifié"}</div>
                                             </div>
                                             <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${room.status === "checked_in" ? "bg-green-500/10 text-green-400 border border-green-500/20" : "bg-amber-500/10 text-amber-400 border border-amber-500/20"}`}>
                                                 {room.status === "checked_in" ? "Occupée" : "Attente"}
@@ -448,139 +543,232 @@ export default function AdminDashboardPage() {
                 </>
             )}
 
+            {/* ── TAB: STATS ───────────────────────────────────────────────── */}
             {activeSubTab === "stats" && (
                 <div className="space-y-6 animate-in fade-in duration-300">
+
+                    {/* KPI Row */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {[
+                            { label: "Commandes Total", value: stats.totalOrdersCount, icon: BarChart2, color: "purple", suffix: "" },
+                            { label: "Complétées Aujourd'hui", value: stats.completedOrdersToday, icon: CheckCircle, color: "green", suffix: "" },
+                            { label: "En Attente / Cuisine", value: stats.pendingOrdersCount, icon: Clock3, color: "amber", suffix: "" },
+                            { label: "Panier Moyen", value: stats.avgOrderValue, icon: DollarSign, color: "orange", suffix: " DH" },
+                        ].map(({ label, value, icon: Icon, color, suffix }) => (
+                            <div key={label} className="bg-[#1E293B] border border-white/10 rounded-2xl p-4">
+                                <div className="flex items-center justify-between mb-2">
+                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{label}</span>
+                                    <div className={`p-1.5 bg-${color}-500/10 rounded-lg text-${color}-500`}>
+                                        <Icon className="w-3.5 h-3.5" />
+                                    </div>
+                                </div>
+                                <div className="text-2xl font-black text-white">{value.toLocaleString()}{suffix}</div>
+                            </div>
+                        ))}
+                    </div>
+
+                    {/* Revenue Chart + Donut */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                         <div className="lg:col-span-2 bg-[#1E293B] border border-white/10 rounded-3xl p-6">
-                            <div className="flex justify-between items-center mb-6">
+                            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
                                 <div>
-                                    <h3 className="text-sm font-bold text-white uppercase tracking-wider">Évolution des Revenus</h3>
-                                    <p className="text-[10px] text-gray-400 font-medium">Encaissements cumulés récents au fil du temps</p>
+                                    <h3 className="text-sm font-bold text-white uppercase tracking-wider">Évolution des Revenus Restaurant</h3>
+                                    <p className="text-[10px] text-gray-400 font-medium mt-0.5">Encaissements validés par jour</p>
                                 </div>
-                                <span className="text-[10px] font-bold bg-green-500/10 border border-green-500/20 text-green-400 px-2.5 py-1 rounded-lg">
-                                    +12.4% Evolution positive
-                                </span>
+                                <div className="flex gap-1 bg-[#0F172A] p-1 rounded-xl border border-white/5">
+                                    {([7, 14, 30] as const).map(n => (
+                                        <button key={n} onClick={() => setChartRange(n)}
+                                            className={`px-3 py-1 rounded-lg text-[10px] font-bold transition-all ${chartRange === n ? "bg-green-500 text-black" : "text-gray-400 hover:text-white"}`}
+                                        >
+                                            {n}j
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
-                            
-                            <div className="h-56 w-full flex items-end relative">
-                                <svg viewBox="0 0 500 200" className="w-full h-full overflow-visible">
-                                    <defs>
-                                        <linearGradient id="chartGlow" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="0%" stopColor="#10B981" stopOpacity="0.3" />
-                                            <stop offset="100%" stopColor="#10B981" stopOpacity="0.0" />
-                                        </linearGradient>
-                                    </defs>
-                                    <line x1="0" y1="50" x2="500" y2="50" stroke="rgba(255,255,255,0.03)" strokeDasharray="4" />
-                                    <line x1="0" y1="100" x2="500" y2="100" stroke="rgba(255,255,255,0.03)" strokeDasharray="4" />
-                                    <line x1="0" y1="150" x2="500" y2="150" stroke="rgba(255,255,255,0.03)" strokeDasharray="4" />
-                                    
-                                    <path
-                                        d="M 0,170 Q 80,120 160,150 T 320,60 T 500,30 L 500,200 L 0,200 Z"
-                                        fill="url(#chartGlow)"
-                                    />
-                                    <path
-                                        d="M 0,170 Q 80,120 160,150 T 320,60 T 500,30"
-                                        fill="none"
-                                        stroke="#10B981"
-                                        strokeWidth="3.5"
-                                        strokeLinecap="round"
-                                    />
-                                    
-                                    <circle cx="160" cy="150" r="4.5" fill="#10B981" stroke="#1E293B" strokeWidth="2.5" />
-                                    <circle cx="320" cy="60" r="4.5" fill="#10B981" stroke="#1E293B" strokeWidth="2.5" />
-                                    <circle cx="500" cy="30" r="4.5" fill="#10B981" stroke="#1E293B" strokeWidth="2.5" />
-                                </svg>
-                                
-                                <div className="absolute bottom-[-15px] left-0 right-0 flex justify-between text-[9px] text-gray-500 font-bold px-1 uppercase tracking-wider">
-                                    <span>Lun</span>
-                                    <span>Mar</span>
-                                    <span>Mer</span>
-                                    <span>Jeu</span>
-                                    <span>Ven</span>
-                                    <span>Sam</span>
-                                    <span>Dim</span>
+
+                            <div className="h-48 w-full relative">
+                                <LineChart data={computedChartData.resto} color="#10B981" />
+                            </div>
+                            <div className="flex justify-between text-[9px] text-gray-500 font-bold uppercase tracking-wider mt-3 px-1">
+                                {computedChartData.dates.filter((_, i) => {
+                                    const step = Math.max(1, Math.floor(computedChartData.dates.length / 7));
+                                    return i % step === 0 || i === computedChartData.dates.length - 1;
+                                }).map(d => (
+                                    <span key={d}>{dayLabel(d)}</span>
+                                ))}
+                            </div>
+
+                            {/* Summary below chart */}
+                            <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-white/5">
+                                <div className="text-center">
+                                    <div className="text-xs font-black text-white">{computedChartData.resto.reduce((a, b) => a + b, 0).toLocaleString()} DH</div>
+                                    <div className="text-[9px] text-gray-500 font-bold">Période</div>
+                                </div>
+                                <div className="text-center">
+                                    <div className="text-xs font-black text-white">
+                                        {Math.round(computedChartData.resto.reduce((a, b) => a + b, 0) / (chartRange || 1)).toLocaleString()} DH
+                                    </div>
+                                    <div className="text-[9px] text-gray-500 font-bold">Moy/jour</div>
+                                </div>
+                                <div className="text-center">
+                                    <div className="text-xs font-black text-green-400">
+                                        {Math.max(...computedChartData.resto).toLocaleString()} DH
+                                    </div>
+                                    <div className="text-[9px] text-gray-500 font-bold">Meilleur jour</div>
                                 </div>
                             </div>
                         </div>
 
+                        {/* Donut */}
                         <div className="bg-[#1E293B] border border-white/10 rounded-3xl p-6 flex flex-col justify-between">
                             <div>
                                 <h3 className="text-sm font-bold text-white uppercase tracking-wider mb-1">Parts d'Activité</h3>
-                                <p className="text-[10px] text-gray-400 font-medium">Pourcentage de contribution par service</p>
+                                <p className="text-[10px] text-gray-400 font-medium">Contribution par service (revenus réels)</p>
                             </div>
 
                             <div className="relative aspect-square w-36 mx-auto flex items-center justify-center my-4">
-                                <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
-                                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="3" />
-                                    {/* Resto: 30% */}
-                                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="#FF8A00" strokeWidth="3.2" strokeDasharray="30 70" strokeDashoffset="0" />
-                                    {/* Hotel: 45% */}
-                                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="#F59E0B" strokeWidth="3.2" strokeDasharray="45 55" strokeDashoffset="-30" />
-                                    {/* Pool: 15% */}
-                                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="#06B6D4" strokeWidth="3.2" strokeDasharray="15 85" strokeDashoffset="-75" />
-                                    {/* Services: 10% */}
-                                    <circle cx="18" cy="18" r="15.915" fill="none" stroke="#10B981" strokeWidth="3.2" strokeDasharray="10 90" strokeDashoffset="-90" />
-                                </svg>
-                                <div className="absolute flex flex-col items-center justify-center text-center">
-                                    <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest font-sans">Global</span>
-                                    <span className="text-lg font-black text-white">100%</span>
-                                </div>
+                                {donutSegments.length > 0 ? (
+                                    <>
+                                        <DonutChart segments={donutSegments} />
+                                        <div className="absolute flex flex-col items-center justify-center text-center">
+                                            <span className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">Total</span>
+                                            <span className="text-base font-black text-white">{stats.totalRevenue.toLocaleString()}</span>
+                                            <span className="text-[9px] text-gray-500 font-bold">DH</span>
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div className="text-center text-xs text-gray-500 font-bold">Pas de données</div>
+                                )}
                             </div>
 
-                            <div className="grid grid-cols-2 gap-2 text-[10px] font-bold">
-                                <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-[#FF8A00]" /> <span className="text-gray-400">Resto (30%)</span></div>
-                                <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-[#F59E0B]" /> <span className="text-gray-400">Hôtel (45%)</span></div>
-                                <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-[#06B6D4]" /> <span className="text-gray-400">Pool (15%)</span></div>
-                                <div className="flex items-center gap-1.5"><div className="w-2.5 h-2.5 rounded bg-[#10B981]" /> <span className="text-gray-400">Wash (10%)</span></div>
+                            <div className="space-y-2">
+                                {[
+                                    { label: "Restaurant", value: stats.restoRevenue, color: "#FF8A00" },
+                                    { label: "Hôtel", value: stats.hotelRevenue, color: "#F59E0B" },
+                                    { label: "Piscine", value: stats.poolRevenue, color: "#06B6D4" },
+                                    { label: "Services", value: stats.servicesRevenue, color: "#10B981" },
+                                ].map(({ label, value, color }) => (
+                                    <div key={label} className="flex items-center justify-between text-[10px] font-bold">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-2.5 h-2.5 rounded" style={{ background: color }} />
+                                            <span className="text-gray-400">{label}</span>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="text-white font-mono">{value.toLocaleString()} DH</span>
+                                            <span className="text-gray-600 ml-1">
+                                                ({stats.totalRevenue > 0 ? Math.round((value / stats.totalRevenue) * 100) : 0}%)
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
                         </div>
                     </div>
 
+                    {/* Top Items Table */}
                     <div className="bg-[#1E293B] border border-white/10 rounded-3xl p-6">
                         <div className="flex justify-between items-center mb-6">
                             <div>
-                                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Top Plats les Plus Rentables (Cuisine Resto)</h3>
-                                <p className="text-[10px] text-gray-400 font-medium">Articles générant le plus grand volume de ventes</p>
+                                <h3 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                                    <Award className="w-4 h-4 text-amber-500" />
+                                    Top Plats les Plus Rentables
+                                </h3>
+                                <p className="text-[10px] text-gray-400 font-medium mt-1">Basé sur les commandes validées et encaissées</p>
                             </div>
-                            <div className="p-2 bg-amber-500/10 rounded-xl text-amber-500">
-                                <DollarSign className="w-4 h-4" />
+                            <div className="text-[10px] font-bold bg-amber-500/10 border border-amber-500/20 text-amber-400 px-2.5 py-1 rounded-lg">
+                                {topItems.length} articles analysés
                             </div>
                         </div>
 
-                        <div className="space-y-4">
-                            {topItems.length === 0 ? (
-                                <div className="text-center py-8 text-xs text-gray-500 font-bold bg-[#0F172A] border border-white/5 rounded-2xl">
-                                    Aucune vente disponible dans l'historique récent.
-                                </div>
-                            ) : (
-                                topItems.map((item, idx) => {
+                        {topItems.length === 0 ? (
+                            <div className="text-center py-8 text-xs text-gray-500 font-bold bg-[#0F172A] border border-white/5 rounded-2xl">
+                                Aucune vente disponible dans l'historique.
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {topItems.map((item, idx) => {
                                     const maxRevenue = topItems[0]?.revenue || 1;
                                     const percent = Math.round((item.revenue / maxRevenue) * 100);
+                                    const colors = ["from-amber-600 to-yellow-400", "from-gray-500 to-gray-300", "from-orange-700 to-orange-500", "from-emerald-700 to-green-400", "from-blue-700 to-blue-400"];
+                                    const medalColors = ["text-yellow-400", "text-gray-300", "text-orange-400", "text-emerald-400", "text-blue-400"];
 
                                     return (
                                         <div key={idx} className="space-y-1.5">
                                             <div className="flex justify-between text-xs font-bold items-center">
                                                 <div className="flex items-center gap-2">
-                                                    <span className="w-5 h-5 rounded-full bg-white/5 flex items-center justify-center text-[10px] text-amber-500 font-mono">#{idx+1}</span>
+                                                    <span className={`w-6 h-6 rounded-full bg-white/5 flex items-center justify-center text-[10px] font-mono ${medalColors[idx] || "text-gray-400"}`}>
+                                                        #{idx + 1}
+                                                    </span>
                                                     <span className="text-white">{item.name}</span>
                                                 </div>
-                                                <div className="text-right flex items-center gap-4 text-gray-400 font-mono">
-                                                    <span>x{item.qty} Ventes</span>
+                                                <div className="flex items-center gap-4 text-gray-400 font-mono text-right">
+                                                    <span>×{item.qty} ventes</span>
                                                     <span className="text-green-400 font-bold font-sans">{item.revenue.toLocaleString()} DH</span>
                                                 </div>
                                             </div>
-                                            <div className="w-full bg-[#0F172A] h-2 rounded-full overflow-hidden border border-white/5">
-                                                <div className="bg-gradient-to-r from-emerald-600 to-green-400 h-full rounded-full transition-all duration-1000" style={{ width: `${percent}%` }} />
+                                            <div className="w-full bg-[#0F172A] h-2.5 rounded-full overflow-hidden border border-white/5">
+                                                <div
+                                                    className={`bg-gradient-to-r ${colors[idx] || "from-green-600 to-green-400"} h-full rounded-full transition-all duration-1000`}
+                                                    style={{ width: `${percent}%` }}
+                                                />
                                             </div>
                                         </div>
                                     );
-                                })
-                            )}
+                                })}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Orders Per Day Bar Chart */}
+                    <div className="bg-[#1E293B] border border-white/10 rounded-3xl p-6">
+                        <div className="flex justify-between items-center mb-6">
+                            <div>
+                                <h3 className="text-sm font-bold text-white uppercase tracking-wider">Volume d'Encaissements / Jour</h3>
+                                <p className="text-[10px] text-gray-400 font-medium mt-0.5">Montant total encaissé par jour ({chartRange} derniers jours)</p>
+                            </div>
+                        </div>
+                        <div className="h-36">
+                            <BarChart
+                                data={computedChartData.resto}
+                                labels={computedChartData.dates.map(d => dayLabel(d))}
+                                color="#10B981"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Alerts / Insights */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-[#1E293B] border border-amber-500/20 rounded-2xl p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <AlertTriangle className="w-4 h-4 text-amber-500" />
+                                <span className="text-xs font-bold text-amber-400 uppercase tracking-wide">Commandes en Attente</span>
+                            </div>
+                            <div className="text-3xl font-black text-white">{stats.pendingOrdersCount}</div>
+                            <div className="text-[10px] text-gray-500 font-bold mt-1">Nécessitent une intervention cuisine</div>
+                        </div>
+
+                        <div className="bg-[#1E293B] border border-green-500/20 rounded-2xl p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <CheckCircle className="w-4 h-4 text-green-500" />
+                                <span className="text-xs font-bold text-green-400 uppercase tracking-wide">Complétées Aujourd'hui</span>
+                            </div>
+                            <div className="text-3xl font-black text-white">{stats.completedOrdersToday}</div>
+                            <div className="text-[10px] text-gray-500 font-bold mt-1">Commandes encaissées ce jour</div>
+                        </div>
+
+                        <div className="bg-[#1E293B] border border-cyan-500/20 rounded-2xl p-4">
+                            <div className="flex items-center gap-2 mb-2">
+                                <Users className="w-4 h-4 text-cyan-500" />
+                                <span className="text-xs font-bold text-cyan-400 uppercase tracking-wide">Piscine Actifs</span>
+                            </div>
+                            <div className="text-3xl font-black text-white">{stats.activePoolGuests}</div>
+                            <div className="text-[10px] text-gray-500 font-bold mt-1">Personnes actuellement enregistrées</div>
                         </div>
                     </div>
                 </div>
             )}
 
+            {/* ── TAB: PINS ────────────────────────────────────────────────── */}
             {activeSubTab === "pins" && (
                 <div className="bg-[#1E293B] border border-white/10 rounded-3xl p-6 max-w-xl mx-auto space-y-6 animate-in fade-in duration-300">
                     <div>
@@ -588,81 +776,43 @@ export default function AdminDashboardPage() {
                             <Lock className="w-4 h-4 text-amber-500" />
                             Gestion des Accès PIN
                         </h3>
-                        <p className="text-[10px] text-gray-400 mt-1">Configurez les codes PIN à 4 chiffres permettant aux différents rôles de se connecter</p>
+                        <p className="text-[10px] text-gray-400 mt-1">Configurez les codes PIN à 4 chiffres pour chaque rôle</p>
                     </div>
 
                     <div className="space-y-4">
-                        {/* Admin Code */}
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">PIN Administrateur (Directeur)</label>
-                            <input
-                                type="text"
-                                maxLength={4}
-                                value={pinAdmin}
-                                onChange={e => setPinAdmin(e.target.value.replace(/[^0-9]/g, ''))}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white font-mono font-bold text-lg outline-none focus:border-amber-500/50"
-                                placeholder="7777"
-                            />
-                        </div>
-
-                        {/* Hotel Code */}
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">PIN Staff Réception Hôtel</label>
-                            <input
-                                type="text"
-                                maxLength={4}
-                                value={pinHotel}
-                                onChange={e => setPinHotel(e.target.value.replace(/[^0-9]/g, ''))}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white font-mono font-bold text-lg outline-none focus:border-amber-500/50"
-                                placeholder="1111"
-                            />
-                        </div>
-
-                        {/* Kitchen Code */}
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">PIN Staff Cuisine Restaurant</label>
-                            <input
-                                type="text"
-                                maxLength={4}
-                                value={pinKitchen}
-                                onChange={e => setPinKitchen(e.target.value.replace(/[^0-9]/g, ''))}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white font-mono font-bold text-lg outline-none focus:border-amber-500/50"
-                                placeholder="2222"
-                            />
-                        </div>
-
-                        {/* Services Code */}
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">PIN Staff Piscine & Services</label>
-                            <input
-                                type="text"
-                                maxLength={4}
-                                value={pinServices}
-                                onChange={e => setPinServices(e.target.value.replace(/[^0-9]/g, ''))}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white font-mono font-bold text-lg outline-none focus:border-amber-500/50"
-                                placeholder="3333"
-                            />
-                        </div>
-
-                        {/* Caisse Code */}
-                        <div className="space-y-1.5">
-                            <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">PIN Staff Caisse (Scanner)</label>
-                            <input
-                                type="text"
-                                maxLength={4}
-                                value={pinCaisse}
-                                onChange={e => setPinCaisse(e.target.value.replace(/[^0-9]/g, ''))}
-                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white font-mono font-bold text-lg outline-none focus:border-amber-500/50"
-                                placeholder="4444"
-                            />
-                        </div>
+                        {[
+                            { label: "PIN Administrateur (Directeur)", value: pinAdmin, onChange: setPinAdmin, placeholder: "7777", color: "amber" },
+                            { label: "PIN Staff Réception Hôtel", value: pinHotel, onChange: setPinHotel, placeholder: "1111", color: "blue" },
+                            { label: "PIN Staff Cuisine Restaurant", value: pinKitchen, onChange: setPinKitchen, placeholder: "2222", color: "orange" },
+                            { label: "PIN Staff Piscine & Services", value: pinServices, onChange: setPinServices, placeholder: "3333", color: "cyan" },
+                            { label: "PIN Staff Caisse (Scanner)", value: pinCaisse, onChange: setPinCaisse, placeholder: "4444", color: "green" },
+                        ].map(({ label, value, onChange, placeholder }) => (
+                            <div key={label} className="space-y-1.5">
+                                <label className="text-xs font-bold text-gray-400 uppercase tracking-wide">{label}</label>
+                                <input
+                                    type="text"
+                                    maxLength={4}
+                                    value={value}
+                                    onChange={e => onChange(e.target.value.replace(/[^0-9]/g, ""))}
+                                    className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white font-mono font-bold text-lg outline-none focus:border-amber-500/50 tracking-[0.5em] text-center"
+                                    placeholder={placeholder}
+                                />
+                            </div>
+                        ))}
 
                         <button
                             onClick={handleSavePins}
-                            className="w-full py-4 bg-amber-500 hover:bg-amber-600 text-black font-black text-sm rounded-xl shadow-lg shadow-amber-500/10 transition-all flex items-center justify-center gap-2 mt-4"
+                            className={`w-full py-4 font-black text-sm rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 mt-4 ${
+                                pinSaved
+                                    ? "bg-green-500 text-white shadow-green-500/10"
+                                    : "bg-amber-500 hover:bg-amber-600 text-black shadow-amber-500/10"
+                            }`}
                         >
-                            <Key className="w-4 h-4" />
-                            Sauvegarder les codes d'accès
+                            {pinSaved ? (
+                                <><CheckCircle className="w-4 h-4" /> Codes sauvegardés avec succès !</>
+                            ) : (
+                                <><Key className="w-4 h-4" /> Sauvegarder les codes d'accès</>
+                            )}
                         </button>
                     </div>
                 </div>
