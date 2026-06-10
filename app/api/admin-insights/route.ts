@@ -27,11 +27,11 @@ export async function POST(req: NextRequest) {
         .map((o: any) => `- ${o.order_number}: ${o.total_price || o.subtotal}DH [${o.status}]`)
         .join("\n") || "Aucune commande récente";
 
-    const prompt = `Tu es un consultant business expert pour Golden Parc Cepsa, un complexe marocain (restaurant, hôtel, piscine, services auto).
+    const prompt = `Tu es un consultant business expert pour Golden Parc Cepsa, un complexe marocain (restaurant, hôtel, piscine, service de lubrifiants/vidange).
 
 DONNÉES ACTUELLES:
-- CA Total: ${stats?.totalRevenue || 0} DH (Restaurant: ${stats?.restoRevenue || 0} DH, Hôtel: ${stats?.hotelRevenue || 0} DH, Piscine: ${stats?.poolRevenue || 0} DH, Services: ${stats?.servicesRevenue || 0} DH)
-- Occupation hôtel: ${stats?.occupancyRate || 0}% (sur 10 chambres)
+- CA Total: ${stats?.totalRevenue || 0} DH (Restaurant: ${stats?.restoRevenue || 0} DH, Hôtel: ${stats?.hotelRevenue || 0} DH, Piscine: ${stats?.poolRevenue || 0} DH, Services (Lubrifiants): ${stats?.servicesRevenue || 0} DH)
+- Taux d'occupation physique de l'hôtel (actuel): ${stats?.occupancyRate || 0}% (sur 10 chambres). Note: Le chiffre d'affaires de l'hôtel provient des réservations payées/confirmées à l'avance, ce qui est normal même si l'occupation physique instantanée est faible ou de 0%. Ne dis pas que l'hôtel est inoccupé ou en perte s'il a généré du chiffre d'affaires significatif.
 - Piscine: ${stats?.activePoolGuests || 0} personnes actives
 - Commandes en attente: ${stats?.pendingOrdersCount || 0}
 - Complétées aujourd'hui: ${stats?.completedOrdersToday || 0}
@@ -43,6 +43,9 @@ ${topPlats}
 
 COMMANDES RECENTES:
 ${recentList}
+
+NOTES IMPORTANTES:
+- Le service de lavage de voiture (Lavage Auto) a été définitivement supprimé. Ne conseille jamais de relancer ou d'activer le lavage auto. Concentre-toi sur le service restant de Lubrifiants/Vidange ou les autres espaces (resto, hôtel, piscine).
 
 Génère 4 conseils business courts, précis et actionnables basés sur ces chiffres réels. Choisis des icônes emojis appropriées pour chaque conseil.`;
 
