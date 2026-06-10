@@ -638,7 +638,11 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                                                             {onSiteLocation === 'table' ? 'Table scannée' : onSiteLocation === 'pool' ? 'Place scannée' : 'Chambre'}
                                                         </p>
                                                         <p className="text-lg font-black text-white leading-none mt-1">
-                                                            N° {locationDetail}
+                                                            {onSiteLocation === 'table' 
+                                                                ? (language === 'ar' ? `طاولة رقم ${locationDetail}` : `Table N° ${locationDetail}`) 
+                                                                : onSiteLocation === 'pool' 
+                                                                    ? (language === 'ar' ? `مكان رقم ${locationDetail}` : `Place N° ${locationDetail}`) 
+                                                                    : (language === 'ar' ? `غرفة رقم ${locationDetail}` : `Chambre N° ${locationDetail}`)}
                                                         </p>
                                                     </div>
                                                 </div>
@@ -655,7 +659,10 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                                                 {(onSiteLocation === 'table' || onSiteLocation === 'pool') && (
                                                     <button 
                                                         type="button"
-                                                        onClick={() => setIsScanning(true)}
+                                                        onClick={() => {
+                                                            setIsCartOpen(false);
+                                                            setIsScanning(true);
+                                                        }}
                                                         className="w-full text-sm text-blue-400 mb-3 bg-blue-500/10 hover:bg-blue-500/20 active:scale-95 transition-all p-4 rounded-xl border border-blue-500/30 flex items-center justify-center gap-3 font-black shadow-[0_4px_15px_rgba(59,130,246,0.15)] animate-in fade-in"
                                                     >
                                                         <Camera className="w-5 h-5"/>
@@ -968,7 +975,10 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                         className="fixed inset-0 z-[70] bg-black/90 backdrop-blur-md flex flex-col justify-center items-center p-6"
                     >
                         <button 
-                            onClick={() => setIsScanning(false)}
+                            onClick={() => {
+                                setIsScanning(false);
+                                setIsCartOpen(true);
+                            }}
                             className="absolute top-6 right-6 p-3 bg-white/5 border border-white/10 rounded-full hover:bg-white/10 text-white transition-colors"
                         >
                             <X className="w-6 h-6"/>
@@ -997,6 +1007,7 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                                             setLocationDetail(text);
                                         }
                                         setIsScanning(false);
+                                        setIsCartOpen(true);
                                     }
                                 }}
                                 onError={(error) => console.log(error?.message)}
