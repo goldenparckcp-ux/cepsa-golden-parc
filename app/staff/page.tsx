@@ -5,7 +5,7 @@ import { Lock, Smartphone, Users, HelpCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 interface StaffSession {
-    role: 'hotel' | 'kitchen' | 'services';
+    role: 'hotel' | 'kitchen' | 'services' | 'caisse';
     name: string;
 }
 
@@ -24,6 +24,7 @@ export default function StaffLoginPage() {
                 if (session.role === "hotel") router.push("/staff/hotel");
                 else if (session.role === "kitchen") router.push("/staff/restaurant");
                 else if (session.role === "services") router.push("/staff/pool-services");
+                else if (session.role === "caisse") router.push("/staff/caisse");
                 else if (session.role === "admin") router.push("/admin");
             } catch (e) {
                 localStorage.removeItem("staff_session");
@@ -66,6 +67,8 @@ export default function StaffLoginPage() {
             resolvedSession = { role: "kitchen", name: "Chef Cuisine" };
         } else if (enteredPin === "3333") {
             resolvedSession = { role: "services", name: "Staff Piscine & Services" };
+        } else if (enteredPin === "4444") {
+            resolvedSession = { role: "caisse", name: "Caisse Principale" };
         } else if (enteredPin === "7777") {
             setErrorMsg("Ce code PIN est réservé à l'administrateur. Veuillez utiliser le portail Admin (/admin).");
             setPin("");
@@ -81,6 +84,7 @@ export default function StaffLoginPage() {
             if (resolvedSession.role === "hotel") router.push("/staff/hotel");
             else if (resolvedSession.role === "kitchen") router.push("/staff/restaurant");
             else if (resolvedSession.role === "services") router.push("/staff/pool-services");
+            else if (resolvedSession.role === "caisse") router.push("/staff/caisse");
         } else {
             setErrorMsg("Code PIN incorrect. Veuillez contacter l'administrateur.");
             setPin("");

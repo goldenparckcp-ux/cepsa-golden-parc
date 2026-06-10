@@ -275,12 +275,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             roles: ["admin"]
         },
         {
-            href: "/admin/content",
-            label: "Ajouter Contenu",
-            icon: PlusCircle,
-            roles: ["admin"]
-        },
-        {
             href: "/admin/qrcodes",
             label: "QR Codes",
             icon: QrCode,

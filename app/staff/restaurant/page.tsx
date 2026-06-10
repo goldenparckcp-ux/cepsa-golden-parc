@@ -17,6 +17,60 @@ export default function StaffRestaurantOrdersPage() {
     // Audio reference for notification sound
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
+    const getArrivalMinutes = (createdAtStr: string, arrivalTimeStr: string): number => {
+        const arrivalTime = (arrivalTimeStr || "30 min").toLowerCase().trim();
+        const date = new Date(createdAtStr);
+        
+        if (arrivalTime.includes("min")) {
+            const mins = parseInt(arrivalTime.replace(/[^0-9]/g, "")) || 0;
+            date.setMinutes(date.getMinutes() + mins);
+        } else if (arrivalTime.includes("h")) {
+            const parts = arrivalTime.split("h");
+            const hours = parseInt(parts[0].replace(/[^0-9]/g, "")) || 0;
+            const mins = parts[1] ? (parseInt(parts[1].replace(/[^0-9]/g, "")) || 0) : 0;
+            
+            if (hours >= 8) {
+                date.setHours(hours);
+                date.setMinutes(mins);
+                date.setSeconds(0);
+                date.setMilliseconds(0);
+            } else {
+                date.setMinutes(date.getMinutes() + (hours * 60 + mins));
+            }
+        } else {
+            date.setMinutes(date.getMinutes() + 30);
+        }
+        
+        const diffMs = date.getTime() - Date.now();
+        return Math.floor(diffMs / 60000);
+    };
+
+    const getSortedOrders = (ordersList: any[]) => {
+        return [...ordersList].sort((a, b) => {
+            const parseMeta = (order: any) => {
+                if (!Array.isArray(order.items)) return { location_type: "on_site" };
+                return order.items.find((i: any) => i.is_meta) || {};
+            };
+            
+            const metaA = parseMeta(a);
+            const metaB = parseMeta(b);
+            
+            const isWayA = metaA.location_type === "on_way";
+            const isWayB = metaB.location_type === "on_way";
+            
+            if (!isWayA && isWayB) return -1;
+            if (isWayA && !isWayB) return 1;
+            
+            if (isWayA && isWayB) {
+                const minsA = getArrivalMinutes(a.created_at, metaA.arrival_time);
+                const minsB = getArrivalMinutes(b.created_at, metaB.arrival_time);
+                return minsA - minsB;
+            }
+            
+            return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+        });
+    };
+
     // Session Check
     useEffect(() => {
         const stored = localStorage.getItem("staff_session");
@@ -259,24 +313,54 @@ export default function StaffRestaurantOrdersPage() {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredOrders.map(order => {
+                        {getSortedOrders(filteredOrders).map(order => {
                             const { foodItems, meta } = parseOrder(order.items);
                             const isEnRoute = meta.location_type === "on_way";
+
+                            let cardColorClass = "border-white/10 hover:border-white/20";
+                            let routeTimeBadge = null;
+
+                            if (isEnRoute && ["pending", "confirmed", "preparing"].includes(order.status)) {
+                                const remainingMins = getArrivalMinutes(order.created_at, meta.arrival_time);
+                                if (remainingMins < 30) {
+                                    cardColorClass = "border-red-500 shadow-red-500/10";
+                                    routeTimeBadge = (
+                                        <span className="px-2 py-0.5 rounded-full text-[9px] uppercase font-black tracking-wider bg-red-500/20 text-red-500 border border-red-500/30">
+                                            🔴 Urgent ({remainingMins} min)
+                                        </span>
+                                    );
+                                } else if (remainingMins <= 45) {
+                                    cardColorClass = "border-amber-500 shadow-amber-500/10";
+                                    routeTimeBadge = (
+                                        <span className="px-2 py-0.5 rounded-full text-[9px] uppercase font-black tracking-wider bg-amber-500/20 text-amber-500 border border-amber-500/30">
+                                            🟡 Wjed Rask ({remainingMins} min)
+                                        </span>
+                                    );
+                                } else {
+                                    cardColorClass = "border-green-500 shadow-green-500/10";
+                                    routeTimeBadge = (
+                                        <span className="px-2 py-0.5 rounded-full text-[9px] uppercase font-black tracking-wider bg-green-500/20 text-green-500 border border-green-500/30">
+                                            🟢 Mzel L7al ({remainingMins} min)
+                                        </span>
+                                    );
+                                }
+                            } else if (order.status === "pending" || order.status === "confirmed") {
+                                cardColorClass = "border-amber-500/40 shadow-amber-500/5";
+                            }
 
                             return (
                                 <div
                                     key={order.id}
-                                    className={`bg-[#1E293B] border rounded-[2rem] p-5 flex flex-col justify-between relative overflow-hidden transition-all duration-300 shadow-xl ${
-                                        (order.status === "pending" || order.status === "confirmed")
-                                            ? "border-amber-500/40 shadow-amber-500/5"
-                                            : "border-white/10 hover:border-white/20"
-                                    }`}
+                                    className={`bg-[#1E293B] border rounded-[2rem] p-5 flex flex-col justify-between relative overflow-hidden transition-all duration-300 shadow-xl ${cardColorClass}`}
                                 >
                                     <div className="space-y-2 mb-4">
                                         <div className="flex justify-between items-start">
                                             <div>
                                                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Commande</span>
-                                                <span className="text-lg font-black text-white">{order.order_number}</span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-lg font-black text-white">{order.order_number}</span>
+                                                    {routeTimeBadge}
+                                                </div>
                                             </div>
                                             <div className="text-right">
                                                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Passée il y a</span>

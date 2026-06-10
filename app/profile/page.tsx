@@ -46,6 +46,11 @@ function ProfileContent() {
         scheduledAt?: string;
         deposit_amount?: number;
         deposit_paid?: boolean;
+        rawItems?: any;
+        locationType?: string;
+        locationDetail?: string;
+        arrivalTime?: string;
+        customerNotes?: string;
     }
 
     // Dashboard Data
@@ -55,6 +60,12 @@ function ProfileContent() {
 
     // QR Modal State
     const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+
+    // Order Editing States
+    const [editingOrder, setEditingOrder] = useState<Order | null>(null);
+    const [newTableDetail, setNewTableDetail] = useState("");
+    const [newArrivalTime, setNewArrivalTime] = useState("");
+    const [newNotes, setNewNotes] = useState("");
 
     // Update Profile Handler
     const handleUpdateProfile = async () => {
@@ -134,6 +145,108 @@ function ProfileContent() {
         } catch (err: unknown) {
             const message = err instanceof Error ? err.message : String(err);
             alert(message);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    const getArrivalDate = (createdAt: Date, arrivalTimeStr: string): Date => {
+        const arrivalTime = arrivalTimeStr.toLowerCase().trim();
+        const date = new Date(createdAt);
+        
+        if (arrivalTime.includes("min")) {
+            const mins = parseInt(arrivalTime.replace(/[^0-9]/g, "")) || 0;
+            date.setMinutes(date.getMinutes() + mins);
+            return date;
+        }
+        
+        if (arrivalTime.includes("h")) {
+            const parts = arrivalTime.split("h");
+            const hours = parseInt(parts[0].replace(/[^0-9]/g, "")) || 0;
+            const mins = parts[1] ? (parseInt(parts[1].replace(/[^0-9]/g, "")) || 0) : 0;
+            
+            if (hours >= 8) {
+                date.setHours(hours);
+                date.setMinutes(mins);
+                date.setSeconds(0);
+                date.setMilliseconds(0);
+            } else {
+                date.setMinutes(date.getMinutes() + (hours * 60 + mins));
+            }
+            return date;
+        }
+        
+        date.setMinutes(date.getMinutes() + 30);
+        return date;
+    };
+
+    const getIsModifiable = (order: Order): boolean => {
+        if (order.status === 'cancelled' || order.status === 'completed' || order.status === 'ready' || order.status === 'preparing') {
+            return false;
+        }
+        if (order.table !== 'restaurant_orders') return false;
+        
+        let itemsList = [];
+        try {
+            itemsList = typeof order.rawItems === 'string' ? JSON.parse(order.rawItems) : order.rawItems;
+        } catch {
+            itemsList = [];
+        }
+        const metaItem = Array.isArray(itemsList) ? itemsList.find((i: any) => i.is_meta) : null;
+        if (!metaItem) return false;
+        
+        const createdAt = new Date(order.date);
+        const now = new Date();
+        
+        if (metaItem.location_type === 'on_way') {
+            const arrivalTimeStr = metaItem.arrival_time || "30 min";
+            const arrivalDate = getArrivalDate(createdAt, arrivalTimeStr);
+            const diffMs = arrivalDate.getTime() - now.getTime();
+            const diffMins = diffMs / 60000;
+            return diffMins > 45;
+        } else {
+            const diffMs = now.getTime() - createdAt.getTime();
+            const diffMins = diffMs / 60000;
+            return diffMins < 10;
+        }
+    };
+
+    const handleSaveEditedOrder = async () => {
+        if (!editingOrder) return;
+        setIsLoading(true);
+        try {
+            let itemsList = [];
+            try {
+                itemsList = typeof editingOrder.rawItems === 'string' ? JSON.parse(editingOrder.rawItems) : editingOrder.rawItems;
+            } catch {
+                itemsList = [];
+            }
+            
+            const metaIdx = itemsList.findIndex((i: any) => i.is_meta);
+            if (metaIdx !== -1) {
+                if (itemsList[metaIdx].location_type === 'on_way') {
+                    itemsList[metaIdx].arrival_time = newArrivalTime;
+                } else {
+                    itemsList[metaIdx].location_detail = newTableDetail;
+                }
+                itemsList[metaIdx].customer_notes = newNotes;
+            }
+            
+            const { error } = await supabase
+                .from('restaurant_orders')
+                .update({ items: itemsList })
+                .eq('id', editingOrder.id);
+                
+            if (error) throw error;
+            
+            alert("Commande modifiée avec succès.");
+            
+            if (userId) {
+                fetchUserOrders(userId, editPhone || phone || email);
+            }
+            setEditingOrder(null);
+        } catch (err: any) {
+            alert("Erreur lors de la modification: " + err.message);
         } finally {
             setIsLoading(false);
         }
@@ -375,7 +488,8 @@ function ProfileContent() {
                     code: x.order_number,
                     table: 'restaurant_orders',
                     image: firstItem?.image || 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=200',
-                    duration: '15-20 min'
+                    duration: '15-20 min',
+                    rawItems: x.items
                 };
             }),
         ]
@@ -746,6 +860,76 @@ function ProfileContent() {
                             </div>
                         )}
 
+                        {/* EDIT ORDER MODAL */}
+                        {editingOrder && (
+                            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+                                <div className="bg-[#1E293B] border border-white/10 w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
+                                    <h3 className="text-xl font-bold text-white mb-6">Modifier la Commande</h3>
+
+                                    <div className="space-y-4">
+                                        {/* Dynamic field based on Location Type */}
+                                        {(() => {
+                                            let itemsList = [];
+                                            try {
+                                                itemsList = typeof editingOrder.rawItems === 'string' ? JSON.parse(editingOrder.rawItems) : editingOrder.rawItems;
+                                            } catch {
+                                                itemsList = [];
+                                            }
+                                            const metaItem = itemsList.find((i: any) => i.is_meta) || {};
+                                            const isWay = metaItem.location_type === 'on_way';
+
+                                            return isWay ? (
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Heure d'arrivée</label>
+                                                    <input
+                                                        value={newArrivalTime}
+                                                        onChange={e => setNewArrivalTime(e.target.value)}
+                                                        className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white font-bold outline-none focus:border-amber-500/50"
+                                                        placeholder="Ex: 30 min, 14h30"
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-2">
+                                                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Numéro de table / Emplacement</label>
+                                                    <input
+                                                        value={newTableDetail}
+                                                        onChange={e => setNewTableDetail(e.target.value)}
+                                                        className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white font-bold outline-none focus:border-amber-500/50"
+                                                        placeholder="Ex: Table 5"
+                                                    />
+                                                </div>
+                                            );
+                                        })()}
+
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Notes / Remarques</label>
+                                            <textarea
+                                                value={newNotes}
+                                                onChange={e => setNewNotes(e.target.value)}
+                                                className="w-full bg-black/40 border border-white/10 rounded-xl p-3 text-white font-bold outline-none focus:border-amber-500/50 h-24 resize-none"
+                                                placeholder="Instructions particulières..."
+                                            />
+                                        </div>
+
+                                        <div className="flex gap-3 mt-6">
+                                            <button
+                                                onClick={() => setEditingOrder(null)}
+                                                className="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-xl text-white font-bold transition-colors"
+                                            >
+                                                Annuler
+                                            </button>
+                                            <button
+                                                onClick={handleSaveEditedOrder}
+                                                className="flex-1 py-3 bg-amber-500 hover:bg-amber-600 rounded-xl text-white font-bold shadow-lg shadow-amber-500/20 transition-colors flex items-center justify-center gap-2"
+                                            >
+                                                <Save className="w-4 h-4" /> Enregistrer
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
                         {/* DIGITAL MEMBER CARD - ULTRA PREMIUM */}
                         <div className="relative w-full aspect-[1.7/1] rounded-[2rem] p-8 border border-white/10 shadow-2xl mb-10 overflow-hidden group transform hover:scale-[1.02] transition-transform duration-500">
 
@@ -939,8 +1123,30 @@ function ProfileContent() {
                                                 </button>
                                             </div>
 
-                                            {/* Delete Button (Hidden by default, shown on group hover if not cancelled) */}
-                                            {/* Delete Button (Hidden by default, shown on group hover if not cancelled) */}
+                                            {/* Edit Button (Pencil) */}
+                                            {getIsModifiable(order) && (
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setEditingOrder(order);
+                                                        let itemsList = [];
+                                                        try {
+                                                            itemsList = typeof order.rawItems === 'string' ? JSON.parse(order.rawItems) : order.rawItems;
+                                                        } catch {
+                                                            itemsList = [];
+                                                        }
+                                                        const metaItem = itemsList.find((i: any) => i.is_meta) || {};
+                                                        setNewTableDetail(metaItem.location_detail || "");
+                                                        setNewArrivalTime(metaItem.arrival_time || "");
+                                                        setNewNotes(metaItem.customer_notes || "");
+                                                    }}
+                                                    className="absolute bottom-4 right-10 text-gray-600 hover:text-amber-500 transition-colors p-1 animate-in fade-in duration-200"
+                                                    title="Modifier"
+                                                    aria-label="Modify order"
+                                                >
+                                                    <Pencil className="w-4 h-4" />
+                                                </button>
+                                            )}
                                             {order.status !== 'cancelled' && (
                                                 <button
                                                     onClick={(e) => {
