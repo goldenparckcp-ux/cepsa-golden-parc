@@ -367,16 +367,24 @@ export default function AdminDashboardPage() {
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ stats, topItems, recentOrders })
             });
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
             const data = await res.json();
+            if (!res.ok) {
+                setAiError(`Erreur ${res.status}: ${data.error || "Inconnue"}${data.detail ? ` — ${data.detail}` : ""}`);
+                return;
+            }
+            if (data.error) {
+                setAiError(data.error + (data.debug ? ` [${data.debug}]` : ""));
+                return;
+            }
             setAiInsights(data.insights || []);
             setAiSummary(data.summary || "");
         } catch (err: any) {
-            setAiError("Impossible de contacter l'IA. Vérifiez votre connexion.");
+            setAiError(`Erreur réseau: ${err.message}`);
         } finally {
             setAiLoading(false);
         }
     }, [stats, topItems, recentOrders]);
+
 
     const savePins = () => {
         Object.entries(pins).forEach(([k, v]) => localStorage.setItem(`pin_${k}`, v));

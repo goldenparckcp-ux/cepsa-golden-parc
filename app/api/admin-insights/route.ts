@@ -1,102 +1,137 @@
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(req: NextRequest) {
-    try {
-        const body = await req.json();
-        const { stats, topItems, recentOrders } = body;
+    const apiKey = process.env.GEMINI_API_KEY;
 
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey) {
-            return NextResponse.json({ error: "Gemini API key not configured" }, { status: 500 });
-        }
-
-        // Build a rich business context prompt
-        const prompt = `Tu es un consultant business expert en restauration, hôtellerie et loisirs. 
-Analyse les données suivantes d'un parc de loisirs / hôtel / restaurant marocain (Golden Parc Cepsa) et donne des conseils concrets, actionnables et pertinents en FRANÇAIS.
-
-=== DONNÉES TEMPS RÉEL ===
-📊 Chiffre d'Affaires Global: ${stats.totalRevenue.toLocaleString()} DH
-  - Restaurant: ${stats.restoRevenue.toLocaleString()} DH (${stats.totalRevenue > 0 ? Math.round((stats.restoRevenue / stats.totalRevenue) * 100) : 0}%)
-  - Hôtel: ${stats.hotelRevenue.toLocaleString()} DH (${stats.totalRevenue > 0 ? Math.round((stats.hotelRevenue / stats.totalRevenue) * 100) : 0}%)
-  - Piscine: ${stats.poolRevenue.toLocaleString()} DH (${stats.totalRevenue > 0 ? Math.round((stats.poolRevenue / stats.totalRevenue) * 100) : 0}%)
-  - Services: ${stats.servicesRevenue.toLocaleString()} DH (${stats.totalRevenue > 0 ? Math.round((stats.servicesRevenue / stats.totalRevenue) * 100) : 0}%)
-
-🏨 Hôtel: Taux d'occupation ${stats.occupancyRate}% (sur 10 chambres)
-🏊 Piscine: ${stats.activePoolGuests} personnes actives
-⏳ Commandes en attente: ${stats.pendingOrdersCount}
-✅ Complétées aujourd'hui: ${stats.completedOrdersToday}
-🧺 Lavages en cours: ${stats.lavagesCount}
-🛒 Panier moyen restaurant: ${stats.avgOrderValue} DH
-📦 Total commandes: ${stats.totalOrdersCount}
-
-=== TOP PLATS (par revenu) ===
-${topItems.slice(0, 5).map((item: any, i: number) => 
-  `${i+1}. ${item.name}: ${item.qty} vendus × ${item.avgPrice}DH = ${item.revenue}DH`
-).join('\n')}
-
-=== COMMANDES RÉCENTES ===
-${recentOrders.slice(0, 5).map((o: any) => 
-  `- ${o.order_number}: ${o.total_price || o.subtotal}DH [${o.status}]`
-).join('\n')}
-
-=== INSTRUCTIONS ===
-Génère exactement 4 conseils business structurés. Chaque conseil doit être:
-- Spécifique aux données ci-dessus (mentionne les chiffres réels)
-- Immédiatement actionnable (que faire concrètement)
-- Court et percutant (2-3 phrases max)
-
-Format JSON strict (rien d'autre, pas de markdown):
-{
-  "insights": [
-    {
-      "type": "revenue" | "attention" | "opportunity" | "warning",
-      "icon": "💰" | "⚠️" | "🚀" | "📈" | "🏆" | "⏰" | "🎯" | "💡",
-      "title": "Titre court (max 5 mots)",
-      "message": "Conseil actionnable avec chiffres réels",
-      "priority": "high" | "medium" | "low"
+    if (!apiKey) {
+        return NextResponse.json({
+            error: "GEMINI_API_KEY non configurée sur le serveur",
+            debug: "Env var missing"
+        }, { status: 500 });
     }
-  ],
-  "summary": "Une phrase de résumé global de la situation (max 15 mots)"
-}`;
 
-        const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    let body: any;
+    try {
+        body = await req.json();
+    } catch {
+        return NextResponse.json({ error: "Invalid request body" }, { status: 400 });
+    }
+
+    const { stats, topItems, recentOrders } = body;
+
+    const topPlats = (topItems || []).slice(0, 5)
+        .map((item: any, i: number) => `${i + 1}. ${item.name}: ${item.qty} vendus × ${item.avgPrice}DH = ${item.revenue}DH`)
+        .join("\n") || "Aucune vente enregistrée";
+
+    const recentList = (recentOrders || []).slice(0, 5)
+        .map((o: any) => `- ${o.order_number}: ${o.total_price || o.subtotal}DH [${o.status}]`)
+        .join("\n") || "Aucune commande récente";
+
+    const prompt = `Tu es un consultant business expert pour Golden Parc Cepsa, un complexe marocain (restaurant, hôtel, piscine, services auto).
+
+DONNÉES ACTUELLES:
+- CA Total: ${stats?.totalRevenue || 0} DH (Restaurant: ${stats?.restoRevenue || 0} DH, Hôtel: ${stats?.hotelRevenue || 0} DH, Piscine: ${stats?.poolRevenue || 0} DH, Services: ${stats?.servicesRevenue || 0} DH)
+- Occupation hôtel: ${stats?.occupancyRate || 0}% (sur 10 chambres)
+- Piscine: ${stats?.activePoolGuests || 0} personnes actives
+- Commandes en attente: ${stats?.pendingOrdersCount || 0}
+- Complétées aujourd'hui: ${stats?.completedOrdersToday || 0}
+- Panier moyen: ${stats?.avgOrderValue || 0} DH
+- Total commandes: ${stats?.totalOrdersCount || 0}
+
+TOP PLATS:
+${topPlats}
+
+COMMANDES RECENTES:
+${recentList}
+
+Génère 4 conseils business courts, précis et actionnables basés sur ces chiffres réels. Réponds UNIQUEMENT avec ce JSON (pas de markdown, pas d'explication):
+{"insights":[{"type":"revenue","icon":"💰","title":"Titre","message":"Conseil court","priority":"high"},{"type":"opportunity","icon":"🚀","title":"Titre","message":"Conseil court","priority":"medium"},{"type":"attention","icon":"⚠️","title":"Titre","message":"Conseil court","priority":"high"},{"type":"revenue","icon":"📈","title":"Titre","message":"Conseil court","priority":"medium"}],"summary":"Résumé en une phrase"}`;
+
+    let geminiRes: Response;
+    try {
+        geminiRes = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
             {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     contents: [{ parts: [{ text: prompt }] }],
                     generationConfig: {
-                        temperature: 0.7,
-                        maxOutputTokens: 1024,
-                        responseMimeType: "application/json"
+                        temperature: 0.6,
+                        maxOutputTokens: 800,
                     }
-                })
+                }),
+                signal: AbortSignal.timeout(20000)
             }
         );
-
-        if (!response.ok) {
-            const errText = await response.text();
-            console.error("Gemini API error:", errText);
-            return NextResponse.json({ error: "Gemini API error", detail: errText }, { status: 502 });
-        }
-
-        const geminiData = await response.json();
-        const rawText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-
-        let parsed;
-        try {
-            parsed = JSON.parse(rawText);
-        } catch {
-            // Try to extract JSON from text
-            const match = rawText.match(/\{[\s\S]*\}/);
-            parsed = match ? JSON.parse(match[0]) : { insights: [], summary: "Analyse indisponible" };
-        }
-
-        return NextResponse.json(parsed);
-
-    } catch (err: any) {
-        console.error("Admin insights error:", err);
-        return NextResponse.json({ error: err.message }, { status: 500 });
+    } catch (fetchErr: any) {
+        return NextResponse.json({
+            error: `Erreur réseau vers Gemini: ${fetchErr.message}`
+        }, { status: 502 });
     }
+
+    if (!geminiRes.ok) {
+        const errBody = await geminiRes.text().catch(() => "unknown");
+        return NextResponse.json({
+            error: `Gemini HTTP ${geminiRes.status}`,
+            detail: errBody.slice(0, 500)
+        }, { status: 502 });
+    }
+
+    let geminiData: any;
+    try {
+        geminiData = await geminiRes.json();
+    } catch {
+        return NextResponse.json({ error: "Réponse Gemini invalide (non-JSON)" }, { status: 502 });
+    }
+
+    const rawText: string = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+
+    if (!rawText) {
+        return NextResponse.json({
+            error: "Gemini n'a pas retourné de texte",
+            debug: JSON.stringify(geminiData).slice(0, 300)
+        }, { status: 502 });
+    }
+
+    // Extract JSON from response (handle markdown code blocks)
+    let parsed: any;
+    try {
+        // Try direct parse first
+        parsed = JSON.parse(rawText);
+    } catch {
+        // Try to extract JSON from markdown code block
+        const jsonMatch = rawText.match(/```(?:json)?\s*([\s\S]*?)```/) ||
+                          rawText.match(/(\{[\s\S]*\})/);
+        if (jsonMatch) {
+            try {
+                parsed = JSON.parse(jsonMatch[1] || jsonMatch[0]);
+            } catch {
+                // Build a fallback from the raw text
+                parsed = {
+                    insights: [{
+                        type: "attention",
+                        icon: "💡",
+                        title: "Analyse disponible",
+                        message: rawText.slice(0, 200),
+                        priority: "medium"
+                    }],
+                    summary: "Analyse IA générée"
+                };
+            }
+        } else {
+            parsed = {
+                insights: [{
+                    type: "revenue",
+                    icon: "📊",
+                    title: "Données analysées",
+                    message: rawText.slice(0, 200),
+                    priority: "medium"
+                }],
+                summary: rawText.slice(0, 100)
+            };
+        }
+    }
+
+    return NextResponse.json(parsed);
 }
