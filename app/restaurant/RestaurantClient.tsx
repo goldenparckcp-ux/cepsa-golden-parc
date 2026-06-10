@@ -974,7 +974,7 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                         exit={{ opacity: 0 }} 
                         className="fixed inset-0 z-[70] bg-black/90 backdrop-blur-md flex flex-col justify-center items-center p-6"
                     >
-                        <button 
+                                    <button 
                             onClick={() => {
                                 setIsScanning(false);
                                 setIsCartOpen(true);
@@ -986,34 +986,34 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                         
                         <div className="w-72 h-72 rounded-3xl overflow-hidden border-4 border-blue-500/50 shadow-2xl relative">
                             <Scanner
-                                onScan={async (result) => {
+                                onScan={(result) => {
                                     if (result && result.length > 0) {
                                         const text = result[0].rawValue;
-                                        // Attempt to parse QR code
-                                        // Expected URL formats: /scan?t=TOKEN or /restaurant?table=5 or /restaurant?pool=3
+                                        // Close camera and reopen drawer instantly
+                                        setIsScanning(false);
+                                        setIsCartOpen(true);
+                                        
+                                        // Parse QR code
+                                        // Expected formats: /scan?type=restaurant&loc=table-5&t=TOKEN or /restaurant?table=5
                                         try {
                                             const url = new URL(text);
+                                            const typeParam = url.searchParams.get('type');
+                                            const locParam = url.searchParams.get('loc');
                                             const tokenParam = url.searchParams.get('t');
                                             const tableParam = url.searchParams.get('table');
                                             const poolParam = url.searchParams.get('pool');
-                                            if (tokenParam) {
-                                                const { data } = await supabase
-                                                    .from('qr_locations')
-                                                    .select('type, label')
-                                                    .eq('token', tokenParam)
-                                                    .eq('is_active', true)
-                                                    .maybeSingle();
-                                                if (data) {
-                                                    if (data.type === 'restaurant') {
-                                                        setOnSiteLocation('table');
-                                                    } else if (data.type === 'pool') {
-                                                        setOnSiteLocation('pool');
-                                                    } else if (data.type === 'hotel') {
-                                                        setOnSiteLocation('room');
-                                                    }
-                                                    const numOnly = data.label.replace(/\D/g, '');
-                                                    setLocationDetail(numOnly || data.label);
+                                            
+                                            // 1. Sync URL parameters parsing (instant & offline-ready)
+                                            if (typeParam && locParam) {
+                                                if (typeParam === 'restaurant' || typeParam === 'table') {
+                                                    setOnSiteLocation('table');
+                                                } else if (typeParam === 'pool') {
+                                                    setOnSiteLocation('pool');
+                                                } else if (typeParam === 'hotel') {
+                                                    setOnSiteLocation('room');
                                                 }
+                                                const numOnly = locParam.replace(/\D/g, '');
+                                                setLocationDetail(numOnly || locParam);
                                             } else if (tableParam) {
                                                 setOnSiteLocation('table');
                                                 setLocationDetail(tableParam);
@@ -1023,12 +1023,35 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                                             } else {
                                                 setLocationDetail(text);
                                             }
+                                            
+                                            // 2. Async database confirmation/lookup (in background)
+                                            if (tokenParam) {
+                                                supabase
+                                                    .from('qr_locations')
+                                                    .select('type, label')
+                                                    .eq('token', tokenParam)
+                                                    .eq('is_active', true)
+                                                    .maybeSingle()
+                                                    .then(({ data }) => {
+                                                        if (data) {
+                                                            if (data.type === 'restaurant') {
+                                                                setOnSiteLocation('table');
+                                                            } else if (data.type === 'pool') {
+                                                                setOnSiteLocation('pool');
+                                                            } else if (data.type === 'hotel') {
+                                                                setOnSiteLocation('room');
+                                                            }
+                                                            const numOnly = data.label.replace(/\D/g, '');
+                                                            setLocationDetail(numOnly || data.label);
+                                                        }
+                                                    });
+                                            }
                                         } catch (e) {
-                                            // Fallback: Use raw scanned text if not a valid URL
-                                            setLocationDetail(text);
+                                            // Fallback: Use cleaned raw text/number if not a URL (e.g. QR is just "5")
+                                            const cleaned = text.trim();
+                                            const numOnly = cleaned.replace(/\D/g, '');
+                                            setLocationDetail(numOnly || cleaned);
                                         }
-                                        setIsScanning(false);
-                                        setIsCartOpen(true);
                                     }
                                 }}
                                 onError={(error) => console.log(error?.message)}
