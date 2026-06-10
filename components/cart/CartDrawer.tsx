@@ -354,7 +354,7 @@ export function CartDrawer() {
                         <div className="px-6 pb-6 animate-fade-in border-t border-white/5 pt-6">
 
                             <h3 className="text-sm font-bold text-gray-400 mb-3 uppercase tracking-wider">Mode de Paiement</h3>
-                            <div className="grid grid-cols-2 gap-3">
+                            <div className="grid grid-cols-3 gap-2">
                                 {/* Cash Option */}
                                 <button
                                     onClick={() => setPaymentMethod('cash')}
@@ -372,6 +372,21 @@ export function CartDrawer() {
                                     )}
                                 </button>
 
+                                {/* Arboune Option (Disabled - Coming Soon) */}
+                                <button
+                                    type="button"
+                                    disabled
+                                    className="relative p-4 rounded-xl border border-white/5 bg-[#0F172A]/40 text-gray-500 cursor-not-allowed flex flex-col items-center gap-2 transition-all opacity-60"
+                                >
+                                    <span className="absolute -top-2 -right-2 bg-amber-500 text-black font-black text-[8px] px-2 py-0.5 rounded-full shadow">
+                                        À venir
+                                    </span>
+                                    <div className="bg-amber-500/20 p-2 rounded-full opacity-55">
+                                        <Banknote className="w-5 h-5 text-amber-500" />
+                                    </div>
+                                    <span className="text-xs font-bold text-gray-400">Arboune (30%)</span>
+                                </button>
+
                                 {/* Card Option (YouCan Pay Style) */}
                                 <button
                                     onClick={() => setPaymentMethod('card')}
@@ -383,7 +398,7 @@ export function CartDrawer() {
                                     <div className="bg-red-500/20 p-2 rounded-full">
                                         <CreditCard className="w-5 h-5" />
                                     </div>
-                                    <span className="text-xs font-bold">Carte Bancaire</span>
+                                    <span className="text-xs font-bold">Carte</span>
                                     {paymentMethod === 'card' && (
                                         <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 shadow-[0_0_10px_rgba(59,130,246,0.5)]" />
                                     )}

@@ -613,7 +613,10 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                                             ].map(loc => (
                                                 <button
                                                     key={loc.id}
-                                                    onClick={() => setOnSiteLocation(loc.id as any)}
+                                                    onClick={() => {
+                                                        setOnSiteLocation(loc.id as any);
+                                                        setLocationDetail('');
+                                                    }}
                                                     className={`py-3 px-2 rounded-xl text-[11px] font-bold border flex items-center justify-center gap-1.5 transition-all ${onSiteLocation === loc.id
                                                         ? 'bg-blue-600/20 border-blue-500 text-blue-400'
                                                         : 'bg-white/5 border-transparent text-gray-400 hover:bg-white/10'
@@ -623,6 +626,53 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                                                 </button>
                                             ))}
                                         </div>
+
+                                        {locationDetail ? (
+                                            <div className="w-full mb-3 p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl flex items-center justify-between animate-in fade-in">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
+                                                        <Check className="w-4 h-4" />
+                                                    </div>
+                                                    <div>
+                                                        <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">
+                                                            {onSiteLocation === 'table' ? 'Table scannée' : onSiteLocation === 'pool' ? 'Place scannée' : 'Chambre'}
+                                                        </p>
+                                                        <p className="text-lg font-black text-white leading-none mt-1">
+                                                            N° {locationDetail}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setLocationDetail('')}
+                                                    className="p-2 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white rounded-lg transition-colors"
+                                                >
+                                                    <X className="w-4 h-4" />
+                                                </button>
+                                            </div>
+                                        ) : (
+                                            <>
+                                                {(onSiteLocation === 'table' || onSiteLocation === 'pool') && (
+                                                    <button 
+                                                        type="button"
+                                                        onClick={() => setIsScanning(true)}
+                                                        className="w-full text-sm text-blue-400 mb-3 bg-blue-500/10 hover:bg-blue-500/20 active:scale-95 transition-all p-4 rounded-xl border border-blue-500/30 flex items-center justify-center gap-3 font-black shadow-[0_4px_15px_rgba(59,130,246,0.15)] animate-in fade-in"
+                                                    >
+                                                        <Camera className="w-5 h-5"/>
+                                                        Scanner le QR Code {onSiteLocation === 'table' ? 'sur votre table' : 'à votre place'}
+                                                    </button>
+                                                )}
+                                                {onSiteLocation === 'room' && (
+                                                    <input
+                                                        type="text"
+                                                        value={locationDetail}
+                                                        onChange={(e) => setLocationDetail(e.target.value)}
+                                                        placeholder="Votre N° de Chambre (Ex: 104)"
+                                                        className="w-full bg-[#1E293B] border border-white/10 rounded-xl p-4 text-white font-bold text-lg outline-none focus:border-blue-500 transition-colors text-center animate-in fade-in"
+                                                    />
+                                                )}
+                                            </>
+                                        )}
 
                                         <p className="text-xs text-green-400 mt-4 flex items-center gap-1 font-medium bg-green-500/10 p-3 rounded-xl border border-green-500/20">
                                             <Check className="w-4 h-4"/>
@@ -727,29 +777,21 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                                             )}
                                         </button>
                                     )}
-
-                                    {/* Arboune Option */}
+                                    {/* Arboune Option (Disabled - Coming Soon) */}
                                     <button
                                         type="button"
-                                        onClick={() => {
-                                            setPaymentMethod('card');
-                                            setIsDepositMode(true);
-                                        }}
-                                        className={`relative p-3 rounded-2xl border flex flex-col items-start gap-1 transition-all text-left ${
-                                            isDepositMode
-                                                ? 'bg-amber-500/10 border-amber-500 text-amber-400'
-                                                : 'bg-[#1E293B] border-white/5 text-gray-400 hover:bg-white/5'
-                                        }`}
+                                        disabled
+                                        className="relative p-3 rounded-2xl border border-white/5 bg-[#1E293B]/40 text-gray-500 cursor-not-allowed flex flex-col items-start gap-1 text-left opacity-60 w-full"
                                     >
-                                        <div className="font-bold text-sm text-white">
+                                        <span className="absolute -top-2 -right-2 bg-amber-500 text-black font-black text-[9px] px-2 py-0.5 rounded-full shadow">
+                                            {language === 'ar' ? 'قريباً' : 'À venir'}
+                                        </span>
+                                        <div className="font-bold text-sm text-gray-400">
                                             {language === 'ar' ? 'عربون (30%)' : 'Arboune (30%)'}
                                         </div>
-                                        <div className="text-[10px] text-gray-400">
+                                        <div className="text-[10px] text-gray-500">
                                             {language === 'ar' ? 'تسبيق والباقي ف المحطة' : 'Acompte en ligne'}
                                         </div>
-                                        {isDepositMode && (
-                                            <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
-                                        )}
                                     </button>
 
                                     {/* Online Option (10% Discount) */}
