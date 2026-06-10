@@ -58,7 +58,6 @@ Génère 4 conseils business courts, précis et actionnables basés sur ces chif
                     contents: [{ parts: [{ text: prompt }] }],
                     generationConfig: {
                         temperature: 0.6,
-                        maxOutputTokens: 800,
                     }
                 }),
                 signal: AbortSignal.timeout(20000)

@@ -1,0 +1,7 @@
+﻿```json
+{
+  "insights": [
+    {
+      "type": "revenue",
+      "icon": "📈",
+
