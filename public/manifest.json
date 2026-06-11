@@ -8,9 +8,14 @@
     "theme_color": "#D6001C",
     "icons": [
         {
-            "src": "/image/cepsa-hero.jpg",
+            "src": "/image/cepsa-logo.png",
             "sizes": "192x192",
-            "type": "image/jpeg"
+            "type": "image/png"
+        },
+        {
+            "src": "/image/cepsa-logo.png",
+            "sizes": "512x512",
+            "type": "image/png"
         }
     ]
 }

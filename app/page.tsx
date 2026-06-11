@@ -86,7 +86,7 @@ export default function Home() {
       <div className="relative h-[65vh] w-full overflow-hidden rounded-b-[4rem] shadow-2xl">
         <motion.div style={{ y: y1 }} className="absolute inset-0">
           <Image
-            src="/image/cepsa-hero.jpg"
+            src="/image/cepsa-hero-premium.png"
             alt="Golden Parc Station"
             fill
             priority

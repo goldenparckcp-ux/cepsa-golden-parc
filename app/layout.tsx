@@ -14,6 +14,10 @@ export const metadata: Metadata = {
   title: "Golden Parc Station (GPS)",
   description: "Station Service & Détente",
   manifest: "/manifest.json",
+  icons: {
+    icon: "/image/cepsa-logo.png",
+    apple: "/image/cepsa-logo.png",
+  }
 };
 
 export default function RootLayout({
