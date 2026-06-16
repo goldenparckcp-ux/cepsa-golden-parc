@@ -961,7 +961,7 @@ export default function AdminPriceModifierPage() {
                                     Aucun plat dans cette catégorie. Cliquez sur "Ajouter Plat" pour commencer.
                                 </div>
                             ) : (
-                                <div className="lg:h-[calc(100vh-280px)] lg:overflow-y-auto pr-2 scrollbar-hide">
+                                <div className="pr-2">
                                     <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <AnimatePresence mode="popLayout">
                                             {filteredRestoItems.map((item, idx) => {
@@ -1147,7 +1147,7 @@ export default function AdminPriceModifierPage() {
                                     Aucun lubrifiant dans le catalogue. Cliquez sur "Ajouter Lubrifiant" pour commencer.
                                 </div>
                             ) : (
-                                <div className="lg:h-[calc(100vh-280px)] lg:overflow-y-auto pr-2 scrollbar-hide">
+                                <div className="pr-2">
                                     <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <AnimatePresence mode="popLayout">
                                             {lubricantItems.map((item, idx) => {
