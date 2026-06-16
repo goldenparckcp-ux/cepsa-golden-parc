@@ -427,7 +427,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </aside>
 
             {/* MAIN CONTENT AREA */}
-            <main className="flex-1 bg-[#0F172A] p-4 md:p-8 overflow-y-auto min-h-0">
+            <main className="flex-1 bg-[#0F172A] p-4 md:p-8 overflow-y-auto min-h-0 scrollbar-hide">
                 <div className="max-w-6xl mx-auto">
                     {children}
                 </div>
