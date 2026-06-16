@@ -638,11 +638,9 @@ export default function AdminPriceModifierPage() {
 
             const payload: any = {
                 name_fr: formData.name_fr,
-                name_ar: formData.name_ar,
                 category_id: formData.category_id,
                 base_price: Number(formData.base_price),
                 description_fr: formData.description_fr,
-                description_ar: formData.description_ar,
                 image_url: formData.image_url || "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=800",
                 prep_time: formData.prep_time,
                 badge: formData.badge || null,
@@ -963,7 +961,7 @@ export default function AdminPriceModifierPage() {
                                     Aucun plat dans cette catégorie. Cliquez sur "Ajouter Plat" pour commencer.
                                 </div>
                             ) : (
-                                <div className="h-[68vh] lg:h-[calc(100vh-280px)] overflow-y-auto pr-2 custom-scrollbar">
+                                <div className="lg:h-[calc(100vh-280px)] lg:overflow-y-auto pr-2 custom-scrollbar">
                                     <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <AnimatePresence mode="popLayout">
                                             {filteredRestoItems.map((item, idx) => {
@@ -1149,7 +1147,7 @@ export default function AdminPriceModifierPage() {
                                     Aucun lubrifiant dans le catalogue. Cliquez sur "Ajouter Lubrifiant" pour commencer.
                                 </div>
                             ) : (
-                                <div className="h-[68vh] lg:h-[calc(100vh-280px)] overflow-y-auto pr-2 custom-scrollbar">
+                                <div className="lg:h-[calc(100vh-280px)] lg:overflow-y-auto pr-2 custom-scrollbar">
                                     <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <AnimatePresence mode="popLayout">
                                             {lubricantItems.map((item, idx) => {

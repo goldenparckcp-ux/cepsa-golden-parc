@@ -62,10 +62,10 @@ export default function PaymentModal({ bookingId, amount, serviceType, tableName
             currency: 'USD'
         }}>
             <div className="fixed inset-0 z-[100] flex flex-col md:items-center justify-end md:justify-center p-0 md:p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-300">
-                <div className="bg-[#1E293B] w-full max-w-md rounded-t-[2rem] md:rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl relative animate-in slide-in-from-bottom-10 md:slide-in-from-bottom-4 duration-500">
+                <div className="bg-[#1E293B] w-full max-w-md max-h-[90vh] md:max-h-[85vh] rounded-t-[2rem] md:rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl relative flex flex-col animate-in slide-in-from-bottom-10 md:slide-in-from-bottom-4 duration-500">
                     <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 blur-[100px] pointer-events-none" />
 
-                    <div className="p-6 pb-0 flex justify-between items-start relative z-10">
+                    <div className="p-6 pb-2 flex justify-between items-start relative z-10 shrink-0">
                         <div>
                             <h2 className="text-2xl font-black text-white mb-1 tracking-tight">
                                 {serviceType === 'topup' ? 'Recharger Wallet' : (paymentType === 'full_discounted' ? 'Paiement Sécurisé' : 'Paiement Sécurisé')}
@@ -80,7 +80,7 @@ export default function PaymentModal({ bookingId, amount, serviceType, tableName
                         </button>
                     </div>
 
-                    <div className="p-6 relative z-10">
+                    <div className="p-6 pt-2 relative z-10 overflow-y-auto flex-1 custom-scrollbar">
                         {step === 'selection' && (
                             <>
                                 <div className="bg-black/40 rounded-3xl p-5 border border-white/5 flex items-center justify-between mb-8 shadow-inner">
