@@ -5,15 +5,35 @@ import { ShoppingBag, Fuel, Languages } from "lucide-react";
 import { useCart } from "@/lib/state/CartContext";
 import { useUI } from "@/lib/state/UIContext";
 
+import { supabase } from "@/lib/supabase";
+
 export function Header() {
     const { itemCount } = useCart();
     const { language, toggleLanguage, openCart } = useUI();
 
-    const fuelPrices = {
+    const [fuelPrices, setFuelPrices] = React.useState({
         gasoil: "12.50 DH/L",
         sansPlomb: "14.20 DH/L",
-        lastUpdate: "Updated 2h ago"
-    };
+        lastUpdate: "Mis à jour"
+    });
+
+    React.useEffect(() => {
+        const fetchFuel = async () => {
+            try {
+                const { data } = await supabase.from("fuel_prices").select("*").eq("id", "current").maybeSingle();
+                if (data) {
+                    setFuelPrices({
+                        gasoil: `${Number(data.gasoil).toFixed(2)} DH/L`,
+                        sansPlomb: `${Number(data.sans_plomb).toFixed(2)} DH/L`,
+                        lastUpdate: `MàJ ${new Date(data.updated_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })}`
+                    });
+                }
+            } catch (err) {
+                console.warn("Using default fuel prices fallback:", err);
+            }
+        };
+        fetchFuel();
+    }, []);
 
     return (
         <header

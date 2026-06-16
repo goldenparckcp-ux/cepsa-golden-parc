@@ -185,7 +185,11 @@ export default function Home() {
           className="flex overflow-x-auto gap-6 pb-8 pt-4 scrollbar-hide snap-x"
         >
           {/* Promo 1 */}
-          <motion.div whileHover={{ scale: 1.02 }} className="min-w-[300px] md:min-w-[450px] h-48 bg-gradient-to-br from-red-600 to-red-900 rounded-[2.5rem] p-6 md:p-8 relative overflow-hidden snap-center flex-shrink-0 shadow-[0_20px_50px_-15px_rgba(220,38,38,0.5)] border border-red-500/30 group">
+          <motion.div 
+            whileHover={{ scale: 1.02 }} 
+            onClick={() => router.push('/services/lubrifiants')}
+            className="cursor-pointer min-w-[300px] md:min-w-[450px] h-48 bg-gradient-to-br from-red-600 to-red-900 rounded-[2.5rem] p-6 md:p-8 relative overflow-hidden snap-center flex-shrink-0 shadow-[0_20px_50px_-15px_rgba(220,38,38,0.5)] border border-red-500/30 group"
+          >
             <div className="relative z-10 w-3/4">
               <span className="bg-white text-red-600 text-[10px] font-black px-3 py-1.5 rounded-full mb-4 inline-block shadow-lg uppercase tracking-wider">{t('home.promo1.badge')}</span>
               <h3 className="text-white font-black text-2xl md:text-3xl leading-tight mb-2">{t('home.promo1.title')}</h3>
@@ -196,7 +200,11 @@ export default function Home() {
           </motion.div>
           
           {/* Promo 2 */}
-          <motion.div whileHover={{ scale: 1.02 }} className="min-w-[300px] md:min-w-[450px] h-48 bg-gradient-to-br from-amber-500 to-orange-600 rounded-[2.5rem] p-6 md:p-8 relative overflow-hidden snap-center flex-shrink-0 shadow-[0_20px_50px_-15px_rgba(245,158,11,0.5)] border border-amber-500/30 group">
+          <motion.div 
+            whileHover={{ scale: 1.02 }} 
+            onClick={() => router.push('/restaurant')}
+            className="cursor-pointer min-w-[300px] md:min-w-[450px] h-48 bg-gradient-to-br from-amber-500 to-orange-600 rounded-[2.5rem] p-6 md:p-8 relative overflow-hidden snap-center flex-shrink-0 shadow-[0_20px_50px_-15px_rgba(245,158,11,0.5)] border border-amber-500/30 group"
+          >
             <div className="relative z-10 w-3/4">
               <span className="bg-black/30 backdrop-blur-md text-white text-[10px] font-black px-3 py-1.5 rounded-full mb-4 inline-block shadow-lg uppercase tracking-wider">{t('home.promo2.badge')}</span>
               <h3 className="text-white font-black text-2xl md:text-3xl leading-tight mb-2">{t('home.promo2.title')}</h3>

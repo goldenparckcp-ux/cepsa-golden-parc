@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Droplets, Hotel, Waves, ChevronRight, Star, Wrench } from "lucide-react";
 import { useTranslation } from "@/lib/state/LanguageContext";
+import { supabase } from "@/lib/supabase";
 
 
 function ServicesContent() {
@@ -55,18 +56,36 @@ function ServicesContent() {
             key: "lube",
             title: t('services.lube.title') || "Lubrifiants",
             desc: t('services.lube.desc') || "Changement d'huile et entretien rapide",
-            to: "#",
+            to: "/services/lubrifiants",
             icon: Wrench,
             image: "https://images.unsplash.com/photo-1599839619722-39751411ea63?w=1200",
             badge: "Auto Care"
         }
     ];
 
-    const fuelPrices = {
+    const [fuelPrices, setFuelPrices] = React.useState({
         gasoil: "12.50 DH/L",
         sansPlomb: "14.20 DH/L",
         lastUpdate: "Updated 2h ago"
-    };
+    });
+
+    React.useEffect(() => {
+        const fetchFuel = async () => {
+            try {
+                const { data } = await supabase.from("fuel_prices").select("*").eq("id", "current").maybeSingle();
+                if (data) {
+                    setFuelPrices({
+                        gasoil: `${Number(data.gasoil).toFixed(2)} DH/L`,
+                        sansPlomb: `${Number(data.sans_plomb).toFixed(2)} DH/L`,
+                        lastUpdate: `Mis à jour le ${new Date(data.updated_at).toLocaleDateString('fr-FR')}`
+                    });
+                }
+            } catch (err) {
+                console.warn("Using default fuel prices fallback:", err);
+            }
+        };
+        fetchFuel();
+    }, []);
 
     return (
         <div className="grid gap-6 text-white">

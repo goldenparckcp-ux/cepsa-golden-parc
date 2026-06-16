@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Cepsa Golden Park</string>
+    <string name="title_activity_main">Cepsa Golden Park</string>
+    <string name="package_name">com.cepsa.goldenpark</string>
+    <string name="custom_url_scheme">com.cepsa.goldenpark</string>
+</resources>

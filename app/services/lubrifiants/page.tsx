@@ -47,13 +47,39 @@ const LUBRICANTS_CATALOG = [
     }
 ];
 
+import { supabase } from "@/lib/supabase";
+import { useEffect } from "react";
+
 export default function LubricantsCatalog() {
     const router = useRouter();
     const { t } = useTranslation();
     const [searchQuery, setSearchQuery] = useState("");
-    const [selectedProduct, setSelectedProduct] = useState<typeof LUBRICANTS_CATALOG[0] | null>(null);
+    const [lubricantsList, setLubricantsList] = useState<any[]>(LUBRICANTS_CATALOG);
+    const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
 
-    const filteredCatalog = LUBRICANTS_CATALOG.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.type.toLowerCase().includes(searchQuery.toLowerCase()));
+    useEffect(() => {
+        const fetchLubricants = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from("lubricant_items")
+                    .select("*")
+                    .eq("is_available", true)
+                    .order("sort_order", { ascending: true });
+                if (!error && data && data.length > 0) {
+                    const mapped = data.map(item => ({
+                        ...item,
+                        image: item.image_url || item.image
+                    }));
+                    setLubricantsList(mapped);
+                }
+            } catch (err) {
+                console.warn("Using local lubricants fallback:", err);
+            }
+        };
+        fetchLubricants();
+    }, []);
+
+    const filteredCatalog = lubricantsList.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.type.toLowerCase().includes(searchQuery.toLowerCase()));
 
     return (
         <main className="min-h-screen bg-[#070A13] pb-24 font-sans text-white">
@@ -204,7 +230,7 @@ export default function LubricantsCatalog() {
                                     <Shield className="w-5 h-5 text-gray-500" /> {t('lube.benefits')}
                                 </h3>
                                 <div className="flex flex-wrap gap-3 mb-8">
-                                    {selectedProduct.features.map(feat => (
+                                    {selectedProduct.features.map((feat: string) => (
                                         <div key={feat} className="bg-[#111827] border border-white/5 px-4 py-2 rounded-xl text-sm font-bold text-gray-300 flex items-center gap-2 shadow-inner">
                                             <Zap className="w-4 h-4 text-amber-500" /> {feat}
                                         </div>

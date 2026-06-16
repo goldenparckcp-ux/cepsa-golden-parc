@@ -1,12 +1,30 @@
 "use client";
 
 import { Fuel } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
 export function FuelPriceWidget() {
   const pathname = usePathname();
-  const [prices] = useState({ gasoil: 13.54, sansPlomb: 15.02 });
+  const [prices, setPrices] = useState({ gasoil: 13.54, sansPlomb: 15.02 });
+
+  useEffect(() => {
+    const fetchFuel = async () => {
+      try {
+        const { data } = await supabase.from("fuel_prices").select("*").eq("id", "current").maybeSingle();
+        if (data) {
+          setPrices({
+            gasoil: Number(data.gasoil),
+            sansPlomb: Number(data.sans_plomb)
+          });
+        }
+      } catch (err) {
+        console.warn("Using default widget prices fallback:", err);
+      }
+    };
+    fetchFuel();
+  }, []);
 
   if (pathname !== '/') return null;
 
