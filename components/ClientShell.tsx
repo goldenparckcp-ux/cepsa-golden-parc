@@ -6,6 +6,8 @@
  * Lazy-loading these keeps them OUT of the initial JS bundle → faster TTFB.
  */
 
+import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 
 const BottomTabs = dynamic(() => import("@/components/BottomTabs"), { ssr: false });
@@ -21,6 +23,14 @@ const FuelPriceWidget = dynamic(
 );
 
 export default function ClientShell() {
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (pathname && !pathname.startsWith("/admin") && !pathname.startsWith("/staff")) {
+      localStorage.removeItem("staff_session");
+    }
+  }, [pathname]);
+
   return (
     <>
       <DesktopNav />

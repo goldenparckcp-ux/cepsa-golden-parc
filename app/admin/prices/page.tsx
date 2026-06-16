@@ -841,7 +841,7 @@ export default function AdminPriceModifierPage() {
         if (activeCategory === "all") return true;
         return item.category_id === activeCategory;
     });    return (
-        <div className="space-y-8 pb-16 animate-fade-in">
+        <div className="space-y-8 pb-0 animate-fade-in">
             {/* Header */}
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-[#1E293B]/40 p-6 rounded-3xl border border-white/5 relative overflow-hidden backdrop-blur-md">
                 <div className="flex items-center gap-3">
@@ -961,7 +961,7 @@ export default function AdminPriceModifierPage() {
                                     Aucun plat dans cette catégorie. Cliquez sur "Ajouter Plat" pour commencer.
                                 </div>
                             ) : (
-                                <div className="pr-2">
+                                <div className="lg:h-[calc(100vh-280px)] lg:overflow-y-auto pr-2 scrollbar-hide">
                                     <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <AnimatePresence mode="popLayout">
                                             {filteredRestoItems.map((item, idx) => {
@@ -1147,7 +1147,7 @@ export default function AdminPriceModifierPage() {
                                     Aucun lubrifiant dans le catalogue. Cliquez sur "Ajouter Lubrifiant" pour commencer.
                                 </div>
                             ) : (
-                                <div className="pr-2">
+                                <div className="lg:h-[calc(100vh-280px)] lg:overflow-y-auto pr-2 scrollbar-hide">
                                     <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                         <AnimatePresence mode="popLayout">
                                             {lubricantItems.map((item, idx) => {
