@@ -17,7 +17,7 @@ const ALLOWED_TABLES = [
   "restaurant_categories",
   "lubricant_items",
   "fuel_prices",
-  "qrcodes",
+  "qr_locations",
   "service_bookings",
   "profiles"
 ];
