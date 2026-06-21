@@ -1,10 +1,30 @@
 import { NextResponse } from 'next/server';
 import { createPayPalOrder, calculateArboun } from '@/lib/payment';
 import { supabase } from '@/lib/supabase';
+import { rateLimit } from '@/lib/rate-limit';
+import { CheckoutSchema } from '@/lib/validations';
 
 export async function POST(req: Request) {
     try {
-        const { bookingId, amount, serviceType, gateway, paymentType } = await req.json();
+        // 1. Rate Limiting (Prevent Spam Checkouts)
+        const ip = req.headers.get('x-forwarded-for') || 'unknown';
+        const rateLimitResult = rateLimit(ip, 10, 60000); // 10 attempts per minute
+        if (!rateLimitResult.success) {
+            return NextResponse.json({ error: 'Trop de requêtes, veuillez patienter.' }, { status: 429 });
+        }
+
+        const body = await req.json();
+        
+        // 2. Validate input using Zod
+        const parseResult = CheckoutSchema.safeParse(body);
+        if (!parseResult.success) {
+            return NextResponse.json(
+              { error: 'Données invalides', details: parseResult.error.flatten().fieldErrors }, 
+              { status: 400 }
+            );
+        }
+
+        const { bookingId, amount, serviceType, gateway, paymentType } = parseResult.data;
 
         if (!bookingId || !gateway) {
             return NextResponse.json({ error: 'Missing Required Fields' }, { status: 400 });

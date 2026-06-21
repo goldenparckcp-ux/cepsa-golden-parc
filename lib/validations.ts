@@ -29,3 +29,37 @@ export function validateData<T>(schema: z.ZodSchema<T>, data: unknown) {
     data: result.data,
   };
 }
+
+// Order Item Schema
+export const OrderItemSchema = z.object({
+  name: z.string().min(1, "Nom de l'article requis"),
+  quantity: z.number().int().min(1, "Quantité doit être au moins 1"),
+  price: z.number().nonnegative().optional(),
+  totalPrice: z.number().nonnegative().optional(),
+  image: z.string().url().optional().or(z.literal('')),
+  customizations: z.record(z.unknown()).optional(),
+  prep_time: z.string().optional(),
+  time_slot: z.string().optional(),
+  date: z.string().optional(),
+});
+
+// Create Order Schema
+export const CreateOrderSchema = z.object({
+  customer_phone: z.string().min(5, "Numéro de téléphone requis").max(20),
+  total: z.number().nonnegative("Le total ne peut pas être négatif").optional(),
+  items: z.array(OrderItemSchema).min(1, "Au moins un article est requis"),
+  notes: z.string().max(500).optional(),
+  status: z.string().optional(),
+  service_type: z.enum(['dine_in', 'pre_order', 'delivery', 'pickup']).optional(),
+  table_number: z.string().optional(),
+  arrival_time: z.string().optional(),
+});
+
+// Checkout Schema
+export const CheckoutSchema = z.object({
+  bookingId: z.string().min(1, "ID de réservation requis"),
+  amount: z.number().nonnegative("Le montant doit être positif").optional(),
+  serviceType: z.string().optional(),
+  gateway: z.enum(['paypal', 'stripe', 'cash']).optional(),
+  paymentType: z.enum(['full', 'deposit', 'full_discounted']).optional(),
+});

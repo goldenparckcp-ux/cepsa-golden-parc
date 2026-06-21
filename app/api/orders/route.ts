@@ -1,5 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { rateLimit } from '@/lib/rate-limit';
+import { CreateOrderSchema } from '@/lib/validations';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,18 +39,33 @@ function getAdminSupabase() {
 
 export async function POST(req: Request) {
   try {
+    // 1. Rate Limiting (Prevent Spam Orders)
+    const ip = req.headers.get('x-forwarded-for') || 'unknown';
+    const rateLimitResult = rateLimit(ip, 5, 60000); // 5 orders per minute max
+    if (!rateLimitResult.success) {
+        return NextResponse.json({ error: 'Trop de commandes. Veuillez patienter.' }, { status: 429 });
+    }
+
     const supabase = getAdminSupabase();
     if (!supabase) {
       return NextResponse.json(
-        { error: 'Missing Supabase server credentials (SUPABASE_SERVICE_ROLE_KEY).' },
+        { error: 'Missing Supabase server credentials.' },
         { status: 500 },
       );
     }
 
-    const body = (await req.json()) as Partial<CreateOrderBody>;
-    if (!body.customer_phone || !Array.isArray(body.items) || body.items.length === 0) {
-      return NextResponse.json({ error: 'Invalid payload.' }, { status: 400 });
+    const rawBody = await req.json();
+    
+    // 2. Validate input using Zod
+    const parseResult = CreateOrderSchema.safeParse(rawBody);
+    if (!parseResult.success) {
+        return NextResponse.json(
+          { error: 'Données de la commande invalides.', details: parseResult.error.flatten().fieldErrors }, 
+          { status: 400 }
+        );
     }
+
+    const body = parseResult.data;
 
     const notes = body.notes || '';
     const status = body.status || 'pending';
