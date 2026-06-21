@@ -37,7 +37,7 @@ export const OrderItemSchema = z.object({
   price: z.number().nonnegative().optional(),
   totalPrice: z.number().nonnegative().optional(),
   image: z.string().url().optional().or(z.literal('')),
-  customizations: z.record(z.unknown()).optional(),
+  customizations: z.record(z.string(), z.unknown()).optional(),
   prep_time: z.string().optional(),
   time_slot: z.string().optional(),
   date: z.string().optional(),
