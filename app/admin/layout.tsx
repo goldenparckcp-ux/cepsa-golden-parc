@@ -88,53 +88,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         setErrorMsg("");
 
         try {
-            // 1. Try Supabase staff table if possible
-            if (dbStatus === "connected") {
-                const { data: staffMember, error } = await supabase
-                    .from("staff")
-                    .select("*")
-                    .eq("pin_hash", enteredPin) // Simple representation or hash check
-                    .single();
+            const res = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ pin: enteredPin }),
+            });
 
-                if (!error && staffMember) {
-                    const newSession: StaffSession = {
-                        role: staffMember.role as any,
-                        name: staffMember.name || "Personnel",
-                        phone: staffMember.phone
-                    };
-                    localStorage.setItem("staff_session", JSON.stringify(newSession));
-                    setSession(newSession);
-                    setPin("");
-                    setIsChecking(false);
-                    return;
-                }
-            }
+            const data = await res.json();
 
-            // 2. Double-Safety Hardcoded fallbacks (Super Robust!)
-            let resolvedSession: StaffSession | null = null;
-            const pinAdmin = localStorage.getItem("pin_admin") || "7777";
-            const pinHotel = localStorage.getItem("pin_hotel") || "1111";
-            const pinKitchen = localStorage.getItem("pin_kitchen") || "2222";
-            const pinServices = localStorage.getItem("pin_services") || "3333";
-            const pinCaisse = localStorage.getItem("pin_caisse") || "4444";
-
-            if (enteredPin === pinAdmin) {
-                resolvedSession = { role: "admin", name: "Directeur" };
-            } else if ([pinHotel, pinKitchen, pinServices, pinCaisse].includes(enteredPin)) {
-                setErrorMsg("Accès Admin réservé. Veuillez utiliser le portail Staff (/staff) pour vous connecter.");
+            if (!res.ok) {
+                setErrorMsg(data.error || "Code PIN incorrect ou refusé.");
                 setPin("");
-                setIsChecking(false);
-                return;
-            }
-
-            if (resolvedSession) {
-                localStorage.setItem("staff_session", JSON.stringify(resolvedSession));
-                setSession(resolvedSession);
+            } else {
+                // API issued a JWT cookie successfully.
+                const newSession: StaffSession = {
+                    role: data.role as any,
+                    name: data.name || "Personnel",
+                };
+                localStorage.setItem("staff_session", JSON.stringify(newSession));
+                setSession(newSession);
                 setPin("");
                 router.push("/admin");
-            } else {
-                setErrorMsg("Code PIN incorrect ou réservé aux administrateurs.");
-                setPin("");
             }
         } catch (err) {
             setErrorMsg("Erreur réseau. Essai hors ligne...");

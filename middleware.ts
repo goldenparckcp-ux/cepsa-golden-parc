@@ -1,11 +1,11 @@
 // middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import jwt from 'jsonwebtoken';
+import { jwtVerify } from 'jose';
 
 /**
  * JWT authentication middleware for all /admin/* routes.
- * It expects an `Authorization: Bearer <token>` header.
+ * It expects a `staff_token` cookie containing the JWT.
  * If the token is missing or invalid, the user is redirected to the admin login page.
  */
 export async function middleware(request: NextRequest) {
@@ -16,8 +16,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const authHeader = request.headers.get('authorization');
-  const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : undefined;
+  // Check for staff_token cookie
+  const token = request.cookies.get('staff_token')?.value;
 
   if (!token) {
     url.pathname = '/admin/login';
@@ -27,10 +27,13 @@ export async function middleware(request: NextRequest) {
   try {
     const secret = process.env.JWT_SECRET;
     if (!secret) throw new Error('JWT secret not defined');
-    const payload = jwt.verify(token, secret) as { role: string };
-    // expose role downstream if needed
-    request.headers.set('x-user-role', payload.role);
-    return NextResponse.next();
+    
+    const { payload } = await jwtVerify(token, new TextEncoder().encode(secret));
+    
+    // Create response and set headers if needed
+    const response = NextResponse.next();
+    response.headers.set('x-user-role', String(payload.role));
+    return response;
   } catch (err) {
     // Invalid token – redirect to login
     url.pathname = '/admin/login';
