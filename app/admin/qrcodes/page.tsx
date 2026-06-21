@@ -8,6 +8,7 @@ import {
 } from "lucide-react";
 import QRCode from "qrcode";
 import { supabase } from "@/lib/supabase";
+import { adminDb } from "@/lib/admin-api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 type LocationType = "restaurant" | "pool" | "hotel";
@@ -87,8 +88,7 @@ export default function QRGeneratorPage() {
   const loadFromDB = async () => {
     setDbStatus("loading");
     try {
-      const { data, error } = await supabase
-        .from("qr_locations")
+      const { data, error } = await adminDb("qr_locations")
         .select("*")
         .order("created_at", { ascending: false });
 
@@ -128,8 +128,7 @@ export default function QRGeneratorPage() {
     const dataUrl = await renderQR(url).catch(() => null);
 
     // Save to Supabase
-    const { data, error } = await supabase
-      .from("qr_locations")
+    const { data, error } = await adminDb("qr_locations")
       .insert({ type, label: label.trim(), token, url, is_active: true })
       .select()
       .single();
@@ -152,8 +151,7 @@ export default function QRGeneratorPage() {
     const url    = buildUrl(item.type, item.label, token);
     const dataUrl = await renderQR(url).catch(() => null);
 
-    const { error } = await supabase
-      .from("qr_locations")
+    const { error } = await adminDb("qr_locations")
       .update({ token, url, updated_at: new Date().toISOString() })
       .eq("id", item.id);
 
@@ -171,8 +169,7 @@ export default function QRGeneratorPage() {
 
   // ── Delete from DB ───────────────────────────────────────────────────────
   const deleteItem = useCallback(async (item: QRItem) => {
-    const { error } = await supabase
-      .from("qr_locations")
+    const { error } = await adminDb("qr_locations")
       .delete()
       .eq("id", item.id);
 

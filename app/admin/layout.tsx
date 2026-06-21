@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Lock, LayoutDashboard, Utensils, Bed, Ticket, DollarSign, PlusCircle, LogOut, ExternalLink, Menu, X, Shield, RefreshCw, QrCode } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { adminDb } from "@/lib/admin-api";
 
 interface StaffSession {
     role: 'admin' | 'hotel' | 'kitchen' | 'services';
@@ -49,7 +50,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         // Test Supabase connection
         const checkDb = async () => {
             try {
-                const { error } = await supabase.from("profiles").select("id").limit(1);
+                const { error } = await adminDb("profiles").select("id").limit(1);
                 if (error) throw error;
                 setDbStatus("connected");
             } catch (err) {

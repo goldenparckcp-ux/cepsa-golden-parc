@@ -20,6 +20,9 @@ export async function middleware(request: NextRequest) {
   const token = request.cookies.get('staff_token')?.value;
 
   if (!token) {
+    if (url.pathname.startsWith('/api/admin')) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
     url.pathname = '/admin/login';
     return NextResponse.redirect(url);
   }
@@ -35,13 +38,16 @@ export async function middleware(request: NextRequest) {
     response.headers.set('x-user-role', String(payload.role));
     return response;
   } catch (err) {
-    // Invalid token – redirect to login
+    // Invalid token – redirect to login or return 401
+    if (url.pathname.startsWith('/api/admin')) {
+      return NextResponse.json({ error: 'Invalid Token' }, { status: 401 });
+    }
     url.pathname = '/admin/login';
     return NextResponse.redirect(url);
   }
 }
 
 export const config = {
-  // Apply only to admin routes
-  matcher: '/admin/:path*',
+  // Apply only to admin routes and admin APIs
+  matcher: ['/admin/:path*', '/api/admin/:path*'],
 };

@@ -27,12 +27,10 @@ export default function AdminHotelReservationsPage() {
 
     const fetchReservations = async () => {
         try {
-            const { data, error } = await supabase
-                .from("hotel_reservations")
-                .select("*")
-                .order("created_at", { ascending: false });
-
-            if (error) throw error;
+            const res = await fetch("/api/admin/hotel");
+            if (!res.ok) throw new Error("Failed to fetch");
+            const data = await res.json();
+            
             if (data) {
                 setReservations(data);
             }
@@ -100,12 +98,13 @@ export default function AdminHotelReservationsPage() {
                 checked_in_at: new Date().toISOString()
             };
 
-            const { error } = await supabase
-                .from("hotel_reservations")
-                .update(updates)
-                .eq("id", resId);
+            const res = await fetch("/api/admin/hotel", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: resId, updates })
+            });
 
-            if (error) throw error;
+            if (!res.ok) throw new Error("Failed to update");
 
             // Update state
             setReservations(prev => prev.map(r => r.id === resId ? { ...r, ...updates } : r));
@@ -125,12 +124,13 @@ export default function AdminHotelReservationsPage() {
                 checked_out_at: new Date().toISOString()
             };
 
-            const { error } = await supabase
-                .from("hotel_reservations")
-                .update(updates)
-                .eq("id", resId);
+            const res = await fetch("/api/admin/hotel", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: resId, updates })
+            });
 
-            if (error) throw error;
+            if (!res.ok) throw new Error("Failed to update");
 
             // Update state
             setReservations(prev => prev.map(r => r.id === resId ? { ...r, ...updates } : r));
@@ -147,12 +147,13 @@ export default function AdminHotelReservationsPage() {
                 status: "cancelled"
             };
 
-            const { error } = await supabase
-                .from("hotel_reservations")
-                .update(updates)
-                .eq("id", resId);
+            const res = await fetch("/api/admin/hotel", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: resId, updates })
+            });
 
-            if (error) throw error;
+            if (!res.ok) throw new Error("Failed to cancel");
 
             // Update state
             setReservations(prev => prev.map(r => r.id === resId ? { ...r, ...updates } : r));

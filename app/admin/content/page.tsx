@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { PlusCircle, Utensils, Save, RefreshCw, CheckCircle2, Image as ImageIcon, Camera, Layout } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { adminDb } from "@/lib/admin-api";
 
 export default function AdminContentAdditionPage() {
     const [loading, setLoading] = useState(false);
@@ -72,8 +73,7 @@ export default function AdminContentAdditionPage() {
         };
 
         try {
-            const { error } = await supabase
-                .from("restaurant_items")
+            const { error } = await adminDb("restaurant_items")
                 .insert([payload]);
 
             if (error) throw error;

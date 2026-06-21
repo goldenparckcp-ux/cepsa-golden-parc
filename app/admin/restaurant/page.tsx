@@ -55,12 +55,10 @@ export default function AdminRestaurantOrdersPage() {
 
     const fetchOrders = async () => {
         try {
-            const { data, error } = await supabase
-                .from("restaurant_orders")
-                .select("*")
-                .order("created_at", { ascending: false });
-
-            if (error) throw error;
+            const res = await fetch("/api/admin/restaurant");
+            if (!res.ok) throw new Error("Failed to fetch");
+            const data = await res.json();
+            
             if (data) {
                 setOrders(data);
             }
@@ -81,12 +79,13 @@ export default function AdminRestaurantOrdersPage() {
                 updates.completed_at = new Date().toISOString();
             }
 
-            const { error } = await supabase
-                .from("restaurant_orders")
-                .update(updates)
-                .eq("id", orderId);
+            const res = await fetch("/api/admin/restaurant", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: orderId, updates })
+            });
 
-            if (error) throw error;
+            if (!res.ok) throw new Error("Failed to update status");
             
             // Optimistic UI update
             setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...updates } : o));

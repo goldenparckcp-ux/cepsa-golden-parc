@@ -7,6 +7,7 @@ import {
     ImageIcon, Eye, EyeOff, LayoutGrid, GripVertical, PlusCircle, Trash, Fuel
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { adminDb } from "@/lib/admin-api";
 import { DarkSheet } from "@/components/ui/DarkSheet";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
@@ -172,7 +173,7 @@ export default function AdminPriceModifierPage() {
         setErrorMessage("");
         try {
             // Load restaurant items from DB
-            const { data, error } = await supabase.from("restaurant_items").select("*");
+            const { data, error } = await adminDb("restaurant_items").select("*");
             if (error) throw error;
             if (data) {
                 // Sort by sort_order ascending, then category weight
@@ -200,15 +201,14 @@ export default function AdminPriceModifierPage() {
                 if (needsMigration) {
                     for (let i = 0; i < resequenced.length; i++) {
                         if (!data.find((x: any) => x.id === resequenced[i].id)?.sort_order) {
-                            supabase.from("restaurant_items").update({ sort_order: resequenced[i].sort_order }).eq("id", resequenced[i].id).then();
+                            adminDb("restaurant_items").update({ sort_order: resequenced[i].sort_order }).eq("id", resequenced[i].id).then();
                         }
                     }
                 }
             }
 
             // Load Lubricants from DB
-            const { data: lubeData, error: lubeErr } = await supabase
-                .from("lubricant_items")
+            const { data: lubeData, error: lubeErr } = await adminDb("lubricant_items")
                 .select("*")
                 .order("sort_order", { ascending: true });
             
@@ -222,8 +222,7 @@ export default function AdminPriceModifierPage() {
             }
 
             // Load Fuel Prices from DB
-            const { data: fuelData, error: fuelErr } = await supabase
-                .from("fuel_prices")
+            const { data: fuelData, error: fuelErr } = await adminDb("fuel_prices")
                 .select("*")
                 .eq("id", "current")
                 .maybeSingle();
@@ -257,8 +256,7 @@ export default function AdminPriceModifierPage() {
         setErrorMessage("");
 
         try {
-            const { error } = await supabase
-                .from("restaurant_items")
+            const { error } = await adminDb("restaurant_items")
                 .update({ base_price: newPrice })
                 .eq("id", itemId);
 
@@ -282,8 +280,7 @@ export default function AdminPriceModifierPage() {
         const nextState = !item.is_available;
 
         try {
-            const { error } = await supabase
-                .from("restaurant_items")
+            const { error } = await adminDb("restaurant_items")
                 .update({ is_available: nextState })
                 .eq("id", item.id);
 
@@ -303,8 +300,7 @@ export default function AdminPriceModifierPage() {
         setSuccessMessage("");
         setErrorMessage("");
         try {
-            const { error } = await supabase
-                .from("fuel_prices")
+            const { error } = await adminDb("fuel_prices")
                 .update({
                     gasoil: fuelPrices.gasoil,
                     sans_plomb: fuelPrices.sansPlomb,
@@ -327,8 +323,7 @@ export default function AdminPriceModifierPage() {
         setErrorMessage("");
 
         try {
-            const { error } = await supabase
-                .from("lubricant_items")
+            const { error } = await adminDb("lubricant_items")
                 .update({ price: newPrice })
                 .eq("id", itemId);
 
@@ -352,8 +347,7 @@ export default function AdminPriceModifierPage() {
         const nextState = !item.is_available;
 
         try {
-            const { error } = await supabase
-                .from("lubricant_items")
+            const { error } = await adminDb("lubricant_items")
                 .update({ is_available: nextState })
                 .eq("id", item.id);
 
@@ -410,8 +404,7 @@ export default function AdminPriceModifierPage() {
                 const updates = updatedListWithOrders.map((item: any) => {
                     const originalItem = lubricantItems.find((x: any) => x.id === item.id);
                     if (originalItem && originalItem.sort_order !== item.sort_order) {
-                        return supabase
-                            .from("lubricant_items")
+                        return adminDb("lubricant_items")
                             .update({ sort_order: item.sort_order })
                             .eq("id", item.id);
                     }
@@ -464,8 +457,7 @@ export default function AdminPriceModifierPage() {
             const updates = updatedFilteredWithOrders.map((item: any) => {
                 const originalItem = menuItems.find((x: any) => x.id === item.id);
                 if (originalItem && originalItem.sort_order !== item.sort_order) {
-                    return supabase
-                        .from("restaurant_items")
+                    return adminDb("restaurant_items")
                         .update({ sort_order: item.sort_order })
                         .eq("id", item.id);
                 }
@@ -583,8 +575,7 @@ export default function AdminPriceModifierPage() {
             try {
                 if (editingItem) {
                     // EDIT MODE
-                    const { error } = await supabase
-                        .from("lubricant_items")
+                    const { error } = await adminDb("lubricant_items")
                         .update(payload)
                         .eq("id", editingItem.id);
 
@@ -596,8 +587,7 @@ export default function AdminPriceModifierPage() {
                     const maxSort = lubricantItems.reduce((max: number, item: any) => Math.max(max, item.sort_order || 0), 0);
                     payload.sort_order = maxSort + 1;
 
-                    const { error } = await supabase
-                        .from("lubricant_items")
+                    const { error } = await adminDb("lubricant_items")
                         .insert([payload]);
 
                     if (error) throw error;
@@ -652,8 +642,7 @@ export default function AdminPriceModifierPage() {
             try {
                 if (editingItem) {
                     // EDIT MODE
-                    const { error } = await supabase
-                        .from("restaurant_items")
+                    const { error } = await adminDb("restaurant_items")
                         .update(payload)
                         .eq("id", editingItem.id);
 
@@ -665,8 +654,7 @@ export default function AdminPriceModifierPage() {
                     const maxSort = menuItems.reduce((max: number, item: any) => Math.max(max, item.sort_order || 0), 0);
                     payload.sort_order = maxSort + 1;
 
-                    const { error } = await supabase
-                        .from("restaurant_items")
+                    const { error } = await adminDb("restaurant_items")
                         .insert([payload]);
 
                     if (error) throw error;
@@ -693,8 +681,7 @@ export default function AdminPriceModifierPage() {
         setErrorMessage("");
 
         try {
-            const { error } = await supabase
-                .from("restaurant_items")
+            const { error } = await adminDb("restaurant_items")
                 .delete()
                 .eq("id", itemId);
 
@@ -781,8 +768,7 @@ export default function AdminPriceModifierPage() {
         setErrorMessage("");
 
         try {
-            const { error } = await supabase
-                .from("lubricant_items")
+            const { error } = await adminDb("lubricant_items")
                 .delete()
                 .eq("id", itemId);
 

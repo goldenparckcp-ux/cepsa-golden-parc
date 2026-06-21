@@ -16,12 +16,10 @@ export default function AdminPoolPage() {
     const fetchData = async () => {
         setLoading(true);
         try {
-            const { data: poolData, error } = await supabase
-                .from("pool_bookings")
-                .select("*")
-                .order("created_at", { ascending: false });
+            const res = await fetch("/api/admin/pool");
+            if (!res.ok) throw new Error("Failed to fetch");
+            const poolData = await res.json();
 
-            if (error) throw error;
             if (poolData) setPoolBookings(poolData);
         } catch (err) {
             console.error("Failed to fetch pool data from database, using fallback", err);
@@ -67,12 +65,13 @@ export default function AdminPoolPage() {
                 checked_in_at: new Date().toISOString()
             };
 
-            const { error } = await supabase
-                .from("pool_bookings")
-                .update(updates)
-                .eq("id", bookingId);
+            const res = await fetch("/api/admin/pool", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: bookingId, updates })
+            });
 
-            if (error) throw error;
+            if (!res.ok) throw new Error("Failed to validate entry");
 
             setPoolBookings(prev => prev.map(b => b.id === bookingId ? { ...b, ...updates } : b));
         } catch (err) {
@@ -87,12 +86,13 @@ export default function AdminPoolPage() {
                 completed_at: new Date().toISOString()
             };
 
-            const { error } = await supabase
-                .from("pool_bookings")
-                .update(updates)
-                .eq("id", bookingId);
+            const res = await fetch("/api/admin/pool", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: bookingId, updates })
+            });
 
-            if (error) throw error;
+            if (!res.ok) throw new Error("Failed to complete pass");
 
             setPoolBookings(prev => prev.map(b => b.id === bookingId ? { ...b, ...updates } : b));
         } catch (err) {
