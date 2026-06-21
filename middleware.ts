@@ -11,8 +11,8 @@ import { jwtVerify } from 'jose';
 export async function middleware(request: NextRequest) {
   const url = request.nextUrl.clone();
 
-  // Publicly accessible admin pages (e.g., login) should bypass auth.
-  if (url.pathname.startsWith('/admin/login') || url.pathname.startsWith('/api/auth')) {
+  // Publicly accessible admin pages should bypass auth.
+  if (url.pathname === '/login' || url.pathname.startsWith('/api/auth')) {
     return NextResponse.next();
   }
 
@@ -23,7 +23,7 @@ export async function middleware(request: NextRequest) {
     if (url.pathname.startsWith('/api/admin')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    url.pathname = '/admin/login';
+    url.pathname = '/login';
     return NextResponse.redirect(url);
   }
 
@@ -42,7 +42,7 @@ export async function middleware(request: NextRequest) {
     if (url.pathname.startsWith('/api/admin')) {
       return NextResponse.json({ error: 'Invalid Token' }, { status: 401 });
     }
-    url.pathname = '/admin/login';
+    url.pathname = '/login';
     return NextResponse.redirect(url);
   }
 }
