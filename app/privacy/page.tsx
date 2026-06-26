@@ -68,16 +68,16 @@ export default function PrivacyPolicy() {
                         </ul>
                     </section>
 
-                    <section className="bg-white/5 border border-white/10 p-6 rounded-2xl space-y-4">
-                        <div className="flex items-center gap-4">
-                            <div className="p-3 rounded-full bg-red-500/10 text-red-500">
-                                <Share2 className="w-6 h-6" />
-                            </div>
-                            <h2 className="text-xl font-bold text-white">3. Partage des Données</h2>
+                    <section className="space-y-3">
+                        <div className="flex items-center gap-3 text-white font-semibold text-lg">
+                            <FileText className="w-5 h-5 text-[#FFCA28]" />
+                            <h2>3. Utilisation des Données</h2>
                         </div>
-                        <p className="text-gray-300">Nous ne vendons jamais vos données. Elles sont partagées uniquement avec :</p>
-                        <ul className="list-disc pl-5 text-gray-300 space-y-2">
-                            <li><strong>PayPal :</strong> Traitement des paiements sécurisés par carte bancaire ou compte.</li>
+                        <p className="leading-relaxed">
+                            Vos données sont utilisées exclusivement pour les finalités suivantes :
+                        </p>
+                        <ul className="list-disc pl-6 space-y-2">
+                            <li>Création et gestion de votre compte client.</li>
                             <li>Traitement et confirmation de vos réservations de services.</li>
                             <li>Traitement sécurisé des transactions de paiement.</li>
                             <li>Remboursement des réservations annulées (conformément à nos conditions de service).</li>
@@ -95,7 +95,7 @@ export default function PrivacyPolicy() {
                         </p>
                         <ul className="list-disc pl-6 space-y-2">
                             <li><strong>Supabase :</strong> Hébergement sécurisé de la base de données et gestion d'authentification.</li>
-                            <li><strong>Stripe / PayPal :</strong> Traitement des paiements sécurisés par carte bancaire.</li>
+                            <li><strong>PayPal :</strong> Traitement des paiements sécurisés par carte bancaire ou compte PayPal.</li>
                         </ul>
                     </section>
 
