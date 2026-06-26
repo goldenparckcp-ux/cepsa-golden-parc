@@ -6,7 +6,6 @@ import { Lock } from "lucide-react";
 
 export default function LoginPage() {
     const router = useRouter();
-    const [phone, setPhone] = useState("");
     const [pin, setPin] = useState("");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState("");
@@ -16,26 +15,31 @@ export default function LoginPage() {
         setLoading(true);
         setError("");
 
-        // Mock Authentication Simulation
-        setTimeout(() => {
-            // Simple mock logic for demonstration
-            if (pin === "0000") {
-                if (phone.endsWith("00")) {
-                    router.push("/admin");
-                } else if (phone.endsWith("01")) {
-                    router.push("/admin/kitchen");
-                } else if (phone.endsWith("02")) {
-                    router.push("/admin/services");
-                } else if (phone.endsWith("03")) {
-                    router.push("/admin/hotel");
-                } else {
-                    router.push("/admin"); // Default fallback for testing
-                }
-            } else {
-                setError("Code PIN incorrect. Réessayez.");
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pin })
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) {
+                setError(data.error || "Code d'accès incorrect. Réessayez.");
                 setLoading(false);
+                return;
             }
-        }, 1000);
+
+            // Redirect based on role
+            if (data.role === 'kitchen') router.push('/admin/kitchen');
+            else if (data.role === 'services') router.push('/admin/services');
+            else if (data.role === 'hotel') router.push('/admin/hotel');
+            else router.push('/admin');
+
+        } catch (err) {
+            setError("Erreur de connexion au serveur.");
+            setLoading(false);
+        }
     };
 
     return (
@@ -46,34 +50,19 @@ export default function LoginPage() {
                         🏢
                     </div>
                     <h1 className="text-3xl font-bold text-gray-900">Cepsa Golden Parc</h1>
-                    <p className="text-gray-500 mt-2 font-medium">Staff Dashboard Access</p>
+                    <p className="text-gray-500 mt-2 font-medium">Accès Réservé au Personnel</p>
                 </div>
 
                 <form onSubmit={handleLogin} className="space-y-6">
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-2">
-                            Numéro de Téléphone
-                        </label>
-                        <input
-                            type="tel"
-                            placeholder="+212 6XX XX XX XX"
-                            value={phone}
-                            onChange={(e) => setPhone(e.target.value)}
-                            className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:border-red-500 outline-none transition font-medium text-lg bg-gray-50 focus:bg-white"
-                            required
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">
-                            Code PIN
+                            Code d'accès
                         </label>
                         <input
                             type="password"
-                            placeholder="••••"
+                            placeholder="Entrez votre code"
                             value={pin}
                             onChange={(e) => setPin(e.target.value)}
-                            maxLength={4}
                             className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:border-red-500 outline-none transition font-medium text-lg tracking-widest bg-gray-50 focus:bg-white"
                             required
                         />
@@ -103,7 +92,7 @@ export default function LoginPage() {
 
                 <div className="mt-8 text-center border-t border-gray-100 pt-6">
                     <p className="text-xs text-gray-400 font-medium uppercase tracking-wider flex items-center justify-center gap-2">
-                        <Lock className="w-3 h-3" /> Accès réservé au personnel
+                        <Lock className="w-3 h-3" /> Espace sécurisé
                     </p>
                 </div>
             </div>
