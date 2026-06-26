@@ -65,7 +65,7 @@ export default function TermsOfService() {
                             <p className="leading-relaxed text-sm">
                                 🟢 <strong>Annulation effectuée plus de 45 minutes avant l'heure prévue :</strong>
                                 <br />
-                                Vous êtes éligible à un remboursement automatique de votre dépôt ou paiement direct sur votre compte bancaire (carte bancaire via Stripe ou PayPal). Des <strong>frais de traitement administratifs fixes de 10 DH</strong> seront automatiquement déduits du montant remboursé.
+                                Vous êtes éligible à un remboursement automatique de votre dépôt ou paiement direct sur votre compte bancaire (via PayPal). Des <strong>frais de traitement administratifs fixes de 10 DH</strong> seront automatiquement déduits du montant remboursé.
                             </p>
                             <p className="leading-relaxed text-sm text-red-400">
                                 🔴 <strong>Annulation effectuée moins de 45 minutes avant l'heure prévue :</strong>
@@ -81,7 +81,7 @@ export default function TermsOfService() {
                             <h2>3. Paiement en ligne et Réservations</h2>
                         </div>
                         <p className="leading-relaxed">
-                            Le paiement en ligne sécurisé par carte bancaire (via Stripe ou PayPal) est obligatoire pour confirmer les réservations de l'hôtel, de la piscine et des services (lavage/lubrifiants).
+                            Le paiement en ligne sécurisé (via PayPal) est obligatoire pour confirmer les réservations de l'hôtel, de la piscine et des services (lavage/lubrifiants).
                         </p>
                         <p className="leading-relaxed">
                             Concernant les commandes de notre restaurant, le paiement par carte en ligne est proposé par défaut dans le panier. Les utilisateurs souhaitant payer en espèces peuvent choisir l'option de paiement "Sur Place" (Onsite) lors de la validation.
