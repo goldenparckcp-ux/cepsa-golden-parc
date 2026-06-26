@@ -1,99 +1,145 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Lock } from "lucide-react";
+import { Lock, RefreshCw } from "lucide-react";
 
 export default function LoginPage() {
     const router = useRouter();
     const [pin, setPin] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
+    const [errorMsg, setErrorMsg] = useState("");
+    const [isChecking, setIsChecking] = useState(false);
+    const [dbStatus, setDbStatus] = useState<"connected" | "checking" | "fallback">("connected");
 
-    const handleLogin = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setLoading(true);
-        setError("");
+    const handlePinInput = (num: string) => {
+        if (pin.length < 4) {
+            setErrorMsg("");
+            setPin(prev => prev + num);
+        }
+    };
+
+    const handlePinDelete = () => {
+        setPin(prev => prev.slice(0, -1));
+    };
+
+    const handlePinClear = () => {
+        setPin("");
+        setErrorMsg("");
+    };
+
+    useEffect(() => {
+        if (pin.length === 4) {
+            verifyPin(pin);
+        }
+    }, [pin]);
+
+    const verifyPin = async (enteredPin: string) => {
+        setIsChecking(true);
+        setErrorMsg("");
 
         try {
-            const res = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ pin })
+            const res = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ pin: enteredPin }),
             });
 
             const data = await res.json();
 
             if (!res.ok) {
-                setError(data.error || "Code d'accès incorrect. Réessayez.");
-                setLoading(false);
-                return;
+                setErrorMsg(data.error || "Code PIN incorrect ou refusé.");
+                setPin("");
+            } else {
+                localStorage.setItem("staff_session", JSON.stringify({
+                    role: data.role,
+                    name: data.name || "Personnel"
+                }));
+                
+                // Redirect based on role
+                if (data.role === 'kitchen') router.push('/admin/kitchen');
+                else if (data.role === 'services') router.push('/admin/services');
+                else if (data.role === 'hotel') router.push('/admin/hotel');
+                else router.push('/admin');
             }
-
-            // Redirect based on role
-            if (data.role === 'kitchen') router.push('/admin/kitchen');
-            else if (data.role === 'services') router.push('/admin/services');
-            else if (data.role === 'hotel') router.push('/admin/hotel');
-            else router.push('/admin');
-
         } catch (err) {
-            setError("Erreur de connexion au serveur.");
-            setLoading(false);
+            setErrorMsg("Erreur réseau. Essai hors ligne...");
+            setPin("");
+        } finally {
+            setIsChecking(false);
         }
     };
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800 flex items-center justify-center p-6 text-white">
-            <div className="bg-white rounded-3xl shadow-2xl p-10 w-full max-w-md text-gray-900">
-                <div className="text-center mb-8">
-                    <div className="inline-flex h-20 w-20 items-center justify-center rounded-full bg-blue-50 mb-4 text-6xl">
-                        🏢
-                    </div>
-                    <h1 className="text-3xl font-bold text-gray-900">Cepsa Golden Parc</h1>
-                    <p className="text-gray-500 mt-2 font-medium">Accès Réservé au Personnel</p>
+        <div className="min-h-screen bg-[#0F172A] flex items-center justify-center p-4">
+            <div className="max-w-md w-full bg-[#1E293B] rounded-3xl border border-white/10 p-8 shadow-2xl flex flex-col items-center relative overflow-hidden">
+                <div className="absolute -top-12 -right-12 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+                <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
+
+                <div className="w-16 h-16 bg-gradient-to-tr from-amber-500 to-amber-600 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/10 mb-6">
+                    <Lock className="w-8 h-8 text-black" />
                 </div>
 
-                <form onSubmit={handleLogin} className="space-y-6">
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-2">
-                            Code d'accès
-                        </label>
-                        <input
-                            type="password"
-                            placeholder="Entrez votre code"
-                            value={pin}
-                            onChange={(e) => setPin(e.target.value)}
-                            className="w-full px-4 py-4 border-2 border-gray-200 rounded-xl focus:border-red-500 outline-none transition font-medium text-lg tracking-widest bg-gray-50 focus:bg-white"
-                            required
+                <h2 className="text-2xl font-black text-white text-center mb-1">Portail Staff Cepsa</h2>
+                <p className="text-xs text-gray-400 text-center mb-8 font-medium">Saisissez votre code PIN pour accéder au panneau</p>
+
+                <div className="flex gap-4 mb-8">
+                    {[0, 1, 2, 3].map(i => (
+                        <div
+                            key={i}
+                            className={`w-4 h-4 rounded-full border transition-all duration-150 ${
+                                pin.length > i
+                                    ? "bg-amber-500 border-amber-500 scale-110 shadow-lg shadow-amber-500/30"
+                                    : "border-white/20 bg-transparent"
+                            }`}
                         />
+                    ))}
+                </div>
+
+                {errorMsg && (
+                    <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-2 text-center text-red-400 font-bold text-xs mb-6 w-full animate-shake">
+                        {errorMsg}
                     </div>
+                )}
 
-                    {error && (
-                        <div className="text-red-500 text-sm font-bold text-center bg-red-50 p-3 rounded-lg border border-red-100">
-                            {error}
-                        </div>
-                    )}
-
+                <div className="grid grid-cols-3 gap-4 w-full max-w-[280px] mb-8">
+                    {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map(num => (
+                        <button
+                            key={num}
+                            onClick={() => handlePinInput(num)}
+                            disabled={isChecking}
+                            className="aspect-square bg-white/5 hover:bg-white/10 active:scale-95 text-white font-bold text-xl rounded-2xl border border-white/5 transition-all flex items-center justify-center disabled:opacity-50"
+                        >
+                            {num}
+                        </button>
+                    ))}
                     <button
-                        type="submit"
-                        disabled={loading}
-                        className="w-full bg-gradient-to-r from-cyan-500 to-blue-600 text-white py-4 rounded-xl font-bold text-lg hover:from-cyan-600 hover:to-blue-700 transition shadow-lg disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                        onClick={handlePinClear}
+                        disabled={isChecking}
+                        className="aspect-square bg-transparent hover:bg-white/5 text-gray-400 font-bold text-xs rounded-2xl transition-all flex items-center justify-center"
                     >
-                        {loading ? (
-                            <>
-                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                                Connexion...
-                            </>
-                        ) : (
-                            "Se Connecter"
-                        )}
+                        EFFACER
                     </button>
-                </form>
+                    <button
+                        onClick={() => handlePinInput("0")}
+                        disabled={isChecking}
+                        className="aspect-square bg-white/5 hover:bg-white/10 active:scale-95 text-white font-bold text-xl rounded-2xl border border-white/5 transition-all flex items-center justify-center disabled:opacity-50"
+                    >
+                        0
+                    </button>
+                    <button
+                        onClick={handlePinDelete}
+                        disabled={isChecking}
+                        className="aspect-square bg-transparent hover:bg-white/5 text-gray-400 font-bold text-sm rounded-2xl transition-all flex items-center justify-center"
+                    >
+                        RETOUR
+                    </button>
+                </div>
 
-                <div className="mt-8 text-center border-t border-gray-100 pt-6">
-                    <p className="text-xs text-gray-400 font-medium uppercase tracking-wider flex items-center justify-center gap-2">
-                        <Lock className="w-3 h-3" /> Espace sécurisé
-                    </p>
+                <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/5">
+                    <span className={`w-2 h-2 rounded-full ${dbStatus === "connected" ? "bg-green-500" : "bg-amber-500 animate-pulse"}`} />
+                    <span className="text-[10px] font-bold text-gray-400">
+                        {dbStatus === "connected" ? "Sécurisé" : "Connexion..."}
+                    </span>
                 </div>
             </div>
         </div>

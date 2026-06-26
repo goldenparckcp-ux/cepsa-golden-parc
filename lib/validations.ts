@@ -5,7 +5,7 @@ export const LoginSchema = z.object({
   pin: z.string()
     .min(4, "Le code PIN doit comporter au moins 4 caractères")
     .max(8, "Le code PIN ne peut pas dépasser 8 caractères")
-    .regex(/^[a-zA-Z0-9]+$/, "Le code doit être alphanumérique"),
+    .regex(/^\d+$/, "Le code PIN ne doit contenir que des chiffres"),
 });
 
 // Example Schema for updating a profile
