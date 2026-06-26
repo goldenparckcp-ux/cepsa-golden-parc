@@ -1,12 +1,24 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { rateLimit } from '@/lib/rate-limit';
 
 export async function POST(req: Request) {
+    // Rate limiting (20 requests per minute)
+    const ip = req.headers.get('x-forwarded-for') || 'unknown';
+    const rl = rateLimit(ip, 20, 60000);
+    if (!rl.success) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+
     const body = await req.json();
 
-    // Verify Event Type
-    if (body.event_type !== 'CHECKOUT.ORDER.APPROVED' && body.event_type !== 'PAYMENT.CAPTURE.COMPLETED') {
-        return NextResponse.json({ received: true });
+    // Basic webhook verification - check event type is expected
+    const allowedEventTypes = ['PAYMENT.CAPTURE.COMPLETED', 'CHECKOUT.ORDER.APPROVED', 'PAYMENT.CAPTURE.DENIED', 'PAYMENT.CAPTURE.REFUNDED'];
+    if (!body.event_type || !allowedEventTypes.includes(body.event_type)) {
+        return NextResponse.json({ error: 'Invalid event type' }, { status: 400 });
+    }
+
+    // Verify the webhook has required fields
+    if (!body.resource || !body.resource.id) {
+        return NextResponse.json({ error: 'Invalid webhook payload' }, { status: 400 });
     }
 
     const bookingId = body.resource?.purchase_units?.[0]?.custom_id || body.resource?.custom_id;

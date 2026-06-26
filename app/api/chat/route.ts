@@ -1,10 +1,16 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { NextResponse } from 'next/server';
+import { rateLimit } from '@/lib/rate-limit';
 
 const apiKey = process.env.GEMINI_API_KEY || '';
 const genAI = new GoogleGenerativeAI(apiKey);
 
 export async function POST(req: Request) {
+    // Rate limiting: 10 requests per minute
+    const ip = req.headers.get('x-forwarded-for') || 'unknown';
+    const rl = rateLimit(ip, 10, 60000);
+    if (!rl.success) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+
     if (!apiKey) {
         return NextResponse.json({ error: 'API key not configured' }, { status: 500 });
     }

@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { verifyStaffAuth } from '@/lib/auth-guard';
+import { rateLimit } from '@/lib/rate-limit';
 
 // Initialize Supabase admin client to bypass RLS for secure state changes
 const supabaseAdmin = createClient(
@@ -111,6 +113,15 @@ function parseScheduledTime(booking: BookingData, tableName: string): Date {
 
 export async function POST(req: Request) {
     try {
+        // Auth check
+        const auth = await verifyStaffAuth();
+        if (!auth.success) return auth.response;
+
+        // Rate limiting (5 requests per minute)
+        const ip = req.headers.get('x-forwarded-for') || 'unknown';
+        const rl = rateLimit(ip, 5, 60000);
+        if (!rl.success) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+
         const { bookingId, tableName: passedTableName } = await req.json();
 
         if (!bookingId) {

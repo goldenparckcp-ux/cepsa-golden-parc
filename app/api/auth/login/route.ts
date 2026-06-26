@@ -71,7 +71,11 @@ export async function POST(request: Request) {
     }
 
     // 4. Generate JWT
-    const secret = process.env.JWT_SECRET || 'temporary_secret_for_demo_12345';
+    const secret = process.env.JWT_SECRET;
+    if (!secret) {
+      console.error('CRITICAL: JWT_SECRET not set');
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
     
     const alg = 'HS256';
     const jwt = await new SignJWT({ role: resolvedRole, name: resolvedName })
