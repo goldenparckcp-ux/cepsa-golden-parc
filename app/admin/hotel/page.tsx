@@ -36,50 +36,7 @@ export default function AdminHotelReservationsPage() {
             }
         } catch (err) {
             console.error("Failed to fetch hotel reservations from database:", err);
-            // Fallback mock reservations for immediate offline visual success
-            setReservations([
-                {
-                    id: "1",
-                    booking_number: "HOTEL-2895",
-                    customer_phone: "0661122334",
-                    room_type: "standard",
-                    booking_type: "night",
-                    check_in: new Date().toISOString().split("T")[0],
-                    check_out: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString().split("T")[0],
-                    nights: 1,
-                    total_price: 300,
-                    status: "pending",
-                    created_at: new Date().toISOString()
-                },
-                {
-                    id: "2",
-                    booking_number: "HOTEL-2894",
-                    customer_phone: "0670998877",
-                    room_type: "deluxe",
-                    booking_type: "sieste",
-                    check_in: new Date().toISOString().split("T")[0],
-                    check_out: new Date().toISOString().split("T")[0],
-                    duration_hours: 3,
-                    total_price: 250,
-                    status: "checked_in",
-                    room_number: "103",
-                    created_at: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString()
-                },
-                {
-                    id: "3",
-                    booking_number: "HOTEL-2890",
-                    customer_phone: "0654321098",
-                    room_type: "family",
-                    booking_type: "night",
-                    check_in: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString().split("T")[0],
-                    check_out: new Date().toISOString().split("T")[0],
-                    nights: 2,
-                    total_price: 1400,
-                    status: "completed",
-                    room_number: "105",
-                    created_at: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString()
-                }
-            ]);
+            setReservations([]);
         } finally {
             setLoading(false);
         }

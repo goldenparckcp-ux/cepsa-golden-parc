@@ -320,11 +320,11 @@ export default function Home() {
               onClick={() => window.open('https://maps.app.goo.gl/wWx1BeVM899uyPJ58')}
             >
               <Image 
-                src="https://lh3.googleusercontent.com/gps-cs-s/APNQkAFdEGJrDvqy2Rsub4z3eT3VI4mbfz9dRLmE9bFoYDlGLmDWZ1RAWRIsARJJjIuHfI5wClt5JwwbVVeKIJeOpDGYKCVf8FMcaISw_OhywoLMmTs13UqBEnYqu8x28zDB_XL31LCJeK931Eht=s1600" 
+                src="https://images.unsplash.com/photo-1524661135-423995f22d0b?w=1600"
                 alt="Map Background" 
                 fill
                 sizes="(max-width: 1024px) 100vw, 66vw"
-                className="object-cover opacity-40 group-hover:scale-105 transition-transform duration-1000"
+                className="object-cover opacity-40 group-hover:scale-105 transition-transform duration-1000 grayscale sepia-[0.3]"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#070A13] via-[#070A13]/50 to-transparent" />
               

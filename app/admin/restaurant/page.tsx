@@ -33,12 +33,8 @@ export default function AdminRestaurantOrdersPage() {
             )
             .subscribe();
 
-        // Polling as ultimate safety backup every 10 seconds
-        const timer = setInterval(fetchOrders, 10000);
-
         return () => {
             channel.unsubscribe();
-            clearInterval(timer);
         };
     }, []);
 
