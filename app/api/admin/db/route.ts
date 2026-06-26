@@ -48,8 +48,14 @@ export async function POST(request: Request) {
     switch (action) {
       case 'select':
         query = query.select(payload?.columns || '*');
+        if (match) {
+          query = query.match(match);
+        }
         if (order) {
            query = query.order(order.column, { ascending: order.ascending });
+        }
+        if (body.single) {
+           query = query.maybeSingle();
         }
         break;
       case 'insert':
