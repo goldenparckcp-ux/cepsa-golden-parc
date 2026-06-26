@@ -95,7 +95,7 @@ function ServicesContent() {
             {/* Enhanced Header Section */}
             <section className="relative overflow-hidden rounded-3xl border border-white/10 shadow-2xl h-[200px]">
                 <Image
-                    src="/image/cepsa-station.jpg"
+                    src="https://vktqecgylkjogquhsymz.supabase.co/storage/v1/object/public/images/cepsa-station.jpg"
                     alt="Cepsa Golden Parc"
                     fill
                     className="absolute inset-0 object-cover"

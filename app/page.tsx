@@ -86,7 +86,7 @@ export default function Home() {
       <div className="relative h-[65vh] w-full overflow-hidden rounded-b-[4rem] shadow-2xl">
         <motion.div style={{ y: y1 }} className="absolute inset-0">
           <Image
-            src="/image/cepsa-hero-premium.png"
+            src="https://vktqecgylkjogquhsymz.supabase.co/storage/v1/object/public/images/cepsa-hero-premium.png"
             alt="Golden Parc Station"
             fill
             priority
@@ -195,7 +195,7 @@ export default function Home() {
               <h3 className="text-white font-black text-2xl md:text-3xl leading-tight mb-2">{t('home.promo1.title')}</h3>
               <p className="text-white/80 text-xs md:text-sm font-medium">{t('home.promo1.desc')}</p>
             </div>
-            <Image src="/image/cepsa-hero.jpg" alt="Promo" fill sizes="(max-width: 768px) 300px, 450px" className="object-cover opacity-20 group-hover:opacity-30 transition-opacity mix-blend-overlay" />
+            <Image src="https://vktqecgylkjogquhsymz.supabase.co/storage/v1/object/public/images/cepsa-hero.jpg" alt="Promo" fill sizes="(max-width: 768px) 300px, 450px" className="object-cover opacity-20 group-hover:opacity-30 transition-opacity mix-blend-overlay" />
             <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-white/10 rounded-full blur-3xl" />
           </motion.div>
           
@@ -210,7 +210,7 @@ export default function Home() {
               <h3 className="text-white font-black text-2xl md:text-3xl leading-tight mb-2">{t('home.promo2.title')}</h3>
               <p className="text-white/90 text-xs md:text-sm font-medium">{t('home.promo2.desc')}</p>
             </div>
-            <Image src="/image/ftor complet.jpeg" alt="Ftour" fill sizes="(max-width: 768px) 300px, 450px" className="object-cover opacity-30 group-hover:opacity-40 transition-opacity mix-blend-overlay" />
+            <Image src="https://vktqecgylkjogquhsymz.supabase.co/storage/v1/object/public/images/ftor_complet.jpeg" alt="Ftour" fill sizes="(max-width: 768px) 300px, 450px" className="object-cover opacity-30 group-hover:opacity-40 transition-opacity mix-blend-overlay" />
             <div className="absolute -top-10 -right-10 w-48 h-48 bg-white/20 rounded-full blur-3xl" />
           </motion.div>
         </motion.div>

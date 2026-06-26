@@ -15,8 +15,8 @@ export const metadata: Metadata = {
   description: "Station Service & Détente",
   manifest: "/manifest.json",
   icons: {
-    icon: "/image/cepsa-logo.png",
-    apple: "/image/cepsa-logo.png",
+    icon: "https://vktqecgylkjogquhsymz.supabase.co/storage/v1/object/public/images/cepsa-logo.png",
+    apple: "https://vktqecgylkjogquhsymz.supabase.co/storage/v1/object/public/images/cepsa-logo.png",
   }
 };
 
