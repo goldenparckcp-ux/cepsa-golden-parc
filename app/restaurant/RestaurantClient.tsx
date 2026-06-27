@@ -127,6 +127,7 @@ function CartDrawerContent({
     const [onSiteLocation, setOnSiteLocation] = useState<'table' | 'pool' | 'room'>('table');
     const [locationDetail, setLocationDetail] = useState(""); 
     const [isScanning, setIsScanning] = useState(false);
+    const [showManualInput, setShowManualInput] = useState(false);
     const [arrivalTime, setArrivalTime] = useState<string>("15 min");
     const [showCustomTime, setShowCustomTime] = useState(false);
     const [customHours, setCustomHours] = useState("");
@@ -372,29 +373,6 @@ function CartDrawerContent({
                     <div className="bg-[#111827] rounded-[2rem] p-6 border border-white/5 shadow-xl">
                         {locationType === 'on_site' ? (
                             <div className="animate-in fade-in duration-300">
-                                <h4 className="text-gray-400 font-bold text-sm mb-4 uppercase tracking-wider">{t('cart.where_exact')}</h4>
-                                <div className="grid grid-cols-3 gap-3 mb-4">
-                                    {[
-                                        { id: 'table', icon: <UtensilsCrossed className="w-4 h-4"/>, label: t('cart.loc.table') },
-                                        { id: 'pool', icon: <UtensilsCrossed className="w-4 h-4"/>, label: t('cart.loc.pool') },
-                                        { id: 'room', icon: <MapPin className="w-4 h-4"/>, label: t('cart.loc.room') }
-                                    ].map(loc => (
-                                        <button
-                                            key={loc.id}
-                                            onClick={() => {
-                                                setOnSiteLocation(loc.id as any);
-                                                setLocationDetail('');
-                                            }}
-                                            className={`py-3 px-2 rounded-xl text-[11px] font-bold border flex items-center justify-center gap-1.5 transition-all ${onSiteLocation === loc.id
-                                                ? 'bg-blue-600/20 border-blue-500 text-blue-400'
-                                                : 'bg-white/5 border-transparent text-gray-400 hover:bg-white/10'
-                                            }`}
-                                        >
-                                            {loc.icon} {loc.label}
-                                        </button>
-                                    ))}
-                                </div>
-
                                 {locationDetail ? (
                                     <div className="w-full mb-3 p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl flex items-center justify-between animate-in fade-in">
                                         <div className="flex items-center gap-3">
@@ -409,14 +387,19 @@ function CartDrawerContent({
                                                     {onSiteLocation === 'table' 
                                                         ? (language === 'ar' ? `طاولة رقم ${locationDetail}` : `Table N° ${locationDetail}`) 
                                                         : onSiteLocation === 'pool' 
-                                                            ? (language === 'ar' ? `مكان رقم ${locationDetail}` : `Place N° ${locationDetail}`) 
+                                                            ? (locationDetail.toLowerCase().includes('pool') || locationDetail.toLowerCase().includes('pisci')
+                                                                ? (language === 'ar' ? 'منطقة المسبح' : 'Espace Piscine')
+                                                                : (language === 'ar' ? `مكان رقم ${locationDetail}` : `Place N° ${locationDetail}`))
                                                             : (language === 'ar' ? `غرفة رقم ${locationDetail}` : `Chambre N° ${locationDetail}`)}
                                                 </p>
                                             </div>
                                         </div>
                                         <button
                                             type="button"
-                                            onClick={() => setLocationDetail('')}
+                                            onClick={() => {
+                                                setLocationDetail('');
+                                                setShowManualInput(false);
+                                            }}
                                             className="p-2 bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white rounded-lg transition-colors"
                                         >
                                             <X className="w-4 h-4" />
@@ -424,26 +407,78 @@ function CartDrawerContent({
                                     </div>
                                 ) : (
                                     <>
-                                        {(onSiteLocation === 'table' || onSiteLocation === 'pool') && (
-                                            <button 
+                                        <button 
+                                            type="button"
+                                            onClick={() => {
+                                                setIsScanning(true);
+                                            }}
+                                            className="w-full text-sm text-blue-400 mb-3 bg-blue-500/10 hover:bg-blue-500/20 active:scale-95 transition-all p-4 rounded-xl border border-blue-500/30 flex items-center justify-center gap-3 font-black shadow-[0_4px_15px_rgba(59,130,246,0.15)] animate-in fade-in"
+                                        >
+                                            <Camera className="w-5 h-5"/>
+                                            {language === 'ar' ? 'مسح رمز الاستجابة السريعة (QR)' : 'Scanner le QR Code sur votre table/emplacement'}
+                                        </button>
+
+                                        {/* Manual Input Toggle */}
+                                        {!showManualInput ? (
+                                            <button
                                                 type="button"
-                                                onClick={() => {
-                                                    setIsScanning(true);
-                                                }}
-                                                className="w-full text-sm text-blue-400 mb-3 bg-blue-500/10 hover:bg-blue-500/20 active:scale-95 transition-all p-4 rounded-xl border border-blue-500/30 flex items-center justify-center gap-3 font-black shadow-[0_4px_15px_rgba(59,130,246,0.15)] animate-in fade-in"
+                                                onClick={() => setShowManualInput(true)}
+                                                className="w-full text-[11px] font-bold text-gray-500 hover:text-white transition-colors py-1 text-center"
                                             >
-                                                <Camera className="w-5 h-5"/>
-                                                Scanner le QR Code {onSiteLocation === 'table' ? 'sur votre table' : 'à votre place'}
+                                                {language === 'ar' ? 'إدخال يدوي' : 'Saisir manuellement'}
                                             </button>
-                                        )}
-                                        {onSiteLocation === 'room' && (
-                                            <input
-                                                type="text"
-                                                value={locationDetail}
-                                                onChange={(e) => setLocationDetail(e.target.value)}
-                                                placeholder="Votre N° de Chambre (Ex: 104)"
-                                                className="w-full bg-[#1E293B] border border-white/10 rounded-xl p-4 text-white font-bold text-lg outline-none focus:border-blue-500 transition-colors text-center animate-in fade-in"
-                                            />
+                                        ) : (
+                                            <div className="mt-4 p-4 bg-white/5 border border-white/10 rounded-2xl space-y-3 animate-in fade-in duration-200">
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
+                                                        {language === 'ar' ? 'إدخال يدوي' : 'Saisir manuellement'}
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setShowManualInput(false);
+                                                        }}
+                                                        className="text-[10px] text-gray-500 hover:text-white font-bold"
+                                                    >
+                                                        {language === 'ar' ? 'إلغاء' : 'Annuler'}
+                                                    </button>
+                                                </div>
+                                                <div className="grid grid-cols-3 gap-2">
+                                                    {[
+                                                        { id: 'table', label: language === 'ar' ? 'طاولة' : 'Table' },
+                                                        { id: 'pool', label: language === 'ar' ? 'مسبح' : 'Piscine' },
+                                                        { id: 'room', label: language === 'ar' ? 'غرفة' : 'Chambre' }
+                                                    ].map(opt => (
+                                                        <button
+                                                            key={opt.id}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setOnSiteLocation(opt.id as any);
+                                                                if (opt.id === 'pool') {
+                                                                    setLocationDetail('Piscine');
+                                                                } else {
+                                                                    setLocationDetail('');
+                                                                }
+                                                            }}
+                                                            className={`py-2 px-1 rounded-xl text-[10px] font-bold border transition-all ${onSiteLocation === opt.id
+                                                                ? 'bg-blue-600/20 border-blue-500 text-blue-400'
+                                                                : 'bg-white/5 border-transparent text-gray-400 hover:bg-white/10'
+                                                            }`}
+                                                        >
+                                                            {opt.label}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                                {onSiteLocation !== 'pool' && (
+                                                    <input
+                                                        type="text"
+                                                        value={locationDetail}
+                                                        onChange={(e) => setLocationDetail(e.target.value)}
+                                                        placeholder={onSiteLocation === 'table' ? (language === 'ar' ? 'رقم الطاولة (مثال: 9)' : 'N° de Table (Ex: 9)') : (language === 'ar' ? 'رقم الغرفة (مثال: 104)' : 'N° de Chambre (Ex: 104)')}
+                                                        className="w-full bg-[#1E293B] border border-white/10 rounded-xl p-3 text-white font-bold text-sm outline-none focus:border-blue-500 text-center"
+                                                    />
+                                                )}
+                                            </div>
                                         )}
                                     </>
                                 )}
