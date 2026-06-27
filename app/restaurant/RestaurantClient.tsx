@@ -406,81 +406,16 @@ function CartDrawerContent({
                                         </button>
                                     </div>
                                 ) : (
-                                    <>
-                                        <button 
-                                            type="button"
-                                            onClick={() => {
-                                                setIsScanning(true);
-                                            }}
-                                            className="w-full text-sm text-blue-400 mb-3 bg-blue-500/10 hover:bg-blue-500/20 active:scale-95 transition-all p-4 rounded-xl border border-blue-500/30 flex items-center justify-center gap-3 font-black shadow-[0_4px_15px_rgba(59,130,246,0.15)] animate-in fade-in"
-                                        >
-                                            <Camera className="w-5 h-5"/>
-                                            {language === 'ar' ? 'مسح رمز الاستجابة السريعة (QR)' : 'Scanner le QR Code sur votre table/emplacement'}
-                                        </button>
-
-                                        {/* Manual Input Toggle */}
-                                        {!showManualInput ? (
-                                            <button
-                                                type="button"
-                                                onClick={() => setShowManualInput(true)}
-                                                className="w-full text-[11px] font-bold text-gray-500 hover:text-white transition-colors py-1 text-center"
-                                            >
-                                                {language === 'ar' ? 'إدخال يدوي' : 'Saisir manuellement'}
-                                            </button>
-                                        ) : (
-                                            <div className="mt-4 p-4 bg-white/5 border border-white/10 rounded-2xl space-y-3 animate-in fade-in duration-200">
-                                                <div className="flex justify-between items-center mb-1">
-                                                    <span className="text-xs font-bold text-gray-400 uppercase tracking-wider">
-                                                        {language === 'ar' ? 'إدخال يدوي' : 'Saisir manuellement'}
-                                                    </span>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => {
-                                                            setShowManualInput(false);
-                                                        }}
-                                                        className="text-[10px] text-gray-500 hover:text-white font-bold"
-                                                    >
-                                                        {language === 'ar' ? 'إلغاء' : 'Annuler'}
-                                                    </button>
-                                                </div>
-                                                <div className="grid grid-cols-3 gap-2">
-                                                    {[
-                                                        { id: 'table', label: language === 'ar' ? 'طاولة' : 'Table' },
-                                                        { id: 'pool', label: language === 'ar' ? 'مسبح' : 'Piscine' },
-                                                        { id: 'room', label: language === 'ar' ? 'غرفة' : 'Chambre' }
-                                                    ].map(opt => (
-                                                        <button
-                                                            key={opt.id}
-                                                            type="button"
-                                                            onClick={() => {
-                                                                setOnSiteLocation(opt.id as any);
-                                                                if (opt.id === 'pool') {
-                                                                    setLocationDetail('Piscine');
-                                                                } else {
-                                                                    setLocationDetail('');
-                                                                }
-                                                            }}
-                                                            className={`py-2 px-1 rounded-xl text-[10px] font-bold border transition-all ${onSiteLocation === opt.id
-                                                                ? 'bg-blue-600/20 border-blue-500 text-blue-400'
-                                                                : 'bg-white/5 border-transparent text-gray-400 hover:bg-white/10'
-                                                            }`}
-                                                        >
-                                                            {opt.label}
-                                                        </button>
-                                                    ))}
-                                                </div>
-                                                {onSiteLocation !== 'pool' && (
-                                                    <input
-                                                        type="text"
-                                                        value={locationDetail}
-                                                        onChange={(e) => setLocationDetail(e.target.value)}
-                                                        placeholder={onSiteLocation === 'table' ? (language === 'ar' ? 'رقم الطاولة (مثال: 9)' : 'N° de Table (Ex: 9)') : (language === 'ar' ? 'رقم الغرفة (مثال: 104)' : 'N° de Chambre (Ex: 104)')}
-                                                        className="w-full bg-[#1E293B] border border-white/10 rounded-xl p-3 text-white font-bold text-sm outline-none focus:border-blue-500 text-center"
-                                                    />
-                                                )}
-                                            </div>
-                                        )}
-                                    </>
+                                    <button 
+                                        type="button"
+                                        onClick={() => {
+                                            setIsScanning(true);
+                                        }}
+                                        className="w-full text-sm text-blue-400 mb-3 bg-blue-500/10 hover:bg-blue-500/20 active:scale-95 transition-all p-4 rounded-xl border border-blue-500/30 flex items-center justify-center gap-3 font-black shadow-[0_4px_15px_rgba(59,130,246,0.15)] animate-in fade-in"
+                                    >
+                                        <Camera className="w-5 h-5"/>
+                                        {language === 'ar' ? 'مسح رمز الاستجابة السريعة (QR)' : 'Scanner le QR Code sur votre table/emplacement'}
+                                    </button>
                                 )}
 
                                 <p className="text-xs text-green-400 mt-4 flex items-center gap-1 font-medium bg-green-500/10 p-3 rounded-xl border border-green-500/20">
@@ -758,7 +693,7 @@ function CartDrawerContent({
                         
                         <div className="w-72 h-72 rounded-3xl overflow-hidden border-4 border-blue-500/50 shadow-2xl relative">
                             <Scanner
-                                constraints={{ facingMode: 'environment' }}
+                                constraints={{ facingMode: 'environment' as any }}
                                 onScan={(result) => {
                                     console.log("Scanner raw result:", result);
                                     if (result && result.length > 0) {
@@ -779,35 +714,60 @@ function CartDrawerContent({
                                                 const tableParam = url.searchParams.get('table');
                                                 const poolParam = url.searchParams.get('pool');
                                                 
+                                                let detectedType = 'restaurant';
+                                                let detectedLoc = '';
+                                                
                                                 if (typeParam && locParam) {
                                                     if (typeParam === 'restaurant' || typeParam === 'table') {
                                                         setOnSiteLocation('table');
+                                                        detectedType = 'restaurant';
                                                     } else if (typeParam === 'pool') {
                                                         setOnSiteLocation('pool');
+                                                        detectedType = 'pool';
                                                     } else if (typeParam === 'hotel') {
                                                         setOnSiteLocation('room');
+                                                        detectedType = 'hotel';
                                                     }
                                                     const numOnly = locParam.replace(/\D/g, '');
                                                     setLocationDetail(numOnly || locParam);
+                                                    detectedLoc = locParam;
                                                 } else if (tableParam) {
                                                     setOnSiteLocation('table');
                                                     setLocationDetail(tableParam);
+                                                    detectedType = 'restaurant';
+                                                    detectedLoc = tableParam;
                                                 } else if (poolParam) {
                                                     setOnSiteLocation('pool');
                                                     setLocationDetail(poolParam);
+                                                    detectedType = 'pool';
+                                                    detectedLoc = poolParam;
                                                 } else {
                                                     const numOnly = text.replace(/\D/g, '');
                                                     setLocationDetail(numOnly || text);
+                                                    detectedLoc = text;
+                                                }
+                                                
+                                                // Save immediately to sessionStorage
+                                                try {
+                                                    sessionStorage.setItem("scan_location", JSON.stringify({
+                                                        type: detectedType,
+                                                        loc: detectedLoc,
+                                                        token: tokenParam || "",
+                                                    }));
+                                                } catch (e) {
+                                                    console.warn("sessionStorage save error", e);
                                                 }
                                                 
                                                 if (tokenParam) {
-                                                    supabase
-                                                        .from('qr_locations')
-                                                        .select('type, label')
-                                                        .eq('token', tokenParam)
-                                                        .eq('is_active', true)
-                                                        .maybeSingle()
-                                                        .then(({ data, error }) => {
+                                                    (async () => {
+                                                        try {
+                                                            const { data, error } = await supabase
+                                                                .from('qr_locations')
+                                                                .select('type, label')
+                                                                .eq('token', tokenParam)
+                                                                .eq('is_active', true)
+                                                                .maybeSingle();
+                                                            
                                                             if (error) {
                                                                 console.error("Supabase scanner verify error:", error);
                                                             }
@@ -821,17 +781,36 @@ function CartDrawerContent({
                                                                 }
                                                                 const numOnly = data.label.replace(/\D/g, '');
                                                                 setLocationDetail(numOnly || data.label);
+                                                                
+                                                                try {
+                                                                    sessionStorage.setItem("scan_location", JSON.stringify({
+                                                                        type: data.type,
+                                                                        loc: data.label,
+                                                                        token: tokenParam,
+                                                                    }));
+                                                                } catch (e) {
+                                                                    console.warn("sessionStorage save error", e);
+                                                                }
                                                             }
-                                                        })
-                                                        .catch(err => {
+                                                        } catch (err) {
                                                             console.error("Supabase scanner promise catch:", err);
-                                                        });
+                                                        }
+                                                    })();
                                                 }
                                             } else {
                                                 // Raw string scanned
                                                 const cleaned = text.trim();
                                                 const numOnly = cleaned.replace(/\D/g, '');
                                                 setLocationDetail(numOnly || cleaned);
+                                                try {
+                                                    sessionStorage.setItem("scan_location", JSON.stringify({
+                                                        type: 'restaurant',
+                                                        loc: cleaned,
+                                                        token: "",
+                                                    }));
+                                                } catch (e) {
+                                                    console.warn("sessionStorage save error", e);
+                                                }
                                             }
                                         } catch (e) {
                                             console.error("Scanner parsing error:", e);
@@ -839,6 +818,15 @@ function CartDrawerContent({
                                             if (cleaned) {
                                                 const numOnly = cleaned.replace(/\D/g, '');
                                                 setLocationDetail(numOnly || cleaned);
+                                                try {
+                                                    sessionStorage.setItem("scan_location", JSON.stringify({
+                                                        type: 'restaurant',
+                                                        loc: cleaned,
+                                                        token: "",
+                                                    }));
+                                                } catch (err) {
+                                                    console.warn("sessionStorage save error", err);
+                                                }
                                             }
                                         }
                                     }
