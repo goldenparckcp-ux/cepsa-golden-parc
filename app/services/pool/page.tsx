@@ -190,18 +190,63 @@ export default function PoolPage() {
 
             <div className="p-3 md:p-4 space-y-4 max-w-5xl mx-auto">
 
-                {/* Hero Image */}
-                <div className="relative h-32 md:h-48 rounded-2xl overflow-hidden shadow-2xl border border-white/10 group">
-                    <Image
-                        src="https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=800&q=80"
-                        alt={t('pool.title')}
-                        fill
-                        className="object-cover transition-transform duration-700 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-transparent to-transparent" />
-                    <div className="absolute bottom-4 left-4 rtl:left-auto rtl:right-4 md:bottom-8 md:left-8 rtl:md:left-auto rtl:md:right-8">
-                        <div className="bg-red-500 text-black text-[10px] md:text-xs font-black px-2 py-0.5 md:px-3 md:py-1 rounded inline-block mb-1 shadow-lg uppercase">{t('pool.hero.badge')}</div>
-                        <h2 className="text-lg md:text-2xl font-black text-white">{t('pool.hero.title')}</h2>
+                {/* POOL HERO CAROUSEL */}
+                <div className="relative w-full h-[200px] sm:h-[240px] rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl group">
+                    <div className="flex overflow-x-auto snap-x snap-mandatory gap-0 scrollbar-hide w-full h-full">
+                        {[
+                            {
+                                title: t('pool.hero.title'),
+                                subtitle: 'Espace aquatique de détente et fraîcheur au Golden Park',
+                                badge: t('pool.hero.badge'),
+                                img: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=1200&q=80'
+                            },
+                            {
+                                title: 'Journée Femmes',
+                                subtitle: 'Profitez d\'une intimité et d\'une ambiance exclusive chaque mercredi & vendredi',
+                                badge: '100% SÉCURISÉ & PRIVÉ',
+                                img: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80'
+                            },
+                            {
+                                title: 'Espace Familles',
+                                subtitle: 'Partagez des moments exceptionnels en famille au bord de l\'eau',
+                                badge: 'ESPACE CHALEUREUX',
+                                img: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80'
+                            }
+                        ].map((slide, idx) => (
+                            <div 
+                                key={idx}
+                                className="relative w-full h-full shrink-0 snap-center flex items-center justify-between px-5 md:px-8"
+                                style={{ minWidth: '100%' }}
+                            >
+                                {/* Background Image */}
+                                <Image
+                                    src={slide.img}
+                                    alt={slide.title}
+                                    fill
+                                    priority={idx === 0}
+                                    className="object-cover group-hover:scale-[1.01] transition-transform duration-700"
+                                />
+                                {/* Full dark overlay */}
+                                <div className="absolute inset-0 bg-black/55" />
+                                {/* Glow FX */}
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/10 rounded-full blur-[100px] pointer-events-none" />
+
+                                {/* Content */}
+                                <div className="relative z-10 w-full flex items-center justify-between gap-4">
+                                    <div className="flex flex-col gap-1 flex-1 min-w-0 text-left">
+                                        <span className="bg-gradient-to-r from-red-500 to-orange-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-wider inline-flex items-center gap-1 w-fit shadow-lg">
+                                            💦 {slide.badge}
+                                        </span>
+                                        <h2 className="text-white text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tight leading-tight drop-shadow-md">
+                                            {slide.title}
+                                        </h2>
+                                        <p className="text-white/75 text-[10px] sm:text-xs font-medium line-clamp-2 drop-shadow leading-relaxed max-w-[280px]">
+                                            {slide.subtitle}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 </div>
 
