@@ -119,6 +119,15 @@ export default function AdminPriceModifierPage() {
         { name: "Dessert", url: "https://images.unsplash.com/photo-1551024601-bec78aea704b?w=800" }
     ];
 
+    const PROMO_THEMES = [
+        { name: "Rouge", gradient: "from-red-600 to-red-900", shadow: "rgba(220,38,38,0.5)", bg: "bg-red-600" },
+        { name: "Orange", gradient: "from-amber-500 to-orange-600", shadow: "rgba(245,158,11,0.5)", bg: "bg-amber-500" },
+        { name: "Vert", gradient: "from-emerald-600 to-teal-900", shadow: "rgba(13,148,136,0.5)", bg: "bg-emerald-600" },
+        { name: "Bleu", gradient: "from-blue-600 to-indigo-900", shadow: "rgba(37,99,235,0.5)", bg: "bg-blue-600" },
+        { name: "Violet", gradient: "from-purple-600 to-indigo-950", shadow: "rgba(124,58,237,0.5)", bg: "bg-purple-600" },
+        { name: "Sombre", gradient: "from-gray-800 to-slate-950", shadow: "rgba(100,116,139,0.3)", bg: "bg-gray-800" }
+    ];
+
     useEffect(() => {
         // Enforce Admin Access
         const stored = localStorage.getItem("staff_session");
@@ -700,7 +709,7 @@ export default function AdminPriceModifierPage() {
                         .update(payload)
                         .eq("id", editingItem.id);
 
-                    if (error) throw error;
+                    if (error) throw new Error(typeof error === "string" ? error : (error.message || JSON.stringify(error)));
                     showSuccess(`L'offre "${formData.title_fr}" a été modifiée avec succès !`);
                     setEditingItem(null);
                 } else {
@@ -711,7 +720,7 @@ export default function AdminPriceModifierPage() {
                     const { error } = await adminDb("home_promos")
                         .insert([payload]);
 
-                    if (error) throw error;
+                    if (error) throw new Error(typeof error === "string" ? error : (error.message || JSON.stringify(error)));
                     showSuccess(`L'offre "${formData.title_fr}" a été ajoutée avec succès !`);
                     setIsAddDrawerOpen(false);
                 }
@@ -719,7 +728,7 @@ export default function AdminPriceModifierPage() {
                 // Reload all items to sync UI
                 await loadData();
             } catch (err: any) {
-                setErrorMessage("Erreur lors de la sauvegarde: " + err.message);
+                setErrorMessage("Erreur lors de la sauvegarde: " + (err.message || String(err)));
             } finally {
                 setLoading(false);
             }
@@ -1784,6 +1793,37 @@ export default function AdminPriceModifierPage() {
                     {/* Dynamic Form inputs based on drawerType */}
                     {drawerType === "promos" ? (
                         <>
+                            {/* Live Card Preview */}
+                            <div className="space-y-2 border-b border-white/5 pb-6">
+                                <span className="text-[10px] text-gray-400 font-black uppercase tracking-wider block">Prévisualisation en Direct</span>
+                                <div className="flex justify-center p-4 bg-[#0F172A] rounded-2xl border border-white/5">
+                                    <div 
+                                        className={`min-w-[280px] w-full max-w-[400px] h-44 bg-gradient-to-br ${formData.gradient_class || 'from-red-600 to-red-900'} rounded-[2rem] p-6 relative overflow-hidden flex-shrink-0 border border-white/10 group transition-all duration-300`}
+                                        style={{ boxShadow: `0 15px 35px -10px ${formData.shadow_color || 'rgba(220,38,38,0.5)'}` }}
+                                    >
+                                        <div className="relative z-10 w-3/4">
+                                            <span className="bg-white text-red-600 text-[9px] font-black px-2.5 py-1 rounded-full mb-3 inline-block shadow-lg uppercase tracking-wider">
+                                                {formData.badge_fr || "CATALOGUE 100% DIGITAL"}
+                                            </span>
+                                            <h3 className="text-white font-black text-xl leading-tight mb-1.5 line-clamp-2">
+                                                {formData.title_fr || "Comptoir Lubrifiants"}
+                                            </h3>
+                                            <p className="text-white/80 text-[10px] font-medium line-clamp-2">
+                                                {formData.desc_fr || "Découvrez notre gamme complète d'huiles de performance."}
+                                            </p>
+                                        </div>
+                                        {formData.image_url && (
+                                            <img 
+                                                src={formData.image_url} 
+                                                alt="Promo Preview" 
+                                                className="absolute inset-0 w-full h-full object-cover opacity-20 mix-blend-overlay pointer-events-none" 
+                                            />
+                                        )}
+                                        <div className="absolute -bottom-10 -right-10 w-36 h-36 bg-white/10 rounded-full blur-2xl" />
+                                    </div>
+                                </div>
+                            </div>
+
                             {/* Badges */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div>
@@ -1879,38 +1919,80 @@ export default function AdminPriceModifierPage() {
                                 />
                             </div>
 
-                            {/* Style Visuel (Gradient & Shadow) */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label htmlFor="gradient_class" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Dégradé CSS (Tailwind classes)</label>
-                                    <input
-                                        id="gradient_class"
-                                        type="text"
-                                        value={formData.gradient_class}
-                                        onChange={(e) => setFormData({ ...formData, gradient_class: e.target.value })}
-                                        placeholder="Ex: from-amber-500 to-orange-600"
-                                        className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors h-[48px]"
-                                    />
-                                    {/* Presets */}
-                                    <div className="flex gap-2 mt-2">
-                                        <button type="button" onClick={() => setFormData({ ...formData, gradient_class: "from-red-600 to-red-900", shadow_color: "rgba(220,38,38,0.5)" })} className="text-[9px] bg-red-600 px-2 py-0.5 rounded text-white font-black">Rouge</button>
-                                        <button type="button" onClick={() => setFormData({ ...formData, gradient_class: "from-amber-500 to-orange-600", shadow_color: "rgba(245,158,11,0.5)" })} className="text-[9px] bg-amber-500 px-2 py-0.5 rounded text-black font-black">Orange</button>
-                                        <button type="button" onClick={() => setFormData({ ...formData, gradient_class: "from-emerald-600 to-teal-900", shadow_color: "rgba(13,148,136,0.5)" })} className="text-[9px] bg-emerald-600 px-2 py-0.5 rounded text-white font-black">Vert</button>
-                                        <button type="button" onClick={() => setFormData({ ...formData, gradient_class: "from-blue-600 to-indigo-900", shadow_color: "rgba(37,99,235,0.5)" })} className="text-[9px] bg-blue-600 px-2 py-0.5 rounded text-white font-black">Bleu</button>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label htmlFor="shadow_color" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Couleur de l'ombre (RGBA)</label>
-                                    <input
-                                        id="shadow_color"
-                                        type="text"
-                                        value={formData.shadow_color}
-                                        onChange={(e) => setFormData({ ...formData, shadow_color: e.target.value })}
-                                        placeholder="Ex: rgba(245,158,11,0.5)"
-                                        className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors h-[48px]"
-                                    />
+                            {/* Style Visuel (Choix du Thème) */}
+                            <div>
+                                <label className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Thème de Couleur (Style Visuel)</label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {PROMO_THEMES.map(theme => {
+                                        const isSelected = formData.gradient_class === theme.gradient && formData.shadow_color === theme.shadow;
+                                        return (
+                                            <button
+                                                key={theme.name}
+                                                type="button"
+                                                onClick={() => setFormData({ 
+                                                    ...formData, 
+                                                    gradient_class: theme.gradient, 
+                                                    shadow_color: theme.shadow 
+                                                })}
+                                                className={`p-2.5 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-between gap-1 ${
+                                                    isSelected
+                                                        ? "border-orange-500 bg-[#1E293B] text-orange-500 shadow-md"
+                                                        : "border-white/5 bg-[#0F172A] text-gray-400 hover:border-white/10 hover:text-white"
+                                                }`}
+                                            >
+                                                <span>{theme.name}</span>
+                                                <span className={`w-3 h-3 rounded-full ${theme.bg} border border-white/10 flex-shrink-0`} />
+                                            </button>
+                                        );
+                                    })}
+                                    {/* Option Thème Personnalisé */}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            if (PROMO_THEMES.some(t => t.gradient === formData.gradient_class && t.shadow === formData.shadow_color) || !formData.gradient_class) {
+                                                setFormData({
+                                                    ...formData,
+                                                    gradient_class: "from-pink-500 to-purple-600",
+                                                    shadow_color: "rgba(219,39,119,0.5)"
+                                                });
+                                            }
+                                        }}
+                                        className={`p-2.5 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all text-center ${
+                                            !PROMO_THEMES.some(t => t.gradient === formData.gradient_class && t.shadow === formData.shadow_color)
+                                                ? "border-orange-500 bg-[#1E293B] text-orange-500"
+                                                : "border-white/5 bg-[#0F172A] text-gray-400 hover:border-white/10 hover:text-white"
+                                        }`}
+                                    >
+                                        ✍️ Customisé
+                                    </button>
                                 </div>
                             </div>
+
+                            {/* Custom values inputs - only visible if Custom is selected */}
+                            {!PROMO_THEMES.some(t => t.gradient === formData.gradient_class && t.shadow === formData.shadow_color) && (
+                                <div className="grid grid-cols-2 gap-4 border border-white/5 p-4 rounded-2xl bg-[#0F172A]/50">
+                                    <div>
+                                        <label htmlFor="gradient_class" className="text-[9px] text-gray-500 font-bold uppercase mb-1 block">Dégradé CSS (Tailwind)</label>
+                                        <input
+                                            id="gradient_class"
+                                            type="text"
+                                            value={formData.gradient_class}
+                                            onChange={(e) => setFormData({ ...formData, gradient_class: e.target.value })}
+                                            className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-2 text-xs text-white font-bold outline-none focus:border-amber-500 h-[38px]"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label htmlFor="shadow_color" className="text-[9px] text-gray-500 font-bold uppercase mb-1 block">Couleur Ombre (RGBA)</label>
+                                        <input
+                                            id="shadow_color"
+                                            type="text"
+                                            value={formData.shadow_color}
+                                            onChange={(e) => setFormData({ ...formData, shadow_color: e.target.value })}
+                                            className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-2 text-xs text-white font-bold outline-none focus:border-amber-500 h-[38px]"
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </>
                     ) : (
                         <>
