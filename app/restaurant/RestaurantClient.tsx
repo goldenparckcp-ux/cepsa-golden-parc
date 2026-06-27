@@ -343,33 +343,50 @@ function CartDrawerContent({
                     </h3>
                     
                     {/* Toggle Location Type */}
-                    <div className="flex bg-[#1E293B] p-1.5 rounded-2xl mb-6 border border-white/5 shadow-inner">
+                    <div className="flex bg-[#1E293B] p-1.5 rounded-2xl mb-6 border border-white/5 shadow-inner relative overflow-hidden">
+                        {/* Beautiful Sliding Pill */}
+                        <div className="absolute inset-1.5 grid grid-cols-2 pointer-events-none z-0">
+                            <motion.div 
+                                className="h-full rounded-xl"
+                                animate={{
+                                    x: locationType === 'on_site' ? '0%' : '100%',
+                                    background: locationType === 'on_site' 
+                                        ? 'linear-gradient(to right, #2563eb, #3b82f6)' 
+                                        : 'linear-gradient(to right, #f59e0b, #f97316)',
+                                    boxShadow: locationType === 'on_site'
+                                        ? '0 8px 20px -4px rgba(37,99,235,0.4)'
+                                        : '0 8px 20px -4px rgba(245,158,11,0.4)'
+                                }}
+                                transition={{ type: 'spring', stiffness: 350, damping: 28 }}
+                            />
+                        </div>
+
                         <button
+                            type="button"
                             onClick={() => {
                                 setLocationType('on_site');
                                 setIsDepositMode(false);
                                 setPaymentMethod('cash');
                             }}
-                            className={`flex-1 py-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all ${locationType === 'on_site'
-                                ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-[0_5px_15px_rgba(37,99,235,0.4)]'
-                                : 'text-gray-400 hover:text-white hover:bg-white/5'
-                                }`}
+                            className={`flex-1 py-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all relative z-10 ${
+                                locationType === 'on_site' ? 'text-white' : 'text-gray-400 hover:text-white'
+                            }`}
                         >
-                            <MapPin className="w-5 h-5" />
+                            <MapPin className={`w-5 h-5 transition-transform duration-300 ${locationType === 'on_site' ? 'scale-110' : ''}`} />
                             {t('cart.onsite')}
                         </button>
                         <button
+                            type="button"
                             onClick={() => {
                                 setLocationType('on_way');
                                 setPaymentMethod('card');
                                 setIsDepositMode(true);
                             }}
-                            className={`flex-1 py-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all ${locationType === 'on_way'
-                                ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-[0_5px_15px_rgba(245,158,11,0.4)]'
-                                : 'text-gray-400 hover:text-white hover:bg-white/5'
-                                }`}
+                            className={`flex-1 py-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all relative z-10 ${
+                                locationType === 'on_way' ? 'text-white' : 'text-gray-400 hover:text-white'
+                            }`}
                         >
-                            <Navigation className="w-5 h-5" />
+                            <Navigation className={`w-5 h-5 transition-transform duration-300 ${locationType === 'on_way' ? 'scale-110 rotate-45' : ''}`} />
                             {t('cart.onway')}
                         </button>
                     </div>
