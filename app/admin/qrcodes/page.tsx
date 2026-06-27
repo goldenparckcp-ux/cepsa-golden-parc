@@ -78,6 +78,8 @@ export default function QRGeneratorPage() {
   const [copied, setCopied]         = useState<string | null>(null);
   const [dbStatus, setDbStatus]     = useState<"loading" | "ok" | "error">("loading");
   const [loadError, setLoadError]   = useState<string | null>(null);
+  const [largeQRUrl, setLargeQRUrl] = useState<string | null>(null);
+  const [largeQRLabel, setLargeQRLabel] = useState<string>("");
   const printRef = useRef<HTMLDivElement>(null);
 
   // ── Load existing QRs from DB on mount ───────────────────────────────────
@@ -370,7 +372,11 @@ export default function QRGeneratorPage() {
                   className="bg-[#1E293B] border border-white/10 rounded-2xl p-4 flex gap-4 items-center hover:border-white/20 transition-all"
                 >
                   {/* QR Preview */}
-                  <div className="w-20 h-20 shrink-0 bg-white rounded-xl overflow-hidden flex items-center justify-center">
+                  <div 
+                    onClick={() => item.dataUrl && (setLargeQRUrl(item.dataUrl), setLargeQRLabel(item.label))}
+                    className="w-20 h-20 shrink-0 bg-white rounded-xl overflow-hidden flex items-center justify-center cursor-pointer hover:ring-2 hover:ring-amber-500/50 hover:scale-105 active:scale-95 transition-all"
+                    title="Agrandir pour scanner"
+                  >
                     {generating === item.id ? (
                       <RefreshCw className="w-6 h-6 text-gray-400 animate-spin" />
                     ) : item.dataUrl ? (
@@ -439,6 +445,34 @@ export default function QRGeneratorPage() {
           ))}
         </div>
       </div>
+
+      {/* Modal to view large QR Code for easy scanning from screen */}
+      {largeQRUrl && (
+        <div 
+          onClick={() => setLargeQRUrl(null)}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-200"
+        >
+          <div 
+            onClick={e => e.stopPropagation()}
+            className="bg-[#1E293B] border border-white/10 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl scale-100 animate-in zoom-in-95 duration-200 flex flex-col items-center"
+          >
+            <h3 className="text-xl font-black text-white mb-2">{largeQRLabel}</h3>
+            <p className="text-xs text-gray-400 mb-6 font-medium">Scannez ce code avec votre téléphone</p>
+            
+            <div className="w-64 h-64 bg-white rounded-2xl p-4 flex items-center justify-center shadow-inner mb-6">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={largeQRUrl} alt={largeQRLabel} className="w-full h-full object-contain" />
+            </div>
+
+            <button
+              onClick={() => setLargeQRUrl(null)}
+              className="w-full py-3.5 bg-white/5 hover:bg-[#EF4444]/15 border border-white/10 text-white font-bold rounded-xl transition-all active:scale-95"
+            >
+              Fermer
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

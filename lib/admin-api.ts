@@ -22,6 +22,9 @@ export const adminDb = (table: string) => {
           matchQuery[col] = val;
           return chain;
         },
+        limit: (n: number) => {
+          return chain;
+        },
         maybeSingle: () => {
           singleResult = true;
           return chain;
