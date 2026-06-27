@@ -129,6 +129,7 @@ const dictionaries: Record<Language, Dictionary> = {
         // Restaurant
         'restaurant.title': 'Menu',
         'restaurant.subtitle': 'Restaurant & Café',
+        'restaurant.featured.title': '🌟 Spécialités & Choix du Chef',
         'restaurant.empty': 'Aucun article trouvé dans cette catégorie.',
         'restaurant.btn.add': 'Ajouter au Panier',
         'restaurant.cart.title': 'Votre Panier',
@@ -347,6 +348,7 @@ const dictionaries: Record<Language, Dictionary> = {
         // Restaurant
         'restaurant.title': 'Menu',
         'restaurant.subtitle': 'Restaurant & Cafe',
+        'restaurant.featured.title': "🌟 Chef's Specials & Featured",
         'restaurant.empty': 'No items found in this category.',
         'restaurant.btn.add': 'Add to Cart',
         'restaurant.cart.title': 'Your Cart',
@@ -565,6 +567,7 @@ const dictionaries: Record<Language, Dictionary> = {
         // Restaurant
         'restaurant.title': 'Menú',
         'restaurant.subtitle': 'Restaurante y Café',
+        'restaurant.featured.title': '🌟 Especialidades y Selección del Chef',
         'restaurant.empty': 'No se encontraron artículos en esta categoría.',
         'restaurant.btn.add': 'Añadir al Carrito',
         'restaurant.cart.title': 'Tu Carrito',
@@ -782,7 +785,8 @@ const dictionaries: Record<Language, Dictionary> = {
 
         // Restaurant
         'restaurant.title': 'القائمة',
-        'restaurant.subtitle': 'مطعم ومقهى',
+        'restaurant.subtitle': 'المطعم والمقهى',
+        'restaurant.featured.title': '🌟 مقترحات الشيف المميزة',
         'restaurant.empty': 'لم يتم العثور على عناصر في هذه الفئة.',
         'restaurant.btn.add': 'أضف إلى السلة',
         'restaurant.cart.title': 'سلة المشتريات',

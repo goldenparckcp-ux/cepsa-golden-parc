@@ -21,7 +21,8 @@ const ALLOWED_TABLES = [
   "fuel_prices",
   "qr_locations",
   "service_bookings",
-  "profiles"
+  "profiles",
+  "home_promos"
 ];
 
 export async function POST(request: Request) {

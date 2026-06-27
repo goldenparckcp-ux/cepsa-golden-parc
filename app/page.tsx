@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { useTranslation } from '@/lib/state/LanguageContext';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import dynamic from 'next/dynamic';
+import { supabase } from '@/lib/supabase';
 
 // Lazy load Chatbot - heavy component, not needed immediately
 const Chatbot = dynamic(() => import('@/components/ui/Chatbot').then(m => ({ default: m.Chatbot })), { ssr: false, loading: () => null });
@@ -32,7 +33,7 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
 
 export default function Home() {
   const router = useRouter();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { scrollY } = useScroll();
   const y1 = useTransform(scrollY, [0, 500], [0, 150]);
   const opacityHero = useTransform(scrollY, [0, 300], [1, 0]);
@@ -40,6 +41,7 @@ export default function Home() {
   const [eta, setEta] = useState<number | null>(null);
   const [distance, setDistance] = useState<number | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [promos, setPromos] = useState<any[]>([]);
 
   useEffect(() => {
     setIsLoaded(true);
@@ -56,6 +58,23 @@ export default function Home() {
         (error) => console.log('Géolocalisation refusée:', error)
       );
     }
+
+    // Load active promotions from database
+    const loadPromos = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('home_promos')
+          .select('*')
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true });
+        if (!error && data && data.length > 0) {
+          setPromos(data);
+        }
+      } catch (err) {
+        console.error("Failed to load home promos:", err);
+      }
+    };
+    loadPromos();
   }, []);
 
   const SERVICES = [
@@ -182,37 +201,71 @@ export default function Home() {
           initial={{ opacity: 0, x: 50 }}
           whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true, margin: "-50px" }}
-          className="flex overflow-x-auto gap-6 pb-8 pt-4 scrollbar-hide snap-x"
+          className="flex overflow-x-auto gap-6 pb-8 pt-4 scrollbar-hide snap-x w-full"
         >
-          {/* Promo 1 */}
-          <motion.div 
-            whileHover={{ scale: 1.02 }} 
-            onClick={() => router.push('/services/lubrifiants')}
-            className="cursor-pointer min-w-[300px] md:min-w-[450px] h-48 bg-gradient-to-br from-red-600 to-red-900 rounded-[2.5rem] p-6 md:p-8 relative overflow-hidden snap-center flex-shrink-0 shadow-[0_20px_50px_-15px_rgba(220,38,38,0.5)] border border-red-500/30 group"
-          >
-            <div className="relative z-10 w-3/4">
-              <span className="bg-white text-red-600 text-[10px] font-black px-3 py-1.5 rounded-full mb-4 inline-block shadow-lg uppercase tracking-wider">{t('home.promo1.badge')}</span>
-              <h3 className="text-white font-black text-2xl md:text-3xl leading-tight mb-2">{t('home.promo1.title')}</h3>
-              <p className="text-white/80 text-xs md:text-sm font-medium">{t('home.promo1.desc')}</p>
-            </div>
-            <Image src="https://vktqecgylkjogquhsymz.supabase.co/storage/v1/object/public/images/cepsa-hero.jpg" alt="Promo" fill sizes="(max-width: 768px) 300px, 450px" className="object-cover opacity-20 group-hover:opacity-30 transition-opacity mix-blend-overlay" />
-            <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-white/10 rounded-full blur-3xl" />
-          </motion.div>
-          
-          {/* Promo 2 */}
-          <motion.div 
-            whileHover={{ scale: 1.02 }} 
-            onClick={() => router.push('/restaurant')}
-            className="cursor-pointer min-w-[300px] md:min-w-[450px] h-48 bg-gradient-to-br from-amber-500 to-orange-600 rounded-[2.5rem] p-6 md:p-8 relative overflow-hidden snap-center flex-shrink-0 shadow-[0_20px_50px_-15px_rgba(245,158,11,0.5)] border border-amber-500/30 group"
-          >
-            <div className="relative z-10 w-3/4">
-              <span className="bg-black/30 backdrop-blur-md text-white text-[10px] font-black px-3 py-1.5 rounded-full mb-4 inline-block shadow-lg uppercase tracking-wider">{t('home.promo2.badge')}</span>
-              <h3 className="text-white font-black text-2xl md:text-3xl leading-tight mb-2">{t('home.promo2.title')}</h3>
-              <p className="text-white/90 text-xs md:text-sm font-medium">{t('home.promo2.desc')}</p>
-            </div>
-            <Image src="https://vktqecgylkjogquhsymz.supabase.co/storage/v1/object/public/images/ftor_complet.jpeg" alt="Ftour" fill sizes="(max-width: 768px) 300px, 450px" className="object-cover opacity-30 group-hover:opacity-40 transition-opacity mix-blend-overlay" />
-            <div className="absolute -top-10 -right-10 w-48 h-48 bg-white/20 rounded-full blur-3xl" />
-          </motion.div>
+          {(promos.length > 0 ? promos : [
+            {
+              id: 'promo-1',
+              badge_fr: 'CATALOGUE 100% DIGITAL',
+              badge_ar: 'كتالوج رقمي 100%',
+              title_fr: 'Comptoir Lubrifiants',
+              title_ar: 'ركن زيوت المحركات',
+              desc_fr: "Découvrez notre gamme complète d'huiles de performance.",
+              desc_ar: 'اكتشف مجموعتنا الكاملة من زيوت الأداء العالي.',
+              image_url: 'https://vktqecgylkjogquhsymz.supabase.co/storage/v1/object/public/images/cepsa-hero.jpg',
+              link_path: '/services/lubrifiants',
+              gradient_class: 'from-red-600 to-red-900',
+              shadow_color: 'rgba(220,38,38,0.5)'
+            },
+            {
+              id: 'promo-2',
+              badge_fr: 'SPÉCIAL RAMADAN',
+              badge_ar: 'خاص برمضان',
+              title_fr: 'Menu Ftour',
+              title_ar: 'قائمة الفطور',
+              desc_fr: 'Le Ftour beldi complet à 20 DH.',
+              desc_ar: 'فطور بلدي متكامل بـ 20 درهم فقط.',
+              image_url: 'https://vktqecgylkjogquhsymz.supabase.co/storage/v1/object/public/images/ftor_complet.jpeg',
+              link_path: '/restaurant',
+              gradient_class: 'from-amber-500 to-orange-600',
+              shadow_color: 'rgba(245,158,11,0.5)'
+            }
+          ]).map((promo, idx) => {
+             const badge = language === 'ar' ? promo.badge_ar : promo.badge_fr;
+             const title = language === 'ar' ? promo.title_ar : promo.title_fr;
+             const desc = language === 'ar' ? promo.desc_ar : promo.desc_fr;
+             const gradient = promo.gradient_class || 'from-red-600 to-red-900';
+             const shadow = promo.shadow_color || 'rgba(220,38,38,0.5)';
+             const badgeBg = idx % 2 === 0 ? 'bg-white text-red-600' : 'bg-black/30 backdrop-blur-md text-white';
+
+             return (
+               <motion.div 
+                 key={promo.id || idx}
+                 whileHover={{ scale: 1.02 }} 
+                 onClick={() => router.push(promo.link_path)}
+                 className={`cursor-pointer min-w-[300px] md:min-w-[450px] h-48 bg-gradient-to-br ${gradient} rounded-[2.5rem] p-6 md:p-8 relative overflow-hidden snap-center flex-shrink-0 border border-white/10 group`}
+                 style={{ boxShadow: `0 20px 50px -15px ${shadow}` }}
+               >
+                 <div className="relative z-10 w-3/4">
+                   <span className={`${badgeBg} text-[10px] font-black px-3 py-1.5 rounded-full mb-4 inline-block shadow-lg uppercase tracking-wider`}>
+                     {badge}
+                   </span>
+                   <h3 className="text-white font-black text-2xl md:text-3xl leading-tight mb-2">{title}</h3>
+                   <p className="text-white/80 text-xs md:text-sm font-medium">{desc}</p>
+                 </div>
+                 {promo.image_url && (
+                   <Image 
+                     src={promo.image_url} 
+                     alt={title} 
+                     fill 
+                     sizes="(max-width: 768px) 300px, 450px" 
+                     className="object-cover opacity-20 group-hover:opacity-35 transition-opacity mix-blend-overlay" 
+                   />
+                 )}
+                 <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-white/10 rounded-full blur-3xl" />
+               </motion.div>
+             );
+          })}
         </motion.div>
 
         {/* --- NOS ENGAGEMENTS (RICH CONTENT) --- */}

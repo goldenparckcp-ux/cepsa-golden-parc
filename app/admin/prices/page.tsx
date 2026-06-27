@@ -32,7 +32,7 @@ export default function AdminPriceModifierPage() {
     const [errorMessage, setErrorMessage] = useState("");
 
     // Global Section Tab
-    const [activeTab, setActiveTab] = useState<"restaurant" | "lubricants">("restaurant");
+    const [activeTab, setActiveTab] = useState<"restaurant" | "lubricants" | "promos">("restaurant");
 
     // Restaurant Items state
     const [menuItems, setMenuItems] = useState<any[]>([]);
@@ -40,6 +40,9 @@ export default function AdminPriceModifierPage() {
 
     // Lubricants Items state
     const [lubricantItems, setLubricantItems] = useState<any[]>([]);
+
+    // Homepage Promotions state
+    const [homePromos, setHomePromos] = useState<any[]>([]);
 
     // Fuel Prices state
     const [fuelPrices, setFuelPrices] = useState({
@@ -54,7 +57,7 @@ export default function AdminPriceModifierPage() {
     // Drawer / Modal states
     const [isAddDrawerOpen, setIsAddDrawerOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<any | null>(null);
-    const [drawerType, setDrawerType] = useState<"restaurant" | "lubricants">("restaurant");
+    const [drawerType, setDrawerType] = useState<"restaurant" | "lubricants" | "promos">("restaurant");
 
     // Form fields state
     const [formData, setFormData] = useState({
@@ -69,7 +72,17 @@ export default function AdminPriceModifierPage() {
         badge: "",
         is_featured: false,
         is_available: true,
-        customization_json: ""
+        customization_json: "",
+        // Promo fields
+        badge_fr: "",
+        badge_ar: "",
+        title_fr: "",
+        title_ar: "",
+        desc_fr: "",
+        desc_ar: "",
+        link_path: "/restaurant",
+        gradient_class: "from-red-600 to-red-900",
+        shadow_color: "rgba(220,38,38,0.5)"
     });
 
     // Visual Customizations state (For the builder)
@@ -234,6 +247,20 @@ export default function AdminPriceModifierPage() {
                 });
             }
 
+            // Load Promotions from DB
+            const { data: promoData, error: promoErr } = await adminDb("home_promos")
+                .select("*")
+                .order("sort_order", { ascending: true });
+            
+            if (!promoErr && promoData) {
+                // Ensure valid sort order
+                const resequencedPromos = promoData.map((item: any, idx: number) => ({
+                    ...item,
+                    sort_order: item.sort_order || (idx + 1)
+                }));
+                setHomePromos(resequencedPromos);
+            }
+
             // Load Hotel/Pool prices from localStorage if customized
             const savedHotel = localStorage.getItem("custom_hotel_prices");
             if (savedHotel) setHotelPrices(JSON.parse(savedHotel));
@@ -383,6 +410,45 @@ export default function AdminPriceModifierPage() {
         setDragOverIndex(null);
         if (draggedIndex === null || draggedIndex === targetIndex) return;
 
+        if (activeTab === "promos") {
+            const originalOrders = homePromos
+                .map((item: any) => item.sort_order || 0)
+                .sort((a: any, b: any) => a - b);
+            
+            const updatedList = [...homePromos];
+            const [movedItem] = updatedList.splice(draggedIndex, 1);
+            updatedList.splice(targetIndex, 0, movedItem);
+
+            const updatedListWithOrders = updatedList.map((item: any, idx: number) => ({
+                ...item,
+                sort_order: originalOrders[idx] || (idx + 1)
+            }));
+
+            setHomePromos(updatedListWithOrders);
+            setDraggedIndex(null);
+
+            try {
+                const updates = updatedListWithOrders.map((item: any) => {
+                    const originalItem = homePromos.find((x: any) => x.id === item.id);
+                    if (originalItem && originalItem.sort_order !== item.sort_order) {
+                        return adminDb("home_promos")
+                            .update({ sort_order: item.sort_order })
+                            .eq("id", item.id);
+                    }
+                    return null;
+                }).filter(Boolean);
+
+                if (updates.length > 0) {
+                    await Promise.all(updates);
+                    showSuccess("Ordre des promotions enregistré avec succès !");
+                }
+            } catch (err: any) {
+                console.error("DB reorder failed:", err);
+                setErrorMessage("Erreur de tri dans la base de données.");
+            }
+            return;
+        }
+
         if (activeTab === "lubricants") {
             const originalOrders = lubricantItems
                 .map((item: any) => item.sort_order || 0)
@@ -491,7 +557,17 @@ export default function AdminPriceModifierPage() {
             badge: "",
             is_featured: false,
             is_available: true,
-            customization_json: ""
+            customization_json: "",
+            // Promo fields
+            badge_fr: "",
+            badge_ar: "",
+            title_fr: "",
+            title_ar: "",
+            desc_fr: "",
+            desc_ar: "",
+            link_path: "/restaurant",
+            gradient_class: "from-red-600 to-red-900",
+            shadow_color: "rgba(220,38,38,0.5)"
         });
         setVisualCustomizations([]);
         setIsJsonMode(false);
@@ -501,7 +577,33 @@ export default function AdminPriceModifierPage() {
     // Open drawer to edit an existing item
     const openEditDrawer = (item: any) => {
         setEditingItem(item);
-        if (drawerType === "lubricants") {
+        if (drawerType === "promos") {
+            setFormData({
+                name_fr: "",
+                name_ar: "",
+                category_id: "",
+                base_price: String(item.sort_order || 0),
+                description_fr: "",
+                description_ar: "",
+                image_url: item.image_url || "",
+                prep_time: "",
+                badge: "",
+                is_featured: false,
+                is_available: !!item.is_active,
+                customization_json: "",
+                badge_fr: item.badge_fr || "",
+                badge_ar: item.badge_ar || "",
+                title_fr: item.title_fr || "",
+                title_ar: item.title_ar || "",
+                desc_fr: item.desc_fr || "",
+                desc_ar: item.desc_ar || "",
+                link_path: item.link_path || "/restaurant",
+                gradient_class: item.gradient_class || "from-red-600 to-red-900",
+                shadow_color: item.shadow_color || "rgba(220,38,38,0.5)"
+            });
+            setVisualCustomizations([]);
+            setIsJsonMode(false);
+        } else if (drawerType === "lubricants") {
             const featuresStr = Array.isArray(item.features) ? item.features.join(", ") : "";
             setFormData({
                 name_fr: item.name || "",
@@ -515,7 +617,17 @@ export default function AdminPriceModifierPage() {
                 badge: "",
                 is_featured: false,
                 is_available: !!item.is_available,
-                customization_json: ""
+                customization_json: "",
+                // Promo defaults
+                badge_fr: "",
+                badge_ar: "",
+                title_fr: "",
+                title_ar: "",
+                desc_fr: "",
+                desc_ar: "",
+                link_path: "/restaurant",
+                gradient_class: "from-red-600 to-red-900",
+                shadow_color: "rgba(220,38,38,0.5)"
             });
             setVisualCustomizations([]);
             setIsJsonMode(false);
@@ -533,7 +645,17 @@ export default function AdminPriceModifierPage() {
                 badge: item.badge || "",
                 is_featured: !!item.is_featured,
                 is_available: !!item.is_available,
-                customization_json: jsonStr
+                customization_json: jsonStr,
+                // Promo defaults
+                badge_fr: "",
+                badge_ar: "",
+                title_fr: "",
+                title_ar: "",
+                desc_fr: "",
+                desc_ar: "",
+                link_path: "/restaurant",
+                gradient_class: "from-red-600 to-red-900",
+                shadow_color: "rgba(220,38,38,0.5)"
             });
             
             // Parse into visual customization state
@@ -549,7 +671,59 @@ export default function AdminPriceModifierPage() {
         e.preventDefault();
         setErrorMessage("");
         
-        if (drawerType === "lubricants") {
+        if (drawerType === "promos") {
+            if (!formData.title_fr || !formData.badge_fr || !formData.desc_fr) {
+                setErrorMessage("Veuillez remplir le badge, le titre et la description en Français.");
+                return;
+            }
+
+            setLoading(true);
+
+            const payload: any = {
+                badge_fr: formData.badge_fr,
+                badge_ar: formData.badge_ar || formData.badge_fr,
+                title_fr: formData.title_fr,
+                title_ar: formData.title_ar || formData.title_fr,
+                desc_fr: formData.desc_fr,
+                desc_ar: formData.desc_ar || formData.desc_fr,
+                image_url: formData.image_url || "https://vktqecgylkjogquhsymz.supabase.co/storage/v1/object/public/images/cepsa-hero.jpg",
+                link_path: formData.link_path,
+                gradient_class: formData.gradient_class,
+                shadow_color: formData.shadow_color,
+                is_active: formData.is_available
+            };
+
+            try {
+                if (editingItem) {
+                    // EDIT MODE
+                    const { error } = await adminDb("home_promos")
+                        .update(payload)
+                        .eq("id", editingItem.id);
+
+                    if (error) throw error;
+                    showSuccess(`L'offre "${formData.title_fr}" a été modifiée avec succès !`);
+                    setEditingItem(null);
+                } else {
+                    // ADD MODE
+                    const maxSort = homePromos.reduce((max: number, item: any) => Math.max(max, item.sort_order || 0), 0);
+                    payload.sort_order = maxSort + 1;
+
+                    const { error } = await adminDb("home_promos")
+                        .insert([payload]);
+
+                    if (error) throw error;
+                    showSuccess(`L'offre "${formData.title_fr}" a été ajoutée avec succès !`);
+                    setIsAddDrawerOpen(false);
+                }
+
+                // Reload all items to sync UI
+                await loadData();
+            } catch (err: any) {
+                setErrorMessage("Erreur lors de la sauvegarde: " + err.message);
+            } finally {
+                setLoading(false);
+            }
+        } else if (drawerType === "lubricants") {
             if (!formData.name_fr || !formData.base_price || !formData.description_fr) {
                 setErrorMessage("Veuillez remplir le nom, le prix et la description.");
                 return;
@@ -674,20 +848,22 @@ export default function AdminPriceModifierPage() {
 
     // Delete item with confirmation
     const handleDeleteItem = async (itemId: string, name: string) => {
-        const confirmDelete = window.confirm(`Voulez-vous vraiment supprimer le plat "${name}" du menu ? Cette action est irréversible.`);
+        const table = activeTab === "promos" ? "home_promos" : (activeTab === "lubricants" ? "lubricant_items" : "restaurant_items");
+        const typeLabel = activeTab === "promos" ? "l'offre" : (activeTab === "lubricants" ? "le lubrifiant" : "le plat");
+        const confirmDelete = window.confirm(`Voulez-vous vraiment supprimer ${typeLabel} "${name}" ? Cette action est irréversible.`);
         if (!confirmDelete) return;
 
         setLoading(true);
         setErrorMessage("");
 
         try {
-            const { error } = await adminDb("restaurant_items")
+            const { error } = await adminDb(table)
                 .delete()
                 .eq("id", itemId);
 
             if (error) throw error;
 
-            showSuccess(`Le plat "${name}" a été supprimé du menu.`);
+            showSuccess(`L'élément "${name}" a été supprimé.`);
             await loadData();
         } catch (err: any) {
             setErrorMessage("Erreur lors de la suppression: " + err.message);
@@ -851,8 +1027,8 @@ export default function AdminPriceModifierPage() {
                 </div>
             </div>
 
-            {/* Tab Switcher (Restaurant vs Lubricants) */}
-            <div className="flex bg-[#1E293B]/60 p-1.5 rounded-[20px] border border-white/5 w-full max-w-md">
+            {/* Tab Switcher (Restaurant vs Lubricants vs Promos) */}
+            <div className="flex bg-[#1E293B]/60 p-1.5 rounded-[20px] border border-white/5 w-full max-w-lg">
                 <button
                     onClick={() => setActiveTab("restaurant")}
                     className={`flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
@@ -874,6 +1050,17 @@ export default function AdminPriceModifierPage() {
                 >
                     <Fuel className="w-4 h-4" />
                     Lubrifiants
+                </button>
+                <button
+                    onClick={() => setActiveTab("promos")}
+                    className={`flex-1 py-3 rounded-xl font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all ${
+                        activeTab === "promos"
+                            ? "bg-gradient-to-r from-amber-500 to-amber-600 text-black shadow-lg shadow-amber-500/10"
+                            : "text-gray-400 hover:text-white"
+                    }`}
+                >
+                    <Sparkles className="w-4 h-4" />
+                    Offres Home
                 </button>
             </div>
 
@@ -1099,7 +1286,7 @@ export default function AdminPriceModifierPage() {
                                 </div>
                             )}
                         </>
-                    ) : (
+                    ) : activeTab === "lubricants" ? (
                         <>
                             <div className="flex justify-between items-center">
                                 <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
@@ -1152,31 +1339,29 @@ export default function AdminPriceModifierPage() {
                                                         className={`group bg-[#0F172A] border rounded-2xl overflow-hidden flex flex-col justify-between transition-all duration-300 shadow-md cursor-grab active:cursor-grabbing ${
                                                             isDragging ? "opacity-30 border-red-500/30 scale-95" : ""
                                                         } ${
-                                                            isDragOver 
-                                                                ? "border-red-500 shadow-[0_0_15px_rgba(239,68,68,0.25)] scale-[1.03]" 
-                                                                : item.is_available 
-                                                                    ? "border-white/5 hover:border-white/20" 
-                                                                    : "border-red-950/40 opacity-75 grayscale hover:grayscale-0"
+                                                            isDragOver ? "border-red-500/80 bg-[#1E293B]" : "border-white/5"
                                                         }`}
                                                     >
-                                                        {/* Lube Image with Actions */}
-                                                        <div className="h-32 relative bg-[#1E293B] overflow-hidden shrink-0">
-                                                            <Image 
-                                                                src={item.image_url || "https://images.unsplash.com/photo-1599839619722-39751411ea63?w=800"} 
-                                                                alt={item.name}
-                                                                fill
-                                                                className="object-cover transition-transform duration-500 group-hover:scale-105"
-                                                            />
-                                                            <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-transparent to-black/30" />
-
-                                                            {/* Drag Indicator Overlay */}
-                                                            <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5">
-                                                                <div className="p-1 bg-[#1E293B]/90 backdrop-blur-sm border border-white/10 rounded-lg text-gray-400 group-hover:text-white transition-colors cursor-grab">
-                                                                    <GripVertical className="w-3.5 h-3.5" />
-                                                                </div>
-                                                                <span className="bg-[#1E293B]/80 backdrop-blur-sm border border-white/10 text-white text-[9px] font-black px-2 py-0.5 rounded-full shadow-lg uppercase">
-                                                                    {item.type}
-                                                                </span>
+                                                        {/* Image & Gradient overlay */}
+                                                        <div className="relative h-28 bg-[#111827]">
+                                                            {item.image_url && (
+                                                                 <Image
+                                                                     src={item.image_url}
+                                                                     alt={item.name}
+                                                                     fill
+                                                                     sizes="200px"
+                                                                     className="object-cover opacity-20"
+                                                                 />
+                                                            )}
+                                                            <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-transparent to-transparent" />
+                                                            
+                                                            {/* Header Badges */}
+                                                            <div className="absolute top-9 left-2 flex flex-col gap-1.5 z-10">
+                                                                {item.badge && (
+                                                                    <span className="bg-red-600 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-lg uppercase tracking-wider">
+                                                                        {item.badge}
+                                                                    </span>
+                                                                )}
                                                             </div>
 
                                                             {/* Edit / Delete overlays */}
@@ -1189,79 +1374,167 @@ export default function AdminPriceModifierPage() {
                                                                     <Edit3 className="w-3.5 h-3.5" />
                                                                 </button>
                                                                 <button
-                                                                    onClick={(e) => { e.stopPropagation(); handleDeleteLubeItem(item.id, item.name); }}
+                                                                    onClick={(e) => { e.stopPropagation(); handleDeleteItem(item.id, item.name); }}
                                                                     className="p-1.5 bg-[#1E293B]/80 backdrop-blur-sm hover:bg-red-600 text-red-400 hover:text-white rounded-lg transition-colors border border-white/10 hover:border-red-500 shadow-md"
                                                                     title="Supprimer du catalogue"
                                                                 >
                                                                     <Trash2 className="w-3.5 h-3.5" />
                                                                 </button>
                                                             </div>
-
-                                                            {/* Availability indicator */}
-                                                            <div className="absolute bottom-2 left-2 z-10 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-lg border border-white/5">
-                                                                <button 
-                                                                    onClick={(e) => { e.stopPropagation(); handleToggleLubeAvailability(item); }}
-                                                                    className="flex items-center gap-1 text-[9px] font-bold text-gray-300"
-                                                                >
-                                                                    {item.is_available ? (
-                                                                        <>
-                                                                            <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                                                                            En Vente
-                                                                        </>
-                                                                    ) : (
-                                                                        <>
-                                                                            <span className="w-1.5 h-1.5 bg-red-500 rounded-full" />
-                                                                            Masqué
-                                                                        </>
-                                                                    )}
-                                                                </button>
-                                                            </div>
                                                         </div>
-
+                                                        
                                                         {/* Lube Info & Price */}
                                                         <div className="p-3.5 flex-1 flex flex-col justify-between gap-3 bg-[#0F172A]">
                                                             <div>
                                                                 <h4 className="font-bold text-white text-sm leading-tight line-clamp-1">{item.name}</h4>
                                                                 <p className="text-[10px] text-gray-500 line-clamp-1 leading-relaxed mt-1">{item.description}</p>
-                                                                {item.features && item.features.length > 0 && (
-                                                                    <div className="flex flex-wrap gap-1 mt-2">
-                                                                        {item.features.map((feat: string, fidx: number) => (
-                                                                            <span key={fidx} className="bg-red-950/40 text-red-400 border border-red-500/10 text-[8px] px-1.5 py-0.5 rounded font-medium">
-                                                                                {feat}
-                                                                            </span>
-                                                                        ))}
-                                                                    </div>
-                                                                )}
                                                             </div>
 
-                                                            {/* Bottom bar - Price */}
                                                             <div className="flex items-center justify-between border-t border-white/5 pt-2.5">
-                                                                <div className="flex items-center gap-2">
-                                                                    <div className="relative">
-                                                                        <input
-                                                                            type="number"
-                                                                            defaultValue={item.price}
-                                                                            onBlur={(e) => {
-                                                                                const val = Number(e.target.value);
-                                                                                if (val > 0 && val !== Number(item.price)) {
-                                                                                    handleSaveLubePriceInline(item.id, val);
-                                                                                }
-                                                                            }}
-                                                                            className="bg-[#1E293B] border border-white/5 rounded-lg py-1 px-2 pl-6 text-xs text-amber-500 font-black w-20 text-right outline-none focus:border-amber-500 transition-colors"
-                                                                        />
-                                                                        <span className="text-gray-500 text-[10px] font-black absolute left-2 top-1.5">DH</span>
-                                                                    </div>
-                                                                    {saving === `lube-price-${item.id}` && (
-                                                                        <RefreshCw className="w-3.5 h-3.5 text-amber-500 animate-spin" />
-                                                                    )}
+                                                                <div className="relative">
+                                                                    <input
+                                                                        type="number"
+                                                                        defaultValue={item.price}
+                                                                        onBlur={(e) => {
+                                                                            const val = Number(e.target.value);
+                                                                            if (val > 0 && val !== Number(item.price)) {
+                                                                                handleSaveLubePriceInline(item.id, val);
+                                                                            }
+                                                                        }}
+                                                                        className="bg-[#1E293B] border border-white/5 rounded-lg py-1 px-2 pl-6 text-xs text-amber-500 font-black w-20 text-right outline-none focus:border-amber-500 transition-colors"
+                                                                    />
+                                                                    <span className="text-gray-500 text-[10px] font-black absolute left-2 top-1.5">DH</span>
                                                                 </div>
-
                                                                 <span className="text-[9px] font-bold text-gray-600 bg-white/5 px-2 py-1 rounded-md">
                                                                     Pos: #{item.sort_order}
                                                                 </span>
                                                             </div>
                                                         </div>
                                                     </div>
+                                                );
+                                            })}
+                                        </AnimatePresence>
+                                    </motion.div>
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <>
+                            <div className="flex justify-between items-center">
+                                <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+                                    <Sparkles className="w-4 h-4 text-amber-500" />
+                                    Offres & Promotions Page d'Accueil
+                                </h3>
+
+                                <button
+                                    onClick={() => { setDrawerType("promos"); openAddDrawer(); }}
+                                    className="bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-black text-xs px-4 py-2.5 rounded-xl flex items-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
+                                >
+                                    <Plus className="w-4 h-4" />
+                                    Ajouter Offre
+                                </button>
+                            </div>
+
+                            {/* Drag and Drop instructions */}
+                            <div className="text-[10px] text-gray-500 font-bold bg-[#0F172A]/50 px-4 py-2 rounded-xl border border-white/5 inline-flex items-center gap-2">
+                                <GripVertical className="w-3.5 h-3.5 text-amber-500" />
+                                Glissez-déposez n'importe quelle carte pour la réordonner sur la page d'accueil.
+                            </div>
+
+                            {/* Promos Card Grid */}
+                            {loading ? (
+                                <div className="text-center py-20 text-xs text-gray-500 flex flex-col items-center gap-3">
+                                    <RefreshCw className="w-8 h-8 text-amber-500 animate-spin" />
+                                    Chargement des promotions...
+                                </div>
+                            ) : homePromos.length === 0 ? (
+                                <div className="text-center py-20 text-xs text-gray-500 bg-[#0F172A] rounded-2xl border border-dashed border-white/5">
+                                    Aucune offre promotionnelle enregistrée. Cliquez sur "Ajouter Offre".
+                                </div>
+                            ) : (
+                                <div className="lg:h-[calc(100vh-280px)] lg:overflow-y-auto pr-2 scrollbar-hide">
+                                    <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                        <AnimatePresence mode="popLayout">
+                                            {homePromos.map((item, idx) => {
+                                                const isDragging = idx === draggedIndex;
+                                                const isDragOver = idx === dragOverIndex;
+
+                                                return (
+                                                    <div
+                                                        key={item.id}
+                                                        draggable={true}
+                                                        onDragStart={(e) => handleDragStart(e, idx)}
+                                                        onDragOver={(e) => handleDragOver(e, idx)}
+                                                        onDragLeave={handleDragLeave}
+                                                        onDragEnd={handleDragEnd}
+                                                        onDrop={(e) => handleDrop(e, idx)}
+                                                        className={`group bg-[#0F172A] border rounded-2xl overflow-hidden flex flex-col justify-between transition-all duration-300 shadow-md cursor-grab active:cursor-grabbing ${
+                                                            isDragging ? "opacity-30 border-amber-500/30 scale-95" : ""
+                                                        } ${
+                                                            isDragOver ? "border-amber-500/80 bg-[#1E293B]" : "border-white/5"
+                                                        }`}
+                                                    >
+                                                        {/* Image & Gradient overlay */}
+                                                        <div className={`relative h-28 bg-gradient-to-br ${item.gradient_class || 'from-red-600 to-red-900'} p-4 flex flex-col justify-between`}>
+                                                             {item.image_url && (
+                                                                 <Image
+                                                                     src={item.image_url}
+                                                                     alt={item.title_fr}
+                                                                     fill
+                                                                     sizes="200px"
+                                                                     className="object-cover opacity-20"
+                                                                 />
+                                                             )}
+                                                             <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-transparent to-transparent" />
+                                                             
+                                                             {/* Header Badges */}
+                                                             <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
+                                                                 <span className="bg-white/90 text-black text-[8px] font-black px-2 py-0.5 rounded-full shadow-lg uppercase tracking-wider">
+                                                                     {item.badge_fr}
+                                                                 </span>
+                                                             </div>
+
+                                                             {/* Edit / Delete overlays */}
+                                                             <div className="absolute top-2 right-2 flex gap-1 z-10">
+                                                                 <button
+                                                                     onClick={(e) => { e.stopPropagation(); setDrawerType("promos"); openEditDrawer(item); }}
+                                                                     className="p-1.5 bg-[#1E293B]/80 backdrop-blur-sm hover:bg-amber-500 hover:text-black text-white rounded-lg transition-colors border border-white/10 hover:border-amber-500 shadow-md"
+                                                                     title="Modifier l'offre"
+                                                                 >
+                                                                     <Edit3 className="w-3.5 h-3.5" />
+                                                                 </button>
+                                                                 <button
+                                                                     onClick={(e) => { e.stopPropagation(); handleDeleteItem(item.id, item.title_fr); }}
+                                                                     className="p-1.5 bg-[#1E293B]/80 backdrop-blur-sm hover:bg-red-600 text-red-400 hover:text-white rounded-lg transition-colors border border-white/10 hover:border-red-500 shadow-md"
+                                                                     title="Supprimer l'offre"
+                                                                 >
+                                                                     <Trash2 className="w-3.5 h-3.5" />
+                                                                 </button>
+                                                             </div>
+
+                                                             {/* Availability indicator */}
+                                                             <div className="absolute bottom-2 left-2 z-10 flex items-center gap-1.5 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-lg border border-white/5">
+                                                                 <span className={`w-1.5 h-1.5 ${item.is_active ? 'bg-green-500 animate-pulse' : 'bg-red-500'} rounded-full`} />
+                                                                 <span className="text-[9px] font-bold text-gray-300">
+                                                                     {item.is_active ? "Actif" : "Désactivé"}
+                                                                 </span>
+                                                             </div>
+                                                         </div>
+
+                                                         {/* Info */}
+                                                         <div className="p-3.5 flex-1 flex flex-col justify-between gap-3 bg-[#0F172A]">
+                                                             <div>
+                                                                 <h4 className="font-bold text-white text-sm leading-tight line-clamp-1">{item.title_fr}</h4>
+                                                                 <p className="text-[10px] text-gray-500 line-clamp-2 leading-relaxed mt-1">{item.desc_fr}</p>
+                                                                 <div className="text-[9px] text-amber-500 font-black mt-2">Lien: {item.link_path}</div>
+                                                             </div>
+                                                             <div className="flex items-center justify-between border-t border-white/5 pt-2">
+                                                                 <span className="text-[9px] font-bold text-gray-600 bg-white/5 px-2 py-1 rounded-md">
+                                                                     Pos: #{item.sort_order}
+                                                                 </span>
+                                                             </div>
+                                                         </div>
+                                                     </div>
                                                 );
                                             })}
                                         </AnimatePresence>
@@ -1495,7 +1768,9 @@ export default function AdminPriceModifierPage() {
             <DarkSheet 
                 open={isAddDrawerOpen || !!editingItem} 
                 onClose={() => { setIsAddDrawerOpen(false); setEditingItem(null); setErrorMessage(""); }}
-                title={editingItem ? `Modifier : ${formData.name_fr}` : (drawerType === "lubricants" ? "Ajouter un nouveau Lubrifiant" : "Ajouter un nouveau plat au Restaurant")}
+                title={editingItem 
+                    ? (drawerType === "promos" ? `Modifier l'offre : ${formData.title_fr}` : drawerType === "lubricants" ? `Modifier le lubrifiant : ${formData.name_fr}` : `Modifier le plat : ${formData.name_fr}`) 
+                    : (drawerType === "promos" ? "Ajouter une nouvelle Offre" : drawerType === "lubricants" ? "Ajouter un nouveau Lubrifiant" : "Ajouter un nouveau plat au Restaurant")}
             >
                 <form onSubmit={handleSaveItemForm} className="p-6 pb-24 space-y-6">
                     {/* Error within Drawer */}
@@ -1506,142 +1781,277 @@ export default function AdminPriceModifierPage() {
                         </div>
                     )}
 
-                    {/* Nom Français */}
-                    <div>
-                        <label htmlFor="name_fr" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Nom en Français <span className="text-red-500">*</span></label>
-                        <input
-                            id="name_fr"
-                            type="text"
-                            required
-                            value={formData.name_fr}
-                            onChange={(e) => setFormData({ ...formData, name_fr: e.target.value })}
-                            placeholder={drawerType === "lubricants" ? "Ex: Cepsa Xtar 5W30" : "Ex: Tajine Kefta"}
-                            className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors h-[48px]"
-                        />
-                    </div>
-
-                    {/* Nom Arabe (Restaurant Only) */}
-                    {drawerType !== "lubricants" && (
-                        <div>
-                            <label htmlFor="name_ar" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Nom en Arabe</label>
-                            <input
-                                id="name_ar"
-                                type="text"
-                                value={formData.name_ar}
-                                onChange={(e) => setFormData({ ...formData, name_ar: e.target.value })}
-                                placeholder="Ex: طاجين كفتة"
-                                className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors text-right h-[48px] font-arabic"
-                            />
-                        </div>
-                    )}
-
-                    {/* Prix & Temps / Caractéristiques */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label htmlFor="base_price" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">
-                                {drawerType === "lubricants" ? "Prix (DH)" : "Prix de Base (DH)"} <span className="text-red-500">*</span>
-                            </label>
-                            <input
-                                id="base_price"
-                                type="number"
-                                required
-                                min="1"
-                                value={formData.base_price}
-                                onChange={(e) => setFormData({ ...formData, base_price: e.target.value })}
-                                placeholder={drawerType === "lubricants" ? "Ex: 350" : "Ex: 35"}
-                                className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-amber-500 font-black placeholder-gray-600 outline-none focus:border-amber-500 transition-colors h-[48px]"
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="prep_time" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">
-                                {drawerType === "lubricants" ? "Caractéristiques (séparées par des virgules)" : "Temps de Préparation"}
-                            </label>
-                            <input
-                                id="prep_time"
-                                type="text"
-                                value={formData.prep_time}
-                                onChange={(e) => setFormData({ ...formData, prep_time: e.target.value })}
-                                placeholder={drawerType === "lubricants" ? "Ex: Protection Max, Éco-Carburant, Longue Durée" : "Ex: 15 min"}
-                                className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors h-[48px]"
-                            />
-                        </div>
-                    </div>
-
-                    {/* Catégorie & Badge */}
-                    {drawerType === "lubricants" ? (
-                        <div>
-                            <label htmlFor="category_id" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Type de Lubrifiant</label>
-                            <select
-                                id="category_id"
-                                value={formData.category_id}
-                                onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                                className="w-full bg-[#0F172A] border border-white/10 rounded-xl px-3 text-sm text-white font-bold outline-none focus:border-amber-500 transition-colors h-[48px]"
-                            >
-                                <option value="Synthétique">🛢️ Synthétique</option>
-                                <option value="Semi-Synthétique">🛢️ Semi-Synthétique</option>
-                                <option value="Minérale">🛢️ Minérale</option>
-                                <option value="Huile de Boîte">⚙️ Huile de Boîte</option>
-                            </select>
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-2 gap-4">
-                            <div>
-                                <label htmlFor="category_id" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Catégorie</label>
-                                <select
-                                    id="category_id"
-                                    value={formData.category_id}
-                                    onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                                    className="w-full bg-[#0F172A] border border-white/10 rounded-xl px-3 text-sm text-white font-bold outline-none focus:border-amber-500 transition-colors h-[48px]"
-                                >
-                                    <option value="FastFood">🍔 Fast Food / Snacks</option>
-                                    <option value="Plats">🍲 Plats & Beldi</option>
-                                    <option value="Ftour">🍳 Ftour (Ptit Déj)</option>
-                                    <option value="Salades">🥗 Salades</option>
-                                    <option value="Desserts">🍰 Desserts</option>
-                                    <option value="Boissons">🍹 Boissons</option>
-                                </select>
+                    {/* Dynamic Form inputs based on drawerType */}
+                    {drawerType === "promos" ? (
+                        <>
+                            {/* Badges */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label htmlFor="badge_fr" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Badge (FR) <span className="text-red-500">*</span></label>
+                                    <input
+                                        id="badge_fr"
+                                        type="text"
+                                        required
+                                        value={formData.badge_fr}
+                                        onChange={(e) => setFormData({ ...formData, badge_fr: e.target.value })}
+                                        placeholder="Ex: OFFRE SPÉCIALE"
+                                        className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors h-[48px]"
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="badge_ar" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Badge (AR)</label>
+                                    <input
+                                        id="badge_ar"
+                                        type="text"
+                                        value={formData.badge_ar}
+                                        onChange={(e) => setFormData({ ...formData, badge_ar: e.target.value })}
+                                        placeholder="Ex: عرض خاص"
+                                        className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors text-right h-[48px] font-arabic"
+                                    />
+                                </div>
                             </div>
+
+                            {/* Titres */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label htmlFor="title_fr" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Titre (FR) <span className="text-red-500">*</span></label>
+                                    <input
+                                        id="title_fr"
+                                        type="text"
+                                        required
+                                        value={formData.title_fr}
+                                        onChange={(e) => setFormData({ ...formData, title_fr: e.target.value })}
+                                        placeholder="Ex: Menu Ftour Beldi"
+                                        className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors h-[48px]"
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="title_ar" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Titre (AR)</label>
+                                    <input
+                                        id="title_ar"
+                                        type="text"
+                                        value={formData.title_ar}
+                                        onChange={(e) => setFormData({ ...formData, title_ar: e.target.value })}
+                                        placeholder="Ex: قائمة الفطور البلدي"
+                                        className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors text-right h-[48px] font-arabic"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Descriptions */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label htmlFor="desc_fr" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Description (FR) <span className="text-red-500">*</span></label>
+                                    <textarea
+                                        id="desc_fr"
+                                        rows={3}
+                                        required
+                                        value={formData.desc_fr}
+                                        onChange={(e) => setFormData({ ...formData, desc_fr: e.target.value })}
+                                        placeholder="Ex: Le Ftour beldi complet à 20 DH seulement."
+                                        className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors resize-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="desc_ar" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Description (AR)</label>
+                                    <textarea
+                                        id="desc_ar"
+                                        rows={3}
+                                        value={formData.desc_ar}
+                                        onChange={(e) => setFormData({ ...formData, desc_ar: e.target.value })}
+                                        placeholder="Ex: فطور بلدي متكامل بـ 20 درهم فقط."
+                                        className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors text-right resize-none font-arabic"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Lien de redirection */}
                             <div>
-                                <label htmlFor="badge" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Badge (Optionnel)</label>
+                                <label htmlFor="link_path" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Lien de redirection (Page path) <span className="text-red-500">*</span></label>
                                 <input
-                                    id="badge"
+                                    id="link_path"
                                     type="text"
-                                    value={formData.badge}
-                                    onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
-                                    placeholder="Ex: Populaire, Nouveau"
+                                    required
+                                    value={formData.link_path}
+                                    onChange={(e) => setFormData({ ...formData, link_path: e.target.value })}
+                                    placeholder="Ex: /restaurant ou /services/lubrifiants"
                                     className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors h-[48px]"
                                 />
                             </div>
-                        </div>
-                    )}
 
-                    {/* Description Française */}
-                    <div>
-                        <label htmlFor="description_fr" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Description en Français <span className="text-red-500">*</span></label>
-                        <textarea
-                            id="description_fr"
-                            rows={3}
-                            required
-                            value={formData.description_fr}
-                            onChange={(e) => setFormData({ ...formData, description_fr: e.target.value })}
-                            placeholder={drawerType === "lubricants" ? "Description du lubrifiant, viscosité, compatibilité..." : "Description alléchante..."}
-                            className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors resize-none"
-                        />
-                    </div>
+                            {/* Style Visuel (Gradient & Shadow) */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label htmlFor="gradient_class" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Dégradé CSS (Tailwind classes)</label>
+                                    <input
+                                        id="gradient_class"
+                                        type="text"
+                                        value={formData.gradient_class}
+                                        onChange={(e) => setFormData({ ...formData, gradient_class: e.target.value })}
+                                        placeholder="Ex: from-amber-500 to-orange-600"
+                                        className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors h-[48px]"
+                                    />
+                                    {/* Presets */}
+                                    <div className="flex gap-2 mt-2">
+                                        <button type="button" onClick={() => setFormData({ ...formData, gradient_class: "from-red-600 to-red-900", shadow_color: "rgba(220,38,38,0.5)" })} className="text-[9px] bg-red-600 px-2 py-0.5 rounded text-white font-black">Rouge</button>
+                                        <button type="button" onClick={() => setFormData({ ...formData, gradient_class: "from-amber-500 to-orange-600", shadow_color: "rgba(245,158,11,0.5)" })} className="text-[9px] bg-amber-500 px-2 py-0.5 rounded text-black font-black">Orange</button>
+                                        <button type="button" onClick={() => setFormData({ ...formData, gradient_class: "from-emerald-600 to-teal-900", shadow_color: "rgba(13,148,136,0.5)" })} className="text-[9px] bg-emerald-600 px-2 py-0.5 rounded text-white font-black">Vert</button>
+                                        <button type="button" onClick={() => setFormData({ ...formData, gradient_class: "from-blue-600 to-indigo-900", shadow_color: "rgba(37,99,235,0.5)" })} className="text-[9px] bg-blue-600 px-2 py-0.5 rounded text-white font-black">Bleu</button>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label htmlFor="shadow_color" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Couleur de l'ombre (RGBA)</label>
+                                    <input
+                                        id="shadow_color"
+                                        type="text"
+                                        value={formData.shadow_color}
+                                        onChange={(e) => setFormData({ ...formData, shadow_color: e.target.value })}
+                                        placeholder="Ex: rgba(245,158,11,0.5)"
+                                        className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors h-[48px]"
+                                    />
+                                </div>
+                            </div>
+                        </>
+                    ) : (
+                        <>
+                            {/* Nom Français */}
+                            <div>
+                                <label htmlFor="name_fr" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Nom en Français <span className="text-red-500">*</span></label>
+                                <input
+                                    id="name_fr"
+                                    type="text"
+                                    required
+                                    value={formData.name_fr}
+                                    onChange={(e) => setFormData({ ...formData, name_fr: e.target.value })}
+                                    placeholder={drawerType === "lubricants" ? "Ex: Cepsa Xtar 5W30" : "Ex: Tajine Kefta"}
+                                    className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors h-[48px]"
+                                />
+                            </div>
 
-                    {/* Description Arabe (Restaurant Only) */}
-                    {drawerType !== "lubricants" && (
-                        <div>
-                            <label htmlFor="description_ar" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Description en Arabe</label>
-                            <textarea
-                                id="description_ar"
-                                rows={3}
-                                value={formData.description_ar}
-                                onChange={(e) => setFormData({ ...formData, description_ar: e.target.value })}
-                                placeholder="وصف الطبق باللغة العربية..."
-                                className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors text-right resize-none font-arabic"
-                            />
-                        </div>
+                            {/* Nom Arabe (Restaurant Only) */}
+                            {drawerType !== "lubricants" && (
+                                <div>
+                                    <label htmlFor="name_ar" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Nom en Arabe</label>
+                                    <input
+                                        id="name_ar"
+                                        type="text"
+                                        value={formData.name_ar}
+                                        onChange={(e) => setFormData({ ...formData, name_ar: e.target.value })}
+                                        placeholder="Ex: طاجين كفتة"
+                                        className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors text-right h-[48px] font-arabic"
+                                    />
+                                </div>
+                            )}
+
+                            {/* Prix & Temps / Caractéristiques */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label htmlFor="base_price" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">
+                                        {drawerType === "lubricants" ? "Prix (DH)" : "Prix de Base (DH)"} <span className="text-red-500">*</span>
+                                    </label>
+                                    <input
+                                        id="base_price"
+                                        type="number"
+                                        required
+                                        min="1"
+                                        value={formData.base_price}
+                                        onChange={(e) => setFormData({ ...formData, base_price: e.target.value })}
+                                        placeholder={drawerType === "lubricants" ? "Ex: 350" : "Ex: 35"}
+                                        className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-amber-500 font-black placeholder-gray-600 outline-none focus:border-amber-500 transition-colors h-[48px]"
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="prep_time" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">
+                                        {drawerType === "lubricants" ? "Caractéristiques (séparées par des virgules)" : "Temps de Préparation"}
+                                    </label>
+                                    <input
+                                        id="prep_time"
+                                        type="text"
+                                        value={formData.prep_time}
+                                        onChange={(e) => setFormData({ ...formData, prep_time: e.target.value })}
+                                        placeholder={drawerType === "lubricants" ? "Ex: Protection Max, Éco-Carburant, Longue Durée" : "Ex: 15 min"}
+                                        className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors h-[48px]"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Catégorie & Badge */}
+                            {drawerType === "lubricants" ? (
+                                <div>
+                                    <label htmlFor="category_id" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Type de Lubrifiant</label>
+                                    <select
+                                        id="category_id"
+                                        value={formData.category_id}
+                                        onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                                        className="w-full bg-[#0F172A] border border-white/10 rounded-xl px-3 text-sm text-white font-bold outline-none focus:border-amber-500 transition-colors h-[48px]"
+                                    >
+                                        <option value="Synthétique">🛢️ Synthétique</option>
+                                        <option value="Semi-Synthétique">🛢️ Semi-Synthétique</option>
+                                        <option value="Minérale">🛢️ Minérale</option>
+                                        <option value="Huile de Boîte">⚙️ Huile de Boîte</option>
+                                    </select>
+                                </div>
+                            ) : (
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label htmlFor="category_id" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Catégorie</label>
+                                        <select
+                                            id="category_id"
+                                            value={formData.category_id}
+                                            onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                                            className="w-full bg-[#0F172A] border border-white/10 rounded-xl px-3 text-sm text-white font-bold outline-none focus:border-amber-500 transition-colors h-[48px]"
+                                        >
+                                            <option value="FastFood">🍔 Fast Food / Snacks</option>
+                                            <option value="Plats">🍲 Plats & Beldi</option>
+                                            <option value="Ftour">🍳 Ftour (Ptit Déj)</option>
+                                            <option value="Salades">🥗 Salades</option>
+                                            <option value="Desserts">🍰 Desserts</option>
+                                            <option value="Boissons">🍹 Boissons</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label htmlFor="badge" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Badge (Optionnel)</label>
+                                        <input
+                                            id="badge"
+                                            type="text"
+                                            value={formData.badge}
+                                            onChange={(e) => setFormData({ ...formData, badge: e.target.value })}
+                                            placeholder="Ex: Populaire, Nouveau"
+                                            className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors h-[48px]"
+                                        />
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Description Française */}
+                            <div>
+                                <label htmlFor="description_fr" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Description en Français <span className="text-red-500">*</span></label>
+                                <textarea
+                                    id="description_fr"
+                                    rows={3}
+                                    required
+                                    value={formData.description_fr}
+                                    onChange={(e) => setFormData({ ...formData, description_fr: e.target.value })}
+                                    placeholder={drawerType === "lubricants" ? "Description du lubrifiant, viscosité, compatibilité..." : "Description alléchante..."}
+                                    className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors resize-none"
+                                />
+                            </div>
+
+                            {/* Description Arabe (Restaurant Only) */}
+                            {drawerType !== "lubricants" && (
+                                <div>
+                                    <label htmlFor="description_ar" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Description en Arabe</label>
+                                    <textarea
+                                        id="description_ar"
+                                        rows={3}
+                                        value={formData.description_ar}
+                                        onChange={(e) => setFormData({ ...formData, description_ar: e.target.value })}
+                                        placeholder="وصف الطبق باللغة العربية..."
+                                        className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors text-right resize-none font-arabic"
+                                    />
+                                </div>
+                            )}
+                        </>
                     )}
 
                     {/* Image Upload & URL Fallback */}
@@ -1738,7 +2148,7 @@ export default function AdminPriceModifierPage() {
                     </div>
 
                     {/* VISUAL CUSTOMIZATION OPTIONS BUILDER (Restaurant Only) */}
-                    {drawerType !== "lubricants" && (
+                    {drawerType === "restaurant" && (
                         <div className="border-t border-white/5 pt-4 space-y-4">
                             <div className="flex justify-between items-center">
                                 <span className="text-[10px] text-gray-400 font-black uppercase tracking-wider block">Option & Suppléments</span>
@@ -1878,7 +2288,7 @@ export default function AdminPriceModifierPage() {
 
                     {/* Featured & Available Toggles */}
                     <div className="bg-[#0F172A] border border-white/5 rounded-2xl p-4 space-y-4">
-                        {drawerType !== "lubricants" && (
+                        {drawerType === "restaurant" && (
                             <label className="flex items-center gap-3 cursor-pointer select-none">
                                 <input
                                     type="checkbox"
@@ -1900,8 +2310,12 @@ export default function AdminPriceModifierPage() {
                                 className="w-5 h-5 rounded border-white/10 bg-[#1E293B] text-orange-500 focus:ring-0 cursor-pointer"
                             />
                             <div>
-                                <span className="text-xs font-bold text-white block">Disponible Immédiatement</span>
-                                <span className="text-[9px] text-gray-500 block">Visible et commandable directement par le client</span>
+                                <span className="text-xs font-bold text-white block">
+                                    {drawerType === "promos" ? "Actif / Visible sur la page d'accueil" : "Disponible Immédiatement"}
+                                </span>
+                                <span className="text-[9px] text-gray-500 block">
+                                    {drawerType === "promos" ? "L'offre sera visible dans le carrousel principal" : "Visible et commandable directement par le client"}
+                                </span>
                             </div>
                         </label>
                     </div>
@@ -1914,8 +2328,8 @@ export default function AdminPriceModifierPage() {
                     >
                         {loading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                         {editingItem 
-                            ? (drawerType === "lubricants" ? "Mettre à jour le lubrifiant" : "Mettre à jour le plat") 
-                            : (drawerType === "lubricants" ? "Ajouter le lubrifiant" : "Ajouter le plat au Restaurant")}
+                            ? (drawerType === "promos" ? "Mettre à jour l'offre" : drawerType === "lubricants" ? "Mettre à jour le lubrifiant" : "Mettre à jour le plat") 
+                            : (drawerType === "promos" ? "Ajouter l'offre" : drawerType === "lubricants" ? "Ajouter le lubrifiant" : "Ajouter le plat au Restaurant")}
                     </button>
                 </form>
             </DarkSheet>
