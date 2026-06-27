@@ -149,7 +149,34 @@ function CartDrawerContent({
     };
 
     useEffect(() => {
-        if (items.length === 0) {
+        const storedScan = sessionStorage.getItem("scan_location");
+        if (storedScan) {
+            try {
+                const scan = JSON.parse(storedScan);
+                if (scan.type === 'restaurant') {
+                    setOnSiteLocation('table');
+                } else if (scan.type === 'pool') {
+                    setOnSiteLocation('pool');
+                } else if (scan.type === 'hotel') {
+                    setOnSiteLocation('room');
+                }
+                const labelStr = scan.loc || "";
+                const numOnly = labelStr.replace(/\D/g, '');
+                setLocationDetail(numOnly || labelStr);
+                setLocationType('on_site');
+            } catch (e) {
+                console.error("Failed to parse scan_location", e);
+            }
+        }
+
+        const storedPayment = sessionStorage.getItem("scan_payment");
+        if (storedPayment === "cash") {
+            setPaymentMethod('cash');
+        } else if (storedPayment === "online") {
+            setPaymentMethod('card');
+        }
+
+        if (!storedScan && items.length === 0) {
             setLocationType('on_site');
             setOnSiteLocation('table');
             setLocationDetail('');
