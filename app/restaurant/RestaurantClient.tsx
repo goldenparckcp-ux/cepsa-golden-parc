@@ -990,9 +990,84 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                 </div>
             </div>
 
-            {/* Floating Filter Button (Sticky & Transparent container) */}
-            <div className="sticky top-[76px] md:top-[96px] z-40 bg-transparent pointer-events-none px-4 max-w-7xl mx-auto flex items-center justify-start pb-4">
-                <div className="relative pointer-events-auto">
+
+            {/* Featured Special Carousel */}
+            {activeCategory === "all" && dbItems.filter(i => i.isFeatured).length > 0 && (() => {
+                const featuredItems = dbItems.filter(i => i.isFeatured);
+                return (
+                    <div className="px-4 max-w-7xl mx-auto mt-2 relative group">
+                        <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 scrollbar-hide w-full rounded-[2rem]">
+                            {featuredItems.map((item) => {
+                                const name = language === "ar" ? (item.name_ar || item.name) : item.name;
+                                const description = language === "ar" ? (item.description_ar || item.description) : item.description;
+                                return (
+                                    <div 
+                                        key={item.id}
+                                        onClick={() => handleItemClick(item)}
+                                        className="relative w-full h-[180px] sm:h-[240px] rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl flex items-center justify-between px-5 md:px-8 shrink-0 snap-center cursor-pointer"
+                                        style={{ minWidth: '100%' }}
+                                    >
+                                        {/* Background Image */}
+                                        {item.image && (
+                                            <Image 
+                                                src={item.image} 
+                                                alt={item.name}
+                                                fill
+                                                className="object-cover group-hover:scale-[1.01] transition-transform duration-700 font-bold"
+                                            />
+                                        )}
+                                        {/* Dark/Gradient Overlay */}
+                                        <div className="absolute inset-0 bg-black/55" />
+                                        
+                                        {/* Content Overlay */}
+                                        <div className="relative z-10 w-full flex items-center justify-between gap-4">
+                                            <div className="flex flex-col gap-1 flex-1 min-w-0 text-left">
+                                                <span className="bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-1 shadow-lg w-fit">
+                                                    🌟 {language === "ar" ? "عرض خاص" : "Offre Spéciale"}
+                                                </span>
+                                                <h2 className="text-white text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tight leading-tight drop-shadow-md">
+                                                    {name}
+                                                </h2>
+                                                <p className="text-white/75 text-[10px] sm:text-xs font-medium line-clamp-2 drop-shadow leading-relaxed max-w-[280px]">
+                                                    {description}
+                                                </p>
+                                            </div>
+                                            
+                                            {/* Price and CTA */}
+                                            <div className="flex items-center gap-2.5 shrink-0">
+                                                <div className="bg-white/10 backdrop-blur-md border border-white/15 px-3 py-2 rounded-2xl flex flex-col justify-center text-left">
+                                                    <span className="text-[8px] text-gray-300 font-bold uppercase tracking-wider leading-none mb-0.5">Prix Spécial</span>
+                                                    <span className="text-white text-sm sm:text-base font-black leading-none">
+                                                        {formatDh(item.basePrice)}
+                                                    </span>
+                                                </div>
+                                                
+                                                <button 
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        handleItemClick(item);
+                                                    }}
+                                                    className="py-3 px-5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg active:scale-95 transition-all flex items-center gap-1.5"
+                                                >
+                                                    <Plus className="w-3.5 h-3.5" />
+                                                    <span>{language === "ar" ? "طلب" : "Commander"}</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        
+                                        {/* Stylized background glow */}
+                                        <div className="absolute top-0 right-0 w-48 h-48 bg-orange-500/10 rounded-full blur-[80px] pointer-events-none" />
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                );
+            })()}
+
+            {/* Filters Underneath Carousel */}
+            <div className="px-4 max-w-7xl mx-auto flex items-center gap-3 mt-4">
+                <div className="relative">
                     <button 
                         onClick={() => setShowFilters(!showFilters)}
                         className={`w-11 h-11 rounded-2xl flex items-center justify-center border transition-all duration-300 shadow-xl ${
@@ -1051,7 +1126,7 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                     <motion.div 
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="ml-3 h-11 bg-orange-500/15 border border-orange-500/30 text-orange-400 font-black text-xs px-4 rounded-2xl flex items-center gap-2 shadow-lg pointer-events-auto"
+                        className="bg-orange-500/15 border border-orange-500/30 text-orange-400 font-black text-xs px-4 h-11 rounded-2xl flex items-center gap-2 shadow-lg"
                     >
                         <span>{dbCategories.find(c => c.id === activeCategory)?.label}</span>
                         <button 
@@ -1063,72 +1138,6 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                     </motion.div>
                 )}
             </div>
-
-            {/* Featured Special Banner */}
-            {activeCategory === "all" && dbItems.some(i => i.isFeatured) && (() => {
-                const featuredItem = dbItems.find(i => i.isFeatured)!;
-                const name = language === "ar" ? (featuredItem.name_ar || featuredItem.name) : featuredItem.name;
-                const description = language === "ar" ? (featuredItem.description_ar || featuredItem.description) : featuredItem.description;
-                return (
-                    <div className="px-4 max-w-7xl mx-auto mt-2">
-                        <div 
-                            onClick={() => handleItemClick(featuredItem)}
-                            className="relative w-full h-[180px] sm:h-[240px] rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl flex items-end p-5 md:p-8 group cursor-pointer"
-                        >
-                            {/* Background Image */}
-                            {featuredItem.image && (
-                                <Image 
-                                    src={featuredItem.image} 
-                                    alt={featuredItem.name}
-                                    fill
-                                    className="object-cover group-hover:scale-[1.03] transition-transform duration-700"
-                                />
-                            )}
-                            {/* Dark/Gradient Overlay */}
-                            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-transparent" />
-                            
-                            {/* Content Overlay */}
-                            <div className="relative z-10 w-full flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-                                <div className="space-y-1 sm:max-w-[70%] text-left">
-                                    <span className="bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-1 shadow-lg">
-                                        🌟 {language === "ar" ? "عرض خاص" : "Offre Spéciale"}
-                                    </span>
-                                    <h2 className="text-white text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tight leading-tight drop-shadow-md">
-                                        {name}
-                                    </h2>
-                                    <p className="text-white/80 text-[10px] sm:text-xs font-medium line-clamp-2 drop-shadow leading-relaxed">
-                                        {description}
-                                    </p>
-                                </div>
-                                
-                                {/* Price and CTA */}
-                                <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-end">
-                                    <div className="bg-white/10 backdrop-blur-md border border-white/15 px-3 py-2 rounded-2xl flex flex-col justify-center text-left">
-                                        <span className="text-[8px] text-gray-300 font-bold uppercase tracking-wider leading-none mb-0.5">Prix Spécial</span>
-                                        <span className="text-white text-sm sm:text-base font-black leading-none">
-                                            {formatDh(featuredItem.basePrice)}
-                                        </span>
-                                    </div>
-                                    
-                                    <button 
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleItemClick(featuredItem);
-                                        }}
-                                        className="py-2.5 px-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg active:scale-95 transition-all flex items-center gap-1.5"
-                                    >
-                                        <Plus className="w-3.5 h-3.5" />
-                                        <span>{language === "ar" ? "طلب" : "Commander"}</span>
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            {/* Stylized background glow to match the gym poster aesthetics */}
-                            <div className="absolute top-0 right-0 w-48 h-48 bg-orange-500/10 rounded-full blur-[80px] pointer-events-none" />
-                        </div>
-                    </div>
-                );
-            })()}
 
             {/* Optimized Grid */}
             <div className="p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 max-w-7xl mx-auto mt-2">

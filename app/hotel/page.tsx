@@ -284,52 +284,79 @@ export default function HotelPage() {
 
             <div className="p-3 md:p-4 space-y-4 max-w-6xl mx-auto">
 
-                {/* HERO BANNER */}
-                {(heroData || true) && (
-                    <div className="relative w-full h-[200px] sm:h-[240px] rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl group">
-                        {/* Background Image */}
-                        <Image
-                            src={heroData?.image_url || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80'}
-                            alt="Hotel Golden Park"
-                            fill
-                            priority
-                            className="object-cover group-hover:scale-[1.03] transition-transform duration-700"
-                        />
-                        {/* Full dark overlay like restaurant */}
-                        <div className="absolute inset-0 bg-black/55" />
-                        {/* Glow FX */}
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
+                {/* HERO BANNER CAROUSEL */}
+                <div className="relative w-full h-[200px] sm:h-[240px] rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl group">
+                    <div className="flex overflow-x-auto snap-x snap-mandatory gap-0 scrollbar-hide w-full h-full">
+                        {[
+                            {
+                                title: heroData?.title || 'Votre Séjour de Rêve',
+                                subtitle: heroData?.subtitle || 'Détente et confort absolu au cœur du Golden Park',
+                                badge: heroData?.badge_text || 'OFFRE SPÉCIALE',
+                                img: heroData?.image_url || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80'
+                            },
+                            {
+                                title: 'Chambres Familiales',
+                                subtitle: 'Spacieuses, modernes et équipées pour toute la famille',
+                                badge: 'ESPACE FAMILLE',
+                                img: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80'
+                            },
+                            {
+                                title: 'Piscine & Détente',
+                                subtitle: 'Accès gratuit à la piscine pour tous nos résidents',
+                                badge: 'INCLUS DANS LE SÉJOUR',
+                                img: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=1200&q=80'
+                            }
+                        ].map((slide, idx) => (
+                            <div 
+                                key={idx}
+                                className="relative w-full h-full shrink-0 snap-center flex items-center justify-between px-5 md:px-8"
+                                style={{ minWidth: '100%' }}
+                            >
+                                {/* Background Image */}
+                                <Image
+                                    src={slide.img}
+                                    alt={slide.title}
+                                    fill
+                                    priority={idx === 0}
+                                    className="object-cover group-hover:scale-[1.01] transition-transform duration-700"
+                                />
+                                {/* Full dark overlay */}
+                                <div className="absolute inset-0 bg-black/55" />
+                                {/* Glow FX */}
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
 
-                        {/* Content — centered vertically, spread horizontally like resto */}
-                        <div className="absolute inset-0 flex items-center justify-between px-5 md:px-8 gap-4">
-                            {/* Left: badge + title + subtitle */}
-                            <div className="flex flex-col gap-1 flex-1 min-w-0">
-                                <span className="bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-wider inline-flex items-center gap-1 w-fit shadow-lg">
-                                    🏨 {heroData?.badge_text || 'OFFRE SPÉCIALE'}
-                                </span>
-                                <h2 className="text-white text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tight leading-tight drop-shadow-md">
-                                    {heroData?.title || 'Votre Séjour de Rêve'}
-                                </h2>
-                                <p className="text-white/75 text-[10px] sm:text-xs font-medium line-clamp-2 drop-shadow leading-relaxed max-w-[280px]">
-                                    {heroData?.subtitle || 'Détente et confort absolu au cœur du Golden Park'}
-                                </p>
-                            </div>
+                                {/* Content */}
+                                <div className="relative z-10 w-full flex items-center justify-between gap-4">
+                                    {/* Left: badge + title + subtitle */}
+                                    <div className="flex flex-col gap-1 flex-1 min-w-0 text-left">
+                                        <span className="bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-wider inline-flex items-center gap-1 w-fit shadow-lg">
+                                            🏨 {slide.badge}
+                                        </span>
+                                        <h2 className="text-white text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tight leading-tight drop-shadow-md">
+                                            {slide.title}
+                                        </h2>
+                                        <p className="text-white/75 text-[10px] sm:text-xs font-medium line-clamp-2 drop-shadow leading-relaxed max-w-[280px]">
+                                            {slide.subtitle}
+                                        </p>
+                                    </div>
 
-                            {/* Right: CTA button */}
-                            <div className="flex flex-col items-end gap-2 shrink-0">
-                                <button
-                                    onClick={() => {
-                                        document.getElementById('hotel-room-gallery')?.scrollIntoView({ behavior: 'smooth' });
-                                    }}
-                                    className="py-3 px-5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg active:scale-95 transition-all flex items-center gap-2 whitespace-nowrap"
-                                >
-                                    <BedDouble className="w-3.5 h-3.5" />
-                                    <span>{heroData?.cta_text || 'Réserver'}</span>
-                                </button>
+                                    {/* Right: CTA button */}
+                                    <div className="flex flex-col items-end gap-2 shrink-0">
+                                        <button
+                                            onClick={() => {
+                                                document.getElementById('hotel-room-gallery')?.scrollIntoView({ behavior: 'smooth' });
+                                            }}
+                                            className="py-3 px-5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg active:scale-95 transition-all flex items-center gap-2 whitespace-nowrap"
+                                        >
+                                            <BedDouble className="w-3.5 h-3.5" />
+                                            <span>{heroData?.cta_text || 'Réserver'}</span>
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
-                        </div>
+                        ))}
                     </div>
-                )}
+                </div>
 
                 {/* MODE SWITCHER */}
                 <div className="flex flex-col items-center gap-2 max-w-md mx-auto w-full">
