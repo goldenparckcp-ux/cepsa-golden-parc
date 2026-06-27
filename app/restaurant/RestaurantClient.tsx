@@ -946,7 +946,7 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
     };
 
     return (
-        <div className="min-h-screen pb-40 bg-[#070A13]">
+        <div className="min-h-screen pt-20 md:pt-28 pb-40 bg-[#070A13]">
             {showSuccess && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
                     <div className="bg-gradient-to-br from-[#1E293B] to-[#0F172A] border border-white/10 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl scale-100 animate-in zoom-in-95 duration-300">
@@ -991,7 +991,7 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
             </div>
 
             {/* Floating Filter Button (Sticky & Transparent container) */}
-            <div className="sticky top-20 z-40 bg-transparent pointer-events-none px-4 max-w-7xl mx-auto flex items-center justify-start pb-4">
+            <div className="sticky top-[76px] md:top-[96px] z-40 bg-transparent pointer-events-none px-4 max-w-7xl mx-auto flex items-center justify-start pb-4">
                 <div className="relative pointer-events-auto">
                     <button 
                         onClick={() => setShowFilters(!showFilters)}
