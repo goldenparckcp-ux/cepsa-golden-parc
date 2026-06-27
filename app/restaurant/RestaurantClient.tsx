@@ -190,7 +190,7 @@ function CartDrawerContent({
     useEffect(() => {
         if (locationType === 'on_way' && paymentMethod === 'cash') {
             setPaymentMethod('card');
-            setIsDepositMode(false);
+            setIsDepositMode(true);
         }
     }, [locationType, paymentMethod]);
 
@@ -339,7 +339,11 @@ function CartDrawerContent({
                     {/* Toggle Location Type */}
                     <div className="flex bg-[#1E293B] p-1.5 rounded-2xl mb-6 border border-white/5 shadow-inner">
                         <button
-                            onClick={() => setLocationType('on_site')}
+                            onClick={() => {
+                                setLocationType('on_site');
+                                setIsDepositMode(false);
+                                setPaymentMethod('cash');
+                            }}
                             className={`flex-1 py-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all ${locationType === 'on_site'
                                 ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-[0_5px_15px_rgba(37,99,235,0.4)]'
                                 : 'text-gray-400 hover:text-white hover:bg-white/5'
@@ -349,7 +353,11 @@ function CartDrawerContent({
                             {t('cart.onsite')}
                         </button>
                         <button
-                            onClick={() => setLocationType('on_way')}
+                            onClick={() => {
+                                setLocationType('on_way');
+                                setPaymentMethod('card');
+                                setIsDepositMode(true);
+                            }}
                             className={`flex-1 py-4 rounded-xl font-black text-sm flex items-center justify-center gap-2 transition-all ${locationType === 'on_way'
                                 ? 'bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-[0_5px_15px_rgba(245,158,11,0.4)]'
                                 : 'text-gray-400 hover:text-white hover:bg-white/5'
@@ -549,18 +557,25 @@ function CartDrawerContent({
                             {locationType === 'on_way' && (
                                 <button
                                     type="button"
-                                    disabled
-                                    className="relative p-3 rounded-2xl border border-white/5 bg-[#1E293B]/40 text-gray-500 cursor-not-allowed flex flex-col items-start gap-1 text-left opacity-60 w-full"
+                                    onClick={() => {
+                                        setPaymentMethod('card');
+                                        setIsDepositMode(true);
+                                    }}
+                                    className={`relative p-3 rounded-2xl border flex flex-col items-start gap-1 transition-all text-left ${
+                                        paymentMethod === 'card' && isDepositMode
+                                            ? 'bg-amber-500/10 border-amber-500 text-amber-400'
+                                            : 'bg-[#1E293B] border-white/5 text-gray-400 hover:bg-white/5'
+                                    }`}
                                 >
-                                    <span className="absolute -top-2 -right-2 bg-amber-500 text-black font-black text-[9px] px-2 py-0.5 rounded-full shadow">
-                                        {language === 'ar' ? 'قريباً' : 'À venir'}
-                                    </span>
-                                    <div className="font-bold text-sm text-gray-400">
+                                    <div className="font-bold text-sm text-white">
                                         {language === 'ar' ? 'عربون (30%)' : 'Arboune (30%)'}
                                     </div>
-                                    <div className="text-[10px] text-gray-500">
+                                    <div className="text-[10px] text-gray-400">
                                         {language === 'ar' ? 'تسبيق والباقي ف المحطة' : 'Acompte en ligne'}
                                     </div>
+                                    {paymentMethod === 'card' && isDepositMode && (
+                                        <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
+                                    )}
                                 </button>
                             )}
 
