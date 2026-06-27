@@ -140,6 +140,11 @@ export default function QRGeneratorPage() {
       return;
     }
 
+    if (!data) {
+      alert("Erreur lors de la sauvegarde: Le serveur n'a renvoyé aucune donnée.");
+      return;
+    }
+
     setItems(prev => [{ id: data.id, type, label: label.trim(), url, token, dataUrl, saved: true }, ...prev]);
     setCustomLabel("");
   }, []);

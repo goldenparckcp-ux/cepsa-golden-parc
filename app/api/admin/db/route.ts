@@ -60,7 +60,7 @@ export async function POST(request: Request) {
         break;
       case 'insert':
         query = query.insert(payload);
-        if (payload?.select) query = query.select();
+        if (select) query = query.select();
         break;
       case 'update':
         if (!match) throw new Error("Match criteria required for update");
