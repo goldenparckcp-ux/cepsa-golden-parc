@@ -71,7 +71,7 @@ export default function DeleteAccountInstructions() {
                                 <h2>Comment supprimer vos données et votre compte</h2>
                             </div>
                             <p className="leading-relaxed">
-                                Si vous avez créé votre compte sur <strong>Golden Parc Cepsa</strong> via Facebook Login, adresse email ou numéro de téléphone, et que vous souhaitez supprimer définitivement toutes vos données associées à votre profil, vous disposez de deux méthodes simples :
+                                Si vous avez créé votre compte sur <strong>Golden Parc Station GPS</strong> via Facebook Login, adresse email ou numéro de téléphone, et que vous souhaitez supprimer définitivement toutes vos données associées à votre profil, vous disposez de deux méthodes simples :
                             </p>
                         </section>
 

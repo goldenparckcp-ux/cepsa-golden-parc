@@ -229,7 +229,7 @@ function CartDrawerContent({
         const depositAmount = Math.min(total, Math.max(20, Math.round(total * 0.3)));
         const paymentAmount = isDepositMode 
             ? depositAmount 
-            : (paymentMethod === 'card' ? Math.round(total * 0.90) : total);
+            : (paymentMethod === 'card' ? Math.round(total * 0.95) : total);
 
         const { data, error } = await supabase.from('restaurant_orders').insert({
             order_number: orderNum,
@@ -238,9 +238,9 @@ function CartDrawerContent({
             items: finalItems,
             status: requiresPayment ? 'pending_payment' : 'pending',
             subtotal: total,
-            total_price: paymentMethod === 'card' && !isDepositMode ? Math.round(total * 0.90) : total,
+            total_price: paymentMethod === 'card' && !isDepositMode ? Math.round(total * 0.95) : total,
             deposit_paid: false,
-            deposit_amount: isDepositMode ? depositAmount : (paymentMethod === 'card' ? Math.round(total * 0.90) : 0),
+            deposit_amount: isDepositMode ? depositAmount : (paymentMethod === 'card' ? Math.round(total * 0.95) : 0),
             created_at: new Date().toISOString()
         }).select().single();
 
@@ -626,14 +626,14 @@ function CartDrawerContent({
                         </div>
                         {paymentMethod === 'card' && !isDepositMode && (
                             <div className="flex justify-between items-center px-2 text-red-400 text-sm font-bold animate-in fade-in">
-                                <span>🎁 {language === 'ar' ? 'خصم الدفع الإلكتروني (10%-)' : 'Remise En Ligne (-10%)'}</span>
-                                <span>-{formatDh(Math.round(total * 0.10))}</span>
+                                <span>🎁 {language === 'ar' ? 'خصم الدفع الإلكتروني (5%-)' : 'Remise En Ligne (-5%)'}</span>
+                                <span>-{formatDh(Math.round(total * 0.05))}</span>
                             </div>
                         )}
                         <div className="flex justify-between items-center px-2 pt-2 border-t border-white/5">
                             <span className="text-white font-black text-lg">{t('cart.total')}</span>
                             <span className="text-amber-500 font-black text-2xl">
-                                {formatDh(paymentMethod === 'card' && !isDepositMode ? Math.round(total * 0.90) : total)}
+                                {formatDh(paymentMethod === 'card' && !isDepositMode ? Math.round(total * 0.95) : total)}
                             </span>
                         </div>
                     </div>
@@ -654,7 +654,7 @@ function CartDrawerContent({
                                     </>
                                 ) : (
                                     <>
-                                        J&apos;accepte le paiement en ligne sécurisé pour confirmer ma commande selon les <Link href="/terms" className="text-red-500 hover:underline">Conditions d&apos;utilisation</Link> et la <Link href="/privacy" className="text-red-500 hover:underline">Politique de confidentialité</Link>.
+                                        J&apos;acceptle paiement en ligne sécurisé pour confirmer ma commande selon les <Link href="/terms" className="text-red-500 hover:underline">Conditions d&apos;utilisation</Link> et la <Link href="/privacy" className="text-red-500 hover:underline">Politique de confidentialité</Link>.
                                     </>
                                 )}
                             </span>
@@ -676,8 +676,8 @@ function CartDrawerContent({
                                     <span>
                                         {paymentMethod === 'card' || isDepositMode
                                             ? (language === 'ar' 
-                                                ? `دفع ${isDepositMode ? Math.min(total, Math.max(20, Math.round(total * 0.3))).toFixed(0) : Math.round(total * 0.90).toFixed(0)} درهم` 
-                                                : `Payer ${isDepositMode ? Math.min(total, Math.max(20, Math.round(total * 0.3))).toFixed(0) : Math.round(total * 0.90).toFixed(0)} DH`)
+                                                ? `دفع ${isDepositMode ? Math.min(total, Math.max(20, Math.round(total * 0.3))).toFixed(0) : Math.round(total * 0.95).toFixed(0)} درهم` 
+                                                : `Payer ${isDepositMode ? Math.min(total, Math.max(20, Math.round(total * 0.3))).toFixed(0) : Math.round(total * 0.95).toFixed(0)} DH`)
                                             : t('cart.btn.confirm')}
                                     </span>
                                     <div className="bg-white/20 rounded-full p-1.5">

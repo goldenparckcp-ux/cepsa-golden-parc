@@ -43,7 +43,7 @@ export function Header() {
             <div className="mx-auto flex w-full max-w-6xl items-center gap-3 px-4 py-3 md:px-6">
                 <div className="min-w-0">
                     <div className="truncate text-sm font-extrabold tracking-wide text-white md:text-base">
-                        Cepsa Golden Parc
+                        Golden Parc Station GPS
                     </div>
                     <div className="flex items-center gap-2 text-xs text-white/70">
                         <Fuel className="h-3.5 w-3.5" />

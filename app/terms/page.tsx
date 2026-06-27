@@ -49,7 +49,7 @@ export default function TermsOfService() {
                             <h2>1. Acceptation des Conditions</h2>
                         </div>
                         <p className="leading-relaxed">
-                            L'accès et l'utilisation de l'application de réservation de <strong>Golden Parc Cepsa</strong> sont soumis à l'acceptation et au respect des présentes Conditions Générales d'Utilisation (CGU). En utilisant nos services, vous acceptez d'être lié par ces règles sans aucune réserve.
+                            L'accès et l'utilisation de l'application de réservation de <strong>Golden Parc Station GPS</strong> sont soumis à l'acceptation et au respect des présentes Conditions Générales d'Utilisation (CGU). En utilisant nos services, vous acceptez d'être lié par ces règles sans aucune réserve.
                         </p>
                     </section>
 

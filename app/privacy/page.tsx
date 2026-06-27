@@ -49,7 +49,7 @@ export default function PrivacyPolicy() {
                             <h2>1. Introduction</h2>
                         </div>
                         <p className="leading-relaxed">
-                            Chez <strong>Golden Parc Cepsa</strong>, nous accordons une importance primordiale à la protection et à la confidentialité de vos données personnelles. Cette politique de confidentialité détaille le type de données que nous collectons, la manière dont nous les utilisons et les droits dont vous disposez en tant qu'utilisateur de notre plateforme de réservation et de services.
+                            Chez <strong>Golden Parc Station GPS</strong>, nous accordons une importance primordiale à la protection et à la confidentialité de vos données personnelles. Cette politique de confidentialité détaille le type de données que nous collectons, la manière dont nous les utilisons et les droits dont vous disposez en tant qu'utilisateur de notre plateforme de réservation et de services.
                         </p>
                     </section>
 

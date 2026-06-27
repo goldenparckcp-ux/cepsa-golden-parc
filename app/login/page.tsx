@@ -79,7 +79,7 @@ export default function LoginPage() {
                     <Lock className="w-8 h-8 text-black" />
                 </div>
 
-                <h2 className="text-2xl font-black text-white text-center mb-1">Portail Staff Cepsa</h2>
+                <h2 className="text-2xl font-black text-white text-center mb-1">Portail Staff Golden Parc</h2>
                 <p className="text-xs text-gray-400 text-center mb-8 font-medium">Saisissez votre code PIN pour accéder au panneau</p>
 
                 <div className="flex gap-4 mb-8">

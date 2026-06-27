@@ -56,7 +56,7 @@ export function ServicesMenuModal({ isOpen, onClose }: ServicesMenuModalProps) {
                         <h2 className="text-white text-2xl font-black tracking-tight">
                             {t('menu.services.title') || "Nos Services"}
                         </h2>
-                        <p className="text-xs text-gray-400 font-medium">Cepsa Golden Parc</p>
+                        <p className="text-xs text-gray-400 font-medium">Golden Parc Station GPS</p>
                     </div>
                     <button
                         onClick={onClose}

@@ -96,7 +96,7 @@ function ServicesContent() {
             <section className="relative overflow-hidden rounded-3xl border border-white/10 shadow-2xl h-[200px]">
                 <Image
                     src="https://vktqecgylkjogquhsymz.supabase.co/storage/v1/object/public/images/cepsa-station.jpg"
-                    alt="Cepsa Golden Parc"
+                    alt="Golden Parc Station GPS"
                     fill
                     className="absolute inset-0 object-cover"
                     priority

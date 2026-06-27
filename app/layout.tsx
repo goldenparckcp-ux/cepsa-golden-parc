@@ -11,8 +11,8 @@ const inter = Inter({ subsets: ["latin"] });
 const outfit = Outfit({ subsets: ["latin"], variable: '--font-outfit' });
 
 export const metadata: Metadata = {
-  title: "Golden Parc Station (GPS)",
-  description: "Station Service & Détente",
+  title: "Golden Parc Station GPS - Station Service Premium & Espace Détente",
+  description: "Votre escale premium sur la Route Nationale 15 à Outat El Haj. Station-service, restaurant, hôtel L'Escale, piscine et lubrifiants.",
   manifest: "/manifest.json",
   icons: {
     icon: "https://vktqecgylkjogquhsymz.supabase.co/storage/v1/object/public/images/cepsa-logo.png",

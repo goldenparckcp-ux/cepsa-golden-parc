@@ -111,7 +111,7 @@ export default function LubricantsCatalog() {
                 <div className="absolute inset-0 bg-gradient-to-t from-[#070A13] to-transparent" />
                 <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-12 max-w-7xl mx-auto">
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-red-600/20 text-red-500 text-[10px] font-black px-3 py-1.5 rounded-full w-fit mb-4 border border-red-500/30 flex items-center gap-2">
-                        <Wrench className="w-3 h-3" /> EXPERTISE CEPSA
+                        <Wrench className="w-3 h-3" /> EXPERTISE PREMIUM
                     </motion.div>
                     <motion.h2 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-4xl md:text-5xl font-black mb-2">
                         {t('lube.catalog.hero')}

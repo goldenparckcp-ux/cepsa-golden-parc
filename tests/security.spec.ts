@@ -58,7 +58,7 @@ test.describe('Security & Role Redirection E2E Flows', () => {
         // A. Visiting /admin should show the Admin portal login screen (PIN Pad)
         console.log("Checking /admin without auth...");
         await page.goto('/admin');
-        await page.waitForSelector('text=Portail Staff Cepsa');
+        await page.waitForSelector('text=Portail Staff Golden Parc');
         await expect(page.locator('text=Saisissez votre code PIN pour accéder au panneau')).toBeVisible();
 
         // B. Visiting /staff/hotel should redirect to /staff page
@@ -135,7 +135,7 @@ test.describe('Security & Role Redirection E2E Flows', () => {
 
     test('3. PIN Code Portal verification (Admin Portal /admin)', async ({ page }) => {
         await page.goto('/admin');
-        await page.waitForSelector('text=Portail Staff Cepsa');
+        await page.waitForSelector('text=Portail Staff Golden Parc');
 
         // A. Enter incorrect PIN (e.g., 0000)
         console.log("Entering incorrect PIN in Admin portal...");

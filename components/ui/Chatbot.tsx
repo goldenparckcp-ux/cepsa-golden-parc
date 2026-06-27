@@ -29,7 +29,7 @@ export function Chatbot() {
                 {
                     id: '1',
                     type: 'bot',
-                    text: "Bonjour ! 👋 Je suis l'Assistant Virtuel Intelligent de Cepsa Golden Parc. Posez-moi vos questions sur la station, le restaurant, l'hôtel, ou la piscine !"
+                    text: "Bonjour ! 👋 Je suis l'Assistant Virtuel Intelligent de Golden Parc Station GPS. Posez-moi vos questions sur la station, le restaurant, l'hôtel, ou la piscine !"
                 }
             ]);
         }
@@ -121,7 +121,7 @@ export function Chatbot() {
                                     <Bot className="w-5 h-5 text-white" />
                                 </div>
                                 <div>
-                                    <h3 className="text-white font-bold text-sm">Assistant IA Cepsa</h3>
+                                    <h3 className="text-white font-bold text-sm">Assistant IA Golden Parc</h3>
                                     <p className="text-green-500 text-[10px] font-black uppercase tracking-wider flex items-center gap-1">
                                         <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> En Ligne
                                     </p>
