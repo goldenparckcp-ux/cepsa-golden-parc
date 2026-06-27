@@ -60,49 +60,45 @@ function ScanContent() {
   useEffect(() => {
     if (!token) { setStep("invalid"); setReady(true); return; }
 
-    try {
-      supabase
-        .from("qr_locations")
-        .select("id, type, label, is_active")
-        .eq("token", token)
-        .eq("is_active", true)
-        .maybeSingle()
-        .then(({ data, error }) => {
-          if (error) {
-            console.error("Supabase query error:", error);
-            setStep("error");
-          }
-          else if (!data) {
-            console.warn("No active QR code found for token:", token);
-            setStep("invalid");
-          }
-          else {
-            setDbLabel(data.label);
-            setDbType(data.type as LocationType);
-            setStep("valid");
-            // Store scan context (no phone needed) - wrapped f try-catch f mobile private mode
-            try {
-              sessionStorage.setItem("scan_location", JSON.stringify({
-                type: data.type,
-                loc: data.label,
-                token,
-              }));
-            } catch (e) {
-              console.warn("Session storage is disabled or quota exceeded:", e);
-            }
-          }
-          setTimeout(() => setReady(true), 150);
-        })
-        .catch(err => {
-          console.error("Failed to fetch QR code:", err);
+    async function verifyToken() {
+      try {
+        const { data, error } = await supabase
+          .from("qr_locations")
+          .select("id, type, label, is_active")
+          .eq("token", token)
+          .eq("is_active", true)
+          .maybeSingle();
+
+        if (error) {
+          console.error("Supabase query error:", error);
           setStep("error");
-          setTimeout(() => setReady(true), 150);
-        });
-    } catch (err) {
-      console.error("Initialization error:", err);
-      setStep("error");
-      setReady(true);
+        } else if (!data) {
+          console.warn("No active QR code found for token:", token);
+          setStep("invalid");
+        } else {
+          setDbLabel(data.label);
+          setDbType(data.type as LocationType);
+          setStep("valid");
+          // Store scan context (no phone needed) - wrapped f try-catch f mobile private mode
+          try {
+            sessionStorage.setItem("scan_location", JSON.stringify({
+              type: data.type,
+              loc: data.label,
+              token,
+            }));
+          } catch (e) {
+            console.warn("Session storage is disabled or quota exceeded:", e);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch QR code:", err);
+        setStep("error");
+      } finally {
+        setTimeout(() => setReady(true), 150);
+      }
     }
+
+    verifyToken();
   }, [token]);
 
   // ── 2. Confirm payment & go to menu ───────────────────────────────────────
