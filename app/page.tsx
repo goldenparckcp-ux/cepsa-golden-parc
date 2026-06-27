@@ -353,6 +353,146 @@ export default function Home() {
         </div>
 
 
+        {/* --- GALERIE PHOTOS --- */}
+        <div className="mb-20">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="mb-8 flex items-end justify-between"
+          >
+            <div>
+              <h2 className="text-3xl md:text-4xl font-black text-white">Notre Station</h2>
+              <p className="text-gray-400 mt-2 font-medium">Découvrez Golden Parc CEPSA en images</p>
+            </div>
+          </motion.div>
+
+          {/* Masonry-style grid */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+            {[
+              { src: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80', alt: 'Station carburant', span: 'row-span-2 col-span-1' },
+              { src: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80', alt: 'Hôtel Golden Parc', span: '' },
+              { src: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=800&q=80', alt: 'Piscine', span: '' },
+              { src: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80', alt: 'Restaurant', span: 'col-span-2' },
+              { src: 'https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80', alt: 'Lubrifiants', span: '' },
+              { src: 'https://images.unsplash.com/photo-1470723710355-95304d8aece4?auto=format&fit=crop&w=800&q=80', alt: 'Café & Repos', span: '' },
+            ].map((photo, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, scale: 0.95 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.07 }}
+                className={`relative overflow-hidden rounded-[1.5rem] md:rounded-[2rem] group cursor-pointer ${photo.span} ${i === 0 ? 'h-[280px] md:h-full' : 'h-[140px] md:h-[200px]'}`}
+              >
+                <Image
+                  src={photo.src}
+                  alt={photo.alt}
+                  fill
+                  sizes="(max-width: 768px) 50vw, 25vw"
+                  className="object-cover group-hover:scale-110 transition-transform duration-700"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                <div className="absolute bottom-3 left-3 text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-lg">
+                  {photo.alt}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+
+        {/* --- AVIS CLIENTS --- */}
+        <div className="mb-24">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="mb-10"
+          >
+            <h2 className="text-3xl md:text-4xl font-black text-white flex items-center gap-3">
+              <Star className="w-8 h-8 text-amber-400 fill-amber-400" />
+              Avis & Recommandations
+            </h2>
+            <p className="text-gray-400 mt-2 font-medium">Ce que disent nos clients</p>
+          </motion.div>
+
+          {/* Static testimonials */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
+            {[
+              { name: 'Mohammed A.', stars: 5, text: 'Station propre, personnel accueillant. Le restaurant est excellent, je recommande le menu complet. Je passe toujours par ici sur la route de Marrakech.', date: 'il y a 2 jours' },
+              { name: 'Sara L.', stars: 5, text: 'Hôtel confortable et bien équipé. La piscine est magnifique. Prix raisonnables pour la qualité offerte. Une étape idéale lors de longs trajets.', date: 'il y a 1 semaine' },
+              { name: 'Karim B.', stars: 4, text: 'Excellent service rapide. La station est bien entretenue et les lubrifiants CEPSA de qualité. Je reviens régulièrement pour l\'entretien de mon véhicule.', date: 'il y a 2 semaines' },
+            ].map((avis, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="bg-[#111827] border border-white/8 rounded-[2rem] p-6 flex flex-col gap-4 hover:border-amber-500/20 transition-colors"
+              >
+                <div className="flex items-center gap-1">
+                  {Array.from({ length: 5 }).map((_, s) => (
+                    <Star key={s} className={`w-4 h-4 ${s < avis.stars ? 'text-amber-400 fill-amber-400' : 'text-gray-600'}`} />
+                  ))}
+                </div>
+                <p className="text-gray-300 text-sm leading-relaxed flex-1">&ldquo;{avis.text}&rdquo;</p>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-black font-black text-sm">
+                      {avis.name[0]}
+                    </div>
+                    <div>
+                      <div className="text-white font-bold text-sm">{avis.name}</div>
+                      <div className="text-gray-500 text-[10px]">{avis.date}</div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          {/* Laisser un avis form */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="bg-gradient-to-br from-[#1E293B] to-[#0F172A] border border-white/10 rounded-[2.5rem] p-6 md:p-8 relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-[80px] pointer-events-none" />
+            <div className="relative z-10">
+              <h3 className="text-xl font-black text-white mb-1">Partagez votre expérience</h3>
+              <p className="text-gray-400 text-sm mb-6">Votre avis aide les autres voyageurs à choisir la meilleure étape</p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Votre prénom</label>
+                  <input
+                    type="text"
+                    placeholder="Ex: Mohammed"
+                    className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white placeholder-gray-500 outline-none focus:border-amber-500 transition-colors"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Note</label>
+                  <div className="flex items-center gap-2 h-[46px]">
+                    {[1,2,3,4,5].map(star => (
+                      <button key={star} className="text-2xl hover:scale-125 transition-transform text-gray-600 hover:text-amber-400">★</button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-1 md:col-span-2">
+                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Votre recommandation</label>
+                  <textarea
+                    rows={3}
+                    placeholder="Partagez votre expérience à la station Golden Parc..."
+                    className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white placeholder-gray-500 outline-none focus:border-amber-500 transition-colors resize-none"
+                  />
+                </div>
+              </div>
+
+              <button className="mt-4 w-full md:w-auto px-8 py-3.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black text-sm rounded-2xl shadow-lg active:scale-95 transition-all flex items-center gap-2">
+                <Star className="w-4 h-4 fill-white" />
+                Envoyer mon avis
+              </button>
+            </div>
+          </motion.div>
+        </div>
+
         {/* --- INFORMATIONS PRATIQUES (Contact, GPS, Horaires) --- */}
         <div className="mb-24">
           <motion.h2 

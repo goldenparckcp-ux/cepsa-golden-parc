@@ -286,7 +286,7 @@ export default function HotelPage() {
 
                 {/* HERO BANNER */}
                 {(heroData || true) && (
-                    <div className="relative w-full h-[200px] sm:h-[260px] rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl flex items-end p-5 md:p-8 group">
+                    <div className="relative w-full h-[240px] sm:h-[320px] md:h-[380px] rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl flex items-end p-5 md:p-8 group">
                         {/* Background Image */}
                         <Image
                             src={heroData?.image_url || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80'}
