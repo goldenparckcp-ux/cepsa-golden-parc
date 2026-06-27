@@ -758,72 +758,96 @@ function CartDrawerContent({
                         
                         <div className="w-72 h-72 rounded-3xl overflow-hidden border-4 border-blue-500/50 shadow-2xl relative">
                             <Scanner
+                                constraints={{ facingMode: 'environment' }}
                                 onScan={(result) => {
+                                    console.log("Scanner raw result:", result);
                                     if (result && result.length > 0) {
-                                        const text = result[0].rawValue;
+                                        const text = result[0]?.rawValue;
+                                        if (!text) {
+                                            console.warn("Scanner returned empty rawValue");
+                                            return;
+                                        }
+                                        
                                         setIsScanning(false);
                                         
                                         try {
-                                            const url = new URL(text);
-                                            const typeParam = url.searchParams.get('type');
-                                            const locParam = url.searchParams.get('loc');
-                                            const tokenParam = url.searchParams.get('t');
-                                            const tableParam = url.searchParams.get('table');
-                                            const poolParam = url.searchParams.get('pool');
-                                            
-                                            if (typeParam && locParam) {
-                                                if (typeParam === 'restaurant' || typeParam === 'table') {
+                                            if (text.startsWith('http://') || text.startsWith('https://')) {
+                                                const url = new URL(text);
+                                                const typeParam = url.searchParams.get('type');
+                                                const locParam = url.searchParams.get('loc');
+                                                const tokenParam = url.searchParams.get('t');
+                                                const tableParam = url.searchParams.get('table');
+                                                const poolParam = url.searchParams.get('pool');
+                                                
+                                                if (typeParam && locParam) {
+                                                    if (typeParam === 'restaurant' || typeParam === 'table') {
+                                                        setOnSiteLocation('table');
+                                                    } else if (typeParam === 'pool') {
+                                                        setOnSiteLocation('pool');
+                                                    } else if (typeParam === 'hotel') {
+                                                        setOnSiteLocation('room');
+                                                    }
+                                                    const numOnly = locParam.replace(/\D/g, '');
+                                                    setLocationDetail(numOnly || locParam);
+                                                } else if (tableParam) {
                                                     setOnSiteLocation('table');
-                                                } else if (typeParam === 'pool') {
+                                                    setLocationDetail(tableParam);
+                                                } else if (poolParam) {
                                                     setOnSiteLocation('pool');
-                                                } else if (typeParam === 'hotel') {
-                                                    setOnSiteLocation('room');
+                                                    setLocationDetail(poolParam);
+                                                } else {
+                                                    const numOnly = text.replace(/\D/g, '');
+                                                    setLocationDetail(numOnly || text);
                                                 }
-                                                const numOnly = locParam.replace(/\D/g, '');
-                                                setLocationDetail(numOnly || locParam);
-                                            } else if (tableParam) {
-                                                setOnSiteLocation('table');
-                                                setLocationDetail(tableParam);
-                                            } else if (poolParam) {
-                                                setOnSiteLocation('pool');
-                                                setLocationDetail(poolParam);
-                                            } else {
-                                                setLocationDetail(text);
-                                            }
-                                            
-                                            if (tokenParam) {
-                                                supabase
-                                                    .from('qr_locations')
-                                                    .select('type, label')
-                                                    .eq('token', tokenParam)
-                                                    .eq('is_active', true)
-                                                    .maybeSingle()
-                                                    .then(({ data }) => {
-                                                        if (data) {
-                                                            if (data.type === 'restaurant') {
-                                                                setOnSiteLocation('table');
-                                                            } else if (data.type === 'pool') {
-                                                                setOnSiteLocation('pool');
-                                                            } else if (data.type === 'hotel') {
-                                                                setOnSiteLocation('room');
+                                                
+                                                if (tokenParam) {
+                                                    supabase
+                                                        .from('qr_locations')
+                                                        .select('type, label')
+                                                        .eq('token', tokenParam)
+                                                        .eq('is_active', true)
+                                                        .maybeSingle()
+                                                        .then(({ data, error }) => {
+                                                            if (error) {
+                                                                console.error("Supabase scanner verify error:", error);
                                                             }
-                                                            const numOnly = data.label.replace(/\D/g, '');
-                                                            setLocationDetail(numOnly || data.label);
-                                                        }
-                                                    });
+                                                            if (data) {
+                                                                if (data.type === 'restaurant') {
+                                                                    setOnSiteLocation('table');
+                                                                } else if (data.type === 'pool') {
+                                                                    setOnSiteLocation('pool');
+                                                                } else if (data.type === 'hotel') {
+                                                                    setOnSiteLocation('room');
+                                                                }
+                                                                const numOnly = data.label.replace(/\D/g, '');
+                                                                setLocationDetail(numOnly || data.label);
+                                                            }
+                                                        })
+                                                        .catch(err => {
+                                                            console.error("Supabase scanner promise catch:", err);
+                                                        });
+                                                }
+                                            } else {
+                                                // Raw string scanned
+                                                const cleaned = text.trim();
+                                                const numOnly = cleaned.replace(/\D/g, '');
+                                                setLocationDetail(numOnly || cleaned);
                                             }
                                         } catch (e) {
-                                            const cleaned = text.trim();
-                                            const numOnly = cleaned.replace(/\D/g, '');
-                                            setLocationDetail(numOnly || cleaned);
+                                            console.error("Scanner parsing error:", e);
+                                            const cleaned = String(text || '').trim();
+                                            if (cleaned) {
+                                                const numOnly = cleaned.replace(/\D/g, '');
+                                                setLocationDetail(numOnly || cleaned);
+                                            }
                                         }
                                     }
                                 }}
-                                onError={(error) => console.log(error?.message)}
+                                onError={(error) => console.log("Scanner error:", error?.message)}
                             />
                         </div>
                         <p className="text-gray-400 mt-8 text-center px-8 text-sm">
-                            {onSiteLocation === 'table' ? 'Visez le QR Code sur votre table' : onSiteLocation === 'pool' ? 'Visez le QR Code à votre place' : onSiteLocation === 'room' ? 'Visez le QR Code dans votre chambre' : 'Visez le QR Code'}
+                            {language === 'ar' ? 'قم بتوجيه الكاميرا إلى رمز QR الخاص بمكانك' : 'Visez le QR Code sur votre table ou emplacement'}
                         </p>
                     </motion.div>
                 )}
