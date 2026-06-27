@@ -519,7 +519,7 @@ function CartDrawerContent({
                         <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider">
                             {language === 'ar' ? 'طريقة الدفع' : 'Mode de Paiement'}
                         </h4>
-                        <div className={`grid gap-3 ${locationType === 'on_site' ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 md:grid-cols-2'}`}>
+                        <div className="grid grid-cols-2 gap-3">
                             {/* Cash Option */}
                             {locationType === 'on_site' && (
                                 <button
@@ -546,21 +546,23 @@ function CartDrawerContent({
                                 </button>
                             )}
                             {/* Arboune Option */}
-                            <button
-                                type="button"
-                                disabled
-                                className="relative p-3 rounded-2xl border border-white/5 bg-[#1E293B]/40 text-gray-500 cursor-not-allowed flex flex-col items-start gap-1 text-left opacity-60 w-full"
-                            >
-                                <span className="absolute -top-2 -right-2 bg-amber-500 text-black font-black text-[9px] px-2 py-0.5 rounded-full shadow">
-                                    {language === 'ar' ? 'قريباً' : 'À venir'}
-                                </span>
-                                <div className="font-bold text-sm text-gray-400">
-                                    {language === 'ar' ? 'عربون (30%)' : 'Arboune (30%)'}
-                                </div>
-                                <div className="text-[10px] text-gray-500">
-                                    {language === 'ar' ? 'تسبيق والباقي ف المحطة' : 'Acompte en ligne'}
-                                </div>
-                            </button>
+                            {locationType === 'on_way' && (
+                                <button
+                                    type="button"
+                                    disabled
+                                    className="relative p-3 rounded-2xl border border-white/5 bg-[#1E293B]/40 text-gray-500 cursor-not-allowed flex flex-col items-start gap-1 text-left opacity-60 w-full"
+                                >
+                                    <span className="absolute -top-2 -right-2 bg-amber-500 text-black font-black text-[9px] px-2 py-0.5 rounded-full shadow">
+                                        {language === 'ar' ? 'قريباً' : 'À venir'}
+                                    </span>
+                                    <div className="font-bold text-sm text-gray-400">
+                                        {language === 'ar' ? 'عربون (30%)' : 'Arboune (30%)'}
+                                    </div>
+                                    <div className="text-[10px] text-gray-500">
+                                        {language === 'ar' ? 'تسبيق والباقي ف المحطة' : 'Acompte en ligne'}
+                                    </div>
+                                </button>
+                            )}
 
                             {/* Online Option (10% Discount) */}
                             <button

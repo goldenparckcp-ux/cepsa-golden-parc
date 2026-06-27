@@ -86,9 +86,12 @@ function ScanContent() {
               loc: data.label,
               token,
             }));
+            sessionStorage.removeItem("scan_payment"); // Clear old choice if any
           } catch (e) {
             console.warn("Session storage is disabled or quota exceeded:", e);
           }
+          // Redirect immediately to the correct menu URL
+          router.replace(TYPE_META[data.type as LocationType].href);
         }
       } catch (err) {
         console.error("Failed to fetch QR code:", err);
@@ -100,14 +103,6 @@ function ScanContent() {
 
     verifyToken();
   }, [token]);
-
-  // ── 2. Confirm payment & go to menu ───────────────────────────────────────
-  const confirmAndOrder = () => {
-    if (!selected) return;
-    // Store payment preference
-    sessionStorage.setItem("scan_payment", selected);
-    router.push(TYPE_META[dbType].href);
-  };
 
   // ── CHECKING ───────────────────────────────────────────────────────────────
   if (step === "checking") {
@@ -166,122 +161,15 @@ function ScanContent() {
     );
   }
 
-  // ── VALID → Payment Choice ─────────────────────────────────────────────────
+  // ── VALID → Redirecting ───────────────────────────────────────────────────
   return (
-    <main className="min-h-screen bg-[#070A13] flex flex-col items-center justify-center p-6 text-white overflow-hidden">
-      {/* Glow */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{ background: `radial-gradient(circle at 50% 35%, ${meta.glow} 0%, transparent 60%)` }}
-      />
-
-      <div className={`relative z-10 w-full max-w-sm flex flex-col items-center text-center transition-all duration-700 ${ready ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
-
-        {/* Icon */}
-        <div
-          className={`w-24 h-24 rounded-[2rem] bg-gradient-to-br ${meta.color} flex items-center justify-center shadow-2xl mb-6`}
-          style={{ boxShadow: `0 20px 60px ${meta.glow}` }}
-        >
-          <Icon className="w-12 h-12 text-white drop-shadow-lg" />
-        </div>
-
-        {/* Location badge */}
-        <div className="flex items-center gap-2 bg-white/5 border border-white/10 rounded-full px-4 py-1.5 mb-3 backdrop-blur-md">
-          <MapPin className="w-3 h-3 text-amber-400" />
-          <span className="text-xs font-bold text-amber-400 uppercase tracking-wider">
-            Golden Park · {meta.label}
-          </span>
-          <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse ml-1" />
-        </div>
-
-        {/* Location name */}
-        <h1 className="text-4xl font-black mb-1 leading-tight">
-          {dbLabel}
-        </h1>
-        <p className="text-gray-400 font-medium mb-8 text-base">{meta.sublabel}</p>
-
-        {/* ── Payment Choice ── */}
-        <div className="w-full mb-6">
-          <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 text-left">
-            Mode de paiement
-          </p>
-          <div className="grid grid-cols-2 gap-3">
-            {/* Cash */}
-            <button
-              onClick={() => setSelected("cash")}
-              className={`relative flex flex-col items-center gap-3 p-5 rounded-2xl border-2 transition-all duration-200 ${
-                selected === "cash"
-                  ? "bg-emerald-500/10 border-emerald-500 shadow-lg shadow-emerald-500/10"
-                  : "bg-white/5 border-white/10 hover:border-white/20"
-              }`}
-            >
-              {selected === "cash" && (
-                <span className="absolute top-2 right-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                </span>
-              )}
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                selected === "cash" ? "bg-emerald-500/20" : "bg-white/5"
-              }`}>
-                <Banknote className={`w-6 h-6 ${selected === "cash" ? "text-emerald-400" : "text-gray-400"}`} />
-              </div>
-              <div>
-                <p className={`font-black text-sm ${selected === "cash" ? "text-white" : "text-gray-300"}`}>
-                  Espèces
-                </p>
-                <p className="text-[10px] text-gray-500 mt-0.5">Payer à la livraison</p>
-              </div>
-            </button>
-
-            {/* Online */}
-            <button
-              onClick={() => setSelected("online")}
-              className={`relative flex flex-col items-center gap-3 p-5 rounded-2xl border-2 transition-all duration-200 ${
-                selected === "online"
-                  ? "bg-blue-500/10 border-blue-500 shadow-lg shadow-blue-500/10"
-                  : "bg-white/5 border-white/10 hover:border-white/20"
-              }`}
-            >
-              {selected === "online" && (
-                <span className="absolute top-2 right-2">
-                  <CheckCircle2 className="w-4 h-4 text-blue-400" />
-                </span>
-              )}
-              <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                selected === "online" ? "bg-blue-500/20" : "bg-white/5"
-              }`}>
-                <CreditCard className={`w-6 h-6 ${selected === "online" ? "text-blue-400" : "text-gray-400"}`} />
-              </div>
-              <div>
-                <p className={`font-black text-sm ${selected === "online" ? "text-white" : "text-gray-300"}`}>
-                  En ligne
-                </p>
-                <p className="text-[10px] text-gray-500 mt-0.5">PayPal sécurisé</p>
-              </div>
-            </button>
-          </div>
-        </div>
-
-        {/* CTA */}
-        <button
-          onClick={confirmAndOrder}
-          disabled={!selected}
-          className={`w-full py-4 rounded-2xl font-black text-lg flex items-center justify-center gap-3 transition-all duration-300 ${
-            selected
-              ? `text-white bg-gradient-to-r ${meta.color} shadow-2xl active:scale-95`
-              : "text-gray-600 bg-white/5 border border-white/5 cursor-not-allowed"
-          }`}
-          style={selected ? { boxShadow: `0 10px 40px ${meta.glow}` } : {}}
-        >
-          Voir le menu
-          <ChevronRight className="w-5 h-5" />
-        </button>
-
-        {/* Token */}
-        <div className="mt-6 flex items-center gap-2 text-gray-700 text-[10px] font-mono">
-          <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-          Vérifié · {token}
-        </div>
+    <main className="min-h-screen bg-[#070A13] flex flex-col items-center justify-center gap-5 text-white">
+      <div className="w-20 h-20 rounded-[2rem] bg-green-500/10 border border-green-500/20 flex items-center justify-center animate-pulse">
+        <CheckCircle2 className="w-10 h-10 text-green-500" />
+      </div>
+      <div className="text-center">
+        <h1 className="text-2xl font-black text-white">{dbLabel}</h1>
+        <p className="text-gray-400 text-sm mt-1">Redirection vers le menu...</p>
       </div>
     </main>
   );
