@@ -1029,57 +1029,71 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                 </div>
             </div>
 
-            {/* Featured / Specials Carousel */}
-            {activeCategory === "all" && dbItems.some(i => i.isFeatured) && (
-                <div className="p-4 max-w-7xl mx-auto mt-2">
-                    <h2 className="text-base font-black text-white mb-3 flex items-center gap-2 tracking-tight">
-                        {t('restaurant.featured.title') || "🌟 Spécialités & Choix du Chef"}
-                    </h2>
-                    <div className="flex overflow-x-auto gap-4 pb-4 snap-x scrollbar-hide">
-                        {dbItems.filter(i => i.isFeatured).map(item => {
-                            const name = language === "ar" ? (item.name_ar || item.name) : item.name;
-                            const description = language === "ar" ? (item.description_ar || item.description) : item.description;
-                            return (
-                                <div
-                                    key={`featured-${item.id}`}
-                                    onClick={() => handleItemClick(item)}
-                                    className="cursor-pointer bg-gradient-to-br from-[#1E293B] to-[#0F172A] border border-white/5 rounded-3xl p-3 flex flex-col snap-center w-[200px] md:w-[240px] flex-shrink-0 shadow-lg hover:border-white/20 transition-all relative overflow-hidden group"
-                                >
-                                    {/* Image */}
-                                    <div className="h-28 rounded-2xl overflow-hidden relative mb-2.5">
-                                        {item.image && (
-                                            <Image
-                                                src={item.image}
-                                                alt={item.name}
-                                                fill
-                                                sizes="200px"
-                                                className="object-cover group-hover:scale-105 transition duration-500"
-                                            />
-                                        )}
-                                        {item.badge && (
-                                            <span className="absolute top-2 left-2 bg-gradient-to-r from-red-600 to-orange-500 text-white text-[8px] font-black px-2 py-0.5 rounded-full shadow-md uppercase tracking-wider">
-                                                {item.badge}
-                                            </span>
-                                        )}
-                                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-                                        <div className="absolute bottom-2 right-2 w-7 h-7 rounded-full bg-white text-black flex items-center justify-center shadow-md group-hover:bg-red-500 group-hover:text-white transition-colors">
-                                            <Plus className="w-4 h-4" />
-                                        </div>
-                                    </div>
-                                    {/* Info */}
-                                    <div className="flex-1 flex flex-col justify-between">
-                                        <div>
-                                            <h3 className="text-white text-xs font-bold line-clamp-1 leading-snug group-hover:text-red-400 transition-colors">{name}</h3>
-                                            <p className="text-[10px] text-gray-400 line-clamp-2 mt-1 leading-normal">{description}</p>
-                                        </div>
-                                        <div className="text-xs font-black text-orange-500 mt-2">{formatDh(item.basePrice)}</div>
-                                    </div>
+            {/* Featured Special Banner */}
+            {activeCategory === "all" && dbItems.some(i => i.isFeatured) && (() => {
+                const featuredItem = dbItems.find(i => i.isFeatured)!;
+                const name = language === "ar" ? (featuredItem.name_ar || featuredItem.name) : featuredItem.name;
+                const description = language === "ar" ? (featuredItem.description_ar || featuredItem.description) : featuredItem.description;
+                return (
+                    <div className="px-4 max-w-7xl mx-auto mt-2">
+                        <div 
+                            onClick={() => handleItemClick(featuredItem)}
+                            className="relative w-full h-[180px] sm:h-[240px] rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl flex items-end p-5 md:p-8 group cursor-pointer"
+                        >
+                            {/* Background Image */}
+                            {featuredItem.image && (
+                                <Image 
+                                    src={featuredItem.image} 
+                                    alt={featuredItem.name}
+                                    fill
+                                    className="object-cover group-hover:scale-[1.03] transition-transform duration-700"
+                                />
+                            )}
+                            {/* Dark/Gradient Overlay */}
+                            <div className="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-transparent" />
+                            
+                            {/* Content Overlay */}
+                            <div className="relative z-10 w-full flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+                                <div className="space-y-1 sm:max-w-[70%] text-left">
+                                    <span className="bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-1 shadow-lg">
+                                        🌟 {language === "ar" ? "عرض خاص" : "Offre Spéciale"}
+                                    </span>
+                                    <h2 className="text-white text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tight leading-tight drop-shadow-md">
+                                        {name}
+                                    </h2>
+                                    <p className="text-white/80 text-[10px] sm:text-xs font-medium line-clamp-2 drop-shadow leading-relaxed">
+                                        {description}
+                                    </p>
                                 </div>
-                            );
-                        })}
+                                
+                                {/* Price and CTA */}
+                                <div className="flex items-center gap-2.5 shrink-0 self-start sm:self-end">
+                                    <div className="bg-white/10 backdrop-blur-md border border-white/15 px-3 py-2 rounded-2xl flex flex-col justify-center text-left">
+                                        <span className="text-[8px] text-gray-300 font-bold uppercase tracking-wider leading-none mb-0.5">Prix Spécial</span>
+                                        <span className="text-white text-sm sm:text-base font-black leading-none">
+                                            {formatDh(featuredItem.basePrice)}
+                                        </span>
+                                    </div>
+                                    
+                                    <button 
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleItemClick(featuredItem);
+                                        }}
+                                        className="py-2.5 px-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg active:scale-95 transition-all flex items-center gap-1.5"
+                                    >
+                                        <Plus className="w-3.5 h-3.5" />
+                                        <span>{language === "ar" ? "طلب" : "Commander"}</span>
+                                    </button>
+                                </div>
+                            </div>
+                            
+                            {/* Stylized background glow to match the gym poster aesthetics */}
+                            <div className="absolute top-0 right-0 w-48 h-48 bg-orange-500/10 rounded-full blur-[80px] pointer-events-none" />
+                        </div>
                     </div>
-                </div>
-            )}
+                );
+            })()}
 
             {/* Optimized Grid */}
             <div className="p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 md:gap-4 max-w-7xl mx-auto mt-2">

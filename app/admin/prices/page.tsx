@@ -1496,8 +1496,11 @@ export default function AdminPriceModifierPage() {
                                                              )}
                                                              <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-transparent to-transparent" />
                                                              
-                                                             {/* Header Badges */}
-                                                             <div className="absolute top-3 left-3 flex flex-col gap-1.5 z-10">
+                                                             {/* Drag indicator & Header Badges */}
+                                                             <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5">
+                                                                 <div className="p-1 bg-black/60 backdrop-blur-sm border border-white/10 rounded-lg text-gray-400 group-hover:text-white transition-colors cursor-grab">
+                                                                     <GripVertical className="w-3.5 h-3.5" />
+                                                                 </div>
                                                                  <span className="bg-white/90 text-black text-[8px] font-black px-2 py-0.5 rounded-full shadow-lg uppercase tracking-wider">
                                                                      {item.badge_fr}
                                                                  </span>
@@ -1907,17 +1910,66 @@ export default function AdminPriceModifierPage() {
 
                             {/* Lien de redirection */}
                             <div>
-                                <label htmlFor="link_path" className="text-[10px] text-gray-400 font-black uppercase mb-2 block">Lien de redirection (Page path) <span className="text-red-500">*</span></label>
-                                <input
-                                    id="link_path"
-                                    type="text"
-                                    required
-                                    value={formData.link_path}
-                                    onChange={(e) => setFormData({ ...formData, link_path: e.target.value })}
-                                    placeholder="Ex: /restaurant ou /services/lubrifiants"
-                                    className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-600 outline-none focus:border-amber-500 transition-colors h-[48px]"
-                                />
+                                <label className="text-[10px] text-gray-400 font-black uppercase mb-2.5 block">Lien de redirection (Page liée)</label>
+                                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                    {[
+                                        { name: "Restaurant 🍔", path: "/restaurant" },
+                                        { name: "Lubrifiants 🛢️", path: "/services/lubrifiants" },
+                                        { name: "Hôtel 🏨", path: "/hotel" },
+                                        { name: "Piscine 🏊", path: "/services/pool" },
+                                        { name: "Services 🛠️", path: "/services" },
+                                        { name: "Pas de lien ❌", path: "#" },
+                                    ].map(link => {
+                                        const isSelected = formData.link_path === link.path;
+                                        return (
+                                            <button
+                                                key={link.path}
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, link_path: link.path })}
+                                                className={`p-2.5 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all text-center ${
+                                                    isSelected
+                                                        ? "border-orange-500 bg-[#1E293B] text-orange-500 shadow-md scale-[1.02]"
+                                                        : "border-white/5 bg-[#0F172A] text-gray-400 hover:border-white/10 hover:text-white"
+                                                }`}
+                                            >
+                                                {link.name}
+                                            </button>
+                                        );
+                                    })}
+                                    {/* Option Lien Personnalisé */}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            if (["/restaurant", "/services/lubrifiants", "/hotel", "/services/pool", "/services", "#"].includes(formData.link_path) || !formData.link_path) {
+                                                setFormData({ ...formData, link_path: "/custom-path" });
+                                            }
+                                        }}
+                                        className={`p-2.5 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all text-center ${
+                                            !["/restaurant", "/services/lubrifiants", "/hotel", "/services/pool", "/services", "#"].includes(formData.link_path)
+                                                ? "border-orange-500 bg-[#1E293B] text-orange-500"
+                                                : "border-white/5 bg-[#0F172A] text-gray-400 hover:border-white/10 hover:text-white"
+                                        }`}
+                                    >
+                                        ✍️ Customisé
+                                    </button>
+                                </div>
                             </div>
+
+                            {/* Custom link path input - only visible if Custom is selected */}
+                            {!["/restaurant", "/services/lubrifiants", "/hotel", "/services/pool", "/services", "#"].includes(formData.link_path) && (
+                                <div className="border border-white/5 p-4 rounded-2xl bg-[#0F172A]/50">
+                                    <label htmlFor="link_path" className="text-[9px] text-gray-500 font-bold uppercase mb-1 block">Lien personnalisé (Chemin URL)</label>
+                                    <input
+                                        id="link_path"
+                                        type="text"
+                                        required
+                                        value={formData.link_path}
+                                        onChange={(e) => setFormData({ ...formData, link_path: e.target.value })}
+                                        placeholder="Ex: /services/booking ou https://example.com"
+                                        className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-2.5 text-xs text-white font-bold outline-none focus:border-amber-500 h-[38px]"
+                                    />
+                                </div>
+                            )}
 
                             {/* Style Visuel (Choix du Thème) */}
                             <div>
