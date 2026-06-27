@@ -760,7 +760,7 @@ function ProfileContent() {
     }
 
     return (
-        <div className="min-h-screen bg-[#0F172A] relative overflow-hidden flex flex-col font-sans">
+        <div className="min-h-screen pt-16 md:pt-20 bg-[#0F172A] relative overflow-hidden flex flex-col font-sans">
 
             {/* Premium Background FX */}
             <div className="fixed inset-0 pointer-events-none">
@@ -769,7 +769,7 @@ function ProfileContent() {
             </div>
 
             {/* Header / Back Navigation */}
-            <div className="sticky top-0 z-30 bg-[#0F172A]/90 backdrop-blur-xl border-b border-white/5 p-4 pt-6">
+            <div className="sticky top-[64px] md:top-[80px] z-30 bg-[#0F172A]/90 backdrop-blur-xl border-b border-white/5 p-4 pt-6">
                 <div className="max-w-2xl mx-auto flex items-center justify-between">
                     <button 
                         onClick={() => {

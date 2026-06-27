@@ -88,7 +88,7 @@ function ServicesContent() {
     }, []);
 
     return (
-        <div className="grid gap-6 text-white">
+        <div className="min-h-screen pt-20 md:pt-28 pb-40 px-4 max-w-7xl mx-auto grid gap-6 text-white">
             {/* Background decoration */}
             <div className="absolute inset-0 bg-gradient-to-br from-red-900/20 via-transparent to-purple-900/20 pointer-events-none"></div>
 

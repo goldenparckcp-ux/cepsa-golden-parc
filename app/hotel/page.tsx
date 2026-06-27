@@ -243,10 +243,10 @@ export default function HotelPage() {
     };
 
     return (
-        <div className="min-h-screen pb-52 bg-[#0F172A]">
+        <div className="min-h-screen pt-16 md:pt-20 pb-52 bg-[#0F172A]">
 
             {/* Header */}
-            <div className="sticky top-0 z-20 bg-[#0F172A]/95 backdrop-blur-xl border-b border-white/10 p-4 pt-6 md:px-8">
+            <div className="sticky top-[64px] md:top-[80px] z-20 bg-[#0F172A]/95 backdrop-blur-xl border-b border-white/10 p-4 pt-6 md:px-8">
                 <div className="max-w-6xl mx-auto flex items-center gap-4">
                     <button onClick={() => router.back()} className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all font-bold rtl:rotate-180" aria-label="Retour">
                         <ChevronLeft className="w-5 h-5 text-white" />

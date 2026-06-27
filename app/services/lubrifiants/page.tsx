@@ -82,9 +82,9 @@ export default function LubricantsCatalog() {
     const filteredCatalog = lubricantsList.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.type.toLowerCase().includes(searchQuery.toLowerCase()));
 
     return (
-        <main className="min-h-screen bg-[#070A13] pb-24 font-sans text-white">
+        <main className="min-h-screen pt-16 md:pt-20 bg-[#070A13] pb-24 font-sans text-white">
             {/* Header */}
-            <div className="sticky top-0 z-30 bg-[#070A13]/90 backdrop-blur-xl border-b border-white/5 pt-4 pb-4 px-4 shadow-xl">
+            <div className="sticky top-[64px] md:top-[80px] z-30 bg-[#070A13]/90 backdrop-blur-xl border-b border-white/5 pt-4 pb-4 px-4 shadow-xl">
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <button 
                         onClick={() => router.back()} 
