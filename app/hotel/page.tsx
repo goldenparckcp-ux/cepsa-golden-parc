@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { BedDouble, Calendar, ChevronLeft, CheckCircle2, Moon, Sun, AlertCircle } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -67,6 +67,33 @@ export default function HotelPage() {
     const [pendingPayment, setPendingPayment] = useState<{ id: string, amount: number, num: string, paymentType?: 'full_discounted' | 'deposit' | 'full' } | null>(null);
 
     const activeRoom = ROOM_TYPES.find(r => r.id === selectedRoom);
+
+    // Hotel Hero Section
+    const [heroData, setHeroData] = useState<{
+        title: string;
+        subtitle: string;
+        badge_text: string;
+        cta_text: string;
+        image_url: string;
+        is_active: boolean;
+    } | null>(null);
+
+    const fetchHero = useCallback(async () => {
+        try {
+            const { data } = await supabase
+                .from('hotel_hero')
+                .select('*')
+                .eq('is_active', true)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+            if (data) setHeroData(data);
+        } catch {
+            // hero table may not exist yet, silently fail
+        }
+    }, []);
+
+    useEffect(() => { fetchHero(); }, [fetchHero]);
 
     // Calculate Nights
     const nights = useMemo(() => {
@@ -257,6 +284,49 @@ export default function HotelPage() {
 
             <div className="p-3 md:p-4 space-y-4 max-w-6xl mx-auto">
 
+                {/* HERO BANNER */}
+                {(heroData || true) && (
+                    <div className="relative w-full h-[200px] sm:h-[260px] rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl flex items-end p-5 md:p-8 group">
+                        {/* Background Image */}
+                        <Image
+                            src={heroData?.image_url || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80'}
+                            alt="Hotel Golden Park"
+                            fill
+                            priority
+                            className="object-cover group-hover:scale-[1.03] transition-transform duration-700"
+                        />
+                        {/* Dark gradient overlay */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+                        {/* Glow FX */}
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
+
+                        {/* Content */}
+                        <div className="relative z-10 w-full flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+                            <div className="space-y-1 sm:max-w-[65%] text-left">
+                                <span className="bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-1 shadow-lg">
+                                    🏨 {heroData?.badge_text || 'OFFRE SPÉCIALE'}
+                                </span>
+                                <h2 className="text-white text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tight leading-tight drop-shadow-md">
+                                    {heroData?.title || 'Votre Séjour de Rêve'}
+                                </h2>
+                                <p className="text-white/80 text-[10px] sm:text-xs font-medium line-clamp-2 drop-shadow leading-relaxed">
+                                    {heroData?.subtitle || 'Détente et confort absolu au cœur du Golden Park'}
+                                </p>
+                            </div>
+                            {/* CTA */}
+                            <button
+                                onClick={() => {
+                                    document.getElementById('hotel-room-gallery')?.scrollIntoView({ behavior: 'smooth' });
+                                }}
+                                className="py-2.5 px-5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg active:scale-95 transition-all flex items-center gap-2 shrink-0 self-start sm:self-end"
+                            >
+                                <BedDouble className="w-3.5 h-3.5" />
+                                <span>{heroData?.cta_text || 'Réserver'}</span>
+                            </button>
+                        </div>
+                    </div>
+                )}
+
                 {/* MODE SWITCHER */}
                 <div className="flex flex-col items-center gap-2 max-w-md mx-auto w-full">
                     <div className="relative bg-[#0F172A] p-1.5 rounded-2xl border border-white/10 flex w-full shadow-xl">
@@ -293,7 +363,7 @@ export default function HotelPage() {
                 </div>
 
                 {/* Room Gallery */}
-                <div>
+                <div id="hotel-room-gallery">
                     <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">{t('hotel.choose_room')}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {ROOM_TYPES.map(room => (

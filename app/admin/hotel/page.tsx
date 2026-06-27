@@ -1,16 +1,38 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Bed, Calendar, Search, CheckCircle2, AlertTriangle, Moon, Sun, ArrowRight, UserCheck, UserMinus, Plus, RefreshCw, PhoneCall } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
+import { Bed, Calendar, Search, CheckCircle2, AlertTriangle, Moon, Sun, ArrowRight, UserCheck, UserMinus, Plus, RefreshCw, PhoneCall, ImagePlus, Save, Eye, EyeOff, LayoutDashboard } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import Image from "next/image";
 
 export default function AdminHotelReservationsPage() {
     const [loading, setLoading] = useState(true);
     const [reservations, setReservations] = useState<any[]>([]);
-    const [activeTab, setActiveTab] = useState<"pending" | "checked_in" | "archive">("pending");
+    const [activeTab, setActiveTab] = useState<"pending" | "checked_in" | "archive" | "hero">("pending");
     const [searchQuery, setSearchQuery] = useState("");
     const [assignRoomModal, setAssignRoomModal] = useState<{ id: string; num: string } | null>(null);
     const [assignedRoomNumber, setAssignedRoomNumber] = useState("");
+
+    // Hero Section State
+    const [heroData, setHeroData] = useState<{
+        id?: string;
+        title: string;
+        subtitle: string;
+        badge_text: string;
+        cta_text: string;
+        image_url: string;
+        is_active: boolean;
+    }>({
+        title: 'Votre Séjour de Rêve',
+        subtitle: 'Détente et confort absolu au cœur du Golden Park',
+        badge_text: 'OFFRE SPÉCIALE',
+        cta_text: 'Réserver',
+        image_url: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80',
+        is_active: true
+    });
+    const [heroSaving, setHeroSaving] = useState(false);
+    const [heroSaved, setHeroSaved] = useState(false);
+    const [heroTableExists, setHeroTableExists] = useState(false);
 
     // Setup visual grid of rooms for the front-desk officer
     const TOTAL_ROOMS = [
@@ -23,7 +45,61 @@ export default function AdminHotelReservationsPage() {
 
     useEffect(() => {
         fetchReservations();
+        fetchHero();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
+
+    const fetchHero = async () => {
+        try {
+            const { data, error } = await supabase
+                .from('hotel_hero')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .maybeSingle();
+            if (!error && data) {
+                setHeroData(data);
+                setHeroTableExists(true);
+            } else if (error && error.code !== '42P01') {
+                setHeroTableExists(true); // table exists, just no data
+            }
+        } catch {
+            // table may not exist yet
+        }
+    };
+
+    const saveHero = async () => {
+        setHeroSaving(true);
+        try {
+            if (heroData.id) {
+                await supabase.from('hotel_hero').update({
+                    title: heroData.title,
+                    subtitle: heroData.subtitle,
+                    badge_text: heroData.badge_text,
+                    cta_text: heroData.cta_text,
+                    image_url: heroData.image_url,
+                    is_active: heroData.is_active,
+                    updated_at: new Date().toISOString()
+                }).eq('id', heroData.id);
+            } else {
+                const { data } = await supabase.from('hotel_hero').insert({
+                    title: heroData.title,
+                    subtitle: heroData.subtitle,
+                    badge_text: heroData.badge_text,
+                    cta_text: heroData.cta_text,
+                    image_url: heroData.image_url,
+                    is_active: heroData.is_active
+                }).select().single();
+                if (data) setHeroData(prev => ({ ...prev, id: data.id }));
+            }
+            setHeroSaved(true);
+            setTimeout(() => setHeroSaved(false), 3000);
+        } catch (err) {
+            alert('Erreur lors de la sauvegarde du hero.');
+        } finally {
+            setHeroSaving(false);
+        }
+    };
 
     const fetchReservations = async () => {
         try {
@@ -233,21 +309,23 @@ export default function AdminHotelReservationsPage() {
                     {[
                         { id: "pending", label: "Arrivées (Attente)", count: reservations.filter(r => r.status === "pending" || r.status === "confirmed" || r.status === "reserved").length, color: "bg-amber-500" },
                         { id: "checked_in", label: "Sur Place (Actifs)", count: reservations.filter(r => r.status === "checked_in").length, color: "bg-green-500 animate-pulse" },
-                        { id: "archive", label: "Terminées / Historique", count: reservations.filter(r => r.status === "completed" || r.status === "cancelled").length }
+                        { id: "archive", label: "Historique", count: reservations.filter(r => r.status === "completed" || r.status === "cancelled").length },
+                        { id: "hero", label: "Hero Accueil", icon: <LayoutDashboard className="w-3.5 h-3.5" /> }
                     ].map(tab => (
                         <button
                             key={tab.id}
                             onClick={() => setActiveTab(tab.id as any)}
-                            className={`flex-1 rounded-lg font-bold text-xs flex items-center justify-center gap-2 transition-all ${
+                            className={`flex-1 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${
                                 activeTab === tab.id
-                                    ? "bg-white/10 text-white shadow-sm"
+                                    ? tab.id === 'hero' ? 'bg-amber-500/20 text-amber-400 shadow-sm' : 'bg-white/10 text-white shadow-sm'
                                     : "text-gray-400 hover:text-white"
                             }`}
                         >
-                            <span>{tab.label}</span>
-                            {tab.count > 0 && (
-                                <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-black text-black ${tab.color || "bg-gray-700 text-gray-300"}`}>
-                                    {tab.count}
+                            {'icon' in tab && tab.icon}
+                            <span className="hidden md:inline">{tab.label}</span>
+                            {'count' in tab && (tab.count as number) > 0 && (
+                                <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-black text-black ${'color' in tab ? tab.color : 'bg-gray-700 text-gray-300'}`}>
+                                    {tab.count as number}
                                 </span>
                             )}
                         </button>
@@ -255,14 +333,137 @@ export default function AdminHotelReservationsPage() {
                 </div>
             </div>
 
+            {/* HERO EDITOR */}
+            {activeTab === 'hero' && (
+                <div className="bg-[#1E293B] border border-amber-500/20 rounded-3xl p-6 space-y-6">
+                    <div className="flex items-center justify-between">
+                        <div>
+                            <h3 className="text-base font-black text-white flex items-center gap-2">
+                                <LayoutDashboard className="w-4 h-4 text-amber-400" />
+                                Bannière Hero — Page Hôtel
+                            </h3>
+                            <p className="text-xs text-gray-400 mt-0.5">Modifiez l&apos;image et le contenu de la section hero visible par les clients</p>
+                        </div>
+                        <button
+                            onClick={() => setHeroData(prev => ({ ...prev, is_active: !prev.is_active }))}
+                            className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-bold border transition-all ${
+                                heroData.is_active
+                                    ? 'bg-green-500/15 border-green-500/30 text-green-400'
+                                    : 'bg-white/5 border-white/10 text-gray-400'
+                            }`}
+                        >
+                            {heroData.is_active ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                            {heroData.is_active ? 'Visible' : 'Masqué'}
+                        </button>
+                    </div>
+
+                    {/* Preview */}
+                    <div className="relative w-full h-[180px] rounded-2xl overflow-hidden border border-white/10">
+                        <Image
+                            src={heroData.image_url || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80'}
+                            alt="Hero preview"
+                            fill
+                            className="object-cover"
+                            unoptimized
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+                        <div className="absolute bottom-4 left-4 right-4">
+                            <span className="bg-amber-500 text-black text-[8px] font-black px-2 py-0.5 rounded-full uppercase mb-1 inline-block">
+                                🏨 {heroData.badge_text}
+                            </span>
+                            <div className="text-white font-black text-lg leading-tight">{heroData.title}</div>
+                            <div className="text-white/70 text-[10px]">{heroData.subtitle}</div>
+                        </div>
+                    </div>
+
+                    {/* Form Fields */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Titre principal</label>
+                            <input
+                                value={heroData.title}
+                                onChange={e => setHeroData(prev => ({ ...prev, title: e.target.value }))}
+                                className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-500 outline-none focus:border-amber-500 transition-colors"
+                                placeholder="Votre Séjour de Rêve"
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Badge (petit texte)</label>
+                            <input
+                                value={heroData.badge_text}
+                                onChange={e => setHeroData(prev => ({ ...prev, badge_text: e.target.value }))}
+                                className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-500 outline-none focus:border-amber-500 transition-colors"
+                                placeholder="OFFRE SPÉCIALE"
+                            />
+                        </div>
+                        <div className="space-y-1 md:col-span-2">
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sous-titre / Description</label>
+                            <input
+                                value={heroData.subtitle}
+                                onChange={e => setHeroData(prev => ({ ...prev, subtitle: e.target.value }))}
+                                className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white placeholder-gray-500 outline-none focus:border-amber-500 transition-colors"
+                                placeholder="Détente et confort absolu..."
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Texte du bouton CTA</label>
+                            <input
+                                value={heroData.cta_text}
+                                onChange={e => setHeroData(prev => ({ ...prev, cta_text: e.target.value }))}
+                                className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white font-bold placeholder-gray-500 outline-none focus:border-amber-500 transition-colors"
+                                placeholder="Réserver"
+                            />
+                        </div>
+                        <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-2">
+                                <ImagePlus className="w-3 h-3" /> URL Image de fond
+                            </label>
+                            <input
+                                value={heroData.image_url}
+                                onChange={e => setHeroData(prev => ({ ...prev, image_url: e.target.value }))}
+                                className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-xs text-gray-300 placeholder-gray-500 outline-none focus:border-amber-500 transition-colors font-mono"
+                                placeholder="https://..."
+                            />
+                        </div>
+                    </div>
+
+                    {/* Save Button */}
+                    <button
+                        onClick={saveHero}
+                        disabled={heroSaving}
+                        className={`w-full py-3.5 rounded-2xl font-black text-sm flex items-center justify-center gap-2 transition-all shadow-lg ${
+                            heroSaved
+                                ? 'bg-green-500 text-white'
+                                : 'bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white disabled:opacity-50'
+                        }`}
+                    >
+                        {heroSaving ? (
+                            <RefreshCw className="w-4 h-4 animate-spin" />
+                        ) : heroSaved ? (
+                            <CheckCircle2 className="w-4 h-4" />
+                        ) : (
+                            <Save className="w-4 h-4" />
+                        )}
+                        {heroSaved ? '✅ Sauvegardé !' : heroSaving ? 'Sauvegarde...' : 'Sauvegarder le Hero'}
+                    </button>
+
+                    {!heroTableExists && (
+                        <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-4">
+                            <p className="text-amber-400 text-xs font-bold">⚠️ La table <code>hotel_hero</code> n&apos;existe pas encore dans Supabase.</p>
+                            <p className="text-gray-400 text-xs mt-1">Créez-la depuis le SQL Editor de Supabase pour activer la sauvegarde dynamique.</p>
+                        </div>
+                    )}
+                </div>
+            )}
+
             {/* RESERVATIONS LIST GRID */}
-            {filteredReservations.length === 0 ? (
+            {activeTab !== 'hero' && filteredReservations.length === 0 ? (
                 <div className="bg-[#1E293B] border border-white/10 rounded-2xl p-12 text-center text-gray-400 space-y-2">
                     <Bed className="w-12 h-12 mx-auto text-gray-500 stroke-1" />
                     <h3 className="font-bold text-white text-base">Aucune réservation</h3>
                     <p className="text-xs max-w-sm mx-auto">Aucun dossier dans cette catégorie ou correspondant aux critères recherchés.</p>
                 </div>
-            ) : (
+            ) : activeTab !== 'hero' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredReservations.map(res => {
                         const isNight = res.booking_type === "night";
