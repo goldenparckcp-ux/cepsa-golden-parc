@@ -258,20 +258,38 @@ export default function HotelPage() {
             <div className="p-3 md:p-4 space-y-4 max-w-6xl mx-auto">
 
                 {/* MODE SWITCHER */}
-                <div className="bg-[#1E293B] p-2 rounded-2xl border border-white/10 flex relative max-w-md mx-auto w-full rtl:flex-row-reverse">
-                    <div className={`absolute top-2 bottom-2 w-[calc(50%-8px)] bg-amber-500 rounded-xl transition-all duration-300 ${bookingType === 'sieste' ? 'ltr:left-[calc(50%+4px)] rtl:right-[calc(50%+4px)]' : 'ltr:left-2 rtl:right-2'}`} />
-                    <button
-                        onClick={() => setBookingType('night')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl relative z-10 font-bold text-sm transition-colors ${bookingType === 'night' ? 'text-black' : 'text-gray-400'}`}
-                    >
-                        <Moon className="w-4 h-4" /> {t('hotel.night_mode')}
-                    </button>
-                    <button
-                        onClick={() => setBookingType('sieste')}
-                        className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-xl relative z-10 font-bold text-sm transition-colors ${bookingType === 'sieste' ? 'text-black' : 'text-gray-400'}`}
-                    >
-                        <Sun className="w-4 h-4" /> {t('hotel.siesta_mode')}
-                    </button>
+                <div className="flex flex-col items-center gap-2 max-w-md mx-auto w-full">
+                    <div className="relative bg-[#0F172A] p-1.5 rounded-2xl border border-white/10 flex w-full shadow-xl">
+                        {/* Glowing slider */}
+                        <div className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded-xl transition-all duration-500 ease-in-out shadow-lg
+                            ${bookingType === 'night'
+                                ? 'ltr:left-1.5 rtl:right-1.5 bg-gradient-to-br from-amber-400 to-amber-600 shadow-amber-500/40'
+                                : 'ltr:left-[calc(50%+4px)] rtl:right-[calc(50%+4px)] bg-gradient-to-br from-sky-400 to-blue-600 shadow-blue-500/40'
+                            }`}
+                        />
+                        {/* Night Button */}
+                        <button
+                            onClick={() => setBookingType('night')}
+                            className={`flex-1 flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl relative z-10 font-bold text-sm transition-all duration-300
+                                ${bookingType === 'night' ? 'text-black' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                            <Moon className={`w-4 h-4 transition-transform duration-300 ${bookingType === 'night' ? 'scale-110' : ''}`} />
+                            <span>{t('hotel.night_mode')}</span>
+                        </button>
+                        {/* Sieste Button */}
+                        <button
+                            onClick={() => setBookingType('sieste')}
+                            className={`flex-1 flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl relative z-10 font-bold text-sm transition-all duration-300
+                                ${bookingType === 'sieste' ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
+                        >
+                            <Sun className={`w-4 h-4 transition-transform duration-300 ${bookingType === 'sieste' ? 'scale-110 rotate-12' : ''}`} />
+                            <span>{t('hotel.siesta_mode')}</span>
+                        </button>
+                    </div>
+                    {/* Subtitle hint */}
+                    <p className="text-xs text-gray-500 font-medium">
+                        {bookingType === 'night' ? '🌙 Réservation complète pour la nuit' : '☀️ Repos de quelques heures en journée'}
+                    </p>
                 </div>
 
                 {/* Room Gallery */}
