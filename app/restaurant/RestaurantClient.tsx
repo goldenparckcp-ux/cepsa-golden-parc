@@ -3,7 +3,6 @@
 import React, { useMemo, useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Plus, UtensilsCrossed, ChevronRight, Trash2, Clock, Check, Car, MapPin, Navigation, ShoppingBag, Filter, AlertTriangle, Camera, X, Banknote, CreditCard, Lock, ShieldCheck } from "lucide-react";
-import { Scanner } from '@yudiel/react-qr-scanner';
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useCart } from "@/lib/state/CartContext";
@@ -13,6 +12,12 @@ import { supabase } from "@/lib/supabase";
 import { useTranslation } from "@/lib/state/LanguageContext";
 import { motion, AnimatePresence } from 'framer-motion';
 import PaymentModal from "@/components/PaymentModal";
+import dynamic from "next/dynamic";
+
+const Html5QrScanner = dynamic(
+    () => import("@/components/Html5QrScanner").then((mod) => mod.Html5QrScanner),
+    { ssr: false }
+);
 
 function formatDh(price: number) {
     return `${price.toFixed(2)} DH`;
@@ -692,22 +697,10 @@ function CartDrawerContent({
                         </button>
                         
                         <div className="w-72 h-72 rounded-3xl overflow-hidden border-4 border-blue-500/50 shadow-2xl relative">
-                            <Scanner
-                                constraints={{ 
-                                    facingMode: 'environment' as any,
-                                    width: { ideal: 1280 },
-                                    height: { ideal: 720 }
-                                }}
-                                formats={['qr_code']}
-                                onScan={(result) => {
-                                    console.log("Scanner raw result:", result);
-                                    if (result && result.length > 0) {
-                                        const text = result[0]?.rawValue;
-                                        if (!text) {
-                                            console.warn("Scanner returned empty rawValue");
-                                            return;
-                                        }
-                                        
+                            <Html5QrScanner
+                                onScan={(text) => {
+                                    console.log("Scanner raw result:", text);
+                                    if (text) {
                                         setIsScanning(false);
                                         
                                         try {
@@ -836,7 +829,6 @@ function CartDrawerContent({
                                         }
                                     }
                                 }}
-                                onError={(error) => console.log("Scanner error:", error?.message)}
                             />
                         </div>
                         <p className="text-gray-400 mt-8 text-center px-8 text-sm">
