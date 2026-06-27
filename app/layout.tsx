@@ -6,6 +6,7 @@ import { UIProvider } from "@/lib/state/UIContext";
 import { AuthProvider } from "@/lib/state/AuthProvider";
 import { LanguageProvider } from "@/lib/state/LanguageContext";
 import type { Metadata } from "next";
+import { Analytics } from '@vercel/analytics/next';
 
 const inter = Inter({ subsets: ["latin"] });
 const outfit = Outfit({ subsets: ["latin"], variable: '--font-outfit' });
@@ -39,6 +40,7 @@ export default function RootLayout({
             </UIProvider>
           </AuthProvider>
         </LanguageProvider>
+        <Analytics />
       </body>
     </html>
   );
