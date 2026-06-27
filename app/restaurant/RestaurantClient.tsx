@@ -996,7 +996,24 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                 const featuredItems = dbItems.filter(i => i.isFeatured);
                 return (
                     <div className="px-4 max-w-7xl mx-auto mt-2 relative group">
-                        <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 scrollbar-hide w-full rounded-[2rem]">
+                        <div 
+                            id="resto-carousel-container"
+                            onScroll={(e) => {
+                                const target = e.currentTarget;
+                                const index = Math.round(target.scrollLeft / target.clientWidth);
+                                const dots = document.querySelectorAll('.resto-dot');
+                                dots.forEach((dot, idx) => {
+                                    if (idx === index) {
+                                        dot.classList.add('bg-orange-500', 'w-6');
+                                        dot.classList.remove('bg-white/30', 'w-2');
+                                    } else {
+                                        dot.classList.remove('bg-orange-500', 'w-6');
+                                        dot.classList.add('bg-white/30', 'w-2');
+                                    }
+                                });
+                            }}
+                            className="flex overflow-x-auto snap-x snap-mandatory gap-4 scrollbar-hide w-full rounded-[2rem] scroll-smooth"
+                        >
                             {featuredItems.map((item) => {
                                 const name = language === "ar" ? (item.name_ar || item.name) : item.name;
                                 const description = language === "ar" ? (item.description_ar || item.description) : item.description;
@@ -1004,7 +1021,7 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                                     <div 
                                         key={item.id}
                                         onClick={() => handleItemClick(item)}
-                                        className="relative w-full h-[180px] sm:h-[240px] rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl flex items-center justify-between px-5 md:px-8 shrink-0 snap-center cursor-pointer"
+                                        className="relative w-full h-[180px] sm:h-[240px] rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl flex items-center justify-between px-5 md:px-8 shrink-0 snap-center cursor-pointer select-none"
                                         style={{ minWidth: '100%' }}
                                     >
                                         {/* Background Image */}
@@ -1013,7 +1030,7 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                                                 src={item.image} 
                                                 alt={item.name}
                                                 fill
-                                                className="object-cover group-hover:scale-[1.01] transition-transform duration-700 font-bold"
+                                                className="object-cover group-hover:scale-[1.01] transition-transform duration-700 font-bold pointer-events-none"
                                             />
                                         )}
                                         {/* Dark/Gradient Overlay */}
@@ -1061,6 +1078,18 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                                 );
                             })}
                         </div>
+
+                        {/* Pagination Dots Indicator */}
+                        {featuredItems.length > 1 && (
+                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
+                                {featuredItems.map((_, idx) => (
+                                    <span 
+                                        key={idx} 
+                                        className={`resto-dot h-2 rounded-full transition-all duration-300 ${idx === 0 ? 'bg-orange-500 w-6' : 'bg-white/30 w-2'}`} 
+                                    />
+                                ))}
+                            </div>
+                        )}
                     </div>
                 );
             })()}
