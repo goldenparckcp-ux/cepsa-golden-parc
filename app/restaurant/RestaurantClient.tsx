@@ -989,19 +989,18 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                     </motion.div>
                 </div>
 
-                <div className="max-w-7xl mx-auto pb-2 relative z-40">
-                    <div className="relative inline-block">
+                <div className="max-w-7xl mx-auto pb-2 relative z-40 flex items-center justify-start">
+                    <div className="relative">
                         <button 
                             onClick={() => setShowFilters(!showFilters)}
-                            className={`inline-flex items-center gap-4 px-4 py-2 rounded-xl font-bold transition-all duration-300 ${showFilters ? 'bg-[#1E293B] border border-white/20 text-white shadow-xl' : 'bg-[#0F172A] border border-white/5 text-gray-300 hover:bg-[#1E293B]'}`}
+                            className={`w-11 h-11 rounded-2xl flex items-center justify-center border transition-all duration-300 shadow-lg ${
+                                showFilters 
+                                    ? 'bg-orange-500 border-orange-500 text-white shadow-orange-500/25 rotate-90 scale-[1.02]' 
+                                    : 'bg-[#0F172A]/85 backdrop-blur-md border-white/10 text-orange-500 hover:border-orange-500/50 hover:bg-orange-500/10'
+                            }`}
+                            title="Filtrer par catégorie"
                         >
-                            <div className="flex items-center gap-2">
-                                <Filter className="w-4 h-4 text-orange-500" />
-                                <span className="text-sm">
-                                    {activeCategory === "all" ? "Tout" : dbCategories.find(c => c.id === activeCategory)?.label || "Tout"}
-                                </span>
-                            </div>
-                            <ChevronRight className={`w-4 h-4 transition-transform duration-300 ${showFilters ? 'rotate-90 text-orange-500' : 'text-gray-500'}`} />
+                            <Filter className="w-5 h-5 transition-transform duration-300" />
                         </button>
 
                         <AnimatePresence>
@@ -1011,21 +1010,56 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                                     animate={{ opacity: 1, y: 0, scale: 1 }} 
                                     exit={{ opacity: 0, y: 10, scale: 0.95 }}
                                     transition={{ duration: 0.15 }}
-                                    className="absolute left-0 top-full mt-2 w-64 bg-[#1E293B] border border-white/10 rounded-xl shadow-2xl overflow-y-auto z-50 flex flex-col py-2 max-h-[60vh] scrollbar-hide"
+                                    className="absolute left-0 top-full mt-2.5 w-64 bg-[#0F172A]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-y-auto z-50 flex flex-col py-2 max-h-[60vh] scrollbar-hide"
                                 >
+                                    <div className="px-4 py-2 border-b border-white/5 mb-1 shrink-0 flex items-center justify-between">
+                                        <span className="text-[10px] text-gray-400 font-black uppercase tracking-wider">Catégories</span>
+                                        {activeCategory !== "all" && (
+                                            <button 
+                                                onClick={() => { setActiveCategory("all"); setShowFilters(false); }}
+                                                className="text-[10px] text-orange-500 font-bold hover:underline"
+                                            >
+                                                Réinitialiser
+                                            </button>
+                                        )}
+                                    </div>
                                     {dbCategories.map(cat => (
                                         <button
                                             key={cat.id}
                                             onClick={() => { setActiveCategory(cat.id); setShowFilters(false); }}
-                                            className={`w-full text-left px-5 py-3.5 text-base font-bold transition-all ${activeCategory === cat.id ? "bg-red-500/20 text-red-500 border-l-4 border-red-500" : "text-gray-300 hover:bg-white/5 hover:text-white border-l-4 border-transparent"}`}
+                                            className={`w-full text-left px-4 py-3 text-sm font-bold transition-all flex items-center justify-between ${
+                                                activeCategory === cat.id 
+                                                    ? "bg-orange-500/10 text-orange-500 border-l-4 border-orange-500" 
+                                                    : "text-gray-300 hover:bg-white/5 hover:text-white border-l-4 border-transparent"
+                                            }`}
                                         >
-                                            {cat.label}
+                                            <span>{cat.label}</span>
+                                            {activeCategory === cat.id && (
+                                                <span className="w-1.5 h-1.5 bg-orange-500 rounded-full" />
+                                            )}
                                         </button>
                                     ))}
                                 </motion.div>
                             )}
                         </AnimatePresence>
                     </div>
+
+                    {/* Active Category Pill */}
+                    {activeCategory !== "all" && (
+                        <motion.div 
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            className="ml-3 h-11 bg-orange-500/15 border border-orange-500/30 text-orange-400 font-black text-xs px-4 rounded-2xl flex items-center gap-2 shadow-lg"
+                        >
+                            <span>{dbCategories.find(c => c.id === activeCategory)?.label}</span>
+                            <button 
+                                onClick={() => setActiveCategory("all")}
+                                className="w-4 h-4 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center hover:bg-orange-500 hover:text-white transition-colors"
+                            >
+                                <X className="w-2.5 h-2.5" />
+                            </button>
+                        </motion.div>
+                    )}
                 </div>
             </div>
 
