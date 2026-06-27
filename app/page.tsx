@@ -558,8 +558,8 @@ export default function Home() {
                 </div>
                 <h3 className="text-xl font-bold text-white mb-2">{t('home.info.contact.title')}</h3>
                 <p className="text-gray-400 text-sm font-medium mb-6">{t('home.info.contact.desc')}</p>
-                <a href="tel:0661690179" className="w-full py-4 bg-green-600 hover:bg-green-500 text-white font-black rounded-2xl transition-colors shadow-lg active:scale-95">
-                  06 61 69 01 79
+                <a href="tel:0600000000" className="w-full py-4 bg-green-600 hover:bg-green-500 text-white font-black rounded-2xl transition-colors shadow-lg active:scale-95">
+                  06 00 00 00 00
                 </a>
               </div>
 
@@ -600,7 +600,7 @@ export default function Home() {
                <span className="text-gray-500 text-sm">© {new Date().getFullYear()}</span>
             </div>
             <div className="flex gap-4">
-               <a href="tel:0661690179" className="bg-red-600/20 text-red-500 hover:bg-red-600 hover:text-white px-4 py-2 rounded-full font-bold text-sm transition-all flex items-center gap-2">
+               <a href="tel:0600000000" className="bg-red-600/20 text-red-500 hover:bg-red-600 hover:text-white px-4 py-2 rounded-full font-bold text-sm transition-all flex items-center gap-2">
                   <PhoneCall className="w-4 h-4" /> SOS Dépannage
                </a>
             </div>
