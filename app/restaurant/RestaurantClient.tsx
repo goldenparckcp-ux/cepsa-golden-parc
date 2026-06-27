@@ -693,7 +693,12 @@ function CartDrawerContent({
                         
                         <div className="w-72 h-72 rounded-3xl overflow-hidden border-4 border-blue-500/50 shadow-2xl relative">
                             <Scanner
-                                constraints={{ facingMode: 'environment' as any }}
+                                constraints={{ 
+                                    facingMode: 'environment' as any,
+                                    width: { ideal: 1280 },
+                                    height: { ideal: 720 }
+                                }}
+                                formats={['qr_code']}
                                 onScan={(result) => {
                                     console.log("Scanner raw result:", result);
                                     if (result && result.length > 0) {
