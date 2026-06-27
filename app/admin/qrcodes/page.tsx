@@ -39,9 +39,9 @@ function buildUrl(type: LocationType, label: string, token: string) {
 async function renderQR(url: string): Promise<string> {
   return QRCode.toDataURL(url, {
     width: 400,
-    margin: 2,
-    color: { dark: "#0F172A", light: "#FFFFFF" },
-    errorCorrectionLevel: "H",
+    margin: 4, // Increased quiet zone for better scanning
+    color: { dark: "#000000", light: "#FFFFFF" }, // Pure black for max contrast
+    errorCorrectionLevel: "M", // Lower density makes dots larger and easier to scan
   });
 }
 
