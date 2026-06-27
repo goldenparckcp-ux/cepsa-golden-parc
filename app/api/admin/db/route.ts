@@ -37,7 +37,7 @@ export async function POST(request: Request) {
     if (!supabase) throw new Error('Missing Supabase server credentials.');
 
     const body = await request.json();
-    const { action, table, payload, match, order } = body;
+    const { action, table, payload, match, order, select } = body;
 
     if (!ALLOWED_TABLES.includes(table)) {
       return NextResponse.json({ error: 'Table not allowed for generic API access' }, { status: 403 });
