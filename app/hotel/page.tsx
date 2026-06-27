@@ -286,7 +286,7 @@ export default function HotelPage() {
 
                 {/* HERO BANNER */}
                 {(heroData || true) && (
-                    <div className="relative w-full h-[240px] sm:h-[320px] md:h-[380px] rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl flex items-end p-5 md:p-8 group">
+                    <div className="relative w-full h-[200px] sm:h-[240px] rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl group">
                         {/* Background Image */}
                         <Image
                             src={heroData?.image_url || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80'}
@@ -295,34 +295,38 @@ export default function HotelPage() {
                             priority
                             className="object-cover group-hover:scale-[1.03] transition-transform duration-700"
                         />
-                        {/* Dark gradient overlay */}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
+                        {/* Full dark overlay like restaurant */}
+                        <div className="absolute inset-0 bg-black/55" />
                         {/* Glow FX */}
                         <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
 
-                        {/* Content */}
-                        <div className="relative z-10 w-full flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
-                            <div className="space-y-1 sm:max-w-[65%] text-left">
-                                <span className="bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-1 shadow-lg">
+                        {/* Content — centered vertically, spread horizontally like resto */}
+                        <div className="absolute inset-0 flex items-center justify-between px-5 md:px-8 gap-4">
+                            {/* Left: badge + title + subtitle */}
+                            <div className="flex flex-col gap-1 flex-1 min-w-0">
+                                <span className="bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-wider inline-flex items-center gap-1 w-fit shadow-lg">
                                     🏨 {heroData?.badge_text || 'OFFRE SPÉCIALE'}
                                 </span>
-                                <h2 className="text-white text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tight leading-tight drop-shadow-md">
+                                <h2 className="text-white text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tight leading-tight drop-shadow-md">
                                     {heroData?.title || 'Votre Séjour de Rêve'}
                                 </h2>
-                                <p className="text-white/80 text-[10px] sm:text-xs font-medium line-clamp-2 drop-shadow leading-relaxed">
+                                <p className="text-white/75 text-[10px] sm:text-xs font-medium line-clamp-2 drop-shadow leading-relaxed max-w-[280px]">
                                     {heroData?.subtitle || 'Détente et confort absolu au cœur du Golden Park'}
                                 </p>
                             </div>
-                            {/* CTA */}
-                            <button
-                                onClick={() => {
-                                    document.getElementById('hotel-room-gallery')?.scrollIntoView({ behavior: 'smooth' });
-                                }}
-                                className="py-2.5 px-5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg active:scale-95 transition-all flex items-center gap-2 shrink-0 self-start sm:self-end"
-                            >
-                                <BedDouble className="w-3.5 h-3.5" />
-                                <span>{heroData?.cta_text || 'Réserver'}</span>
-                            </button>
+
+                            {/* Right: CTA button */}
+                            <div className="flex flex-col items-end gap-2 shrink-0">
+                                <button
+                                    onClick={() => {
+                                        document.getElementById('hotel-room-gallery')?.scrollIntoView({ behavior: 'smooth' });
+                                    }}
+                                    className="py-3 px-5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg active:scale-95 transition-all flex items-center gap-2 whitespace-nowrap"
+                                >
+                                    <BedDouble className="w-3.5 h-3.5" />
+                                    <span>{heroData?.cta_text || 'Réserver'}</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 )}
