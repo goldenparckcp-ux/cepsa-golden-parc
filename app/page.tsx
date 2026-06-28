@@ -52,6 +52,7 @@ export default function Home() {
   const [newReview, setNewReview] = useState({ name: '', text: '', stars: 5 });
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [fuelPrices, setFuelPrices] = useState({ gasoil: "12.50 DH", essence: "14.20 DH" });
 
   useEffect(() => {
     setIsLoaded(true);
@@ -68,6 +69,26 @@ export default function Home() {
         (error) => console.log('Géolocalisation refusée:', error)
       );
     }
+
+    // Load fuel prices
+    const loadFuelPrices = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('fuel_prices')
+          .select('*')
+          .eq('id', 'current')
+          .maybeSingle();
+        if (!error && data) {
+          setFuelPrices({
+            gasoil: `${Number(data.gasoil).toFixed(2)} DH`,
+            essence: `${Number(data.essence).toFixed(2)} DH`
+          });
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    loadFuelPrices();
 
     // Load active promotions from database
     const loadPromos = async () => {
@@ -491,10 +512,19 @@ export default function Home() {
                 transition={{ delay: i * 0.1 }}
                 className="bg-[#111827] border border-white/8 rounded-[2rem] p-6 flex flex-col gap-4 hover:border-amber-500/20 transition-colors snap-center min-w-[280px] sm:min-w-[340px] md:min-w-0 flex-shrink-0 md:flex-shrink"
               >
-                <div className="flex items-center gap-1">
-                  {Array.from({ length: 5 }).map((_, s) => (
-                    <Star key={s} className={`w-4 h-4 ${s < avis.stars ? 'text-amber-400 fill-amber-400' : 'text-gray-600'}`} />
-                  ))}
+                <div className="flex items-center justify-between gap-2 w-full">
+                  <div className="flex items-center gap-1">
+                    {Array.from({ length: 5 }).map((_, s) => (
+                      <Star key={s} className={`w-4 h-4 ${s < avis.stars ? 'text-amber-400 fill-amber-400' : 'text-gray-600'}`} />
+                    ))}
+                  </div>
+                  {i === 0 && (
+                    <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-wider text-white bg-white/5 border border-white/10 px-2 py-1 rounded-lg">
+                      <span className="text-amber-400">⛽ Gasoil: {fuelPrices.gasoil}</span>
+                      <span className="text-white/30">|</span>
+                      <span className="text-emerald-400">⛽ Essence: {fuelPrices.essence}</span>
+                    </div>
+                  )}
                 </div>
                 <p className="text-gray-300 text-sm leading-relaxed flex-1">&ldquo;{avis.text}&rdquo;</p>
                 <div className="flex items-center justify-between">
