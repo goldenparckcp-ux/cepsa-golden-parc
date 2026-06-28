@@ -43,6 +43,16 @@ export default function Home() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [promos, setPromos] = useState<any[]>([]);
 
+  // Reviews States
+  const [reviews, setReviews] = useState<any[]>([
+    { name: 'Mohammed A.', stars: 5, text: 'Station propre, personnel accueillant. Le restaurant est excellent, je recommande le menu complet. Je passe toujours par ici sur la route de Marrakech.', date: 'il y a 2 jours' },
+    { name: 'Sara L.', stars: 5, text: 'Hôtel confortable et bien équipé. La piscine est magnifique. Prix raisonnables pour la qualité offerte. Une étape idéale lors de longs trajets.', date: 'il y a 1 semaine' },
+    { name: 'Karim B.', stars: 4, text: 'Excellent service rapide. La station est bien entretenue et les lubrifiants CEPSA de qualité. Je reviens régulièrement pour l\'entretien de mon véhicule.', date: 'il y a 2 semaines' }
+  ]);
+  const [newReview, setNewReview] = useState({ name: '', text: '', stars: 5 });
+  const [submitting, setSubmitting] = useState(false);
+  const [submitSuccess, setSubmitSuccess] = useState(false);
+
   useEffect(() => {
     setIsLoaded(true);
     if ('geolocation' in navigator) {
@@ -74,8 +84,66 @@ export default function Home() {
         console.error("Failed to load home promos:", err);
       }
     };
+
+    // Load client reviews from database
+    const loadReviews = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('client_reviews')
+          .select('*')
+          .eq('is_approved', true)
+          .order('created_at', { ascending: false });
+        
+        if (!error && data && data.length > 0) {
+          // Map to match reviews format
+          const formattedReviews = data.map(r => ({
+            name: r.name,
+            stars: r.stars,
+            text: r.text,
+            date: new Date(r.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
+          }));
+          setReviews(formattedReviews);
+        }
+      } catch (err) {
+        console.error("Failed to load reviews:", err);
+      }
+    };
+
     loadPromos();
+    loadReviews();
   }, []);
+
+  const handleSubmitReview = async () => {
+    if (!newReview.name.trim() || !newReview.text.trim()) return;
+    setSubmitting(true);
+    try {
+      const { error } = await supabase
+        .from('client_reviews')
+        .insert({
+          name: newReview.name,
+          text: newReview.text,
+          stars: newReview.stars,
+          is_approved: true
+        });
+
+      // Update local state immediately for instant feedback
+      const freshReview = {
+        name: newReview.name,
+        stars: newReview.stars,
+        text: newReview.text,
+        date: "À l'instant"
+      };
+
+      setReviews(prev => [freshReview, ...prev]);
+      setNewReview({ name: '', text: '', stars: 5 });
+      setSubmitSuccess(true);
+      setTimeout(() => setSubmitSuccess(false), 4000);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const SERVICES = [
     { id: 'restaurant', title: t('home.service.resto.title') || "Restaurant", image: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=600&q=80", icon: <Utensils className="w-8 h-8" />, color: "from-amber-500 to-orange-600", link: "/restaurant", delay: 0.1 },
@@ -412,20 +480,16 @@ export default function Home() {
             <p className="text-gray-400 mt-2 font-medium">Ce que disent nos clients</p>
           </motion.div>
 
-          {/* Static testimonials */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
-            {[
-              { name: 'Mohammed A.', stars: 5, text: 'Station propre, personnel accueillant. Le restaurant est excellent, je recommande le menu complet. Je passe toujours par ici sur la route de Marrakech.', date: 'il y a 2 jours' },
-              { name: 'Sara L.', stars: 5, text: 'Hôtel confortable et bien équipé. La piscine est magnifique. Prix raisonnables pour la qualité offerte. Une étape idéale lors de longs trajets.', date: 'il y a 1 semaine' },
-              { name: 'Karim B.', stars: 4, text: 'Excellent service rapide. La station est bien entretenue et les lubrifiants CEPSA de qualité. Je reviens régulièrement pour l\'entretien de mon véhicule.', date: 'il y a 2 semaines' },
-            ].map((avis, i) => (
+          {/* Swipeable Carousel on Mobile, Grid on Desktop */}
+          <div className="flex overflow-x-auto gap-5 snap-x snap-mandatory pb-6 scrollbar-hide md:grid md:grid-cols-3 w-full">
+            {reviews.map((avis, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="bg-[#111827] border border-white/8 rounded-[2rem] p-6 flex flex-col gap-4 hover:border-amber-500/20 transition-colors"
+                className="bg-[#111827] border border-white/8 rounded-[2rem] p-6 flex flex-col gap-4 hover:border-amber-500/20 transition-colors snap-center min-w-[280px] sm:min-w-[340px] md:min-w-0 flex-shrink-0 md:flex-shrink"
               >
                 <div className="flex items-center gap-1">
                   {Array.from({ length: 5 }).map((_, s) => (
@@ -436,7 +500,7 @@ export default function Home() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-black font-black text-sm">
-                      {avis.name[0]}
+                      {avis.name ? avis.name[0].toUpperCase() : 'C'}
                     </div>
                     <div>
                       <div className="text-white font-bold text-sm">{avis.name}</div>
@@ -463,6 +527,8 @@ export default function Home() {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Votre prénom</label>
                   <input
                     type="text"
+                    value={newReview.name}
+                    onChange={(e) => setNewReview({ ...newReview, name: e.target.value })}
                     placeholder="Ex: Mohammed"
                     className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white placeholder-gray-500 outline-none focus:border-amber-500 transition-colors"
                   />
@@ -470,8 +536,15 @@ export default function Home() {
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Note</label>
                   <div className="flex items-center gap-2 h-[46px]">
-                    {[1,2,3,4,5].map(star => (
-                      <button key={star} className="text-2xl hover:scale-125 transition-transform text-gray-600 hover:text-amber-400">★</button>
+                    {[1, 2, 3, 4, 5].map(star => (
+                      <button 
+                        key={star} 
+                        type="button"
+                        onClick={() => setNewReview({ ...newReview, stars: star })}
+                        className={`text-2xl hover:scale-125 transition-transform ${star <= newReview.stars ? 'text-amber-400' : 'text-gray-600'}`}
+                      >
+                        ★
+                      </button>
                     ))}
                   </div>
                 </div>
@@ -479,15 +552,27 @@ export default function Home() {
                   <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Votre recommandation</label>
                   <textarea
                     rows={3}
+                    value={newReview.text}
+                    onChange={(e) => setNewReview({ ...newReview, text: e.target.value })}
                     placeholder="Partagez votre expérience à la station Golden Parc..."
                     className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white placeholder-gray-500 outline-none focus:border-amber-500 transition-colors resize-none"
                   />
                 </div>
               </div>
 
-              <button className="mt-4 w-full md:w-auto px-8 py-3.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black text-sm rounded-2xl shadow-lg active:scale-95 transition-all flex items-center gap-2">
+              {submitSuccess && (
+                <div className="text-green-400 text-xs font-bold mt-3 animate-pulse">
+                  Merci ! Votre avis a bien été enregistré.
+                </div>
+              )}
+
+              <button 
+                onClick={handleSubmitReview}
+                disabled={submitting || !newReview.name.trim() || !newReview.text.trim()}
+                className="mt-4 w-full md:w-auto px-8 py-3.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black text-sm rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              >
                 <Star className="w-4 h-4 fill-white" />
-                Envoyer mon avis
+                {submitting ? "Envoi..." : "Envoyer mon avis"}
               </button>
             </div>
           </motion.div>
