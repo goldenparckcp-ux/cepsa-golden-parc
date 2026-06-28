@@ -17,23 +17,10 @@ function ServicesContent() {
 
     useEffect(() => {
         if (type === "pool") router.replace("/pool");
-        // Lavage Auto temporarily disabled
-        // if (type === "wash") router.replace("/services/lavage");
         if (type === "auto") router.replace("/services");
     }, [type, router]);
 
     const tiles = [
-        /* Lavage Auto temporarily disabled
-        {
-            key: "wash",
-            title: t('services.wash.title') || "Lavage",
-            desc: t('services.wash.desc') || "30-min slots · smart duration blocking · eco-friendly products",
-            to: "/services/lavage",
-            icon: Droplets,
-            image: "https://images.unsplash.com/photo-1487754180451-c456f719a1fc?w=1200",
-            badge: "Popular"
-        },
-        */
         {
             key: "hotel",
             title: t('services.hotel.title') || "Hotel",
