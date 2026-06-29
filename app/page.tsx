@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { Car, Utensils, BedDouble, Waves, ChevronRight, Star, MapPin, Phone, Wrench, Wind, Zap, Clock, Navigation, PhoneCall } from "lucide-react";
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import { useTranslation } from '@/lib/state/LanguageContext';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
@@ -53,6 +53,34 @@ export default function Home() {
   const [submitting, setSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [fuelPrices, setFuelPrices] = useState({ gasoil: "12.50 DH", essence: "14.20 DH" });
+  
+  const reviewsCarouselRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll Reviews Carousel horizontally
+  useEffect(() => {
+    if (reviews.length <= 1) return;
+    
+    const interval = setInterval(() => {
+      const el = reviewsCarouselRef.current;
+      if (!el) return;
+
+      const isMobile = window.innerWidth < 768;
+      if (!isMobile) return; // Only auto-play on mobile viewports where scroll is active
+
+      // Card width is 85vw on mobile, we find the exact card width by querying the first child or calculating
+      const firstCard = el.firstElementChild as HTMLElement;
+      const cardWidth = firstCard ? firstCard.offsetWidth + 20 : el.offsetWidth * 0.85 + 20; // card + gap
+      const maxScroll = el.scrollWidth - el.clientWidth;
+
+      if (el.scrollLeft >= maxScroll - 15) {
+        el.scrollTo({ left: 0, behavior: 'smooth' });
+      } else {
+        el.scrollTo({ left: el.scrollLeft + cardWidth, behavior: 'smooth' });
+      }
+    }, 4500);
+
+    return () => clearInterval(interval);
+  }, [reviews]);
 
   useEffect(() => {
     setIsLoaded(true);
@@ -512,8 +540,8 @@ export default function Home() {
             <p className="text-gray-400 mt-2 font-medium">Ce que disent nos clients</p>
           </motion.div>
 
-          {/* Vertical stack on Mobile, 3-columns Grid on Desktop */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 w-full">
+          {/* Swipeable Carousel on Mobile, 3-columns Grid on Desktop */}
+          <div ref={reviewsCarouselRef} className="flex overflow-x-auto gap-5 snap-x snap-mandatory pb-6 scrollbar-hide md:grid md:grid-cols-3 w-full">
             {reviews.map((avis, i) => (
               <motion.div
                 key={i}
@@ -521,7 +549,7 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="bg-[#111827] border border-white/8 rounded-[2rem] p-6 flex flex-col justify-between hover:border-amber-500/20 transition-colors min-h-[180px] w-full"
+                className="bg-[#111827] border border-white/8 rounded-[2rem] p-6 flex flex-col justify-between hover:border-amber-500/20 transition-colors snap-center min-w-[85vw] md:min-w-0 flex-shrink-0 md:flex-shrink min-h-[220px] w-[85vw] md:w-auto"
               >
                 <div className="space-y-4">
                   <div className="flex items-center justify-between gap-2 w-full">
