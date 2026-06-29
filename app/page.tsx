@@ -518,15 +518,15 @@ export default function Home() {
                       <Star key={s} className={`w-4 h-4 ${s < avis.stars ? 'text-amber-400 fill-amber-400' : 'text-gray-600'}`} />
                     ))}
                   </div>
-                  {i === 0 && (
-                    <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-wider text-white bg-white/5 border border-white/10 px-2 py-1 rounded-lg">
+                  {avis.name === 'Mohammed A.' && (
+                    <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-wider text-white bg-white/5 border border-white/10 px-2 py-1 rounded-lg shrink-0">
                       <span className="text-amber-400">⛽ Gasoil: {fuelPrices.gasoil}</span>
                       <span className="text-white/30">|</span>
                       <span className="text-emerald-400">⛽ Essence: {fuelPrices.essence}</span>
                     </div>
                   )}
                 </div>
-                <p className="text-gray-300 text-sm leading-relaxed flex-1">&ldquo;{avis.text}&rdquo;</p>
+                <p className="text-gray-300 text-sm leading-relaxed flex-1 break-words whitespace-pre-wrap">&ldquo;{avis.text}&rdquo;</p>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-black font-black text-sm">
