@@ -17,10 +17,26 @@ export const adminDb = (table: string) => {
       const matchQuery: any = {};
       let singleResult = false;
       const execute = async () => {
+        if (apiPath === '/api/admin/db') {
+          const res = await fetch(apiPath, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'select',
+              table,
+              payload: { columns },
+              match: matchQuery,
+              order: orderQuery,
+              single: singleResult
+            })
+          });
+          const data = await res.json();
+          return { data, error: res.ok ? null : { message: data.error || 'Request failed' } };
+        }
+
         let url = apiPath;
         const params = new URLSearchParams();
         
-        // Handle specific case for caisse order lookups by order_number
         if (matchQuery.order_number) {
           params.append('order_number', matchQuery.order_number);
         }
@@ -35,7 +51,6 @@ export const adminDb = (table: string) => {
         });
         
         const data = await res.json();
-        // Return matching format to mock Supabase client response
         return { data, error: res.ok ? null : { message: data.error || 'Request failed' } };
       };
       
@@ -65,6 +80,16 @@ export const adminDb = (table: string) => {
     },
     insert: (payload: any): any => {
       const execute = async () => {
+        if (apiPath === '/api/admin/db') {
+          const res = await fetch(apiPath, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'insert', table, payload, select: true })
+          });
+          const data = await res.json();
+          return { data, error: res.ok ? null : { message: data.error || 'Insert failed' } };
+        }
+
         const res = await fetch(apiPath, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -84,6 +109,16 @@ export const adminDb = (table: string) => {
     update: (payload: any) => {
       const matchQuery: any = {};
       const execute = async () => {
+        if (apiPath === '/api/admin/db') {
+          const res = await fetch(apiPath, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'update', table, payload, match: matchQuery })
+          });
+          const data = await res.json();
+          return { data, error: res.ok ? null : { message: data.error || 'Update failed' } };
+        }
+
         const res = await fetch(apiPath, {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
@@ -105,6 +140,16 @@ export const adminDb = (table: string) => {
     delete: () => {
       const matchQuery: any = {};
       const execute = async () => {
+        if (apiPath === '/api/admin/db') {
+          const res = await fetch(apiPath, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'delete', table, match: matchQuery })
+          });
+          const data = await res.json();
+          return { data, error: res.ok ? null : { message: data.error || 'Delete failed' } };
+        }
+
         const res = await fetch(apiPath, {
           method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
@@ -125,3 +170,4 @@ export const adminDb = (table: string) => {
     }
   };
 };
+
