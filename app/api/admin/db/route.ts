@@ -73,7 +73,7 @@ export async function POST(request: Request) {
     const { data, error } = await query;
     if (error) throw error;
 
-    return NextResponse.json(data);
+    return NextResponse.json(data || { success: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }

@@ -521,7 +521,7 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="bg-[#111827] border border-white/8 rounded-[2rem] p-6 flex flex-col gap-4 hover:border-amber-500/20 transition-colors snap-center min-w-[280px] sm:min-w-[340px] md:min-w-0 flex-shrink-0 md:flex-shrink"
+                className="bg-[#111827] border border-white/8 rounded-[2rem] p-6 flex flex-col gap-4 hover:border-amber-500/20 transition-colors snap-center min-w-[310px] sm:min-w-[360px] md:min-w-0 flex-shrink-0 md:flex-shrink"
               >
                 <div className="flex items-center justify-between gap-2 w-full">
                   <div className="flex items-center gap-1">
@@ -530,7 +530,7 @@ export default function Home() {
                     ))}
                   </div>
                   {avis.name === 'Mohammed A.' && (
-                    <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-wider text-white bg-white/5 border border-white/10 px-2 py-1 rounded-lg shrink-0">
+                    <div className="hidden md:flex items-center gap-2 text-[9px] font-black uppercase tracking-wider text-white bg-white/5 border border-white/10 px-2 py-1 rounded-lg shrink-0">
                       <span className="text-amber-400">⛽ Gasoil: {fuelPrices.gasoil}</span>
                       <span className="text-white/30">|</span>
                       <span className="text-emerald-400">⛽ Essence: {fuelPrices.essence}</span>
