@@ -482,50 +482,113 @@ export default function Home() {
 
 
         {/* --- GALERIE PHOTOS --- */}
-        <div className="mb-20">
+        <div className="mb-20 overflow-hidden relative w-full">
+          {/* Custom Marquee Styles */}
+          <style dangerouslySetInnerHTML={{__html: `
+            @keyframes marquee-text {
+              0% { transform: translateX(0); }
+              100% { transform: translateX(-50%); }
+            }
+            @keyframes marquee-images {
+              0% { transform: translateX(0); }
+              100% { transform: translateX(-50%); }
+            }
+            .animate-marquee-text {
+              display: flex;
+              width: max-content;
+              animation: marquee-text 20s linear infinite;
+            }
+            .animate-marquee-images {
+              display: flex;
+              width: max-content;
+              animation: marquee-images 35s linear infinite;
+            }
+            .animate-marquee-images:hover {
+              animation-play-state: paused;
+            }
+          `}} />
+
           <motion.div
             initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="mb-8 flex items-end justify-between"
+            className="mb-8"
           >
-            <div>
-              <h2 className="text-3xl md:text-4xl font-black text-white">Notre Station</h2>
-              <p className="text-gray-400 mt-2 font-medium">Découvrez Golden Parc CEPSA en images</p>
-            </div>
+            <h2 className="text-3xl md:text-4xl font-black text-white">Notre Station</h2>
+            <p className="text-gray-400 mt-2 font-medium">Découvrez Golden Parc CEPSA en images</p>
           </motion.div>
 
-          {/* Masonry-style grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
-            {[
-              { src: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80', alt: 'Station carburant', span: 'row-span-2 col-span-1' },
-              { src: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80', alt: 'Hôtel Golden Parc', span: '' },
-              { src: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=800&q=80', alt: 'Piscine', span: '' },
-              { src: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80', alt: 'Restaurant', span: 'col-span-2' },
-              { src: 'https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80', alt: 'Lubrifiants', span: '' },
-              { src: 'https://images.unsplash.com/photo-1470723710355-95304d8aece4?auto=format&fit=crop&w=800&q=80', alt: 'Café & Repos', span: '' },
-            ].map((photo, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, scale: 0.95 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.07 }}
-                className={`relative overflow-hidden rounded-[1.5rem] md:rounded-[2rem] group cursor-pointer ${photo.span} ${i === 0 ? 'h-[280px] md:h-full' : 'h-[140px] md:h-[200px]'}`}
-              >
-                <Image
-                  src={photo.src}
-                  alt={photo.alt}
-                  fill
-                  sizes="(max-width: 768px) 50vw, 25vw"
-                  className="object-cover group-hover:scale-110 transition-transform duration-700"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <div className="absolute bottom-3 left-3 text-white text-xs font-bold opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-lg">
-                  {photo.alt}
+          {/* INFINITE TEXT TICKER (Style like user attachment) */}
+          <div className="w-full bg-[#111827]/40 border-y border-white/5 py-4 mb-8 overflow-hidden relative">
+            <div className="animate-marquee-text flex items-center gap-16 text-[10px] md:text-xs font-black tracking-[0.2em] text-white/60 uppercase">
+              {/* Loop 1 */}
+              <span>RESTAURANT BELDI 🍽️</span>
+              <span className="w-2 h-2 bg-[#06b6d4] rounded-full inline-block shrink-0" />
+              <span>HOTEL L'ESCALE 🏨</span>
+              <span className="w-2 h-2 bg-[#06b6d4] rounded-full inline-block shrink-0" />
+              <span>PISCINE PRIVÉE 🏊</span>
+              <span className="w-2 h-2 bg-[#06b6d4] rounded-full inline-block shrink-0" />
+              <span>LAVAGE EXPRESS 🚿</span>
+              <span className="w-2 h-2 bg-[#06b6d4] rounded-full inline-block shrink-0" />
+              <span>STATION SERVICE CEPSA ⛽</span>
+              <span className="w-2 h-2 bg-[#06b6d4] rounded-full inline-block shrink-0" />
+              
+              {/* Loop 2 (Duplicate for infinite seamless scroll) */}
+              <span>RESTAURANT BELDI 🍽️</span>
+              <span className="w-2 h-2 bg-[#06b6d4] rounded-full inline-block shrink-0" />
+              <span>HOTEL L'ESCALE 🏨</span>
+              <span className="w-2 h-2 bg-[#06b6d4] rounded-full inline-block shrink-0" />
+              <span>PISCINE PRIVÉE 🏊</span>
+              <span className="w-2 h-2 bg-[#06b6d4] rounded-full inline-block shrink-0" />
+              <span>LAVAGE EXPRESS 🚿</span>
+              <span className="w-2 h-2 bg-[#06b6d4] rounded-full inline-block shrink-0" />
+              <span>STATION SERVICE CEPSA ⛽</span>
+              <span className="w-2 h-2 bg-[#06b6d4] rounded-full inline-block shrink-0" />
+            </div>
+          </div>
+
+          {/* INFINITE IMAGES CAROUSEL (Slow seamless slide) */}
+          <div className="w-full overflow-hidden relative py-2">
+            {/* Left and right gradient masks for a smooth fade effect */}
+            <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-[#0F172A] to-transparent z-10 pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-[#0F172A] to-transparent z-10 pointer-events-none" />
+            
+            <div className="animate-marquee-images flex gap-4">
+              {/* Duplicate the array of images to achieve a seamless loop */}
+              {[
+                { src: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80', alt: 'Station carburant' },
+                { src: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80', alt: 'Hôtel Golden Parc' },
+                { src: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=800&q=80', alt: 'Piscine' },
+                { src: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80', alt: 'Restaurant' },
+                { src: 'https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80', alt: 'Lubrifiants' },
+                { src: 'https://images.unsplash.com/photo-1470723710355-95304d8aece4?auto=format&fit=crop&w=800&q=80', alt: 'Café & Repos' }
+              ].concat([
+                { src: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80', alt: 'Station carburant' },
+                { src: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80', alt: 'Hôtel Golden Parc' },
+                { src: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=800&q=80', alt: 'Piscine' },
+                { src: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80', alt: 'Restaurant' },
+                { src: 'https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80', alt: 'Lubrifiants' },
+                { src: 'https://images.unsplash.com/photo-1470723710355-95304d8aece4?auto=format&fit=crop&w=800&q=80', alt: 'Café & Repos' }
+              ]).map((photo, i) => (
+                <div
+                  key={i}
+                  className="relative overflow-hidden rounded-[1.5rem] md:rounded-[2rem] group cursor-pointer h-[180px] md:h-[240px] w-[260px] md:w-[350px] flex-shrink-0 border border-white/5 hover:border-amber-500/30 transition-colors duration-500"
+                >
+                  <Image
+                    src={photo.src}
+                    alt={photo.alt}
+                    fill
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                    className="object-cover group-hover:scale-110 transition-transform duration-700"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="absolute bottom-4 left-4 text-white text-xs md:text-sm font-black opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-lg uppercase tracking-wider">
+                    {photo.alt}
+                  </div>
                 </div>
-              </motion.div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
+
 
         {/* --- AVIS CLIENTS --- */}
         <div className="mb-24">
