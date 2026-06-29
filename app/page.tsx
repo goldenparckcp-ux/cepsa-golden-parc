@@ -79,9 +79,11 @@ export default function Home() {
           .eq('id', 'current')
           .maybeSingle();
         if (!error && data) {
+          const gasPrice = Number(data.gasoil);
+          const essPrice = Number(data.sans_plomb || data.essence);
           setFuelPrices({
-            gasoil: `${Number(data.gasoil).toFixed(2)} DH`,
-            essence: `${Number(data.essence).toFixed(2)} DH`
+            gasoil: !isNaN(gasPrice) ? `${gasPrice.toFixed(2)} DH` : "12.50 DH",
+            essence: !isNaN(essPrice) ? `${essPrice.toFixed(2)} DH` : "14.20 DH"
           });
         }
       } catch (err) {
@@ -116,13 +118,22 @@ export default function Home() {
           .order('created_at', { ascending: false });
         
         if (!error && data && data.length > 0) {
-          // Map to match reviews format
-          const formattedReviews = data.map(r => ({
-            name: r.name,
-            stars: r.stars,
-            text: r.text,
-            date: new Date(r.created_at).toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })
-          }));
+          // Map to match reviews format with dynamic fallback checkers
+          const formattedReviews = data.map(r => {
+            let dateFormatted = "Récemment";
+            if (r.created_at) {
+              const d = new Date(r.created_at);
+              if (!isNaN(d.getTime())) {
+                dateFormatted = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+              }
+            }
+            return {
+              name: r.name || "Client",
+              stars: Number(r.stars) || 5,
+              text: r.text || "",
+              date: dateFormatted
+            };
+          });
           setReviews(formattedReviews);
         }
       } catch (err) {
