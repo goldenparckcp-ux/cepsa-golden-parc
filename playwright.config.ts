@@ -8,7 +8,7 @@ export default defineConfig({
   workers: 1, // Run sequentially for database stability
   reporter: 'list',
   use: {
-    baseURL: 'http://localhost:3001',
+    baseURL: process.env.BASE_URL || 'http://localhost:3001',
     trace: 'on-first-retry',
     screenshot: 'only-on-failure',
   },
