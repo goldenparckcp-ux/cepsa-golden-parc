@@ -521,23 +521,25 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="bg-[#111827] border border-white/8 rounded-[2rem] p-6 flex flex-col gap-4 hover:border-amber-500/20 transition-colors snap-center min-w-[310px] sm:min-w-[360px] md:min-w-0 flex-shrink-0 md:flex-shrink"
+                className="bg-[#111827] border border-white/8 rounded-[2rem] p-6 flex flex-col justify-between hover:border-amber-500/20 transition-colors snap-center min-w-[310px] sm:min-w-[360px] md:min-w-0 flex-shrink-0 md:flex-shrink min-h-[200px]"
               >
-                <div className="flex items-center justify-between gap-2 w-full">
-                  <div className="flex items-center gap-1">
-                    {Array.from({ length: 5 }).map((_, s) => (
-                      <Star key={s} className={`w-4 h-4 ${s < avis.stars ? 'text-amber-400 fill-amber-400' : 'text-gray-600'}`} />
-                    ))}
-                  </div>
-                  {avis.name === 'Mohammed A.' && (
-                    <div className="hidden md:flex items-center gap-2 text-[9px] font-black uppercase tracking-wider text-white bg-white/5 border border-white/10 px-2 py-1 rounded-lg shrink-0">
-                      <span className="text-amber-400">⛽ Gasoil: {fuelPrices.gasoil}</span>
-                      <span className="text-white/30">|</span>
-                      <span className="text-emerald-400">⛽ Essence: {fuelPrices.essence}</span>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between gap-2 w-full">
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: 5 }).map((_, s) => (
+                        <Star key={s} className={`w-4 h-4 ${s < avis.stars ? 'text-amber-400 fill-amber-400' : 'text-gray-600'}`} />
+                      ))}
                     </div>
-                  )}
+                    {avis.name === 'Mohammed A.' && (
+                      <div className="hidden md:flex items-center gap-2 text-[9px] font-black uppercase tracking-wider text-white bg-white/5 border border-white/10 px-2 py-1 rounded-lg shrink-0">
+                        <span className="text-amber-400">⛽ Gasoil: {fuelPrices.gasoil}</span>
+                        <span className="text-white/30">|</span>
+                        <span className="text-emerald-400">⛽ Essence: {fuelPrices.essence}</span>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-gray-300 text-sm leading-relaxed break-words whitespace-pre-wrap">&ldquo;{avis.text}&rdquo;</p>
                 </div>
-                <p className="text-gray-300 text-sm leading-relaxed flex-1 break-words whitespace-pre-wrap">&ldquo;{avis.text}&rdquo;</p>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-black font-black text-sm">
