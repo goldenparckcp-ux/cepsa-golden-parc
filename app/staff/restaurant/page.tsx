@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Utensils, Clock, Check, Bell, BellOff, Search, Table, Navigation, LogOut } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { adminDb } from "@/lib/admin-api";
 import { useRouter } from "next/navigation";
 
 export default function StaffRestaurantOrdersPage() {
@@ -129,8 +130,7 @@ export default function StaffRestaurantOrdersPage() {
 
     const fetchOrders = async () => {
         try {
-            const { data, error } = await supabase
-                .from("restaurant_orders")
+            const { data, error } = await adminDb("restaurant_orders")
                 .select("*")
                 .order("created_at", { ascending: false });
 
@@ -155,8 +155,7 @@ export default function StaffRestaurantOrdersPage() {
                 updates.completed_at = new Date().toISOString();
             }
 
-            const { error } = await supabase
-                .from("restaurant_orders")
+            const { error } = await adminDb("restaurant_orders")
                 .update(updates)
                 .eq("id", orderId);
 

@@ -1,10 +1,6 @@
 name: Run Supabase Migration
 
 on:
-  push:
-    paths:
-      - 'scripts/run_migration_direct.js'
-      - '.github/workflows/run-migration.yml'
   workflow_dispatch:
 
 jobs:
@@ -23,8 +19,10 @@ jobs:
         run: npm install pg
 
       - name: Execute Migration Script
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          node scripts/run_migration_direct.js > migration_output.txt 2>&1 || true
+          node devtools/scripts/run_migration_direct.js > migration_output.txt 2>&1 || true
           cat migration_output.txt
           echo "### Migration Output" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY

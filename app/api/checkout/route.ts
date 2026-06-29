@@ -1,17 +1,12 @@
 import { NextResponse } from 'next/server';
 import { createPayPalOrder, calculateArboun } from '@/lib/payment';
 import { supabase } from '@/lib/supabase';
-import { rateLimit } from '@/lib/rate-limit';
+
 import { CheckoutSchema } from '@/lib/validations';
 
 export async function POST(req: Request) {
     try {
-        // 1. Rate Limiting (Prevent Spam Checkouts)
-        const ip = req.headers.get('x-forwarded-for') || 'unknown';
-        const rateLimitResult = rateLimit(ip, 10, 60000); // 10 attempts per minute
-        if (!rateLimitResult.success) {
-            return NextResponse.json({ error: 'Trop de requêtes, veuillez patienter.' }, { status: 429 });
-        }
+
 
         const body = await req.json();
         

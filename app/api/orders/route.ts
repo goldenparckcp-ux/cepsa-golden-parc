@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-import { rateLimit } from '@/lib/rate-limit';
+
 import { CreateOrderSchema } from '@/lib/validations';
 
 export const dynamic = 'force-dynamic';
@@ -39,12 +39,7 @@ function getAdminSupabase() {
 
 export async function POST(req: Request) {
   try {
-    // 1. Rate Limiting (Prevent Spam Orders)
-    const ip = req.headers.get('x-forwarded-for') || 'unknown';
-    const rateLimitResult = rateLimit(ip, 5, 60000); // 5 orders per minute max
-    if (!rateLimitResult.success) {
-        return NextResponse.json({ error: 'Trop de commandes. Veuillez patienter.' }, { status: 429 });
-    }
+
 
     const supabase = getAdminSupabase();
     if (!supabase) {

@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Bed, Calendar, Search, Moon, Sun, UserCheck, UserMinus, RefreshCw, PhoneCall, LogOut } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { adminDb } from "@/lib/admin-api";
 import { useRouter } from "next/navigation";
 
 export default function StaffHotelReservationsPage() {
@@ -47,8 +48,7 @@ export default function StaffHotelReservationsPage() {
 
     const fetchReservations = async () => {
         try {
-            const { data, error } = await supabase
-                .from("hotel_reservations")
+            const { data, error } = await adminDb("hotel_reservations")
                 .select("*")
                 .order("created_at", { ascending: false });
 
@@ -106,8 +106,7 @@ export default function StaffHotelReservationsPage() {
                 checked_in_at: new Date().toISOString()
             };
 
-            const { error } = await supabase
-                .from("hotel_reservations")
+            const { error } = await adminDb("hotel_reservations")
                 .update(updates)
                 .eq("id", resId);
 
@@ -130,8 +129,7 @@ export default function StaffHotelReservationsPage() {
                 checked_out_at: new Date().toISOString()
             };
 
-            const { error } = await supabase
-                .from("hotel_reservations")
+            const { error } = await adminDb("hotel_reservations")
                 .update(updates)
                 .eq("id", resId);
 
@@ -151,8 +149,7 @@ export default function StaffHotelReservationsPage() {
                 status: "cancelled"
             };
 
-            const { error } = await supabase
-                .from("hotel_reservations")
+            const { error } = await adminDb("hotel_reservations")
                 .update(updates)
                 .eq("id", resId);
 

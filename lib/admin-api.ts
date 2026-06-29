@@ -1,16 +1,42 @@
 export const adminDb = (table: string) => {
+  let apiPath = '';
+  if (table === 'restaurant_orders') {
+    apiPath = '/api/admin/restaurant';
+  } else if (table === 'hotel_reservations') {
+    apiPath = '/api/admin/hotel';
+  } else if (table === 'pool_bookings') {
+    apiPath = '/api/admin/pool';
+  } else {
+    // Fallback/Legacy route
+    apiPath = '/api/admin/db';
+  }
+
   return {
     select: (columns = '*') => {
       let orderQuery: any = null;
-      let matchQuery: any = {};
+      const matchQuery: any = {};
       let singleResult = false;
       const execute = async () => {
-        const res = await fetch('/api/admin/db', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'select', table, payload: { columns }, order: orderQuery, match: matchQuery, single: singleResult })
+        let url = apiPath;
+        const params = new URLSearchParams();
+        
+        // Handle specific case for caisse order lookups by order_number
+        if (matchQuery.order_number) {
+          params.append('order_number', matchQuery.order_number);
+        }
+        
+        if (params.toString()) {
+          url += `?${params.toString()}`;
+        }
+        
+        const res = await fetch(url, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
         });
-        return await res.json();
+        
+        const data = await res.json();
+        // Return matching format to mock Supabase client response
+        return { data, error: res.ok ? null : { message: data.error || 'Request failed' } };
       };
       
       const chain: any = Object.assign(Promise.resolve().then(() => execute()), {
@@ -38,46 +64,33 @@ export const adminDb = (table: string) => {
       return chain;
     },
     insert: (payload: any): any => {
-      // Fake a chained object that supports .select().single()
-      let wantSelect = false;
-      let wantSingle = false;
-
       const execute = async () => {
-        const res = await fetch('/api/admin/db', {
+        const res = await fetch(apiPath, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'insert', table, payload, select: wantSelect })
+          body: JSON.stringify(payload)
         });
-        const json = await res.json();
-        if (wantSingle && json.data && Array.isArray(json.data)) {
-           json.data = json.data[0];
-        }
-        return json;
+        const data = await res.json();
+        return { data, error: res.ok ? null : { message: data.error || 'Insert failed' } };
       };
-
       const chain: any = Object.assign(Promise.resolve().then(() => execute()), {
-        select: (cols: any) => {
-          wantSelect = true;
-          return chain;
-        },
-        single: () => {
-          wantSingle = true;
-          return chain;
-        },
+        select: (cols: any) => chain,
+        single: () => chain,
         then: (onfulfilled: any, onrejected: any) => execute().then(onfulfilled, onrejected)
       });
       
       return chain;
     },
     update: (payload: any) => {
-      let matchQuery: any = {};
+      const matchQuery: any = {};
       const execute = async () => {
-        const res = await fetch('/api/admin/db', {
-          method: 'POST',
+        const res = await fetch(apiPath, {
+          method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'update', table, payload, match: matchQuery })
+          body: JSON.stringify({ id: matchQuery.id, updates: payload })
         });
-        return await res.json();
+        const data = await res.json();
+        return { data, error: res.ok ? null : { message: data.error || 'Update failed' } };
       };
 
       const chain: any = Object.assign(Promise.resolve().then(() => execute()), {
@@ -90,14 +103,15 @@ export const adminDb = (table: string) => {
       return chain;
     },
     delete: () => {
-      let matchQuery: any = {};
+      const matchQuery: any = {};
       const execute = async () => {
-        const res = await fetch('/api/admin/db', {
-          method: 'POST',
+        const res = await fetch(apiPath, {
+          method: 'DELETE',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'delete', table, match: matchQuery })
+          body: JSON.stringify({ id: matchQuery.id })
         });
-        return await res.json();
+        const data = await res.json();
+        return { data, error: res.ok ? null : { message: data.error || 'Delete failed' } };
       };
 
       const chain: any = Object.assign(Promise.resolve().then(() => execute()), {

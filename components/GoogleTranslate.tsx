@@ -1,29 +1,12 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export function GoogleTranslate() {
-    useEffect(() => {
-        // Prevent React Hydration Errors when Google Translate modifies the DOM
-        if (typeof Node === "function" && Node.prototype) {
-            const originalRemoveChild = Node.prototype.removeChild;
-            Node.prototype.removeChild = function <T extends Node>(child: T): T {
-                if (child.parentNode !== this) {
-                    if (console) console.warn("Google Translate React Hydration fix - removeChild caught.");
-                    return child;
-                }
-                return originalRemoveChild.call(this, child) as T;
-            };
+    const [isMounted, setIsMounted] = useState(false);
 
-            const originalInsertBefore = Node.prototype.insertBefore;
-            Node.prototype.insertBefore = function <T extends Node>(newNode: T, referenceNode: Node | null): T {
-                if (referenceNode && referenceNode.parentNode !== this) {
-                    if (console) console.warn("Google Translate React Hydration fix - in.sertBefore caught.");
-                    return newNode;
-                }
-                return originalInsertBefore.call(this, newNode, referenceNode) as T;
-            };
-        }
+    useEffect(() => {
+        setIsMounted(true);
 
         // Add Google Translate Script
         const addScript = document.createElement("script");
@@ -60,5 +43,7 @@ export function GoogleTranslate() {
         };
     }, []);
 
-    return <div id="google_translate_element" className="hidden"></div>;
+    if (!isMounted) return null;
+
+    return <div id="google_translate_element" className="hidden" suppressHydrationWarning></div>;
 }

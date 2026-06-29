@@ -27,7 +27,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="fr" suppressHydrationWarning>
       <body className={`${inter.className} ${outfit.variable} bg-[#0F172A]`}>
         <LanguageProvider>
           <AuthProvider>

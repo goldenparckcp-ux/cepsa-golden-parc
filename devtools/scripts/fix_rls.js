@@ -12,7 +12,11 @@ function getEnvVar(name) {
   return match ? match[1].trim() : null;
 }
 
-const connectionString = "postgresql://postgres:EgBovcTTPMqZga5W@[2a05:d018:65a:e202:51ae:29f1:5502:5fd]:5432/postgres";
+const connectionString = getEnvVar('DATABASE_URL');
+if (!connectionString) {
+  console.error("Error: DATABASE_URL is not defined in .env.local");
+  process.exit(1);
+}
 
 const client = new Client({
   connectionString: connectionString,

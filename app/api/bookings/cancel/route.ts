@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { verifyStaffAuth } from '@/lib/auth-guard';
-import { rateLimit } from '@/lib/rate-limit';
+
 
 // Initialize Supabase admin client to bypass RLS for secure state changes
 const supabaseAdmin = createClient(
@@ -117,10 +117,7 @@ export async function POST(req: Request) {
         const auth = await verifyStaffAuth();
         if (!auth.success) return auth.response;
 
-        // Rate limiting (5 requests per minute)
-        const ip = req.headers.get('x-forwarded-for') || 'unknown';
-        const rl = rateLimit(ip, 5, 60000);
-        if (!rl.success) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+
 
         const { bookingId, tableName: passedTableName } = await req.json();
 
@@ -177,12 +174,11 @@ export async function POST(req: Request) {
                 .eq('id', bookingId);
 
             if (cancelError) {
-                console.warn(`Cancel update failed on ${tableName}, doing hard delete fallback:`, cancelError.message);
-                const { error: deleteError } = await supabaseAdmin
-                    .from(tableName)
-                    .delete()
-                    .eq('id', bookingId);
-                if (deleteError) throw deleteError;
+                console.error(`Cancel update failed on ${tableName}:`, cancelError.message);
+                return NextResponse.json({ 
+                    error: "Impossible de modifier le statut de la réservation en 'cancelled'.", 
+                    details: cancelError.message 
+                }, { status: 500 });
             }
 
             let refunded = false;
@@ -255,12 +251,11 @@ export async function POST(req: Request) {
                 .eq('id', bookingId);
 
             if (forfeitError) {
-                console.warn(`Forfeit update failed on ${tableName}, doing hard delete fallback:`, forfeitError.message);
-                const { error: deleteError } = await supabaseAdmin
-                    .from(tableName)
-                    .delete()
-                    .eq('id', bookingId);
-                if (deleteError) throw deleteError;
+                console.error(`Forfeit update failed on ${tableName}:`, forfeitError.message);
+                return NextResponse.json({ 
+                    error: "Impossible de modifier le statut de la réservation en 'forfeited'.", 
+                    details: forfeitError.message 
+                }, { status: 500 });
             }
 
             return NextResponse.json({

@@ -574,55 +574,12 @@ function ProfileContent() {
         let isMounted = true;
 
         const handleAuth = async () => {
-            const hasAuthParams = window.location.hash.includes('access_token') ||
-                window.location.search.includes('code') ||
-                window.location.search.includes('error');
+            if (authLoading) return;
 
-            const hasSessionLoaded = window.location.search.includes('session_loaded');
-
-            // If we just redirected back from the callback route with success,
-            // force fetch session to ensure client-side state aligns immediately
-            if (hasSessionLoaded) {
-                // Clear the query parameter cleanly from the URL bar without reloading
-                const cleanUrl = window.location.pathname + window.location.search.replace(/[?&]session_loaded=1/, '');
-                window.history.replaceState({}, document.title, cleanUrl);
-
-                const { data: { session } } = await supabase.auth.getSession();
-                if (session?.user && isMounted) {
-                    await loadUserProfile(session.user.id);
-                    return;
-                }
-            }
-
-            // 1. If we have a user, load their profile immediately
             if (authUser) {
-                await loadUserProfile(authUser.id);
-                return;
-            }
-
-            // 2. If we are still loading global auth, just wait (UI shows spinner)
-            if (authLoading) {
-                return;
-            }
-
-            // 3. If global auth is done, but no user found:
-            if (!authUser) {
-                // If we see redirect params, Supabase might still be processing the exchange
-                // We give it a short grace period, then force stop content loading
-                if (hasAuthParams) {
-                    console.log("Auth params present but no user yet. Waiting brief moment...");
-                    setTimeout(async () => {
-                        const { data: { session } } = await supabase.auth.getSession();
-                        if (session?.user && isMounted) {
-                            await loadUserProfile(session.user.id);
-                        } else if (isMounted) {
-                            setIsLoading(false);
-                        }
-                    }, 1500); // reduced timeout and added manual check fallback
-                } else {
-                    // No params, no user -> Show login form
-                    setIsLoading(false);
-                }
+                if (isMounted) await loadUserProfile(authUser.id);
+            } else {
+                if (isMounted) setIsLoading(false);
             }
         };
 

@@ -28,7 +28,7 @@ const TYPE_META = {
     icon: Waves,
     color: "from-cyan-400 to-blue-600",
     glow: "rgba(34,211,238,0.3)",
-    href: "/restaurant",
+    href: "/services/pool",
   },
   hotel: {
     label: "Hôtel",
@@ -36,7 +36,7 @@ const TYPE_META = {
     icon: BedDouble,
     color: "from-purple-500 to-indigo-600",
     glow: "rgba(168,85,247,0.3)",
-    href: "/restaurant",
+    href: "/hotel",
   },
 };
 
