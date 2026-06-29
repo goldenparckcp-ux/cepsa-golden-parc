@@ -268,10 +268,17 @@ function ProfileContent() {
         if (userId && poolQuery) poolQuery += `,user_id.eq.${userId}`;
         else if (userId) poolQuery = `user_id.eq.${userId}`;
 
-        const { data: serv } = await supabase.from('service_bookings').select('*').or(query);
-        const { data: hotel } = await supabase.from('hotel_reservations').select('*').or(query);
-        const { data: pool } = await supabase.from('pool_bookings').select('*').or(poolQuery || query);
-        const { data: resto } = await supabase.from('restaurant_orders').select('*').or(query);
+        const [servRes, hotelRes, poolRes, restoRes] = await Promise.all([
+            supabase.from('service_bookings').select('*').or(query),
+            supabase.from('hotel_reservations').select('*').or(query),
+            supabase.from('pool_bookings').select('*').or(poolQuery || query),
+            supabase.from('restaurant_orders').select('*').or(query)
+        ]);
+
+        const serv = servRes.data;
+        const hotel = hotelRes.data;
+        const pool = poolRes.data;
+        const resto = restoRes.data;
 
         const all = [
             // --- LAVAGE / SERVICES ---
@@ -571,6 +578,22 @@ function ProfileContent() {
                 window.location.search.includes('code') ||
                 window.location.search.includes('error');
 
+            const hasSessionLoaded = window.location.search.includes('session_loaded');
+
+            // If we just redirected back from the callback route with success,
+            // force fetch session to ensure client-side state aligns immediately
+            if (hasSessionLoaded) {
+                // Clear the query parameter cleanly from the URL bar without reloading
+                const cleanUrl = window.location.pathname + window.location.search.replace(/[?&]session_loaded=1/, '');
+                window.history.replaceState({}, document.title, cleanUrl);
+
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session?.user && isMounted) {
+                    await loadUserProfile(session.user.id);
+                    return;
+                }
+            }
+
             // 1. If we have a user, load their profile immediately
             if (authUser) {
                 await loadUserProfile(authUser.id);
@@ -588,9 +611,14 @@ function ProfileContent() {
                 // We give it a short grace period, then force stop content loading
                 if (hasAuthParams) {
                     console.log("Auth params present but no user yet. Waiting brief moment...");
-                    setTimeout(() => {
-                        if (isMounted) setIsLoading(false);
-                    }, 3000); // 3s safety timeout to stop infinite spinner
+                    setTimeout(async () => {
+                        const { data: { session } } = await supabase.auth.getSession();
+                        if (session?.user && isMounted) {
+                            await loadUserProfile(session.user.id);
+                        } else if (isMounted) {
+                            setIsLoading(false);
+                        }
+                    }, 1500); // reduced timeout and added manual check fallback
                 } else {
                     // No params, no user -> Show login form
                     setIsLoading(false);
@@ -626,7 +654,7 @@ function ProfileContent() {
             const { error } = await supabase.auth.signInWithOtp({
                 email: email,
                 options: {
-                    emailRedirectTo: `${window.location.origin}/api/auth/callback?next=/profile`,
+                    emailRedirectTo: `${window.location.origin}/auth/callback?next=/profile`,
                 },
             });
 
@@ -1359,7 +1387,7 @@ function ProfileContent() {
                                         <button
                                             onClick={() => {
                                                 setIsLoading(true);
-                                                const callbackUrl = new URL('/api/auth/callback', window.location.origin);
+                                                const callbackUrl = new URL('/auth/callback', window.location.origin);
                                                 callbackUrl.searchParams.set('next', '/profile');
 
                                                 supabase.auth.signInWithOAuth({
@@ -1383,7 +1411,7 @@ function ProfileContent() {
                                         <button
                                             onClick={() => {
                                                 setIsLoading(true);
-                                                const callbackUrl = new URL('/api/auth/callback', window.location.origin);
+                                                const callbackUrl = new URL('/auth/callback', window.location.origin);
                                                 callbackUrl.searchParams.set('next', '/profile');
 
                                                 supabase.auth.signInWithOAuth({

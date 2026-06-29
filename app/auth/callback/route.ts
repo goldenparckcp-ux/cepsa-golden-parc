@@ -1,4 +1,3 @@
-
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { type NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
@@ -7,7 +6,12 @@ export async function GET(request: NextRequest) {
     const { searchParams, origin } = new URL(request.url)
     const code = searchParams.get('code')
     // if "next" is in param, use it as the redirect URL
-    const next = searchParams.get('next') ?? '/'
+    const next = searchParams.get('next') ?? '/profile'
+
+    // Securely determine the correct public URL for production redirection on Vercel
+    const host = request.headers.get('host') || origin.replace(/^https?:\/\//, '')
+    const proto = request.headers.get('x-forwarded-proto') || 'https'
+    const absoluteOrigin = `${proto}://${host}`
 
     if (code) {
         const cookieStore = await cookies()
@@ -30,10 +34,13 @@ export async function GET(request: NextRequest) {
         )
         const { error } = await supabase.auth.exchangeCodeForSession(code)
         if (!error) {
-            return NextResponse.redirect(`${origin}${next}`)
+            // Append a dynamic query param to force refresh or session detection on redirect
+            const targetUrl = new URL(next, absoluteOrigin)
+            targetUrl.searchParams.set('session_loaded', '1')
+            return NextResponse.redirect(targetUrl.toString())
         }
     }
 
     // return the user to an error page with instructions
-    return NextResponse.redirect(`${origin}/auth/auth-code-error`)
+    return NextResponse.redirect(`${absoluteOrigin}/auth/auth-code-error`)
 }
