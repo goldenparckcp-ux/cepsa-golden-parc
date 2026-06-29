@@ -512,8 +512,8 @@ export default function Home() {
             <p className="text-gray-400 mt-2 font-medium">Ce que disent nos clients</p>
           </motion.div>
 
-          {/* Swipeable Carousel on Mobile, Grid on Desktop */}
-          <div className="flex overflow-x-auto gap-5 snap-x snap-mandatory pb-6 scrollbar-hide md:grid md:grid-cols-3 w-full">
+          {/* Vertical stack on Mobile, 3-columns Grid on Desktop */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 w-full">
             {reviews.map((avis, i) => (
               <motion.div
                 key={i}
@@ -521,7 +521,7 @@ export default function Home() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="bg-[#111827] border border-white/8 rounded-[2rem] p-6 flex flex-col justify-between hover:border-amber-500/20 transition-colors snap-center min-w-[310px] sm:min-w-[360px] md:min-w-0 flex-shrink-0 md:flex-shrink min-h-[200px]"
+                className="bg-[#111827] border border-white/8 rounded-[2rem] p-6 flex flex-col justify-between hover:border-amber-500/20 transition-colors min-h-[180px] w-full"
               >
                 <div className="space-y-4">
                   <div className="flex items-center justify-between gap-2 w-full">
