@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { verifyStaffAuth } from '@/lib/auth-guard';
-import { rateLimit } from '@/lib/rate-limit';
+
 
 export const dynamic = 'force-dynamic';
 
@@ -14,23 +14,39 @@ function getAdminSupabase() {
   });
 }
 
+import { z } from 'zod';
+
+const RestaurantOrderUpdateSchema = z.object({
+  status: z.enum(['pending', 'preparing', 'ready', 'completed', 'cancelled']).optional(),
+  deposit_paid: z.boolean().optional(),
+  deposit_amount: z.number().optional(),
+  updated_at: z.string().optional(),
+  completed_at: z.string().optional(),
+});
+
 // GET all restaurant orders
 export async function GET(request: Request) {
   try {
     const auth = await verifyStaffAuth();
     if (!auth.success) return auth.response;
 
-    const ip = request.headers.get('x-forwarded-for') || 'unknown';
-    const rl = rateLimit(ip, 30, 60000);
-    if (!rl.success) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+
 
     const supabase = getAdminSupabase();
     if (!supabase) throw new Error('Missing Supabase server credentials.');
 
-    const { data, error } = await supabase
-      .from("restaurant_orders")
-      .select("*")
-      .order("created_at", { ascending: false });
+    const { searchParams } = new URL(request.url);
+    const orderNumber = searchParams.get("order_number");
+
+    let query = supabase.from("restaurant_orders").select("*");
+
+    if (orderNumber) {
+      query = query.eq("order_number", orderNumber);
+    } else {
+      query = query.order("created_at", { ascending: false });
+    }
+
+    const { data, error } = await query;
 
     if (error) throw error;
     return NextResponse.json(data);
@@ -45,9 +61,7 @@ export async function PATCH(request: Request) {
     const auth = await verifyStaffAuth();
     if (!auth.success) return auth.response;
 
-    const ip = request.headers.get('x-forwarded-for') || 'unknown';
-    const rl = rateLimit(ip, 30, 60000);
-    if (!rl.success) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+
 
     const supabase = getAdminSupabase();
     if (!supabase) throw new Error('Missing Supabase server credentials.');
@@ -59,9 +73,14 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Missing id or updates in body.' }, { status: 400 });
     }
 
+    const parsedUpdates = RestaurantOrderUpdateSchema.safeParse(updates);
+    if (!parsedUpdates.success) {
+      return NextResponse.json({ error: 'Invalid update payload', details: parsedUpdates.error.flatten().fieldErrors }, { status: 400 });
+    }
+
     const { error } = await supabase
       .from("restaurant_orders")
-      .update(updates)
+      .update(parsedUpdates.data)
       .eq("id", id);
 
     if (error) throw error;

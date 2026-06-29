@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Banknote, Clock, Check, Bell, Search, QrCode, Camera, X, Loader2, LogOut, ArrowRight, ShieldCheck, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { adminDb } from "@/lib/admin-api";
 import { useRouter } from "next/navigation";
 import { Scanner } from '@yudiel/react-qr-scanner';
 
@@ -45,8 +46,7 @@ export default function StaffCaissePage() {
 
         try {
             // Fetch order from restaurant_orders
-            const { data, error } = await supabase
-                .from("restaurant_orders")
+            const { data, error } = await adminDb("restaurant_orders")
                 .select("*")
                 .eq("order_number", query.trim().toUpperCase())
                 .maybeSingle();
@@ -88,8 +88,7 @@ export default function StaffCaissePage() {
                 updates.completed_at = new Date().toISOString();
             }
 
-            const { error } = await supabase
-                .from("restaurant_orders")
+            const { error } = await adminDb("restaurant_orders")
                 .update(updates)
                 .eq("id", order.id);
 

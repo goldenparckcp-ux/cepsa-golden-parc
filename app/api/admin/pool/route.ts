@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { verifyStaffAuth } from '@/lib/auth-guard';
-import { rateLimit } from '@/lib/rate-limit';
+
 
 export const dynamic = 'force-dynamic';
 
@@ -14,15 +14,21 @@ function getAdminSupabase() {
   });
 }
 
+import { z } from 'zod';
+
+const PoolBookingUpdateSchema = z.object({
+  status: z.enum(['pending', 'active', 'completed', 'cancelled', 'checked_in']).optional(),
+  checked_in_at: z.string().optional(),
+  updated_at: z.string().optional(),
+});
+
 // GET all pool bookings
 export async function GET(request: Request) {
   try {
     const auth = await verifyStaffAuth();
     if (!auth.success) return auth.response;
 
-    const ip = request.headers.get('x-forwarded-for') || 'unknown';
-    const rl = rateLimit(ip, 30, 60000);
-    if (!rl.success) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+
 
     const supabase = getAdminSupabase();
     if (!supabase) throw new Error('Missing Supabase server credentials.');
@@ -45,9 +51,7 @@ export async function PATCH(request: Request) {
     const auth = await verifyStaffAuth();
     if (!auth.success) return auth.response;
 
-    const ip = request.headers.get('x-forwarded-for') || 'unknown';
-    const rl = rateLimit(ip, 30, 60000);
-    if (!rl.success) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+
 
     const supabase = getAdminSupabase();
     if (!supabase) throw new Error('Missing Supabase server credentials.');
@@ -59,9 +63,14 @@ export async function PATCH(request: Request) {
       return NextResponse.json({ error: 'Missing id or updates in body.' }, { status: 400 });
     }
 
+    const parsedUpdates = PoolBookingUpdateSchema.safeParse(updates);
+    if (!parsedUpdates.success) {
+      return NextResponse.json({ error: 'Invalid update payload', details: parsedUpdates.error.flatten().fieldErrors }, { status: 400 });
+    }
+
     const { error } = await supabase
       .from("pool_bookings")
-      .update(updates)
+      .update(parsedUpdates.data)
       .eq("id", id);
 
     if (error) throw error;

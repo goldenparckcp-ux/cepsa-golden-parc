@@ -4,8 +4,10 @@ import React, { useState, useEffect } from "react";
 import { Lock, Smartphone, Users, HelpCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+import { supabase } from "@/lib/supabase";
+
 interface StaffSession {
-    role: 'hotel' | 'kitchen' | 'services' | 'caisse';
+    role: 'hotel' | 'kitchen' | 'services' | 'caisse' | 'admin';
     name: string;
 }
 
@@ -55,47 +57,54 @@ export default function StaffLoginPage() {
         }
     }, [pin]);
 
-    const verifyStaffPin = (enteredPin: string) => {
+    const verifyStaffPin = async (enteredPin: string) => {
         setIsChecking(true);
         setErrorMsg("");
 
-        let resolvedSession: StaffSession | null = null;
+        try {
+            const response = await fetch("/api/auth/login", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ pin: enteredPin }),
+            });
 
-        const pinAdmin = localStorage.getItem("pin_admin") || "7777";
-        const pinHotel = localStorage.getItem("pin_hotel") || "1111";
-        const pinKitchen = localStorage.getItem("pin_kitchen") || "2222";
-        const pinServices = localStorage.getItem("pin_services") || "3333";
-        const pinCaisse = localStorage.getItem("pin_caisse") || "4444";
+            const resData = await response.json();
 
-        if (enteredPin === pinHotel) {
-            resolvedSession = { role: "hotel", name: "Réception Hôtel" };
-        } else if (enteredPin === pinKitchen) {
-            resolvedSession = { role: "kitchen", name: "Chef Cuisine" };
-        } else if (enteredPin === pinServices) {
-            resolvedSession = { role: "services", name: "Staff Piscine & Services" };
-        } else if (enteredPin === pinCaisse) {
-            resolvedSession = { role: "caisse", name: "Caisse Principale" };
-        } else if (enteredPin === pinAdmin) {
-            setErrorMsg("Ce code PIN est réservé à l'administrateur. Veuillez utiliser le portail Admin (/admin).");
-            setPin("");
-            setIsChecking(false);
-            return;
-        }
+            if (!response.ok || !resData.success) {
+                setErrorMsg(resData.error || "Code PIN incorrect.");
+                setPin("");
+                setIsChecking(false);
+                return;
+            }
 
-        if (resolvedSession) {
+            // Role mapping and session preparation
+            const resolvedSession: StaffSession = {
+                role: resData.role,
+                name: resData.name || `Staff ${resData.role}`
+            };
+
             localStorage.setItem("staff_session", JSON.stringify(resolvedSession));
             setPin("");
-            
+
             // Redirect based on role
             if (resolvedSession.role === "hotel") router.push("/staff/hotel");
             else if (resolvedSession.role === "kitchen") router.push("/staff/restaurant");
-            else if (resolvedSession.role === "services") router.push("/staff/pool-services");
-            else if (resolvedSession.role === "caisse") router.push("/staff/caisse");
-        } else {
-            setErrorMsg("Code PIN incorrect. Veuillez contacter l'administrateur.");
+            else if (resolvedSession.role === "services" || resolvedSession.role === "caisse") {
+                if (resolvedSession.name.includes("Caisse") || resolvedSession.role === "caisse") {
+                    router.push("/staff/caisse");
+                } else {
+                    router.push("/staff/pool-services");
+                }
+            }
+            else if (resolvedSession.role === "admin") router.push("/admin");
+            
+        } catch (err) {
+            console.error(err);
+            setErrorMsg("Une erreur réseau s'est produite.");
             setPin("");
+        } finally {
+            setIsChecking(false);
         }
-        setIsChecking(false);
     };
 
     return (

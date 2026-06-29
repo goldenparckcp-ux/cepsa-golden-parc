@@ -1,14 +1,35 @@
 const { Client } = require('pg');
-require('dotenv').config({ path: './.env.local' });
+try {
+  require('dotenv').config({ path: './.env.local' });
+} catch (e) {
+  try {
+    const fs = require('fs');
+    const path = require('path');
+    const envPath = path.join(__dirname, '..', '.env.local');
+    if (fs.existsSync(envPath)) {
+      fs.readFileSync(envPath, 'utf8').split('\n').forEach(line => {
+        const match = line.match(/^\s*([^#=]+)\s*=\s*(.*)\s*$/);
+        if (match) {
+          const key = match[1].trim();
+          let val = match[2].trim();
+          if (val.startsWith('"') && val.endsWith('"')) val = val.slice(1, -1);
+          if (val.startsWith("'") && val.endsWith("'")) val = val.slice(1, -1);
+          process.env[key] = val;
+        }
+      });
+    }
+  } catch (err) {}
+}
 
-// We'll try the direct connection string first, then the pooler with different variations
 const urls = [
-  "postgresql://postgres:EgBovcTTPMqZga5W@db.vktqecgylkjogquhsymz.supabase.co:5432/postgres",
-  "postgresql://postgres.vktqecgylkjogquhsymz:EgBovcTTPMqZga5W@aws-0-eu-west-1.pooler.supabase.com:6543/postgres?sslmode=require",
-  "postgresql://postgres.vktqecgylkjogquhsymz:EgBovcTTPMqZga5W@aws-0-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require",
-  // Let's also check if standard connection string without SSL mode works
-  "postgresql://postgres:EgBovcTTPMqZga5W@db.vktqecgylkjogquhsymz.supabase.co:5432/postgres?sslmode=require"
-];
+  process.env.DATABASE_URL,
+  process.env.DATABASE_URL_POOLER
+].filter(Boolean);
+
+if (urls.length === 0) {
+  console.error("Error: Neither DATABASE_URL nor DATABASE_URL_POOLER environment variables are defined.");
+  process.exit(1);
+}
 
 const sql = `
 CREATE TABLE IF NOT EXISTS public.lubricant_items (

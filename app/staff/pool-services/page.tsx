@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { Ticket, Search, Waves, Check, LogOut, RefreshCw, QrCode } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { adminDb } from "@/lib/admin-api";
 import { useRouter } from "next/navigation";
 
 export default function StaffPoolServicesPage() {
@@ -39,8 +40,7 @@ export default function StaffPoolServicesPage() {
         setLoading(true);
         try {
             // Fetch pool bookings
-            const { data, error } = await supabase
-                .from("pool_bookings")
+            const { data, error } = await adminDb("pool_bookings")
                 .select("*")
                 .order("created_at", { ascending: false });
 
@@ -89,8 +89,7 @@ export default function StaffPoolServicesPage() {
                 checked_in_at: new Date().toISOString()
             };
 
-            const { error } = await supabase
-                .from("pool_bookings")
+            const { error } = await adminDb("pool_bookings")
                 .update(updates)
                 .eq("id", bookingId);
 

@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Car, X, Plus, Utensils, Zap, Check } from "lucide-react";
 import { useCart } from "@/lib/state/CartContext";
 import { COMPLETE_MENU } from "@/lib/types/menu";
@@ -47,8 +48,7 @@ export default function DriveModePage() {
                                 className="h-40 bg-[#1A1A1A] rounded-3xl border-2 border-white/5 active:border-red-500 flex items-center p-4 gap-6 transition-all active:bg-[#222]"
                             >
                                 <div className="w-32 h-32 rounded-2xl bg-black overflow-hidden relative shrink-0">
-                                    {/* Using standard img to avoid Next/Image constraints in this fast UI */}
-                                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                                    <Image src={item.image} alt={item.name} fill className="object-cover" />
                                 </div>
                                 <div className="flex-1 text-left flex flex-col justify-center">
                                     <h3 className="text-2xl font-black line-clamp-2">{item.name}</h3>

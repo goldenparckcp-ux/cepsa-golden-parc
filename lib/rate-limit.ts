@@ -1,35 +1,68 @@
-// Basic Rate Limiting Utility using an in-memory Map
-// Note: For multi-region serverless or edge deployments, a Redis-based solution (like Upstash) is recommended.
-// This in-memory solution works well for single-instance or basic protection.
+// Redis-based Rate Limiting Utility using Upstash REST API
 
-const rateLimitMap = new Map<string, { count: number; lastReset: number }>();
-
-export function rateLimit(
+export async function rateLimit(
   ip: string,
   limit: number = 100, // max requests
   windowMs: number = 60000 // timeframe in milliseconds (e.g., 1 minute)
-): { success: boolean; limit: number; remaining: number; reset: number } {
+): Promise<{ success: boolean; limit: number; remaining: number; reset: number }> {
   const now = Date.now();
-  const windowData = rateLimitMap.get(ip) || { count: 0, lastReset: now };
+  const windowSeconds = Math.ceil(windowMs / 1000);
+  const key = `ratelimit:${ip}:${windowSeconds}`;
 
-  // Reset window if timeframe has passed
-  if (now - windowData.lastReset > windowMs) {
-    windowData.count = 0;
-    windowData.lastReset = now;
+  const url = process.env.UPSTASH_REDIS_REST_URL;
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN;
+
+  if (!url || !token) {
+    console.warn("Upstash Redis credentials missing. Falling back to fail-open.");
+    return {
+      success: true,
+      limit,
+      remaining: limit,
+      reset: now + windowMs,
+    };
   }
 
-  // Increment request count
-  windowData.count += 1;
-  rateLimitMap.set(ip, windowData);
+  try {
+    // Run an atomic Lua script to increment and set expiration if it's the first request
+    const response = await fetch(`${url}`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify([
+        "EVAL",
+        "local c = redis.call('incr', KEYS[1]); if c == 1 then redis.call('expire', KEYS[1], ARGV[1]) end; return c;",
+        "1",
+        key,
+        windowSeconds.toString()
+      ]),
+    });
 
-  const remaining = Math.max(0, limit - windowData.count);
-  const success = windowData.count <= limit;
-  const reset = windowData.lastReset + windowMs;
+    if (!response.ok) {
+      throw new Error(`Upstash response status: ${response.status}`);
+    }
 
-  return {
-    success,
-    limit,
-    remaining,
-    reset,
-  };
+    const data = await response.json();
+    const count = parseInt(data.result ?? "0", 10);
+
+    const remaining = Math.max(0, limit - count);
+    const success = count <= limit;
+    const reset = now + windowMs;
+
+    return {
+      success,
+      limit,
+      remaining,
+      reset,
+    };
+  } catch (err) {
+    console.error("Rate limiter Redis call failed, failing open:", err);
+    return {
+      success: true,
+      limit,
+      remaining: limit,
+      reset: now + windowMs,
+    };
+  }
 }

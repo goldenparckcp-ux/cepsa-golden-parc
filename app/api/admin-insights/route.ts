@@ -1,16 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyStaffAuth } from '@/lib/auth-guard';
-import { rateLimit } from '@/lib/rate-limit';
+
 
 export async function POST(req: NextRequest) {
     // Auth check: staff only
     const auth = await verifyStaffAuth();
     if (!auth.success) return auth.response;
 
-    // Rate limiting: 5 requests per minute
-    const ip = req.headers.get('x-forwarded-for') || 'unknown';
-    const rl = rateLimit(ip, 5, 60000);
-    if (!rl.success) return NextResponse.json({ error: 'Rate limited' }, { status: 429 });
+
 
     const apiKey = process.env.GEMINI_API_KEY;
 

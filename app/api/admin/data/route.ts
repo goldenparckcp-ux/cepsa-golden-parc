@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { verifyStaffAuth } from '@/lib/auth-guard';
-import { rateLimit } from '@/lib/rate-limit';
+
 
 export const dynamic = 'force-dynamic';
 
@@ -19,9 +19,7 @@ export async function GET(request: Request) {
     const auth = await verifyStaffAuth();
     if (!auth.success) return auth.response;
 
-    const ip = request.headers.get('x-forwarded-for') || 'unknown';
-    const rl = rateLimit(ip, 30, 60000);
-    if (!rl.success) return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+
 
     const supabase = getAdminSupabase();
     if (!supabase) {

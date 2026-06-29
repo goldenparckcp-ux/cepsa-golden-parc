@@ -29,29 +29,28 @@ export default function PaymentModal({ bookingId, amount, serviceType, tableName
 
     const handleSuccessActions = async (captureId: string) => {
         try {
-            // Standard Booking Checkout - Flip status to confirmed and deposit paid
-            await supabase
-                .from(tableName)
-                .update({ deposit_paid: true, deposit_amount: amount, status: 'confirmed' })
-                .eq('id', bookingId);
-
-            // Log General Transaction
-            await supabase.from('transactions').insert({
-                user_id: user?.id,
-                booking_id: bookingId,
-                booking_table: tableName,
-                amount,
-                gateway: 'paypal',
-                gateway_reference: captureId,
-                type: 'deposit',
-                status: 'completed'
+            // Securely verify capture and confirm booking server-side
+            const response = await fetch('/api/checkout/confirm', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    bookingId,
+                    tableName,
+                    orderId: captureId,
+                    amount
+                })
             });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.error || "Erreur de validation du paiement serveur");
+            }
 
             setStep('success');
             setTimeout(() => onSuccess('paypal'), 2000);
         } catch (err: unknown) {
             console.error("Success database update error:", err);
-            setError("Paiement capturé, mais erreur de mise à jour de la base de données.");
+            setError(err instanceof Error ? err.message : "Paiement capturé, mais erreur de mise à jour de la base de données.");
             setStep('selection');
         }
     };

@@ -1,21 +1,21 @@
 import { NextResponse } from 'next/server';
-import { rateLimit } from '@/lib/rate-limit';
+
 import { LoginSchema } from '@/lib/validations';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { SignJWT } from 'jose';
+
+function getAdminSupabase() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceKey) return null;
+  return createClient(supabaseUrl, serviceKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
 
 export async function POST(request: Request) {
   try {
-    // 1. Rate Limiting
-    const ip = request.headers.get('x-forwarded-for') || 'unknown';
-    const rateLimitResult = rateLimit(ip, 5, 60000); // 5 attempts per minute
-    
-    if (!rateLimitResult.success) {
-      return NextResponse.json(
-        { error: 'Trop de tentatives. Veuillez réessayer dans une minute.' },
-        { status: 429 }
-      );
-    }
+
 
     // 2. Parse & Validate input
     const body = await request.json();
@@ -30,18 +30,30 @@ export async function POST(request: Request) {
 
     const { pin } = parseResult.data;
 
-    // 3. Verify against Supabase
-    const { data: staffMember, error } = await supabase
-      .from('staff')
-      .select('*')
-      .eq('pin_hash', pin)
-      .single();
+    const supabaseAdmin = getAdminSupabase();
+    if (!supabaseAdmin) {
+      console.error('CRITICAL: Supabase admin client not initialized');
+    }
+
+    // 3. Verify against Supabase using Admin Client (RLS-secure)
+    let staffMember = null;
+    let dbError = null;
+
+    if (supabaseAdmin) {
+      const { data, error } = await supabaseAdmin
+        .from('staff')
+        .select('*')
+        .eq('pin_hash', pin)
+        .maybeSingle();
+      staffMember = data;
+      dbError = error;
+    }
 
     // Handling legacy hardcoded fallbacks for safety if Supabase fails or not configured
     let resolvedRole = null;
     let resolvedName = null;
 
-    if (!error && staffMember) {
+    if (!dbError && staffMember) {
       resolvedRole = staffMember.role;
       resolvedName = staffMember.name || 'Personnel';
     } else {
@@ -55,11 +67,18 @@ export async function POST(request: Request) {
       if (pin === pinAdmin) {
         resolvedRole = 'admin';
         resolvedName = 'Directeur';
-      } else if ([pinHotel, pinKitchen, pinServices, pinCaisse].includes(pin)) {
-        return NextResponse.json(
-          { error: 'Accès Admin réservé. Veuillez utiliser le portail Staff.' },
-          { status: 403 }
-        );
+      } else if (pin === pinHotel) {
+        resolvedRole = 'hotel';
+        resolvedName = 'Réceptionniste';
+      } else if (pin === pinKitchen) {
+        resolvedRole = 'kitchen';
+        resolvedName = 'Chef Ahmed';
+      } else if (pin === pinServices) {
+        resolvedRole = 'services';
+        resolvedName = 'Service Manager';
+      } else if (pin === pinCaisse) {
+        resolvedRole = 'services'; // fallback to services role (dashboard has redirection for caisse based on name or local checks)
+        resolvedName = 'Caisse Principale';
       }
     }
 
