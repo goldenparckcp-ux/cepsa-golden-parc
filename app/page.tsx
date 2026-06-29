@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from 'next/navigation';
-import { Car, Utensils, BedDouble, Waves, ChevronRight, Star, MapPin, Phone, Wrench, Wind, Zap, Clock, Navigation, PhoneCall } from "lucide-react";
+import { Car, Utensils, BedDouble, Waves, ChevronRight, Star, MapPin, Phone, Wrench, Wind, Zap, Clock, Navigation, PhoneCall, X } from "lucide-react";
 import { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import { useTranslation } from '@/lib/state/LanguageContext';
@@ -55,6 +55,7 @@ export default function Home() {
   const [fuelPrices, setFuelPrices] = useState({ gasoil: "12.50 DH", essence: "14.20 DH" });
   
   const reviewsCarouselRef = useRef<HTMLDivElement>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
 
   // Auto-scroll Reviews Carousel horizontally
   useEffect(() => {
@@ -570,6 +571,7 @@ export default function Home() {
               ]).map((photo, i) => (
                 <div
                   key={i}
+                  onClick={() => setPreviewImage(photo.src)}
                   className="relative overflow-hidden rounded-[1.5rem] md:rounded-[2rem] group cursor-pointer h-[180px] md:h-[240px] w-[260px] md:w-[350px] flex-shrink-0 border border-white/5 hover:border-amber-500/30 transition-colors duration-500"
                 >
                   <Image
@@ -825,6 +827,46 @@ export default function Home() {
             </div>
          </div>
       </footer>
+
+      {/* IMAGE PREVIEW LIGHTBOX MODAL */}
+      <AnimatePresence>
+        {previewImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setPreviewImage(null)}
+            className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out"
+          >
+            {/* Close Button */}
+            <button 
+              onClick={(e) => { e.stopPropagation(); setPreviewImage(null); }}
+              className="absolute top-6 right-6 p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors z-[10000]"
+            >
+              <X className="w-6 h-6" />
+            </button>
+            
+            {/* High-res Image Box */}
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              onClick={(e) => e.stopPropagation()}
+              className="relative max-w-5xl w-full max-h-[85vh] aspect-video rounded-3xl overflow-hidden shadow-2xl border border-white/10"
+            >
+              <Image 
+                src={previewImage} 
+                alt="Aperçu station"
+                fill
+                className="object-contain"
+                sizes="(max-width: 1200px) 100vw, 1200px"
+                priority
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
 }
