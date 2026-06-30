@@ -547,49 +547,58 @@ export default function Home() {
           </div>
 
           {/* INFINITE IMAGES CAROUSEL (Slow seamless slide) */}
-          <div className="w-full overflow-hidden relative py-2">
+          <div className="w-full overflow-hidden relative py-4">
             {/* Left and right gradient masks for a smooth fade effect */}
-            <div className="absolute left-0 top-0 bottom-0 w-16 bg-gradient-to-r from-[#0F172A] to-transparent z-10 pointer-events-none" />
-            <div className="absolute right-0 top-0 bottom-0 w-16 bg-gradient-to-l from-[#0F172A] to-transparent z-10 pointer-events-none" />
+            <div className="absolute left-0 top-0 bottom-0 w-20 bg-gradient-to-r from-[#0F172A] via-[#0F172A]/40 to-transparent z-10 pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-[#0F172A] via-[#0F172A]/40 to-transparent z-10 pointer-events-none" />
             
-            <div className="animate-marquee-images flex gap-4">
+            <div className="animate-marquee-images flex gap-6">
               {/* Duplicate the array of images to achieve a seamless loop */}
               {[
-                { src: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80', alt: 'Station carburant' },
-                { src: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80', alt: 'Hôtel Golden Parc' },
-                { src: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=800&q=80', alt: 'Piscine' },
-                { src: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80', alt: 'Restaurant' },
-                { src: 'https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80', alt: 'Lubrifiants' },
-                { src: 'https://images.unsplash.com/photo-1470723710355-95304d8aece4?auto=format&fit=crop&w=800&q=80', alt: 'Café & Repos' }
+                { src: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80', alt: 'Station Carburant' },
+                { src: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80', alt: "Hôtel L'Escale" },
+                { src: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=800&q=80', alt: 'Piscine Privée' },
+                { src: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80', alt: 'Restaurant Beldi' },
+                { src: 'https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80', alt: 'Entretien & Lubrifiants' },
+                { src: 'https://images.unsplash.com/photo-1470723710355-95304d8aece4?auto=format&fit=crop&w=800&q=80', alt: 'Espace Café & Repos' }
               ].concat([
-                { src: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80', alt: 'Station carburant' },
-                { src: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80', alt: 'Hôtel Golden Parc' },
-                { src: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=800&q=80', alt: 'Piscine' },
-                { src: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80', alt: 'Restaurant' },
-                { src: 'https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80', alt: 'Lubrifiants' },
-                { src: 'https://images.unsplash.com/photo-1470723710355-95304d8aece4?auto=format&fit=crop&w=800&q=80', alt: 'Café & Repos' }
+                { src: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80', alt: 'Station Carburant' },
+                { src: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80', alt: "Hôtel L'Escale" },
+                { src: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=800&q=80', alt: 'Piscine Privée' },
+                { src: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80', alt: 'Restaurant Beldi' },
+                { src: 'https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80', alt: 'Entretien & Lubrifiants' },
+                { src: 'https://images.unsplash.com/photo-1470723710355-95304d8aece4?auto=format&fit=crop&w=800&q=80', alt: 'Espace Café & Repos' }
               ]).map((photo, i) => (
                 <div
                   key={i}
                   onClick={() => setPreviewImage(photo.src)}
-                  className="relative overflow-hidden rounded-[1.5rem] md:rounded-[2rem] group cursor-pointer h-[180px] md:h-[240px] w-[260px] md:w-[350px] flex-shrink-0 border border-white/5 hover:border-amber-500/30 transition-colors duration-500"
+                  className="relative overflow-hidden rounded-[2rem] group cursor-zoom-in h-[200px] md:h-[260px] w-[280px] md:w-[380px] flex-shrink-0 border border-white/5 hover:border-amber-500/30 transition-all duration-700 shadow-lg shadow-black/25"
                 >
                   <Image
                     src={photo.src}
                     alt={photo.alt}
                     fill
                     sizes="(max-width: 768px) 50vw, 25vw"
-                    className="object-cover group-hover:scale-110 transition-transform duration-700"
+                    className="object-cover group-hover:scale-105 transition-transform duration-[1200ms] ease-out"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                  <div className="absolute bottom-4 left-4 text-white text-xs md:text-sm font-black opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-lg uppercase tracking-wider">
-                    {photo.alt}
+                  {/* Soft permanent bottom gradient overlay for readability on mobile */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
+                  
+                  {/* Clean elegant text overlay */}
+                  <div className="absolute bottom-5 left-5 right-5 z-10 flex flex-col gap-1">
+                    <span className="text-white text-xs md:text-sm font-bold uppercase tracking-wider drop-shadow-md">
+                      {photo.alt}
+                    </span>
+                    <span className="text-amber-400 text-[9px] font-black uppercase tracking-widest opacity-0 group-hover:opacity-100 transform translate-y-2 group-hover:translate-y-0 transition-all duration-500">
+                      Zoomer l'image +
+                    </span>
                   </div>
                 </div>
               ))}
             </div>
           </div>
         </div>
+
 
 
         {/* --- AVIS CLIENTS --- */}
@@ -836,33 +845,46 @@ export default function Home() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setPreviewImage(null)}
-            className="fixed inset-0 z-[9999] bg-black/95 backdrop-blur-md flex items-center justify-center p-4 cursor-zoom-out"
+            className="fixed inset-0 z-[9999] bg-black/90 backdrop-blur-2xl flex flex-col items-center justify-center p-4 cursor-zoom-out select-none"
           >
-            {/* Close Button */}
+            {/* Close Button - Minimalist Glassmorphism */}
             <button 
               onClick={(e) => { e.stopPropagation(); setPreviewImage(null); }}
-              className="absolute top-6 right-6 p-3 rounded-full bg-white/10 text-white hover:bg-white/20 transition-colors z-[10000]"
+              className="absolute top-6 right-6 p-4 rounded-full bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:scale-105 transition-all duration-300 z-[10000] cursor-pointer"
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5" />
             </button>
             
-            {/* High-res Image Box */}
+            {/* High-res Image Box - Adapts to original ratio without cropping */}
             <motion.div 
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              transition={{ type: "spring", damping: 30, stiffness: 120 }}
               onClick={(e) => e.stopPropagation()}
-              className="relative max-w-5xl w-full max-h-[85vh] aspect-video rounded-3xl overflow-hidden shadow-2xl border border-white/10"
+              className="relative max-w-[90vw] max-h-[75vh] w-[800px] h-[500px] rounded-2xl md:rounded-[2.5rem] overflow-hidden shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] border border-white/10"
             >
               <Image 
                 src={previewImage} 
-                alt="Aperçu station"
+                alt="Aperçu Station"
                 fill
-                className="object-contain"
-                sizes="(max-width: 1200px) 100vw, 1200px"
+                className="object-cover"
+                sizes="(max-width: 1200px) 90vw, 1200px"
                 priority
               />
+            </motion.div>
+
+            {/* Captions and Tip */}
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ delay: 0.2 }}
+              className="mt-6 text-center"
+            >
+              <p className="text-white/40 text-xs font-medium tracking-widest uppercase">
+                Cliquez n'importe où pour fermer
+              </p>
             </motion.div>
           </motion.div>
         )}
@@ -870,3 +892,4 @@ export default function Home() {
     </main>
   );
 }
+
