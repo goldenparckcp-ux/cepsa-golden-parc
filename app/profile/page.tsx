@@ -753,8 +753,8 @@ function ProfileContent() {
                 <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-red-500/10 rounded-full blur-[100px] opacity-30" />
             </div>
 
-            {/* Header / Back Navigation */}
-            <div className="sticky top-[64px] md:top-[80px] z-30 bg-[#0F172A]/90 backdrop-blur-xl border-b border-white/5 p-4 pt-6">
+            {/* Header / Back Navigation (Mobile Only) */}
+            <div className="md:hidden sticky top-[64px] z-30 bg-[#0F172A]/90 backdrop-blur-xl border-b border-white/5 p-4">
                 <div className="max-w-2xl mx-auto flex items-center justify-between">
                     <button 
                         onClick={() => {
@@ -769,7 +769,7 @@ function ProfileContent() {
                     >
                         <ChevronLeft className="w-5 h-5 text-white" />
                     </button>
-                    <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">Golden Park</div>
+                    <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">Mon Profil</div>
                 </div>
             </div>
 
@@ -779,9 +779,9 @@ function ProfileContent() {
                     <div className="flex-1 pb-28 max-w-2xl mx-auto w-full pt-6 px-4 md:px-0 relative z-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
 
                         {/* ACCOUNT HEADER */}
-                        <div className="flex items-center justify-between mb-8 px-2">
+                        <div className="flex items-center justify-between mb-8 px-2 md:pt-4">
                             <div>
-                                <h1 className="text-3xl font-black text-white tracking-tight mb-2">Mon Profil</h1>
+                                <h1 className="text-3xl md:text-4xl font-black text-white tracking-tight mb-2">Mon Profil</h1>
                                 <div className="flex items-center gap-3">
                                     <p className="text-gray-400 text-sm font-medium">Bienvenue, <span className="text-white">{fullName.split(' ')[0]}</span></p>
                                     <button
@@ -794,8 +794,8 @@ function ProfileContent() {
                             </div>
                             <button
                                 onClick={handleLogout}
-                                className="p-3 bg-white/5 border border-white/10 rounded-full text-gray-400 hover:text-white hover:bg-white/10 transition-colors hover:rotate-90 duration-300"
-                                aria-label="Logout"
+                                className="p-3 bg-red-500/10 border border-red-500/20 rounded-full text-red-400 hover:text-white hover:bg-red-500 transition-colors hover:rotate-90 duration-300 shadow-lg"
+                                aria-label="Déconnexion"
                             >
                                 <LogOut className="w-5 h-5" />
                             </button>
