@@ -7,7 +7,7 @@ import Image from "next/image";
 
 type HeroSlide = {
     id: string;
-    page: 'hotel' | 'restaurant' | 'pool';
+    page: 'hotel' | 'restaurant' | 'pool' | 'lubricants';
     title: string;
     subtitle: string;
     badge_text: string;
@@ -20,7 +20,7 @@ type HeroSlide = {
 export default function AdminHeroPage() {
     const [slides, setSlides] = useState<HeroSlide[]>([]);
     const [loading, setLoading] = useState(true);
-    const [activePage, setActivePage] = useState<'hotel' | 'restaurant' | 'pool'>('hotel');
+    const [activePage, setActivePage] = useState<'hotel' | 'restaurant' | 'pool' | 'lubricants'>('hotel');
     const [editingSlide, setEditingSlide] = useState<HeroSlide | null>(null);
     const [showSuccess, setShowSuccess] = useState(false);
 
@@ -75,8 +75,8 @@ export default function AdminHeroPage() {
                     <h1 className="text-3xl font-black text-white uppercase tracking-wider">Gestion des Sliders</h1>
                     <p className="text-gray-400 mt-1">Personnalisez les images et textes des bannières principales.</p>
                 </div>
-                <div className="flex bg-[#111827] rounded-xl border border-white/10 p-1">
-                    {(['hotel', 'restaurant', 'pool'] as const).map((page) => (
+                <div className="flex flex-wrap bg-[#111827] rounded-xl border border-white/10 p-1 gap-1">
+                    {(['hotel', 'restaurant', 'pool', 'lubricants'] as const).map((page) => (
                         <button
                             key={page}
                             onClick={() => setActivePage(page)}
@@ -84,7 +84,7 @@ export default function AdminHeroPage() {
                                 activePage === page ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'text-gray-400 hover:text-white'
                             }`}
                         >
-                            {page}
+                            {page === 'lubricants' ? 'Lubrifiants' : page}
                         </button>
                     ))}
                 </div>

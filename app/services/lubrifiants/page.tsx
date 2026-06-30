@@ -53,7 +53,7 @@ export default function LubricantsCatalog() {
     const { t, language } = useTranslation();
     const [searchQuery, setSearchQuery] = useState("");
     const [lubricantsList, setLubricantsList] = useState<any[]>(LUBRICANTS_CATALOG);
-    const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
+    const [heroSlides, setHeroSlides] = useState<any[]>([]);
 
     useEffect(() => {
         const fetchLubricants = async () => {
@@ -74,7 +74,25 @@ export default function LubricantsCatalog() {
                 console.warn("Using local lubricants fallback:", err);
             }
         };
+
+        const fetchHero = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('hero_sliders')
+                    .select('*')
+                    .eq('page', 'lubricants')
+                    .eq('is_active', true)
+                    .order('order_index', { ascending: true });
+                if (data && data.length > 0) {
+                    setHeroSlides(data);
+                }
+            } catch {
+                // Ignore error
+            }
+        };
+
         fetchLubricants();
+        fetchHero();
     }, []);
 
     const filteredCatalog = lubricantsList.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.type.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -106,27 +124,74 @@ export default function LubricantsCatalog() {
                 </div>
             </div>
 
-            {/* Hero Section */}
-            <div className="relative h-[300px] md:h-[400px] w-full overflow-hidden border-b border-white/5 group">
-                <Image
-                    src="https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=1200&q=80"
-                    alt="Lubrifiants Hero"
-                    fill
-                    className="object-cover opacity-30 group-hover:opacity-40 transition-opacity duration-1000 group-hover:scale-105 transform"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F19] via-[#0B0F19]/60 to-transparent" />
-                <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-12 max-w-7xl mx-auto">
-                    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="bg-gradient-to-r from-red-600 to-orange-500 text-white text-[10px] font-black px-4 py-1.5 rounded-full w-fit mb-4 flex items-center gap-2 shadow-[0_0_20px_rgba(220,38,38,0.4)]">
-                        <Wrench className="w-3.5 h-3.5" /> {language === 'ar' ? 'جودة عالية' : 'EXPERTISE PREMIUM'}
-                    </motion.div>
-                    <motion.h2 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-4xl md:text-6xl font-black mb-3 uppercase tracking-tighter leading-none drop-shadow-2xl">
-                        {t('lube.catalog.hero')}
-                    </motion.h2>
-                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-gray-400 max-w-xl font-medium leading-relaxed text-sm md:text-base">
-                        {t('lube.catalog.desc')}
-                    </motion.p>
+            {/* HERO CAROUSEL */}
+            {heroSlides.length > 0 ? (
+                <div className="p-3 md:p-6 max-w-7xl mx-auto mb-2 relative z-10">
+                    <div className="relative w-full h-[300px] sm:h-[400px] rounded-[2.5rem] overflow-hidden border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] group">
+                        <div 
+                            onScroll={(e) => {
+                                const target = e.target as HTMLElement;
+                                const index = Math.round(target.scrollLeft / target.clientWidth);
+                                const dots = document.querySelectorAll('.lube-dot');
+                                dots.forEach((dot, idx) => {
+                                    if (idx === index) {
+                                        dot.classList.add('bg-red-500', 'w-6');
+                                        dot.classList.remove('bg-white/30', 'w-2');
+                                    } else {
+                                        dot.classList.remove('bg-red-500', 'w-6');
+                                        dot.classList.add('bg-white/30', 'w-2');
+                                    }
+                                });
+                            }}
+                            className="flex overflow-x-auto snap-x snap-mandatory gap-0 scrollbar-hide w-full h-full scroll-smooth"
+                        >
+                            {heroSlides.map((slide, idx) => (
+                                <div key={slide.id || idx} className="relative w-full h-full shrink-0 snap-center flex flex-col justify-end p-6 md:p-12 select-none" style={{ minWidth: '100%' }}>
+                                    <Image src={slide.image_url} alt={slide.title} fill priority={idx === 0} className="object-cover absolute inset-0 -z-10 brightness-[0.5] saturate-150 transition-transform duration-[20s] ease-linear hover:scale-110 pointer-events-none" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F19] via-[#0B0F19]/40 to-transparent -z-10" />
+                                    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="bg-gradient-to-r from-red-600 to-orange-500 text-white text-[10px] font-black px-4 py-1.5 rounded-full w-fit mb-4 flex items-center gap-2 shadow-[0_0_20px_rgba(220,38,38,0.4)]">
+                                        <Wrench className="w-3.5 h-3.5" /> {slide.badge_text || 'EXPERTISE PREMIUM'}
+                                    </motion.div>
+                                    <motion.h2 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-4xl md:text-6xl font-black mb-3 uppercase tracking-tighter leading-none drop-shadow-2xl">
+                                        {slide.title}
+                                    </motion.h2>
+                                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-gray-400 max-w-xl font-medium leading-relaxed text-sm md:text-base">
+                                        {slide.subtitle}
+                                    </motion.p>
+                                </div>
+                            ))}
+                        </div>
+                        {heroSlides.length > 1 && (
+                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
+                                {heroSlides.map((_, idx) => (
+                                    <span key={idx} className={`lube-dot h-2 rounded-full transition-all duration-300 ${idx === 0 ? 'bg-red-500 w-6' : 'bg-white/30 w-2'}`} />
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </div>
+            ) : (
+                <div className="relative h-[300px] md:h-[400px] w-full overflow-hidden border-b border-white/5 group">
+                    <Image
+                        src="https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=1200&q=80"
+                        alt="Lubrifiants Hero"
+                        fill
+                        className="object-cover opacity-30 group-hover:opacity-40 transition-opacity duration-1000 group-hover:scale-105 transform"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F19] via-[#0B0F19]/60 to-transparent" />
+                    <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-12 max-w-7xl mx-auto">
+                        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="bg-gradient-to-r from-red-600 to-orange-500 text-white text-[10px] font-black px-4 py-1.5 rounded-full w-fit mb-4 flex items-center gap-2 shadow-[0_0_20px_rgba(220,38,38,0.4)]">
+                            <Wrench className="w-3.5 h-3.5" /> {language === 'ar' ? 'جودة عالية' : 'EXPERTISE PREMIUM'}
+                        </motion.div>
+                        <motion.h2 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-4xl md:text-6xl font-black mb-3 uppercase tracking-tighter leading-none drop-shadow-2xl">
+                            {t('lube.catalog.hero')}
+                        </motion.h2>
+                        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-gray-400 max-w-xl font-medium leading-relaxed text-sm md:text-base">
+                            {t('lube.catalog.desc')}
+                        </motion.p>
+                    </div>
+                </div>
+            )}
 
             {/* Sleek Search Bar */}
             <div className="px-4 max-w-3xl mx-auto mt-8 mb-10 relative z-20">
@@ -145,9 +210,9 @@ export default function LubricantsCatalog() {
                 </div>
             </div>
 
-            {/* Premium Asymmetrical Grid */}
+            {/* Premium Symmetrical Grid */}
             <div className="px-4 max-w-7xl mx-auto">
-                <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
+                <motion.div layout className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 md:gap-8">
                     <AnimatePresence>
                         {filteredCatalog.map((product, idx) => (
                             <motion.div 
@@ -155,43 +220,36 @@ export default function LubricantsCatalog() {
                                 initial={{ opacity: 0, y: 30 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
-                                transition={{ delay: idx * 0.1, type: "spring", stiffness: 100 }}
+                                transition={{ delay: idx * 0.05, type: "spring", stiffness: 100 }}
                                 key={product.id}
-                                className={`bg-[#111827]/60 backdrop-blur-xl border border-white/10 rounded-[2.5rem] overflow-hidden flex flex-col group hover:border-red-500/40 hover:shadow-[0_20px_50px_rgba(220,38,38,0.15)] transition-all duration-500 cursor-pointer relative ${idx === 0 ? 'md:col-span-2 md:flex-row' : ''}`}
+                                className="bg-[#111827]/60 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden flex flex-col group hover:border-red-500/40 hover:shadow-[0_20px_50px_rgba(220,38,38,0.15)] transition-all duration-500 cursor-pointer relative"
                                 onClick={() => setSelectedProduct(product)}
                             >
-                                <div className={`relative overflow-hidden bg-[#0a0d14] ${idx === 0 ? 'md:w-1/2 h-64 md:h-auto' : 'h-64'}`}>
+                                <div className="relative overflow-hidden bg-[#0a0d14] h-56">
                                     <Image 
                                         src={product.image} 
                                         alt={product.name} 
                                         fill 
-                                        className="object-cover opacity-60 group-hover:scale-110 group-hover:opacity-80 transition-all duration-[2000ms] ease-out mix-blend-luminosity group-hover:mix-blend-normal"
+                                        className="object-cover opacity-60 group-hover:scale-110 group-hover:opacity-80 transition-all duration-700 ease-out"
                                     />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-[#111827] via-transparent to-transparent opacity-80" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-[#111827] via-[#111827]/20 to-transparent" />
                                     
-                                    <div className="absolute top-5 left-5 bg-black/50 backdrop-blur-md text-white text-[9px] font-black px-3 py-1.5 rounded-xl border border-white/10 flex items-center gap-1.5 uppercase tracking-widest shadow-lg">
+                                    <div className="absolute top-4 left-4 bg-black/50 backdrop-blur-md text-white text-[9px] font-black px-3 py-1.5 rounded-xl border border-white/10 flex items-center gap-1.5 uppercase tracking-widest shadow-lg">
                                         <Droplet className="w-3 h-3 text-red-500" /> {product.type}
                                     </div>
                                     
-                                    <div className="absolute bottom-5 right-5 bg-[#111827]/80 backdrop-blur-md border border-white/10 text-white font-black text-xl px-5 py-2.5 rounded-2xl shadow-xl flex items-center gap-2">
-                                        {product.price} <span className="text-[10px] text-gray-400 mt-1">DH</span>
+                                    <div className="absolute bottom-4 right-4 bg-gradient-to-r from-red-600 to-orange-500 text-white font-black text-lg px-4 py-2 rounded-xl shadow-xl flex items-center gap-1">
+                                        {product.price} <span className="text-[10px] text-white/80 mt-1">DH</span>
                                     </div>
                                 </div>
-                                <div className={`p-8 flex-1 flex flex-col justify-center relative ${idx === 0 ? 'md:w-1/2' : ''}`}>
-                                    <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-[40px] pointer-events-none group-hover:bg-red-500/10 transition-colors" />
+                                <div className="p-6 flex-1 flex flex-col relative">
+                                    <div className="absolute top-0 right-0 w-24 h-24 bg-red-500/5 rounded-full blur-[30px] pointer-events-none group-hover:bg-red-500/10 transition-colors" />
                                     <div>
-                                        <h3 className="text-2xl lg:text-3xl font-black mb-3 text-white group-hover:text-red-400 transition-colors uppercase tracking-tight leading-none">{product.name}</h3>
-                                        <p className="text-gray-400 text-xs leading-relaxed mb-6 font-medium line-clamp-3">{product.description}</p>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2 mb-6">
-                                        {product.features?.slice(0,2).map((feat: string) => (
-                                            <span key={feat} className="text-[9px] font-bold uppercase tracking-widest text-amber-500 bg-amber-500/10 px-2 py-1 rounded-lg">
-                                                {feat}
-                                            </span>
-                                        ))}
+                                        <h3 className="text-xl font-black mb-2 text-white group-hover:text-red-400 transition-colors uppercase tracking-tight leading-tight">{product.name}</h3>
+                                        <p className="text-gray-400 text-xs leading-relaxed mb-4 font-medium line-clamp-2">{product.description}</p>
                                     </div>
                                     <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/5">
-                                        <span className="text-xs font-black uppercase tracking-wider text-gray-500 group-hover:text-white transition-colors">{t('lube.details')}</span>
+                                        <span className="text-[10px] font-black uppercase tracking-wider text-gray-500 group-hover:text-white transition-colors">{t('lube.details')}</span>
                                         <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-red-600 transition-colors">
                                             <ArrowRight className="w-4 h-4 text-white -rotate-45 group-hover:rotate-0 transition-transform duration-300" />
                                         </div>
