@@ -614,114 +614,121 @@ export default function Home() {
             <p className="text-gray-400 mt-2 font-medium">Ce que disent nos clients</p>
           </motion.div>
 
-          {/* Swipeable Carousel on Mobile, 3-columns Grid on Desktop */}
-          <div ref={reviewsCarouselRef} className="flex overflow-x-auto gap-5 snap-x snap-mandatory pb-6 scrollbar-hide md:grid md:grid-cols-3 w-full">
-            {reviews.map((avis, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="bg-[#111827] border border-white/8 rounded-[2rem] p-6 flex flex-col justify-between hover:border-amber-500/20 transition-colors snap-center min-w-[85vw] md:min-w-0 flex-shrink-0 md:flex-shrink min-h-[220px] w-[85vw] md:w-auto"
-              >
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between gap-2 w-full">
-                    <div className="flex items-center gap-1">
-                      {Array.from({ length: 5 }).map((_, s) => (
-                        <Star key={s} className={`w-4 h-4 ${s < avis.stars ? 'text-amber-400 fill-amber-400' : 'text-gray-600'}`} />
-                      ))}
-                    </div>
-                    {avis.name === 'Mohammed A.' && (
-                      <div className="hidden md:flex items-center gap-2 text-[9px] font-black uppercase tracking-wider text-white bg-white/5 border border-white/10 px-2 py-1 rounded-lg shrink-0">
-                        <span className="text-amber-400">⛽ Gasoil: {fuelPrices.gasoil}</span>
-                        <span className="text-white/30">|</span>
-                        <span className="text-emerald-400">⛽ Essence: {fuelPrices.essence}</span>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+            {/* Left columns (2/3): Reviews List */}
+            <div className="lg:col-span-2 w-full">
+              <div ref={reviewsCarouselRef} className="flex overflow-x-auto gap-5 snap-x snap-mandatory pb-6 scrollbar-hide lg:grid lg:grid-cols-2 w-full">
+                {reviews.map((avis, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 20 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: i * 0.1 }}
+                    className="bg-[#111827] border border-white/8 rounded-[2rem] p-6 flex flex-col justify-between hover:border-amber-500/20 transition-colors snap-center min-w-[85vw] lg:min-w-0 flex-shrink-0 lg:flex-shrink min-h-[220px] w-[85vw] lg:w-auto"
+                  >
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between gap-2 w-full">
+                        <div className="flex items-center gap-1">
+                          {Array.from({ length: 5 }).map((_, s) => (
+                            <Star key={s} className={`w-4 h-4 ${s < avis.stars ? 'text-amber-400 fill-amber-400' : 'text-gray-600'}`} />
+                          ))}
+                        </div>
+                        {avis.name === 'Mohammed A.' && (
+                          <div className="hidden md:flex items-center gap-2 text-[9px] font-black uppercase tracking-wider text-white bg-white/5 border border-white/10 px-2 py-1 rounded-lg shrink-0">
+                            <span className="text-amber-400">⛽ Gasoil: {fuelPrices.gasoil}</span>
+                            <span className="text-white/30">|</span>
+                            <span className="text-emerald-400">⛽ Essence: {fuelPrices.essence}</span>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  <p className="text-gray-300 text-sm leading-relaxed break-words whitespace-pre-wrap">&ldquo;{avis.text}&rdquo;</p>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-black font-black text-sm">
-                      {avis.name ? avis.name[0].toUpperCase() : 'C'}
+                      <p className="text-gray-300 text-sm leading-relaxed break-words whitespace-pre-wrap">&ldquo;{avis.text}&rdquo;</p>
                     </div>
-                    <div>
-                      <div className="text-white font-bold text-sm">{avis.name}</div>
-                      <div className="text-gray-500 text-[10px]">{avis.date}</div>
+                    <div className="flex items-center justify-between mt-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-black font-black text-sm">
+                          {avis.name ? avis.name[0].toUpperCase() : 'C'}
+                        </div>
+                        <div>
+                          <div className="text-white font-bold text-sm">{avis.name}</div>
+                          <div className="text-gray-500 text-[10px]">{avis.date}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right column (1/3): Submit Form */}
+            <div className="lg:col-span-1 w-full">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+                className="bg-gradient-to-br from-[#1E293B] to-[#0F172A] border border-white/10 rounded-[2.5rem] p-6 md:p-8 relative overflow-hidden"
+              >
+                <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-[80px] pointer-events-none" />
+                <div className="relative z-10">
+                  <h3 className="text-xl font-black text-white mb-1">Partagez votre expérience</h3>
+                  <p className="text-gray-400 text-sm mb-6">Votre avis aide les autres voyageurs</p>
+
+                  <div className="flex flex-col gap-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Votre prénom</label>
+                      <input
+                        type="text"
+                        value={newReview.name}
+                        onChange={(e) => setNewReview({ ...newReview, name: e.target.value })}
+                        placeholder="Ex: Mohammed"
+                        className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white placeholder-gray-500 outline-none focus:border-amber-500 transition-colors"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Note</label>
+                      <div className="flex items-center gap-2 h-[46px]">
+                        {[1, 2, 3, 4, 5].map(star => (
+                          <button 
+                            key={star} 
+                            type="button"
+                            onClick={() => setNewReview({ ...newReview, stars: star })}
+                            className={`text-2xl hover:scale-125 transition-transform ${star <= newReview.stars ? 'text-amber-400' : 'text-gray-600'}`}
+                          >
+                            ★
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Votre recommandation</label>
+                      <textarea
+                        rows={3}
+                        value={newReview.text}
+                        onChange={(e) => setNewReview({ ...newReview, text: e.target.value })}
+                        placeholder="Partagez votre expérience..."
+                        className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white placeholder-gray-500 outline-none focus:border-amber-500 transition-colors resize-none"
+                      />
                     </div>
                   </div>
+
+                  {submitSuccess && (
+                    <div className="text-green-400 text-xs font-bold mt-3 animate-pulse">
+                      Merci ! Votre avis a bien été enregistré.
+                    </div>
+                  )}
+
+                  <button 
+                    onClick={handleSubmitReview}
+                    disabled={submitting || !newReview.name.trim() || !newReview.text.trim()}
+                    className="mt-6 w-full px-8 py-3.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black text-sm rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    <Star className="w-4 h-4 fill-white" />
+                    {submitting ? "Envoi..." : "Envoyer mon avis"}
+                  </button>
                 </div>
               </motion.div>
-            ))}
-          </div>
-
-          {/* Laisser un avis form */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-            className="bg-gradient-to-br from-[#1E293B] to-[#0F172A] border border-white/10 rounded-[2.5rem] p-6 md:p-8 relative overflow-hidden"
-          >
-            <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-[80px] pointer-events-none" />
-            <div className="relative z-10">
-              <h3 className="text-xl font-black text-white mb-1">Partagez votre expérience</h3>
-              <p className="text-gray-400 text-sm mb-6">Votre avis aide les autres voyageurs à choisir la meilleure étape</p>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Votre prénom</label>
-                  <input
-                    type="text"
-                    value={newReview.name}
-                    onChange={(e) => setNewReview({ ...newReview, name: e.target.value })}
-                    placeholder="Ex: Mohammed"
-                    className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white placeholder-gray-500 outline-none focus:border-amber-500 transition-colors"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Note</label>
-                  <div className="flex items-center gap-2 h-[46px]">
-                    {[1, 2, 3, 4, 5].map(star => (
-                      <button 
-                        key={star} 
-                        type="button"
-                        onClick={() => setNewReview({ ...newReview, stars: star })}
-                        className={`text-2xl hover:scale-125 transition-transform ${star <= newReview.stars ? 'text-amber-400' : 'text-gray-600'}`}
-                      >
-                        ★
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="space-y-1 md:col-span-2">
-                  <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Votre recommandation</label>
-                  <textarea
-                    rows={3}
-                    value={newReview.text}
-                    onChange={(e) => setNewReview({ ...newReview, text: e.target.value })}
-                    placeholder="Partagez votre expérience à la station Golden Parc..."
-                    className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white placeholder-gray-500 outline-none focus:border-amber-500 transition-colors resize-none"
-                  />
-                </div>
-              </div>
-
-              {submitSuccess && (
-                <div className="text-green-400 text-xs font-bold mt-3 animate-pulse">
-                  Merci ! Votre avis a bien été enregistré.
-                </div>
-              )}
-
-              <button 
-                onClick={handleSubmitReview}
-                disabled={submitting || !newReview.name.trim() || !newReview.text.trim()}
-                className="mt-4 w-full md:w-auto px-8 py-3.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black text-sm rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                <Star className="w-4 h-4 fill-white" />
-                {submitting ? "Envoi..." : "Envoyer mon avis"}
-              </button>
             </div>
-          </motion.div>
+          </div>
         </div>
+
 
         {/* --- INFORMATIONS PRATIQUES (Contact, GPS, Horaires) --- */}
         <div className="mb-24">
