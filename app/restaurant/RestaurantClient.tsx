@@ -1065,7 +1065,7 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
 
 
             {/* Featured Special Carousel */}
-            {activeCategory === "all" && dbItems.filter(i => i.isFeatured).length > 0 && (() => {
+            {dbItems.filter(i => i.isFeatured).length > 0 && (() => {
                 const featuredItems = dbItems.filter(i => i.isFeatured);
                 return (
                     <div className="px-4 max-w-7xl mx-auto mt-2 relative group">
@@ -1188,7 +1188,7 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                     >
                         {language === "ar" ? "الكل" : "Tous"}
                     </button>
-                    {dbCategories.map(cat => (
+                    {dbCategories.filter(cat => !['tout', 'tous'].includes(cat.label.toLowerCase())).map(cat => (
                         <button
                             key={cat.id}
                             onClick={() => setActiveCategory(cat.id)}

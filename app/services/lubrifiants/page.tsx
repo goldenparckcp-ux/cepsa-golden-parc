@@ -52,7 +52,9 @@ export default function LubricantsCatalog() {
     const router = useRouter();
     const { t, language } = useTranslation();
     const [searchQuery, setSearchQuery] = useState("");
+    const [selectedCategory, setSelectedCategory] = useState<string>("all");
     const [lubricantsList, setLubricantsList] = useState<any[]>(LUBRICANTS_CATALOG);
+    const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
     const [heroSlides, setHeroSlides] = useState<any[]>([]);
 
     useEffect(() => {
@@ -95,7 +97,13 @@ export default function LubricantsCatalog() {
         fetchHero();
     }, []);
 
-    const filteredCatalog = lubricantsList.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.type.toLowerCase().includes(searchQuery.toLowerCase()));
+    const categories = ["all", ...Array.from(new Set(lubricantsList.map(p => p.type)))];
+
+    const filteredCatalog = lubricantsList.filter(p => {
+        const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || p.type.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesCategory = selectedCategory === "all" || p.type === selectedCategory;
+        return matchesSearch && matchesCategory;
+    });
 
     return (
         <div className="min-h-screen pt-16 md:pt-20 bg-[#0B0F19] pb-24 font-sans text-white relative overflow-hidden">
@@ -193,9 +201,9 @@ export default function LubricantsCatalog() {
                 </div>
             )}
 
-            {/* Sleek Search Bar */}
-            <div className="px-4 max-w-3xl mx-auto mt-8 mb-10 relative z-20">
-                <div className="relative group">
+            {/* Sleek Search Bar & Categories */}
+            <div className="px-4 max-w-7xl mx-auto mt-8 mb-10 relative z-20">
+                <div className="max-w-3xl mx-auto relative group mb-6">
                     <div className="absolute inset-0 bg-gradient-to-r from-red-600/20 to-orange-500/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all opacity-0 group-focus-within:opacity-100" />
                     <div className="relative flex items-center">
                         <Search className="absolute left-6 w-5 h-5 text-gray-400" />
@@ -207,6 +215,23 @@ export default function LubricantsCatalog() {
                             className="w-full bg-[#111827]/80 backdrop-blur-xl border border-white/10 rounded-3xl py-5 pl-16 pr-6 text-sm font-bold text-white outline-none focus:border-red-500/50 transition-all shadow-2xl placeholder-gray-500"
                         />
                     </div>
+                </div>
+
+                {/* Categories */}
+                <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 scrollbar-hide pb-4 px-2">
+                    {categories.map((cat, idx) => (
+                        <button
+                            key={idx}
+                            onClick={() => setSelectedCategory(cat)}
+                            className={`shrink-0 snap-start px-6 py-3 rounded-2xl font-black text-xs uppercase tracking-wider transition-all duration-300 shadow-md ${
+                                selectedCategory === cat 
+                                    ? "bg-gradient-to-r from-red-600 to-orange-500 text-white shadow-red-500/30 scale-105"
+                                    : "bg-[#1E293B]/80 text-gray-400 hover:bg-[#1E293B] hover:text-white border border-white/5"
+                            }`}
+                        >
+                            {cat === "all" ? (language === "ar" ? "الكل" : "Tous") : cat}
+                        </button>
+                    ))}
                 </div>
             </div>
 
