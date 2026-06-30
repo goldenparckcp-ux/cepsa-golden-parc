@@ -43,10 +43,11 @@ export default function AdminHeroPage() {
     };
 
     const handleSave = async (slide: HeroSlide) => {
-        const isNew = !slide.id;
+        const { id, ...rest } = slide;
+        const isNew = !id;
         const { data, error } = isNew 
-            ? await supabase.from('hero_sliders').insert([slide]).select()
-            : await supabase.from('hero_sliders').update(slide).eq('id', slide.id).select();
+            ? await supabase.from('hero_sliders').insert([rest]).select()
+            : await supabase.from('hero_sliders').update(rest).eq('id', id).select();
 
         if (!error) {
             setEditingSlide(null);
@@ -55,7 +56,7 @@ export default function AdminHeroPage() {
             fetchSlides();
         } else {
             console.error("Error saving slide:", error);
-            alert("Erreur lors de la sauvegarde.");
+            alert("Erreur lors de la sauvegarde: " + error.message);
         }
     };
 
@@ -195,20 +196,55 @@ export default function AdminHeroPage() {
                                 </div>
                             </div>
                             <div>
-                                <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Image URL</label>
-                                <input 
-                                    type="text" 
-                                    value={editingSlide.image_url}
-                                    onChange={e => setEditingSlide({...editingSlide, image_url: e.target.value})}
-                                    className="w-full bg-[#111827] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-amber-500 transition-colors"
-                                    placeholder="https://..."
-                                />
-                                {editingSlide.image_url && (
-                                    <div className="mt-4 relative h-40 w-full rounded-xl overflow-hidden border border-white/10 bg-black">
-                                        <Image src={editingSlide.image_url} alt="Preview" fill className="object-cover" />
+                                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2 block">Image</label>
+                                <div className="flex flex-col gap-2">
+                                    <input
+                                        type="text"
+                                        value={editingSlide.image_url}
+                                        onChange={(e) => setEditingSlide({ ...editingSlide, image_url: e.target.value })}
+                                        className="w-full bg-[#111827] border border-white/10 rounded-xl px-4 py-3 text-white focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition-all outline-none"
+                                        placeholder="https://..."
+                                    />
+                                    <div className="relative">
+                                        <input 
+                                            type="file"
+                                            accept="image/*"
+                                            id="upload-image"
+                                            className="hidden"
+                                            onChange={async (e) => {
+                                                const file = e.target.files?.[0];
+                                                if (!file) return;
+                                                try {
+                                                    const ext = file.name.split('.').pop();
+                                                    const fileName = `${Date.now()}.${ext}`;
+                                                    const { data, error } = await supabase.storage
+                                                        .from('images')
+                                                        .upload(`heroes/${fileName}`, file, {
+                                                            cacheControl: '3600',
+                                                            upsert: false
+                                                        });
+                                                    if (error) throw error;
+                                                    const { data: { publicUrl } } = supabase.storage.from('images').getPublicUrl(`heroes/${fileName}`);
+                                                    setEditingSlide({ ...editingSlide, image_url: publicUrl });
+                                                } catch (err: any) {
+                                                    alert("Erreur upload: " + err.message + "\n\nVeuillez vérifier que le bucket 'images' existe et est public.");
+                                                }
+                                            }}
+                                        />
+                                        <label 
+                                            htmlFor="upload-image" 
+                                            className="cursor-pointer flex items-center justify-center gap-2 w-full py-2 bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 text-sm font-bold text-gray-300 transition-colors"
+                                        >
+                                            <ImageIcon className="w-4 h-4" /> Uploader une image
+                                        </label>
                                     </div>
-                                )}
+                                </div>
                             </div>
+                            {editingSlide.image_url && (
+                                <div className="mt-4 relative h-40 w-full rounded-xl overflow-hidden border border-white/10 bg-black">
+                                    <Image src={editingSlide.image_url} alt="Preview" fill className="object-cover" />
+                                </div>
+                            )}
                         </div>
                         <div className="p-6 border-t border-white/10 bg-[#111827] flex justify-end gap-4">
                             <button onClick={() => setEditingSlide(null)} className="px-6 py-3 rounded-xl text-white font-bold hover:bg-white/5 transition-colors">Annuler</button>
