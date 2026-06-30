@@ -529,20 +529,20 @@ function CartDrawerContent({
                                         setPaymentMethod('cash');
                                         setIsDepositMode(false);
                                     }}
-                                    className={`relative p-3 rounded-2xl border flex flex-col items-start gap-1 transition-all text-left ${
+                                    className={`relative p-3 rounded-[2rem] border flex flex-col items-start gap-1 transition-all text-left overflow-hidden ${
                                         paymentMethod === 'cash' && !isDepositMode
                                             ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400'
                                             : 'bg-[#1E293B] border-white/5 text-gray-400 hover:bg-white/5'
                                     }`}
                                 >
-                                    <div className="font-bold text-sm text-white">
+                                    <div className="font-bold text-sm text-white ml-2">
                                         {language === 'ar' ? 'نقداً (في المحطة)' : 'Sur Place (Cash)'}
                                     </div>
-                                    <div className="text-[10px] text-gray-400">
+                                    <div className="text-[10px] text-gray-400 ml-2">
                                         {language === 'ar' ? 'الدفع في المحطة' : 'Régler à la station'}
                                     </div>
                                     {paymentMethod === 'cash' && !isDepositMode && (
-                                        <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                                        <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
                                     )}
                                 </button>
                             )}
@@ -554,20 +554,20 @@ function CartDrawerContent({
                                         setPaymentMethod('card');
                                         setIsDepositMode(true);
                                     }}
-                                    className={`relative p-3 rounded-2xl border flex flex-col items-start gap-1 transition-all text-left ${
+                                    className={`relative p-3 rounded-[2rem] border flex flex-col items-start gap-1 transition-all text-left overflow-hidden ${
                                         paymentMethod === 'card' && isDepositMode
                                             ? 'bg-amber-500/10 border-amber-500 text-amber-400'
                                             : 'bg-[#1E293B] border-white/5 text-gray-400 hover:bg-white/5'
                                     }`}
                                 >
-                                    <div className="font-bold text-sm text-white">
+                                    <div className="font-bold text-sm text-white ml-2">
                                         {language === 'ar' ? 'عربون (30%)' : 'Arboune (30%)'}
                                     </div>
-                                    <div className="text-[10px] text-gray-400">
+                                    <div className="text-[10px] text-gray-400 ml-2">
                                         {language === 'ar' ? 'تسبيق والباقي ف المحطة' : 'Acompte en ligne'}
                                     </div>
                                     {paymentMethod === 'card' && isDepositMode && (
-                                        <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
+                                        <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]" />
                                     )}
                                 </button>
                             )}
@@ -579,23 +579,23 @@ function CartDrawerContent({
                                     setPaymentMethod('card');
                                     setIsDepositMode(false);
                                 }}
-                                className={`relative p-3 rounded-2xl border flex flex-col items-start gap-1 transition-all text-left ${
+                                className={`relative p-3 rounded-[2rem] border flex flex-col items-start gap-1 transition-all text-left overflow-visible ${
                                     paymentMethod === 'card' && !isDepositMode
                                         ? 'bg-red-500/10 border-red-500 text-red-400'
                                         : 'bg-[#1E293B] border-white/5 text-gray-400 hover:bg-white/5'
                                 }`}
                             >
-                                <span className="absolute -top-2 -right-2 bg-red-600 text-white font-black text-[9px] px-2 py-0.5 rounded-full shadow animate-pulse">
+                                <span className="absolute -top-3 right-2 bg-red-600 text-white font-black text-[9px] px-2 py-0.5 rounded-full shadow animate-pulse z-10 border-2 border-[#0B0F19]">
                                     -10%
                                 </span>
-                                <div className="font-bold text-sm text-white">
+                                <div className="font-bold text-sm text-white ml-2">
                                     {language === 'ar' ? 'دفع إلكتروني كامل' : 'En ligne (-10%)'}
                                 </div>
-                                <div className="text-[10px] text-gray-400">
+                                <div className="text-[10px] text-gray-400 ml-2">
                                     {language === 'ar' ? 'تخفيض فوري 10%' : '10% de remise incluse'}
                                 </div>
                                 {paymentMethod === 'card' && !isDepositMode && (
-                                    <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" />
+                                    <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" />
                                 )}
                             </button>
                         </div>
@@ -637,6 +637,18 @@ function CartDrawerContent({
                                 {formatDh(paymentMethod === 'card' && !isDepositMode ? Math.round(total * 0.95) : total)}
                             </span>
                         </div>
+                        {isDepositMode && (
+                            <div className="flex justify-between items-center px-2 pt-2 border-t border-white/5/50 mt-2">
+                                <span className="text-gray-400 text-xs font-bold">{language === 'ar' ? 'عربون يُدفع الآن (30%)' : 'Acompte à payer (30%)'}</span>
+                                <span className="text-amber-500 font-bold text-sm">{formatDh(Math.min(total, Math.max(20, Math.round(total * 0.3))))}</span>
+                            </div>
+                        )}
+                        {isDepositMode && (
+                            <div className="flex justify-between items-center px-2 mt-1">
+                                <span className="text-gray-500 text-xs font-bold">{language === 'ar' ? 'الباقي يُدفع في المحطة' : 'Reste à payer sur place'}</span>
+                                <span className="text-gray-400 font-bold text-sm">{formatDh(total - Math.min(total, Math.max(20, Math.round(total * 0.3))))}</span>
+                            </div>
+                        )}
                     </div>
 
                     {/* CHECKBOX AND SUBMIT BUTTON */}
@@ -664,7 +676,7 @@ function CartDrawerContent({
                         <button
                             onClick={handleCheckout}
                             disabled={isSubmitting || !policyAccepted}
-                            className={`w-full py-5 rounded-2xl font-black text-xl text-white active:scale-[0.98] transition-all flex items-center justify-center gap-3 mt-4 shadow-lg ${
+                            className={`w-full py-5 rounded-[2.5rem] font-black text-xl text-white active:scale-[0.98] transition-all flex items-center justify-center gap-3 mt-4 shadow-lg ${
                                 isDepositMode 
                                     ? 'bg-gradient-to-r from-amber-500 to-amber-700 shadow-amber-500/20' 
                                     : 'bg-gradient-to-r from-red-600 to-orange-500 shadow-[0_10px_25px_rgba(220,38,38,0.3)]'

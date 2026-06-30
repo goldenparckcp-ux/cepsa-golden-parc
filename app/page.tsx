@@ -184,18 +184,11 @@ export default function Home() {
           name: newReview.name,
           text: newReview.text,
           stars: newReview.stars,
-          is_approved: true
+          is_approved: false
         });
 
       // Update local state immediately for instant feedback
-      const freshReview = {
-        name: newReview.name,
-        stars: newReview.stars,
-        text: newReview.text,
-        date: "À l'instant"
-      };
-
-      setReviews(prev => [freshReview, ...prev]);
+      
       setNewReview({ name: '', text: '', stars: 5 });
       setSubmitSuccess(true);
       setTimeout(() => setSubmitSuccess(false), 4000);
@@ -712,7 +705,7 @@ export default function Home() {
                   {submitSuccess && (
                     <div className="text-green-400 text-xs font-bold mt-4 animate-in fade-in flex items-center gap-2 bg-green-500/10 p-3 rounded-xl border border-green-500/20">
                       <CheckCircle2 className="w-4 h-4" />
-                      Merci ! Votre avis a bien été enregistré.
+                      Merci ! Votre avis a été soumis et est en attente de validation par l'administrateur.
                     </div>
                   )}
 

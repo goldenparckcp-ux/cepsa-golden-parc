@@ -7,6 +7,7 @@ import { Smartphone, Check, User, Loader2, ArrowRight, LogOut, Clock, Package, W
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 import { useAuth } from '@/lib/state/AuthProvider';
+import { useCart } from '@/lib/state/CartContext';
 
 import Image from 'next/image';
 
@@ -15,6 +16,7 @@ function ProfileContent() {
     const searchParams = useSearchParams();
     const redirectTo = searchParams.get('redirect') || '/restaurant';
     const { user: authUser, loading: authLoading } = useAuth(); // Global Auth
+    const { clear, addItem } = useCart();
 
     // Auth States
     const [step, setStep] = useState<'phone' | 'otp' | 'profile' | 'dashboard' | 'email' | 'email-sent'>('phone');

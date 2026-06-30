@@ -243,7 +243,7 @@ export default function PoolPage() {
                 <div className="absolute bottom-[25%] left-[10%] w-[300px] h-[300px] bg-emerald-600/5 rounded-full blur-[120px] pointer-events-none -z-10" />
 
                 {/* POOL HERO CAROUSEL */}
-                <div className="relative w-full h-[200px] sm:h-[260px] rounded-[2.5rem] overflow-hidden border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] group">
+                <div className="relative w-full h-[200px] sm:h-[260px] rounded-full overflow-hidden border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] group">
                     <div 
                         id="pool-carousel-container"
                         onScroll={(e) => {                            const target = e.target as HTMLElement;
@@ -531,7 +531,7 @@ export default function PoolPage() {
                     <button
                         onClick={handleBooking}
                         disabled={!selectedOption || loading}
-                        className="w-full bg-[#111827]/80 backdrop-blur-md flex-row-reverse rtl:flex-row border border-white/10 p-2.5 pl-4 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-between group active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed hover:border-cyan-500/30"
+                        className="w-full bg-[#111827]/80 backdrop-blur-md flex-row-reverse rtl:flex-row border border-white/10 p-2.5 pl-4 rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-between group active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed hover:border-cyan-500/30"
                     >
                         {/* Price Right */}
                         <div className="flex items-center gap-2 pl-2">
@@ -567,7 +567,7 @@ export default function PoolPage() {
             {/* Success Modal */}
             {showSuccess && (
                 <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-2xl animate-in fade-in">
-                    <div className="bg-[#111827]/80 backdrop-blur-md border border-white/10 rounded-[2.5rem] p-8 max-w-sm w-full text-center shadow-2xl relative">
+                    <div className="bg-[#111827]/80 backdrop-blur-md border border-white/10 rounded-full p-8 max-w-sm w-full text-center shadow-2xl relative">
                         <div className="w-20 h-20 bg-cyan-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-cyan-500/5">
                             <Ticket className="w-10 h-10 text-cyan-400" />
                         </div>

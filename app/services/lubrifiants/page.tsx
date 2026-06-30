@@ -130,8 +130,8 @@ export default function LubricantsCatalog() {
 
             {/* HERO CAROUSEL */}
             {heroSlides.length > 0 ? (
-                <div className="p-3 md:p-6 max-w-7xl mx-auto mb-2 relative z-10">
-                    <div className="relative w-full h-[300px] sm:h-[400px] rounded-[2.5rem] overflow-hidden border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] group">
+                <div className="px-0 md:px-6 pt-0 md:pt-6 pb-2 md:pb-6 max-w-7xl mx-auto mb-2 relative z-10">
+                    <div className="relative w-full h-[300px] sm:h-[400px] rounded-b-[2rem] md:rounded-[2.5rem] overflow-hidden border-b md:border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] group">
                         <div 
                             onScroll={(e) => {
                                 const target = e.target as HTMLElement;
@@ -175,7 +175,7 @@ export default function LubricantsCatalog() {
                     </div>
                 </div>
             ) : (
-                <div className="relative h-[300px] md:h-[400px] w-full overflow-hidden border-b border-white/5 group">
+                <div className="relative h-[300px] md:h-[400px] w-full max-w-7xl mx-auto rounded-b-[2rem] md:rounded-[2.5rem] md:mt-6 overflow-hidden border-b md:border border-white/5 group z-10">
                     <Image
                         src="https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=1200&q=80"
                         alt="Lubrifiants Hero"

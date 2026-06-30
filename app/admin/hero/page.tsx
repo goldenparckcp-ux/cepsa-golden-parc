@@ -7,7 +7,7 @@ import Image from "next/image";
 
 type HeroSlide = {
     id: string;
-    page: 'hotel' | 'restaurant' | 'pool' | 'lubricants';
+    page: 'restaurant' | 'pool' | 'lubricants';
     title: string;
     subtitle: string;
     badge_text: string;
@@ -20,7 +20,7 @@ type HeroSlide = {
 export default function AdminHeroPage() {
     const [slides, setSlides] = useState<HeroSlide[]>([]);
     const [loading, setLoading] = useState(true);
-    const [activePage, setActivePage] = useState<'hotel' | 'restaurant' | 'pool' | 'lubricants'>('hotel');
+    const [activePage, setActivePage] = useState<'restaurant' | 'pool' | 'lubricants'>('restaurant');
     const [editingSlide, setEditingSlide] = useState<HeroSlide | null>(null);
     const [showSuccess, setShowSuccess] = useState(false);
 
@@ -76,7 +76,7 @@ export default function AdminHeroPage() {
                     <p className="text-gray-400 mt-1">Personnalisez les images et textes des bannières principales.</p>
                 </div>
                 <div className="flex flex-wrap bg-[#111827] rounded-xl border border-white/10 p-1 gap-1">
-                    {(['hotel', 'restaurant', 'pool', 'lubricants'] as const).map((page) => (
+                    {(['restaurant', 'pool', 'lubricants'] as const).map((page) => (
                         <button
                             key={page}
                             onClick={() => setActivePage(page)}
