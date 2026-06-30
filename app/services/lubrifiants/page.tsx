@@ -111,26 +111,7 @@ export default function LubricantsCatalog() {
             <div className="fixed top-[-10%] left-[-10%] w-[500px] h-[500px] bg-red-600/10 rounded-full blur-[150px] pointer-events-none -z-10 animate-pulse duration-10000" />
             <div className="fixed bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[150px] pointer-events-none -z-10 animate-pulse duration-7000" />
 
-            {/* Header */}
-            <div className="sticky top-[64px] md:top-[80px] z-30 bg-[#0B0F19]/80 backdrop-blur-3xl border-b border-white/5 pt-4 pb-4 px-4 shadow-2xl">
-                <div className="max-w-7xl mx-auto flex items-center justify-between">
-                    <button 
-                        onClick={() => router.back()} 
-                        className="w-12 h-12 flex items-center justify-center bg-white/5 rounded-full border border-white/10 hover:bg-white/20 hover:scale-105 active:scale-95 transition-all shadow-lg"
-                    >
-                        <ChevronLeft className="w-6 h-6 text-white" />
-                    </button>
-                    <div className="text-center flex-1">
-                        <h1 className="text-lg md:text-2xl font-black tracking-widest uppercase bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-                            {t('lube.catalog.title')}
-                        </h1>
-                        <p className="text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] mt-1">
-                            {t('lube.catalog.sub')}
-                        </p>
-                    </div>
-                    <div className="w-12 h-12" /> {/* Spacer */}
-                </div>
-            </div>
+
 
             {/* HERO CAROUSEL */}
             {heroSlides.length > 0 ? (

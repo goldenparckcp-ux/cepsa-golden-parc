@@ -753,25 +753,7 @@ function ProfileContent() {
                 <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-red-500/10 rounded-full blur-[100px] opacity-30" />
             </div>
 
-            {/* Header / Back Navigation (Mobile Only) */}
-            <div className="md:hidden sticky top-[64px] z-30 bg-[#0F172A]/90 backdrop-blur-xl border-b border-white/5 p-4">
-                <div className="max-w-2xl mx-auto flex items-center justify-between">
-                    <button 
-                        onClick={() => {
-                            if (window.history.length > 1) {
-                                router.back();
-                            } else {
-                                router.push('/');
-                            }
-                        }} 
-                        className="p-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all font-bold" 
-                        aria-label="Retour"
-                    >
-                        <ChevronLeft className="w-5 h-5 text-white" />
-                    </button>
-                    <div className="text-xs font-bold text-gray-400 uppercase tracking-widest">Mon Profil</div>
-                </div>
-            </div>
+
 
             {/* --- DASHBOARD VIEW --- */}
             {
