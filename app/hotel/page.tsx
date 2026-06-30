@@ -399,12 +399,16 @@ export default function HotelPage() {
                         ))}
                     </div>
 
-                    {/* Pagination Dots Indicator */}
-                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
-                        <span className="hotel-dot w-6 h-2 rounded-full bg-amber-500 transition-all duration-300" />
-                        <span className="hotel-dot w-2 h-2 rounded-full bg-white/30 transition-all duration-300" />
-                        <span className="hotel-dot w-2 h-2 rounded-full bg-white/30 transition-all duration-300" />
-                    </div>
+                    {heroSlides.length > 1 && (
+                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
+                            {heroSlides.map((_, idx) => (
+                                <span 
+                                    key={idx} 
+                                    className={`hotel-dot h-2 rounded-full transition-all duration-300 ${idx === 0 ? 'bg-amber-500 w-6' : 'bg-white/30 w-2'}`} 
+                                />
+                            ))}
+                        </div>
+                    )}
                 </div>
 
 

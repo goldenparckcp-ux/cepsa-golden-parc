@@ -939,23 +939,7 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
 
     useEffect(() => { fetchHero(); }, [fetchHero]);
 
-    // Auto-scroll logic for Resto Hero carousel
-    useEffect(() => {
-        if (heroSlides.length <= 1) return;
-        const interval = setInterval(() => {
-            const container = document.getElementById("resto-hero-carousel-container");
-            if (!container) return;
 
-            const maxScroll = container.scrollWidth - container.clientWidth;
-            if (container.scrollLeft >= maxScroll - 5) {
-                container.scrollTo({ left: 0, behavior: "smooth" });
-            } else {
-                container.scrollBy({ left: container.clientWidth, behavior: "smooth" });
-            }
-        }, 4500);
-
-        return () => clearInterval(interval);
-    }, [heroSlides]);
 
     // Auto-scroll logic for Special Offers carousel (like comments)
     useEffect(() => {
@@ -1063,85 +1047,6 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                 </div>
             )}
 
-            {/* RESTAURANT HERO CAROUSEL */}
-            {heroSlides.length > 0 && (
-                <div className="p-3 md:p-6 max-w-7xl mx-auto mb-2 mt-4 relative z-10">
-                    <div className="relative w-full h-[200px] sm:h-[260px] rounded-[2.5rem] overflow-hidden border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] group">
-                        <div 
-                            id="resto-hero-carousel-container"
-                            onScroll={(e) => {
-                                const target = e.target as HTMLElement;
-                                const scrollLeft = target.scrollLeft;
-                                const width = target.clientWidth;
-                                const index = Math.round(scrollLeft / width);
-                                const dots = document.querySelectorAll('.resto-hero-dot');
-                                dots.forEach((dot, idx) => {
-                                    if (idx === index) {
-                                        dot.classList.add('bg-orange-500', 'w-6');
-                                        dot.classList.remove('bg-white/30', 'w-2');
-                                    } else {
-                                        dot.classList.remove('bg-orange-500', 'w-6');
-                                        dot.classList.add('bg-white/30', 'w-2');
-                                    }
-                                });
-                            }}
-                            className="flex overflow-x-auto snap-x snap-mandatory gap-0 scrollbar-hide w-full h-full scroll-smooth"
-                        >
-                            {heroSlides.map((slide, idx) => (
-                                <div 
-                                    key={slide.id || idx}
-                                    className="relative w-full h-full shrink-0 snap-center flex items-center justify-between px-6 md:px-12 select-none"
-                                    style={{ minWidth: '100%' }}
-                                >
-                                    <Image
-                                        src={slide.image_url}
-                                        alt={slide.title}
-                                        fill
-                                        priority={idx === 0}
-                                        className="object-cover absolute inset-0 -z-10 brightness-[0.65] saturate-150 transition-transform duration-[20s] ease-linear hover:scale-110 pointer-events-none"
-                                    />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F19] via-transparent to-black/40 -z-10" />
-
-                                    <div className="relative z-10 w-full flex items-center justify-between gap-4 h-full pb-6">
-                                        <div className="flex flex-col gap-1.5 flex-1 min-w-0 text-left justify-end h-full">
-                                            {slide.badge_text && (
-                                                <span className="bg-orange-500/20 border border-orange-500 text-orange-400 text-[8px] sm:text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider inline-flex items-center gap-1 w-fit shadow-lg backdrop-blur-sm">
-                                                    ✨ {slide.badge_text}
-                                                </span>
-                                            )}
-                                            <h2 className="text-white text-xl sm:text-2xl md:text-4xl font-black uppercase tracking-tight leading-tight drop-shadow-lg">
-                                                {slide.title}
-                                            </h2>
-                                            <p className="text-white/80 text-[9px] sm:text-[10px] md:text-xs font-medium line-clamp-2 drop-shadow leading-relaxed max-w-[280px] sm:max-w-[400px]">
-                                                {slide.subtitle}
-                                            </p>
-                                        </div>
-                                        {slide.cta_text && (
-                                            <div className="flex flex-col items-end justify-end h-full shrink-0">
-                                                <button
-                                                    className="py-2.5 px-4 bg-orange-500 text-black font-black text-xs uppercase tracking-wider rounded-xl shadow-lg active:scale-95 transition-all whitespace-nowrap"
-                                                >
-                                                    {slide.cta_text}
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                        {heroSlides.length > 1 && (
-                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
-                                {heroSlides.map((_, idx) => (
-                                    <div 
-                                        key={idx} 
-                                        className={`resto-hero-dot h-2 rounded-full transition-all duration-300 ${idx === 0 ? 'bg-orange-500 w-6' : 'bg-white/30 w-2'}`}
-                                    />
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
 
             {/* Page Header (Scrolls with page) */}
             <div className="pt-6 pb-2 px-4 max-w-7xl mx-auto">
