@@ -288,27 +288,28 @@ function CartDrawerContent({
         }
 
         await processOrder({ id: user.id, email: user.email }, profile || {});
-    };
+    };    return (
+        <div className="p-5 pb-[200px] flex flex-col h-full min-h-[80vh] overflow-y-auto custom-scrollbar bg-[#0B0F19] relative overflow-hidden">
+            {/* Subtle background glow */}
+            <div className="absolute top-[30%] left-[10%] w-72 h-72 bg-amber-500/5 rounded-full blur-[95px] pointer-events-none -z-10" />
 
-    return (
-        <div className="p-5 pb-[200px] flex flex-col h-full min-h-[80vh] overflow-y-auto custom-scrollbar bg-[#070A13]">
             {/* 1. Items */}
             <div className="space-y-4 mb-8">
                 {items.map((item, idx) => (
-                    <div key={idx} className="flex gap-4 bg-[#111827] p-4 rounded-2xl border border-white/5 relative shadow-lg animate-in fade-in">
-                        <div className="w-20 h-20 rounded-xl bg-black/40 overflow-hidden shrink-0 relative">
+                    <div key={idx} className="flex gap-4 bg-white/5 p-4 rounded-2xl border border-white/5 relative shadow-lg animate-in fade-in">
+                        <div className="w-20 h-20 rounded-xl bg-black/40 overflow-hidden shrink-0 relative border border-white/5">
                             {item.image && <Image src={item.image} alt={item.name} fill className="object-cover" />}
                         </div>
                         <div className="flex-1 min-w-0 flex flex-col justify-between pr-6">
                             <div>
-                                <div className="font-bold text-white text-base truncate">{language === "ar" ? (item.name_ar || item.name) : item.name}</div>
-                                {item.meta && <p className="text-[11px] text-gray-400 line-clamp-1 mt-0.5">{item.meta}</p>}
+                                <div className="font-bold text-white text-base truncate uppercase tracking-tight">{language === "ar" ? (item.name_ar || item.name) : item.name}</div>
+                                {item.meta && <p className="text-[10px] text-gray-400 line-clamp-1 mt-0.5">{item.meta}</p>}
                             </div>
                             <div className="flex justify-between items-center mt-2 flex-wrap gap-2">
                                 <div className="text-amber-500 font-black text-base">
                                     {formatDh(item.price! * (item.quantity || 1))}
                                 </div>
-                                <div className="flex items-center gap-2 bg-[#1E293B] p-0.5 rounded-lg border border-white/5">
+                                <div className="flex items-center gap-2 bg-white/5 p-0.5 rounded-lg border border-white/5">
                                     <button
                                         type="button"
                                         onClick={() => setQuantity(item.id!, Math.max(0, (item.quantity || 1) - 1))}
@@ -320,7 +321,7 @@ function CartDrawerContent({
                                     <button
                                         type="button"
                                         onClick={() => setQuantity(item.id!, (item.quantity || 1) + 1)}
-                                        className="w-7 h-7 rounded bg-red-600 flex items-center justify-center hover:bg-red-500 active:scale-95 transition-all text-white font-black text-sm shadow-md"
+                                        className="w-7 h-7 rounded bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center hover:from-amber-600 hover:to-orange-600 active:scale-95 transition-all text-white font-black text-sm shadow-md shadow-amber-500/20"
                                     >
                                         +
                                     </button>
@@ -342,7 +343,7 @@ function CartDrawerContent({
                     </h3>
                     
                     {/* Toggle Location Type */}
-                    <div className="flex bg-[#1E293B] p-1.5 rounded-2xl mb-6 border border-white/5 shadow-inner relative overflow-hidden">
+                    <div className="flex bg-white/5 p-1.5 rounded-2xl mb-6 border border-white/5 shadow-inner relative overflow-hidden">
                         {/* Beautiful Sliding Pill */}
                         <div className="absolute inset-1.5 grid grid-cols-2 pointer-events-none z-0">
                             <motion.div 
@@ -350,11 +351,11 @@ function CartDrawerContent({
                                 animate={{
                                     x: locationType === 'on_site' ? '0%' : '100%',
                                     background: locationType === 'on_site' 
-                                        ? 'linear-gradient(to right, #2563eb, #3b82f6)' 
-                                        : 'linear-gradient(to right, #f59e0b, #f97316)',
+                                        ? 'linear-gradient(to right, #d97706, #ea580c)' 
+                                        : 'linear-gradient(to right, #2563eb, #3b82f6)',
                                     boxShadow: locationType === 'on_site'
-                                        ? '0 8px 20px -4px rgba(37,99,235,0.4)'
-                                        : '0 8px 20px -4px rgba(245,158,11,0.4)'
+                                        ? '0 8px 20px -4px rgba(217,119,6,0.4)'
+                                        : '0 8px 20px -4px rgba(37,99,235,0.4)'
                                 }}
                                 transition={{ type: 'spring', stiffness: 350, damping: 28 }}
                             />
@@ -391,17 +392,17 @@ function CartDrawerContent({
                     </div>
 
                     {/* Dynamic Details based on Location Type */}
-                    <div className="bg-[#111827] rounded-[2rem] p-6 border border-white/5 shadow-xl">
+                    <div className="bg-white/5 rounded-[2rem] p-6 border border-white/5 shadow-xl">
                         {locationType === 'on_site' ? (
                             <div className="animate-in fade-in duration-300">
                                 {locationDetail ? (
-                                    <div className="w-full mb-3 p-4 bg-blue-500/10 border border-blue-500/30 rounded-xl flex items-center justify-between animate-in fade-in">
+                                    <div className="w-full mb-3 p-4 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center justify-between animate-in fade-in">
                                         <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400">
+                                            <div className="w-8 h-8 rounded-full bg-amber-500/20 flex items-center justify-center text-amber-500 animate-pulse">
                                                 <Check className="w-4 h-4" />
                                             </div>
                                             <div>
-                                                <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">
+                                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">
                                                     {onSiteLocation === 'table' ? 'Table scannée' : onSiteLocation === 'pool' ? 'Place scannée' : 'Chambre'}
                                                 </p>
                                                 <p className="text-lg font-black text-white leading-none mt-1">
@@ -893,6 +894,27 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
     const [dbCategories, setDbCategories] = useState<{id: string, label: string}[]>(initialCategories);
     const [isLoadingMenu, setIsLoadingMenu] = useState(false);
 
+    // Auto-scroll logic for Special Offers carousel (like comments)
+    useEffect(() => {
+        if (activeCategory !== "all") return;
+        const featuredItems = dbItems.filter(i => i.isFeatured);
+        if (featuredItems.length <= 1) return;
+
+        const interval = setInterval(() => {
+            const container = document.getElementById("resto-carousel-container");
+            if (!container) return;
+
+            const maxScroll = container.scrollWidth - container.clientWidth;
+            if (container.scrollLeft >= maxScroll - 5) {
+                container.scrollTo({ left: 0, behavior: "smooth" });
+            } else {
+                container.scrollBy({ left: container.clientWidth, behavior: "smooth" });
+            }
+        }, 4500);
+
+        return () => clearInterval(interval);
+    }, [activeCategory, dbItems]);
+
     const displayItems = useMemo(() => {
         if (activeCategory === "all") return dbItems;
         return dbItems.filter(i => i.category === activeCategory);
@@ -1205,18 +1227,21 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
             {/* Customization Sheet */}
             <DarkSheet open={!!customizeItem} onClose={() => setCustomizeItem(null)} title={(language === "ar" && customizeItem?.name_ar) ? customizeItem.name_ar : (customizeItem?.name || "Personnaliser")}>
                 {customizeItem && (
-                    <div className="flex flex-col h-full bg-[#070A13]">
+                    <div className="flex flex-col h-full bg-[#0B0F19] relative overflow-hidden">
+                        {/* Subtle background glow */}
+                        <div className="absolute top-[20%] right-[10%] w-72 h-72 bg-amber-500/5 rounded-full blur-[90px] pointer-events-none -z-10" />
+
                         <div className="p-6 pb-[250px] space-y-8 overflow-y-auto custom-scrollbar">
-                            <div className="rounded-3xl overflow-hidden h-48 w-full relative -mt-4 shadow-2xl">
-                                {customizeItem.image && <Image src={customizeItem.image} alt={customizeItem.name} fill className="object-cover" />}
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#070A13] via-transparent to-transparent" />
+                            <div className="rounded-3xl overflow-hidden h-48 w-full relative -mt-4 shadow-2xl border border-white/10">
+                                {customizeItem.image && <Image src={customizeItem.image} alt={customizeItem.name} fill className="object-cover animate-in zoom-in-95 duration-[2000ms]" />}
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F19] via-transparent to-transparent" />
                             </div>
 
                             {customizeItem.customization && Object.entries(customizeItem.customization).map(([key, opt]) => (
                                 <div key={key} className="space-y-4">
-                                    <h3 className="text-xs font-black text-gray-500 uppercase tracking-widest flex items-center gap-3">
+                                    <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest flex items-center gap-3">
                                         {opt.label}
-                                        <div className="h-[1px] bg-white/10 flex-1"></div>
+                                        <div className="h-[1px] bg-white/5 flex-1"></div>
                                     </h3>
 
                                     <div className="space-y-3">
@@ -1240,16 +1265,16 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                                                         }
                                                     }}
                                                     className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all duration-300 group ${isSelected
-                                                        ? 'bg-red-600/10 border-red-500/50 shadow-[0_0_20px_rgba(220,38,38,0.15)]'
-                                                        : 'bg-[#1E293B]/50 border-white/5 hover:bg-[#1E293B] hover:border-white/20'
+                                                        ? 'bg-amber-500/10 border-amber-500/50 shadow-[0_0_20px_rgba(245,158,11,0.15)]'
+                                                        : 'bg-white/5 border-white/5 hover:bg-white/10 hover:border-white/10'
                                                         }`}
                                                 >
                                                     <div className="flex items-center gap-4">
                                                         <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isSelected
-                                                            ? 'bg-red-500 border-red-500 scale-110'
+                                                            ? 'bg-amber-500 border-amber-500 scale-110 shadow-[0_0_10px_rgba(245,158,11,0.4)]'
                                                             : 'bg-transparent border-white/20 group-hover:border-white/40'
                                                             }`}>
-                                                            {isSelected && <div className="w-2.5 h-2.5 bg-white rounded-full shadow-sm" />}
+                                                            {isSelected && <div className="w-2.5 h-2.5 bg-black rounded-full shadow-sm" />}
                                                         </div>
                                                         <span className={`font-bold transition-colors ${isSelected ? 'text-white' : 'text-gray-300'}`}>
                                                             {subOpt.label}
@@ -1257,7 +1282,7 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                                                     </div>
 
                                                     {subOpt.price ? (
-                                                        <span className={`text-xs font-black px-3 py-1.5 rounded-lg ${isSelected ? 'bg-red-500 text-white shadow-lg' : 'bg-white/5 text-amber-500'}`}>
+                                                        <span className={`text-xs font-black px-3 py-1.5 rounded-lg transition-all ${isSelected ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/20' : 'bg-white/5 text-amber-500 border border-white/5'}`}>
                                                             +{subOpt.price} DH
                                                         </span>
                                                     ) : null}
@@ -1266,7 +1291,7 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                                         })}
 
                                         {opt.type === 'stepper' && (
-                                            <div className="flex items-center justify-between bg-[#1E293B] p-3 pr-4 rounded-2xl border border-white/5">
+                                            <div className="flex items-center justify-between bg-white/5 p-3 pr-4 rounded-2xl border border-white/5">
                                                 <div className="px-4 py-2 bg-white/5 rounded-xl text-gray-300 text-sm font-bold">
                                                     Quantité
                                                 </div>
@@ -1274,7 +1299,7 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                                                     <button
                                                         type="button"
                                                         onClick={() => setSelections({ ...selections, [key]: Math.max(opt.min || 0, (selections[key] as number) - 1) })}
-                                                        className="w-12 h-12 rounded-xl bg-white/5 flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all text-white font-black text-xl"
+                                                        className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all text-white font-black text-xl"
                                                     >
                                                         -
                                                     </button>
@@ -1282,7 +1307,7 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                                                     <button
                                                         type="button"
                                                         onClick={() => setSelections({ ...selections, [key]: Math.min(opt.max || 10, (selections[key] as number) + 1) })}
-                                                        className="w-12 h-12 rounded-xl bg-gradient-to-br from-red-600 to-red-500 flex items-center justify-center shadow-[0_5px_15px_rgba(220,38,38,0.4)] active:scale-95 transition-all text-white font-black text-xl"
+                                                        className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 flex items-center justify-center shadow-[0_5px_15px_rgba(245,158,11,0.3)] active:scale-95 transition-all text-white font-black text-xl"
                                                     >
                                                         +
                                                     </button>
@@ -1294,29 +1319,29 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                             ))}
 
                             <div className="pt-6 border-t border-white/5">
-                                <h3 className="text-xs font-black text-gray-500 uppercase tracking-widest mb-4">{t('restaurant.note.title')}</h3>
+                                <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">{t('restaurant.note.title')}</h3>
                                 <textarea
                                     value={selections.special_instructions as string || ""}
                                     onChange={e => setSelections({ ...selections, special_instructions: e.target.value })}
-                                    className="w-full bg-[#111827] border border-white/10 rounded-2xl p-5 text-white placeholder-gray-600 outline-none focus:border-red-500 transition-all h-32 resize-none text-sm font-medium"
+                                    className="w-full bg-[#111827]/40 backdrop-blur-md border border-white/10 rounded-2xl p-5 text-white placeholder-gray-600 outline-none focus:border-amber-500 transition-all h-32 resize-none text-sm font-medium"
                                     placeholder={t('restaurant.note.placeholder')}
                                 />
                             </div>
                         </div>
 
                         <div className="absolute bottom-0 left-0 right-0 z-50">
-                            <div className="h-16 bg-gradient-to-t from-[#070A13] to-transparent pointer-events-none" />
-                            <div className="bg-[#070A13] p-5 pt-0 pb-8 border-t border-white/5 shadow-[0_-20px_50px_rgba(0,0,0,0.8)]">
+                            <div className="h-16 bg-gradient-to-t from-[#0B0F19] to-transparent pointer-events-none" />
+                            <div className="bg-[#0B0F19] p-5 pt-0 pb-8 border-t border-white/5 shadow-[0_-20px_50px_rgba(0,0,0,0.8)]">
                                 {/* Quantity Stepper */}
                                 <div className="flex items-center justify-between mb-4 px-2">
                                     <span className="text-gray-400 font-bold text-sm">
                                         {language === "ar" ? "الكمية" : "Quantité"}
                                     </span>
-                                    <div className="flex items-center gap-4 bg-[#1E293B] p-1 rounded-xl border border-white/5">
+                                    <div className="flex items-center gap-4 bg-white/5 p-1 rounded-xl border border-white/5">
                                         <button
                                             type="button"
                                             onClick={() => setCustomizeQty(q => Math.max(1, q - 1))}
-                                            className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all text-white font-black text-lg"
+                                            className="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all text-white font-black text-lg"
                                         >
                                             -
                                         </button>
@@ -1324,7 +1349,7 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                                         <button
                                             type="button"
                                             onClick={() => setCustomizeQty(q => q + 1)}
-                                            className="w-10 h-10 rounded-lg bg-red-600 flex items-center justify-center hover:bg-red-500 active:scale-95 transition-all text-white font-black text-lg shadow-md"
+                                            className="w-10 h-10 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center hover:from-amber-600 hover:to-orange-600 active:scale-95 transition-all text-white font-black text-lg shadow-md"
                                         >
                                             +
                                         </button>
@@ -1339,11 +1364,11 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                                 </div>
                                 <button
                                     onClick={handleAddToCart}
-                                    className="w-full py-5 bg-gradient-to-r from-red-600 to-orange-500 hover:from-red-500 hover:to-orange-400 rounded-2xl font-black text-xl text-white shadow-[0_10px_25px_rgba(220,38,38,0.3)] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+                                    className="w-full py-5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 rounded-2xl font-black text-xl text-white shadow-[0_10px_25px_rgba(245,158,11,0.25)] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
                                 >
                                     <span>{t('restaurant.btn.add')}</span>
-                                    <div className="bg-white/20 rounded-full p-1.5">
-                                        <Plus className="w-5 h-5" />
+                                    <div className="bg-black/20 rounded-full p-1.5">
+                                        <Plus className="w-5 h-5 text-white" />
                                     </div>
                                 </button>
                             </div>
