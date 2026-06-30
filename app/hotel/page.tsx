@@ -69,27 +69,27 @@ export default function HotelPage() {
     const activeRoom = ROOM_TYPES.find(r => r.id === selectedRoom);
 
     // Hotel Hero Section
-    const [heroData, setHeroData] = useState<{
+    const [heroSlides, setHeroSlides] = useState<{
+        id: string;
         title: string;
         subtitle: string;
         badge_text: string;
         cta_text: string;
         image_url: string;
-        is_active: boolean;
-    } | null>(null);
+    }[]>([]);
 
     const fetchHero = useCallback(async () => {
         try {
             const { data } = await supabase
-                .from('hotel_hero')
+                .from('hero_sliders')
                 .select('*')
+                .eq('page', 'hotel')
                 .eq('is_active', true)
-                .order('created_at', { ascending: false })
-                .limit(1)
-                .maybeSingle();
-            if (data) setHeroData(data);
+                .order('order_index', { ascending: true });
+            
+            if (data && data.length > 0) setHeroSlides(data);
         } catch {
-            // hero table may not exist yet, silently fail
+            // silently fail
         }
     }, []);
 
@@ -309,8 +309,10 @@ export default function HotelPage() {
                     <div 
                         id="hotel-carousel-container"
                         onScroll={(e) => {
-                            const target = e.currentTarget;
-                            const index = Math.round(target.scrollLeft / target.clientWidth);
+                            const target = e.target as HTMLElement;
+                            const scrollLeft = target.scrollLeft;
+                            const width = target.clientWidth;
+                            const index = Math.round(scrollLeft / width);
                             const dots = document.querySelectorAll('.hotel-dot');
                             dots.forEach((dot, idx) => {
                                 if (idx === index) {
@@ -324,70 +326,73 @@ export default function HotelPage() {
                         }}
                         className="flex overflow-x-auto snap-x snap-mandatory gap-0 scrollbar-hide w-full h-full scroll-smooth"
                     >
-                        {[
+                        {(heroSlides.length > 0 ? heroSlides : [
                             {
-                                title: heroData?.title || 'Votre Séjour de Rêve',
-                                subtitle: heroData?.subtitle || 'Détente et confort absolu au cœur du Golden Park',
-                                badge: heroData?.badge_text || 'OFFRE SPÉCIALE',
-                                img: heroData?.image_url || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80'
+                                id: 'fallback-1',
+                                title: 'Votre Séjour de Rêve',
+                                subtitle: 'Détente et confort absolu au cœur du Golden Park',
+                                badge_text: 'OFFRE SPÉCIALE',
+                                cta_text: 'Réserver',
+                                image_url: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80'
                             },
                             {
+                                id: 'fallback-2',
                                 title: 'Chambres Familiales',
                                 subtitle: 'Spacieuses, modernes et équipées pour toute la famille',
-                                badge: 'ESPACE FAMILLE',
-                                img: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80'
+                                badge_text: 'ESPACE FAMILLE',
+                                cta_text: 'Découvrir',
+                                image_url: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80'
                             },
                             {
+                                id: 'fallback-3',
                                 title: 'Piscine & Détente',
                                 subtitle: 'Accès gratuit à la piscine pour tous nos résidents',
-                                badge: 'INCLUS DANS LE SÉJOUR',
-                                img: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=1200&q=80'
+                                badge_text: 'INCLUS DANS LE SÉJOUR',
+                                cta_text: 'Explorer',
+                                image_url: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=1200&q=80'
                             }
-                        ].map((slide, idx) => (
+                        ]).map((slide, idx) => (
                             <div 
-                                key={idx}
+                                key={slide.id || idx}
                                 className="relative w-full h-full shrink-0 snap-center flex items-center justify-between px-6 md:px-12 select-none"
                                 style={{ minWidth: '100%' }}
                             >
-                                {/* Background Image */}
                                 <Image
-                                    src={slide.img}
+                                    src={slide.image_url}
                                     alt={slide.title}
                                     fill
                                     priority={idx === 0}
-                                    className="object-cover group-hover:scale-105 transition-transform duration-[2000ms] ease-out pointer-events-none"
+                                    className="object-cover absolute inset-0 -z-10 brightness-[0.65] saturate-150 transition-transform duration-[20s] ease-linear hover:scale-110"
                                 />
-                                {/* Full dark overlay */}
-                                <div className="absolute inset-0 bg-black/60" />
-                                {/* Glow FX */}
-                                <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F19] via-transparent to-black/40 -z-10" />
+                                
+                                <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-12 z-10 bg-gradient-to-r from-black/50 to-transparent">
+                                    <div className="flex flex-col md:flex-row justify-between items-start md:items-end w-full gap-6">
+                                        {/* Left: badge + title + subtitle */}
+                                        <div className="flex flex-col gap-2 flex-1 min-w-0 text-left">
+                                            <span className="bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[9px] font-black px-3.5 py-1 rounded-full uppercase tracking-wider inline-flex items-center gap-1 w-fit shadow-lg shadow-orange-500/20">
+                                                🏨 {slide.badge_text}
+                                            </span>
+                                            <h2 className="text-white text-2xl sm:text-3xl md:text-5xl font-black uppercase tracking-tight leading-tight drop-shadow-lg">
+                                                {slide.title}
+                                            </h2>
+                                            <p className="text-white/80 text-[10px] sm:text-xs font-semibold line-clamp-2 drop-shadow leading-relaxed max-w-[400px]">
+                                                {slide.subtitle}
+                                            </p>
+                                        </div>
 
-                                {/* Content */}
-                                <div className="relative z-10 w-full flex items-center justify-between gap-4">
-                                    {/* Left: badge + title + subtitle */}
-                                    <div className="flex flex-col gap-2 flex-1 min-w-0 text-left">
-                                        <span className="bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[9px] font-black px-3.5 py-1 rounded-full uppercase tracking-wider inline-flex items-center gap-1 w-fit shadow-lg shadow-orange-500/20">
-                                            🏨 {slide.badge}
-                                        </span>
-                                        <h2 className="text-white text-2xl sm:text-3xl md:text-5xl font-black uppercase tracking-tight leading-tight drop-shadow-lg">
-                                            {slide.title}
-                                        </h2>
-                                        <p className="text-white/70 text-[10px] sm:text-xs font-semibold line-clamp-2 drop-shadow leading-relaxed max-w-[320px]">
-                                            {slide.subtitle}
-                                        </p>
-                                    </div>
-
-                                    {/* Right: CTA button */}
-                                    <div className="flex flex-col items-end gap-2 shrink-0">
-                                        <button
-                                            onClick={() => {
-                                                document.getElementById('hotel-room-gallery')?.scrollIntoView({ behavior: 'smooth' });
-                                            }}
-                                            className="py-3.5 px-6 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg active:scale-95 transition-all flex items-center gap-2 whitespace-nowrap"
-                                        >
-                                            <BedDouble className="w-4 h-4" />
-                                            <span>{heroData?.cta_text || 'Réserver'}</span>
-                                        </button>
+                                        {/* Right: CTA button */}
+                                        <div className="flex flex-col items-start md:items-end gap-2 shrink-0 w-full md:w-auto">
+                                            <button
+                                                onClick={() => {
+                                                    document.getElementById('hotel-room-gallery')?.scrollIntoView({ behavior: 'smooth' });
+                                                }}
+                                                className="w-full md:w-auto py-3.5 px-6 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-[0_10px_20px_rgba(245,158,11,0.3)] active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
+                                            >
+                                                <BedDouble className="w-4 h-4" />
+                                                <span>{slide.cta_text || 'Réserver'}</span>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -402,48 +407,6 @@ export default function HotelPage() {
                     </div>
                 </div>
 
-                {/* INFINITE IMAGES CAROUSEL */}
-                <div className="w-full overflow-hidden relative py-2 mb-2 group">
-                    <style dangerouslySetInnerHTML={{__html: `
-                        @keyframes marquee-images-hotel {
-                            0% { transform: translateX(0); }
-                            100% { transform: translateX(-50%); }
-                        }
-                        .animate-marquee-hotel {
-                            display: flex;
-                            width: max-content;
-                            animation: marquee-images-hotel 35s linear infinite;
-                        }
-                        .animate-marquee-hotel:hover {
-                            animation-play-state: paused;
-                        }
-                    `}} />
-                    
-                    <div className="absolute left-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-r from-[#0B0F19] to-transparent z-10 pointer-events-none" />
-                    <div className="absolute right-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-l from-[#0B0F19] to-transparent z-10 pointer-events-none" />
-                    
-                    <div className="animate-marquee-hotel flex gap-4">
-                        {[
-                            'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80',
-                            'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80',
-                            'https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=800&q=80',
-                            'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80',
-                            'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
-                            'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=800&q=80'
-                        ].concat([
-                            'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80',
-                            'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80',
-                            'https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=800&q=80',
-                            'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80',
-                            'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
-                            'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=800&q=80'
-                        ]).map((src, idx) => (
-                            <div key={idx} className="relative w-40 h-28 md:w-64 md:h-40 rounded-[2rem] overflow-hidden shrink-0 border border-white/5 shadow-xl">
-                                <Image src={src} alt="Hotel Gallery" fill className="object-cover group-hover:scale-105 transition-all duration-1000" />
-                            </div>
-                        ))}
-                    </div>
-                </div>
 
                 {/* MODE SWITCHER */}
                 <div className="flex flex-col items-center gap-2 max-w-md mx-auto w-full">
@@ -670,7 +633,7 @@ export default function HotelPage() {
                         <div className="flex items-center gap-2 pl-2">
                             <span className="text-white font-black text-lg">
                                 {dateError ? '--' : (paymentMethod === 'card' ? Math.round(totalPrice * 0.90) : totalPrice)}{' '}
-                                <span className="text-xs font-bold text-gray-400">{t('hotel.book.dh')}</span>
+                                <span className="text-xs font-bold text-gray-400">DH</span>
                                 {paymentMethod === 'card' && totalPrice > 0 && !dateError && (
                                     <span className="text-[10px] text-red-500 font-bold ml-1.5 bg-red-500/10 px-1.5 py-0.5 rounded animate-pulse">
                                         -10%
@@ -701,8 +664,7 @@ export default function HotelPage() {
                 </div>
             </div>
 
-            {/* Curtain for Scroll Mask */}
-            <div className="fixed inset-x-0 bottom-0 h-[100px] bg-gradient-to-t from-[#0B0F19] to-transparent z-30 pointer-events-none" />
+
 
             {/* Success Modal */}
             {showSuccess && (

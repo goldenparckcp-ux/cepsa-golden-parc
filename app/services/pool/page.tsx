@@ -49,6 +49,32 @@ export default function PoolPage() {
     const [adults, setAdults] = useState(1);
     const [children, setChildren] = useState(0);
 
+    const [heroSlides, setHeroSlides] = useState<{
+        id: string;
+        title: string;
+        subtitle: string;
+        badge_text: string;
+        cta_text: string;
+        image_url: string;
+    }[]>([]);
+
+    const fetchHero = useCallback(async () => {
+        try {
+            const { data } = await supabase
+                .from('hero_sliders')
+                .select('*')
+                .eq('page', 'pool')
+                .eq('is_active', true)
+                .order('order_index', { ascending: true });
+            
+            if (data && data.length > 0) setHeroSlides(data);
+        } catch {
+            // silently fail
+        }
+    }, []);
+
+    useEffect(() => { fetchHero(); }, [fetchHero]);
+
     const [loading, setLoading] = useState(false);
     const [showSuccess, setShowSuccess] = useState<string | null>(null);
     const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('card');
@@ -213,9 +239,10 @@ export default function PoolPage() {
                 <div className="relative w-full h-[200px] sm:h-[260px] rounded-[2.5rem] overflow-hidden border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] group">
                     <div 
                         id="pool-carousel-container"
-                        onScroll={(e) => {
-                            const target = e.currentTarget;
-                            const index = Math.round(target.scrollLeft / target.clientWidth);
+                        onScroll={(e) => {                            const target = e.target as HTMLElement;
+                            const scrollLeft = target.scrollLeft;
+                            const width = target.clientWidth;
+                            const index = Math.round(scrollLeft / width);
                             const dots = document.querySelectorAll('.pool-dot');
                             dots.forEach((dot, idx) => {
                                 if (idx === index) {
@@ -229,57 +256,70 @@ export default function PoolPage() {
                         }}
                         className="flex overflow-x-auto snap-x snap-mandatory gap-0 scrollbar-hide w-full h-full scroll-smooth"
                     >
-                        {[
+                        {(heroSlides.length > 0 ? heroSlides : [
                             {
+                                id: 'fallback-1',
                                 title: t('pool.hero.title'),
                                 subtitle: 'Espace aquatique de détente et fraîcheur au Golden Park',
-                                badge: t('pool.hero.badge'),
-                                img: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=1200&q=80'
+                                badge_text: t('pool.hero.badge'),
+                                cta_text: '',
+                                image_url: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=1200&q=80'
                             },
                             {
+                                id: 'fallback-2',
                                 title: 'Journée Femmes',
                                 subtitle: 'Profitez d\'une intimité et d\'une ambiance exclusive chaque mercredi & vendredi',
-                                badge: '100% SÉCURISÉ & PRIVÉ',
-                                img: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80'
+                                badge_text: '100% SÉCURISÉ & PRIVÉ',
+                                cta_text: '',
+                                image_url: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80'
                             },
                             {
+                                id: 'fallback-3',
                                 title: 'Espace Familles',
                                 subtitle: 'Partagez des moments exceptionnels en famille au bord de l\'eau',
-                                badge: 'ESPACE CHALEUREUX',
-                                img: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80'
+                                badge_text: 'ESPACE CHALEUREUX',
+                                cta_text: '',
+                                image_url: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=1200&q=80'
                             }
-                        ].map((slide, idx) => (
+                        ]).map((slide, idx) => (
                             <div 
-                                key={idx}
+                                key={slide.id || idx}
                                 className="relative w-full h-full shrink-0 snap-center flex items-center justify-between px-6 md:px-12 select-none"
                                 style={{ minWidth: '100%' }}
                             >
                                 {/* Background Image */}
                                 <Image
-                                    src={slide.img}
+                                    src={slide.image_url}
                                     alt={slide.title}
                                     fill
                                     priority={idx === 0}
-                                    className="object-cover group-hover:scale-105 transition-transform duration-[2000ms] ease-out pointer-events-none"
+                                    className="object-cover absolute inset-0 -z-10 brightness-[0.65] saturate-150 transition-transform duration-[20s] ease-linear hover:scale-110 pointer-events-none"
                                 />
                                 {/* Full dark overlay */}
-                                <div className="absolute inset-0 bg-black/60" />
-                                {/* Glow FX */}
-                                <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-[100px] pointer-events-none" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F19] via-transparent to-black/40 -z-10" />
 
                                 {/* Content */}
-                                <div className="relative z-10 w-full flex items-center justify-between gap-4">
-                                    <div className="flex flex-col gap-2 flex-1 min-w-0 text-left">
-                                        <span className="bg-gradient-to-r from-cyan-500 to-emerald-600 text-white text-[9px] font-black px-3.5 py-1 rounded-full uppercase tracking-wider inline-flex items-center gap-1 w-fit shadow-lg shadow-cyan-500/20">
-                                            💦 {slide.badge}
+                                <div className="relative z-10 w-full flex items-center justify-between gap-4 h-full pb-6">
+                                    <div className="flex flex-col gap-1.5 flex-1 min-w-0 text-left justify-end h-full">
+                                        <span className="bg-cyan-500/20 border border-cyan-500 text-cyan-400 text-[8px] sm:text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider inline-flex items-center gap-1 w-fit shadow-lg backdrop-blur-sm">
+                                            💦 {slide.badge_text}
                                         </span>
-                                        <h2 className="text-white text-2xl sm:text-3xl md:text-5xl font-black uppercase tracking-tight leading-tight drop-shadow-lg">
+                                        <h2 className="text-white text-xl sm:text-2xl md:text-4xl font-black uppercase tracking-tight leading-tight drop-shadow-lg">
                                             {slide.title}
                                         </h2>
-                                        <p className="text-white/70 text-[10px] sm:text-xs font-semibold line-clamp-2 drop-shadow leading-relaxed max-w-[320px]">
+                                        <p className="text-white/80 text-[9px] sm:text-[10px] md:text-xs font-medium line-clamp-2 drop-shadow leading-relaxed max-w-[280px] sm:max-w-[400px]">
                                             {slide.subtitle}
                                         </p>
                                     </div>
+                                    {slide.cta_text && (
+                                        <div className="flex flex-col items-end justify-end h-full shrink-0">
+                                            <button
+                                                className="py-2.5 px-4 bg-cyan-500 text-black font-black text-xs uppercase tracking-wider rounded-xl shadow-lg active:scale-95 transition-all whitespace-nowrap"
+                                            >
+                                                {slide.cta_text}
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))}
@@ -290,49 +330,6 @@ export default function PoolPage() {
                         <span className="pool-dot w-6 h-2 rounded-full bg-cyan-500 transition-all duration-300" />
                         <span className="pool-dot w-2 h-2 rounded-full bg-white/30 transition-all duration-300" />
                         <span className="pool-dot w-2 h-2 rounded-full bg-white/30 transition-all duration-300" />
-                    </div>
-                </div>
-
-                {/* INFINITE IMAGES CAROUSEL */}
-                <div className="w-full overflow-hidden relative py-2 mb-2 group">
-                    <style dangerouslySetInnerHTML={{__html: `
-                        @keyframes marquee-images-pool {
-                            0% { transform: translateX(0); }
-                            100% { transform: translateX(-50%); }
-                        }
-                        .animate-marquee-pool {
-                            display: flex;
-                            width: max-content;
-                            animation: marquee-images-pool 35s linear infinite;
-                        }
-                        .animate-marquee-pool:hover {
-                            animation-play-state: paused;
-                        }
-                    `}} />
-                    
-                    <div className="absolute left-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-r from-[#0B0F19] to-transparent z-10 pointer-events-none" />
-                    <div className="absolute right-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-l from-[#0B0F19] to-transparent z-10 pointer-events-none" />
-                    
-                    <div className="animate-marquee-pool flex gap-4">
-                        {[
-                            'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=800&q=80',
-                            'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
-                            'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80',
-                            'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80',
-                            'https://images.unsplash.com/photo-1622396481328-9b1b78cdd9fd?auto=format&fit=crop&w=800&q=80',
-                            'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=800&q=80'
-                        ].concat([
-                            'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=800&q=80',
-                            'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
-                            'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80',
-                            'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80',
-                            'https://images.unsplash.com/photo-1622396481328-9b1b78cdd9fd?auto=format&fit=crop&w=800&q=80',
-                            'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=800&q=80'
-                        ]).map((src, idx) => (
-                            <div key={idx} className="relative w-40 h-28 md:w-64 md:h-40 rounded-[2rem] overflow-hidden shrink-0 border border-white/5 shadow-xl">
-                                <Image src={src} alt="Pool Gallery" fill className="object-cover group-hover:scale-105 transition-all duration-1000" />
-                            </div>
-                        ))}
                     </div>
                 </div>
 
@@ -554,9 +551,6 @@ export default function PoolPage() {
                     </button>
                 </div>
             </div>
-
-            {/* Curtain for Scroll Mask */}
-            <div className="fixed inset-x-0 bottom-0 h-[100px] bg-gradient-to-t from-[#0B0F19] to-transparent z-30 pointer-events-none" />
 
 
             {/* Success Modal */}

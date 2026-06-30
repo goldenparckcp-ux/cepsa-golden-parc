@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Lock, LayoutDashboard, Utensils, Bed, Ticket, DollarSign, PlusCircle, LogOut, ExternalLink, Menu, X, Shield, RefreshCw, QrCode } from "lucide-react";
+import { Lock, LayoutDashboard, Utensils, Bed, Ticket, DollarSign, PlusCircle, LogOut, ExternalLink, Menu, X, Shield, RefreshCw, QrCode, Image as ImageIcon } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { adminDb } from "@/lib/admin-api";
@@ -260,6 +260,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             href: "/admin/prices",
             label: "Modifier les Prix",
             icon: DollarSign,
+            roles: ["admin"]
+        },
+        {
+            href: "/admin/hero",
+            label: "Gestion Sliders (Hero)",
+            icon: ImageIcon,
             roles: ["admin"]
         },
         {
