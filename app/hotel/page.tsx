@@ -289,6 +289,21 @@ export default function HotelPage() {
     return (
         <div className="min-h-screen pt-16 md:pt-20 pb-52 bg-[#0B0F19]">
 
+            {/* Page Header */}
+            <div className="pt-6 pb-2 px-4 max-w-6xl mx-auto relative z-20">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg shadow-indigo-500/20">
+                            <Moon className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-black text-white leading-none tracking-tight">{t('hotel.title')}</h1>
+                            <p className="text-sm text-gray-400 mt-1">Hôtel & Séjour</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
 
 
             <div className="p-3 md:p-6 space-y-8 max-w-6xl mx-auto relative z-10">

@@ -220,6 +220,21 @@ export default function PoolPage() {
     return (
         <div className="min-h-screen pt-16 md:pt-20 pb-52 bg-[#0B0F19]">
 
+            {/* Page Header */}
+            <div className="pt-6 pb-2 px-4 max-w-5xl mx-auto relative z-20">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-gradient-to-br from-cyan-500 to-blue-600 rounded-2xl shadow-lg shadow-cyan-500/20">
+                            <Waves className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-black text-white leading-none tracking-tight">{t('pool.title')}</h1>
+                            <p className="text-sm text-gray-400 mt-1">Piscine & Détente</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
 
 
             <div className="p-3 md:p-6 space-y-8 max-w-5xl mx-auto relative z-10">

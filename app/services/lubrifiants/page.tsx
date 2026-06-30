@@ -111,6 +111,21 @@ export default function LubricantsCatalog() {
             <div className="fixed top-[-10%] left-[-10%] w-[500px] h-[500px] bg-red-600/10 rounded-full blur-[150px] pointer-events-none -z-10 animate-pulse duration-10000" />
             <div className="fixed bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[150px] pointer-events-none -z-10 animate-pulse duration-7000" />
 
+            {/* Page Header */}
+            <div className="pt-6 pb-2 px-4 max-w-7xl mx-auto relative z-20">
+                <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-4">
+                        <div className="p-3 bg-gradient-to-br from-red-600 to-orange-500 rounded-2xl shadow-lg shadow-orange-500/20">
+                            <Wrench className="w-6 h-6 text-white" />
+                        </div>
+                        <div>
+                            <h1 className="text-2xl font-black text-white leading-none tracking-tight">{t('lube.catalog.title')}</h1>
+                            <p className="text-sm text-gray-400 mt-1">{t('lube.catalog.sub')}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
 
 
             {/* HERO CAROUSEL */}
