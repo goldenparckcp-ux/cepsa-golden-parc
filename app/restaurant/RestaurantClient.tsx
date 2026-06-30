@@ -1063,24 +1063,24 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                                         <div className="absolute inset-0 bg-black/55" />
                                         
                                         {/* Content Overlay */}
-                                        <div className="relative z-10 w-full flex items-center justify-between gap-4">
-                                            <div className="flex flex-col gap-1 flex-1 min-w-0 text-left">
-                                                <span className="bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-1 shadow-lg w-fit">
+                                        <div className="relative z-10 w-full flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+                                            <div className="flex flex-col gap-0.5 flex-1 min-w-0 text-left">
+                                                <span className="bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider inline-block mb-1 shadow-lg w-fit">
                                                     🌟 {language === "ar" ? "عرض خاص" : "Offre Spéciale"}
                                                 </span>
-                                                <h2 className="text-white text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tight leading-tight drop-shadow-md">
+                                                <h2 className="text-white text-xl sm:text-2xl md:text-3xl font-black uppercase tracking-tight leading-tight drop-shadow-md truncate">
                                                     {name}
                                                 </h2>
-                                                <p className="text-white/75 text-[10px] sm:text-xs font-medium line-clamp-2 drop-shadow leading-relaxed max-w-[280px]">
+                                                <p className="text-white/70 text-[9px] sm:text-xs font-semibold line-clamp-1 sm:line-clamp-2 drop-shadow leading-normal max-w-md">
                                                     {description}
                                                 </p>
                                             </div>
                                             
                                             {/* Price and CTA */}
-                                            <div className="flex items-center gap-2.5 shrink-0">
-                                                <div className="bg-white/10 backdrop-blur-md border border-white/15 px-3 py-2 rounded-2xl flex flex-col justify-center text-left">
-                                                    <span className="text-[8px] text-gray-300 font-bold uppercase tracking-wider leading-none mb-0.5">Prix Spécial</span>
-                                                    <span className="text-white text-sm sm:text-base font-black leading-none">
+                                            <div className="flex items-center gap-2 shrink-0 justify-start sm:justify-end mt-1 sm:mt-0">
+                                                <div className="bg-white/10 backdrop-blur-md border border-white/15 px-3 py-1.5 rounded-xl flex flex-col justify-center text-left">
+                                                    <span className="text-[7px] text-gray-300 font-bold uppercase tracking-wider leading-none mb-0.5">Prix Spécial</span>
+                                                    <span className="text-white text-xs sm:text-sm font-black leading-none">
                                                         {formatDh(item.basePrice)}
                                                     </span>
                                                 </div>
@@ -1090,9 +1090,9 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                                                         e.stopPropagation();
                                                         handleItemClick(item);
                                                     }}
-                                                    className="py-3 px-5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg active:scale-95 transition-all flex items-center gap-1.5"
+                                                    className="py-2.5 px-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black text-[10px] uppercase tracking-wider rounded-xl shadow-lg active:scale-95 transition-all flex items-center gap-1.5"
                                                 >
-                                                    <Plus className="w-3.5 h-3.5" />
+                                                    <Plus className="w-3 h-3" />
                                                     <span>{language === "ar" ? "طلب" : "Commander"}</span>
                                                 </button>
                                             </div>
