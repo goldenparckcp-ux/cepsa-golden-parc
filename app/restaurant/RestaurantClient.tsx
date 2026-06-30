@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useEffect, useCallback } from "react";
+import React, { useMemo, useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { Plus, UtensilsCrossed, ChevronRight, Trash2, Clock, Check, Car, MapPin, Navigation, ShoppingBag, Filter, AlertTriangle, Camera, X, Banknote, CreditCard, Lock, ShieldCheck } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -885,10 +885,27 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
     const [showSuccess, setShowSuccess] = useState<string | null>(null);
     const [activeCategory, setActiveCategory] = useState("all");
     const [showFilters, setShowFilters] = useState(false);
+    const categoriesCarouselRef = useRef<HTMLDivElement>(null);
     const [customizeItem, setCustomizeItem] = useState<MenuItem | null>(null);
     const [isCartOpen, setIsCartOpen] = useState(false);
     const [selections, setSelections] = useState<Record<string, unknown>>({});
     const [customizeQty, setCustomizeQty] = useState(1);
+
+    // Auto-scroll logic for Categories carousel
+    useEffect(() => {
+        if (!categoriesCarouselRef.current) return;
+        const interval = setInterval(() => {
+            const container = categoriesCarouselRef.current;
+            if (!container) return;
+            const maxScroll = container.scrollWidth - container.clientWidth;
+            if (container.scrollLeft >= maxScroll - 5) {
+                container.scrollTo({ left: 0, behavior: "smooth" });
+            } else {
+                container.scrollBy({ left: 150, behavior: "smooth" });
+            }
+        }, 3000);
+        return () => clearInterval(interval);
+    }, []);
 
     // Database States (Pre-loaded from Server)
     const [dbItems, setDbItems] = useState<MenuItem[]>(initialItems);
@@ -1025,18 +1042,23 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                         <div 
                             id="resto-carousel-container"
                             onScroll={(e) => {
-                                const target = e.currentTarget;
-                                const index = Math.round(target.scrollLeft / target.clientWidth);
-                                const dots = document.querySelectorAll('.resto-dot');
-                                dots.forEach((dot, idx) => {
-                                    if (idx === index) {
-                                        dot.classList.add('bg-orange-500', 'w-6');
-                                        dot.classList.remove('bg-white/30', 'w-2');
-                                    } else {
-                                        dot.classList.remove('bg-orange-500', 'w-6');
-                                        dot.classList.add('bg-white/30', 'w-2');
-                                    }
-                                });
+                                const target = e.currentTarget as any;
+                                if (target._isScrolling) return;
+                                target._isScrolling = true;
+                                setTimeout(() => {
+                                    target._isScrolling = false;
+                                    const index = Math.round(target.scrollLeft / target.clientWidth);
+                                    const dots = document.querySelectorAll('.resto-dot');
+                                    dots.forEach((dot, idx) => {
+                                        if (idx === index) {
+                                            dot.classList.add('bg-orange-500', 'w-6');
+                                            dot.classList.remove('bg-white/30', 'w-2');
+                                        } else {
+                                            dot.classList.remove('bg-orange-500', 'w-6');
+                                            dot.classList.add('bg-white/30', 'w-2');
+                                        }
+                                    });
+                                }, 100);
                             }}
                             className="flex overflow-x-auto snap-x snap-mandatory gap-4 scrollbar-hide w-full rounded-[2rem] scroll-smooth"
                         >
@@ -1120,78 +1142,36 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                 );
             })()}
 
-            {/* Filters Underneath Carousel */}
-            <div className="px-4 max-w-7xl mx-auto flex items-center gap-3 mt-4">
-                <div className="relative">
-                    <button 
-                        onClick={() => setShowFilters(!showFilters)}
-                        className={`w-11 h-11 rounded-2xl flex items-center justify-center border transition-all duration-300 shadow-xl ${
-                            showFilters 
-                                ? 'bg-orange-500 border-orange-500 text-white shadow-orange-500/25 rotate-90 scale-[1.02]' 
-                                : 'bg-[#0F172A]/90 backdrop-blur-md border-white/10 text-orange-500 hover:border-orange-500/50 hover:bg-orange-500/10'
+            {/* Categories Carousel */}
+            <div className="px-4 max-w-7xl mx-auto mt-6">
+                <div 
+                    ref={categoriesCarouselRef}
+                    className="flex overflow-x-auto gap-3 snap-x snap-mandatory scrollbar-hide pb-2 scroll-smooth"
+                >
+                    <button
+                        onClick={() => setActiveCategory("all")}
+                        className={`shrink-0 snap-start px-5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider transition-all duration-300 shadow-md ${
+                            activeCategory === "all" 
+                                ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-orange-500/30 scale-105"
+                                : "bg-[#1E293B] text-gray-400 hover:bg-[#1E293B]/80 hover:text-white border border-white/5"
                         }`}
-                        title="Filtrer par catégorie"
                     >
-                        <Filter className="w-5 h-5 transition-transform duration-300" />
+                        {language === "ar" ? "الكل" : "Tous"}
                     </button>
-
-                    <AnimatePresence>
-                        {showFilters && (
-                            <motion.div 
-                                initial={{ opacity: 0, y: 10, scale: 0.95 }} 
-                                animate={{ opacity: 1, y: 0, scale: 1 }} 
-                                exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                                transition={{ duration: 0.15 }}
-                                className="absolute left-0 top-full mt-2.5 w-64 bg-[#0F172A]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-y-auto z-50 flex flex-col py-2 max-h-[60vh] scrollbar-hide"
-                            >
-                                <div className="px-4 py-2 border-b border-white/5 mb-1 shrink-0 flex items-center justify-between">
-                                    <span className="text-[10px] text-gray-400 font-black uppercase tracking-wider">Catégories</span>
-                                    {activeCategory !== "all" && (
-                                        <button 
-                                            onClick={() => { setActiveCategory("all"); setShowFilters(false); }}
-                                            className="text-[10px] text-orange-500 font-bold hover:underline"
-                                        >
-                                            Réinitialiser
-                                        </button>
-                                    )}
-                                </div>
-                                {dbCategories.map(cat => (
-                                    <button
-                                        key={cat.id}
-                                        onClick={() => { setActiveCategory(cat.id); setShowFilters(false); }}
-                                        className={`w-full text-left px-4 py-3 text-sm font-bold transition-all flex items-center justify-between ${
-                                            activeCategory === cat.id 
-                                                ? "bg-orange-500/10 text-orange-500 border-l-4 border-orange-500" 
-                                                : "text-gray-300 hover:bg-white/5 hover:text-white border-l-4 border-transparent"
-                                        }`}
-                                    >
-                                        <span>{cat.label}</span>
-                                        {activeCategory === cat.id && (
-                                            <span className="w-1.5 h-1.5 bg-orange-500 rounded-full" />
-                                        )}
-                                    </button>
-                                ))}
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
-
-                {/* Active Category Pill */}
-                {activeCategory !== "all" && (
-                    <motion.div 
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="bg-orange-500/15 border border-orange-500/30 text-orange-400 font-black text-xs px-4 h-11 rounded-2xl flex items-center gap-2 shadow-lg"
-                    >
-                        <span>{dbCategories.find(c => c.id === activeCategory)?.label}</span>
-                        <button 
-                            onClick={() => setActiveCategory("all")}
-                            className="w-4 h-4 rounded-full bg-orange-500/20 text-orange-400 flex items-center justify-center hover:bg-orange-500 hover:text-white transition-colors"
+                    {dbCategories.map(cat => (
+                        <button
+                            key={cat.id}
+                            onClick={() => setActiveCategory(cat.id)}
+                            className={`shrink-0 snap-start px-5 py-2.5 rounded-2xl font-black text-xs uppercase tracking-wider transition-all duration-300 shadow-md ${
+                                activeCategory === cat.id 
+                                    ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-orange-500/30 scale-105"
+                                    : "bg-[#1E293B] text-gray-400 hover:bg-[#1E293B]/80 hover:text-white border border-white/5"
+                            }`}
                         >
-                            <X className="w-2.5 h-2.5" />
+                            {cat.label}
                         </button>
-                    </motion.div>
-                )}
+                    ))}
+                </div>
             </div>
 
             {/* Optimized Grid */}
@@ -1383,20 +1363,28 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                 />
             </DarkSheet>
 
-            {/* Floating Action Button for Cart */}
+            {/* Sleek Floating Action Button for Cart */}
             {itemCount > 0 && !isCartOpen && !customizeItem && (
-                <div className="fixed bottom-[80px] right-4 z-50 animate-in slide-in-from-bottom-10 fade-in duration-500">
+                <div className="fixed bottom-[80px] left-1/2 -translate-x-1/2 z-50 animate-in slide-in-from-bottom-10 fade-in duration-500 w-[95%] max-w-sm px-4">
                     <button
                         onClick={() => setIsCartOpen(true)}
-                        className="bg-gradient-to-br from-red-600 to-orange-500 rounded-full px-5 py-3 shadow-[0_8px_20px_rgba(220,38,38,0.4)] active:scale-95 transition-all flex items-center gap-3 border border-white/20"
+                        className="w-full bg-[#1E293B]/80 backdrop-blur-3xl rounded-full px-6 py-4 shadow-[0_20px_40px_rgba(0,0,0,0.5)] active:scale-95 transition-all flex items-center justify-between border border-white/10 group hover:bg-[#1E293B] hover:border-amber-500/30"
                     >
-                        <div className="relative">
-                            <ShoppingBag className="w-5 h-5 text-white" />
-                            <div className="absolute -top-1.5 -right-1.5 bg-white text-red-600 w-4 h-4 rounded-full flex items-center justify-center font-black text-[10px] shadow-sm">
-                                {itemCount}
+                        <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-amber-500 to-orange-600 flex items-center justify-center relative shadow-[0_0_15px_rgba(245,158,11,0.4)]">
+                                <ShoppingBag className="w-5 h-5 text-white" />
+                                <div className="absolute -top-1 -right-1 bg-white text-orange-600 w-5 h-5 rounded-full flex items-center justify-center font-black text-[10px] shadow-md border-2 border-[#1E293B]">
+                                    {itemCount}
+                                </div>
+                            </div>
+                            <div className="flex flex-col items-start">
+                                <span className="font-bold text-[10px] text-gray-400 uppercase tracking-widest leading-tight">Panier</span>
+                                <span className="font-black text-sm text-white leading-tight">Voir commande</span>
                             </div>
                         </div>
-                        <span className="font-black text-sm text-white">{formatDh(total)}</span>
+                        <span className="font-black text-lg text-amber-500 group-hover:text-amber-400 transition-colors drop-shadow-md">
+                            {formatDh(total)}
+                        </span>
                     </button>
                 </div>
             )}

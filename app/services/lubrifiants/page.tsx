@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
-import { ChevronLeft, Info, Search, Droplet, Shield, Zap, Wrench, Check } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { ChevronLeft, Info, Search, Droplet, Shield, Zap, Wrench, Check, ArrowRight } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "@/lib/state/LanguageContext";
+import { supabase } from "@/lib/supabase";
 
-// Catalogue Mockup
+// Catalogue Mockup Fallback
 const LUBRICANTS_CATALOG = [
     {
         id: "cepsa-xtar-5w30",
@@ -47,12 +48,9 @@ const LUBRICANTS_CATALOG = [
     }
 ];
 
-import { supabase } from "@/lib/supabase";
-import { useEffect } from "react";
-
 export default function LubricantsCatalog() {
     const router = useRouter();
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
     const [searchQuery, setSearchQuery] = useState("");
     const [lubricantsList, setLubricantsList] = useState<any[]>(LUBRICANTS_CATALOG);
     const [selectedProduct, setSelectedProduct] = useState<any | null>(null);
@@ -83,100 +81,120 @@ export default function LubricantsCatalog() {
 
     return (
         <div className="min-h-screen pt-16 md:pt-20 bg-[#0B0F19] pb-24 font-sans text-white relative overflow-hidden">
-            {/* Background Glow Accents */}
-            <div className="absolute top-[10%] left-[30%] w-[400px] h-[400px] bg-red-600/5 rounded-full blur-[130px] pointer-events-none -z-10" />
-            <div className="absolute bottom-[20%] right-[10%] w-[350px] h-[350px] bg-orange-600/5 rounded-full blur-[120px] pointer-events-none -z-10" />
+            {/* Ultra-Premium Background Glows */}
+            <div className="fixed top-[-10%] left-[-10%] w-[500px] h-[500px] bg-red-600/10 rounded-full blur-[150px] pointer-events-none -z-10 animate-pulse duration-10000" />
+            <div className="fixed bottom-[-10%] right-[-10%] w-[500px] h-[500px] bg-amber-500/10 rounded-full blur-[150px] pointer-events-none -z-10 animate-pulse duration-7000" />
 
             {/* Header */}
-            <div className="sticky top-[64px] md:top-[80px] z-30 bg-[#0B0F19]/90 backdrop-blur-xl border-b border-white/5 pt-4 pb-4 px-4 shadow-xl">
+            <div className="sticky top-[64px] md:top-[80px] z-30 bg-[#0B0F19]/80 backdrop-blur-3xl border-b border-white/5 pt-4 pb-4 px-4 shadow-2xl">
                 <div className="max-w-7xl mx-auto flex items-center justify-between">
                     <button 
                         onClick={() => router.back()} 
-                        className="w-12 h-12 flex items-center justify-center bg-white/5 rounded-full border border-white/10 hover:bg-white/10 transition-all"
+                        className="w-12 h-12 flex items-center justify-center bg-white/5 rounded-full border border-white/10 hover:bg-white/20 hover:scale-105 active:scale-95 transition-all shadow-lg"
                     >
                         <ChevronLeft className="w-6 h-6 text-white" />
                     </button>
                     <div className="text-center flex-1">
-                        <h1 className="text-xl md:text-2xl font-black tracking-widest uppercase">{t('lube.catalog.title')}</h1>
-                        <p className="text-gray-400 text-xs">{t('lube.catalog.sub')}</p>
+                        <h1 className="text-lg md:text-2xl font-black tracking-widest uppercase bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+                            {t('lube.catalog.title')}
+                        </h1>
+                        <p className="text-gray-500 text-[10px] md:text-xs font-bold uppercase tracking-[0.2em] mt-1">
+                            {t('lube.catalog.sub')}
+                        </p>
                     </div>
                     <div className="w-12 h-12" /> {/* Spacer */}
                 </div>
             </div>
 
-            {/* Hero Banner */}
-            <div className="relative h-64 md:h-80 w-full overflow-hidden border-b border-white/5">
+            {/* Hero Section */}
+            <div className="relative h-[300px] md:h-[400px] w-full overflow-hidden border-b border-white/5 group">
                 <Image
                     src="https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=1200&q=80"
                     alt="Lubrifiants Hero"
                     fill
-                    className="object-cover opacity-25"
+                    className="object-cover opacity-30 group-hover:opacity-40 transition-opacity duration-1000 group-hover:scale-105 transform"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F19] to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F19] via-[#0B0F19]/60 to-transparent" />
                 <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-12 max-w-7xl mx-auto">
-                    <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-red-500/10 text-red-500 text-[10px] font-black px-3.5 py-1.5 rounded-full w-fit mb-4 border border-red-500/20 flex items-center gap-2">
-                        <Wrench className="w-3 h-3 animate-pulse" /> EXPERTISE PREMIUM
+                    <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="bg-gradient-to-r from-red-600 to-orange-500 text-white text-[10px] font-black px-4 py-1.5 rounded-full w-fit mb-4 flex items-center gap-2 shadow-[0_0_20px_rgba(220,38,38,0.4)]">
+                        <Wrench className="w-3.5 h-3.5" /> {language === 'ar' ? 'جودة عالية' : 'EXPERTISE PREMIUM'}
                     </motion.div>
-                    <motion.h2 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-4xl md:text-5xl font-black mb-2 uppercase tracking-tight">
+                    <motion.h2 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="text-4xl md:text-6xl font-black mb-3 uppercase tracking-tighter leading-none drop-shadow-2xl">
                         {t('lube.catalog.hero')}
                     </motion.h2>
-                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-gray-400 max-w-lg font-medium leading-relaxed">
+                    <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }} className="text-gray-400 max-w-xl font-medium leading-relaxed text-sm md:text-base">
                         {t('lube.catalog.desc')}
                     </motion.p>
                 </div>
             </div>
 
-            {/* Search Bar */}
-            <div className="px-4 max-w-7xl mx-auto mt-8 mb-8">
-                <div className="relative">
-                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-500" />
-                    <input 
-                        type="text"
-                        placeholder={t('lube.search')}
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                        className="w-full bg-[#111827]/40 backdrop-blur-md border border-white/5 rounded-2xl py-4 pl-16 pr-6 text-white outline-none focus:border-red-500/50 focus:bg-[#111827]/60 transition-all shadow-2xl"
-                    />
+            {/* Sleek Search Bar */}
+            <div className="px-4 max-w-3xl mx-auto mt-8 mb-10 relative z-20">
+                <div className="relative group">
+                    <div className="absolute inset-0 bg-gradient-to-r from-red-600/20 to-orange-500/20 rounded-3xl blur-xl group-hover:blur-2xl transition-all opacity-0 group-focus-within:opacity-100" />
+                    <div className="relative flex items-center">
+                        <Search className="absolute left-6 w-5 h-5 text-gray-400" />
+                        <input 
+                            type="text"
+                            placeholder={t('lube.search')}
+                            value={searchQuery}
+                            onChange={e => setSearchQuery(e.target.value)}
+                            className="w-full bg-[#111827]/80 backdrop-blur-xl border border-white/10 rounded-3xl py-5 pl-16 pr-6 text-sm font-bold text-white outline-none focus:border-red-500/50 transition-all shadow-2xl placeholder-gray-500"
+                        />
+                    </div>
                 </div>
             </div>
 
-            {/* Catalog Grid */}
+            {/* Premium Asymmetrical Grid */}
             <div className="px-4 max-w-7xl mx-auto">
-                <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <motion.div layout className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
                     <AnimatePresence>
                         {filteredCatalog.map((product, idx) => (
                             <motion.div 
                                 layout
-                                initial={{ opacity: 0, scale: 0.95 }}
-                                animate={{ opacity: 1, scale: 1 }}
+                                initial={{ opacity: 0, y: 30 }}
+                                animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, scale: 0.95 }}
-                                transition={{ delay: idx * 0.05 }}
+                                transition={{ delay: idx * 0.1, type: "spring", stiffness: 100 }}
                                 key={product.id}
-                                className="bg-[#111827]/40 backdrop-blur-md border border-white/5 rounded-[2rem] overflow-hidden flex flex-col group hover:border-red-500/20 hover:shadow-[0_20px_40px_rgba(0,0,0,0.5)] transition-all duration-300 cursor-pointer"
+                                className={`bg-[#111827]/60 backdrop-blur-xl border border-white/10 rounded-[2.5rem] overflow-hidden flex flex-col group hover:border-red-500/40 hover:shadow-[0_20px_50px_rgba(220,38,38,0.15)] transition-all duration-500 cursor-pointer relative ${idx === 0 ? 'md:col-span-2 md:flex-row' : ''}`}
                                 onClick={() => setSelectedProduct(product)}
                             >
-                                <div className="h-56 relative overflow-hidden bg-[#111827]">
+                                <div className={`relative overflow-hidden bg-[#0a0d14] ${idx === 0 ? 'md:w-1/2 h-64 md:h-auto' : 'h-64'}`}>
                                     <Image 
                                         src={product.image} 
                                         alt={product.name} 
                                         fill 
-                                        className="object-cover opacity-40 group-hover:scale-105 group-hover:opacity-60 transition-all duration-[1200ms] ease-out mix-blend-luminosity"
+                                        className="object-cover opacity-60 group-hover:scale-110 group-hover:opacity-80 transition-all duration-[2000ms] ease-out mix-blend-luminosity group-hover:mix-blend-normal"
                                     />
-                                    <div className="absolute top-4 left-4 bg-black/60 backdrop-blur-md text-white text-[10px] font-black px-3 py-1.5 rounded-full border border-white/10 flex items-center gap-2 uppercase tracking-wider">
-                                        <Droplet className="w-3.5 h-3.5 text-red-500" /> {product.type}
+                                    <div className="absolute inset-0 bg-gradient-to-t from-[#111827] via-transparent to-transparent opacity-80" />
+                                    
+                                    <div className="absolute top-5 left-5 bg-black/50 backdrop-blur-md text-white text-[9px] font-black px-3 py-1.5 rounded-xl border border-white/10 flex items-center gap-1.5 uppercase tracking-widest shadow-lg">
+                                        <Droplet className="w-3 h-3 text-red-500" /> {product.type}
                                     </div>
-                                    <div className="absolute bottom-4 right-4 bg-gradient-to-r from-red-600 to-red-500 text-white font-black text-lg px-4 py-2 rounded-xl shadow-lg shadow-red-600/20">
-                                        {product.price} DH
+                                    
+                                    <div className="absolute bottom-5 right-5 bg-[#111827]/80 backdrop-blur-md border border-white/10 text-white font-black text-xl px-5 py-2.5 rounded-2xl shadow-xl flex items-center gap-2">
+                                        {product.price} <span className="text-[10px] text-gray-400 mt-1">DH</span>
                                     </div>
                                 </div>
-                                <div className="p-6 flex-1 flex flex-col justify-between">
+                                <div className={`p-8 flex-1 flex flex-col justify-center relative ${idx === 0 ? 'md:w-1/2' : ''}`}>
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-red-500/5 rounded-full blur-[40px] pointer-events-none group-hover:bg-red-500/10 transition-colors" />
                                     <div>
-                                        <h3 className="text-2xl font-black mb-2 text-white group-hover:text-red-400 transition-colors uppercase tracking-tight">{product.name}</h3>
-                                        <p className="text-gray-400 text-sm line-clamp-2 leading-relaxed mb-6 font-medium">{product.description}</p>
+                                        <h3 className="text-2xl lg:text-3xl font-black mb-3 text-white group-hover:text-red-400 transition-colors uppercase tracking-tight leading-none">{product.name}</h3>
+                                        <p className="text-gray-400 text-xs leading-relaxed mb-6 font-medium line-clamp-3">{product.description}</p>
                                     </div>
-                                    <div className="flex items-center gap-2 mt-auto">
-                                        <Info className="w-5 h-5 text-gray-500" />
-                                        <span className="text-xs font-black uppercase tracking-wider text-gray-500 group-hover:text-gray-400 transition-colors">{t('lube.details')}</span>
+                                    <div className="flex flex-wrap gap-2 mb-6">
+                                        {product.features?.slice(0,2).map((feat: string) => (
+                                            <span key={feat} className="text-[9px] font-bold uppercase tracking-widest text-amber-500 bg-amber-500/10 px-2 py-1 rounded-lg">
+                                                {feat}
+                                            </span>
+                                        ))}
+                                    </div>
+                                    <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/5">
+                                        <span className="text-xs font-black uppercase tracking-wider text-gray-500 group-hover:text-white transition-colors">{t('lube.details')}</span>
+                                        <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-red-600 transition-colors">
+                                            <ArrowRight className="w-4 h-4 text-white -rotate-45 group-hover:rotate-0 transition-transform duration-300" />
+                                        </div>
                                     </div>
                                 </div>
                             </motion.div>
@@ -185,75 +203,90 @@ export default function LubricantsCatalog() {
                 </motion.div>
             </div>
 
-            {/* Product Detail Modal */}
+            {/* Ultra-Premium Product Detail Sheet */}
             <AnimatePresence>
                 {selectedProduct && (
-                    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 md:p-4">
+                    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 md:p-6">
                         <motion.div 
                             initial={{ opacity: 0 }} 
                             animate={{ opacity: 1 }} 
                             exit={{ opacity: 0 }} 
                             onClick={() => setSelectedProduct(null)}
-                            className="absolute inset-0 bg-black/80 backdrop-blur-xl"
+                            className="absolute inset-0 bg-black/90 backdrop-blur-2xl"
                         />
                         <motion.div 
-                            initial={{ y: "100%" }} 
-                            animate={{ y: 0 }} 
-                            exit={{ y: "100%" }} 
+                            initial={{ y: "100%", scale: 0.95 }} 
+                            animate={{ y: 0, scale: 1 }} 
+                            exit={{ y: "100%", scale: 0.95 }} 
                             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-                            className="relative w-full max-w-2xl bg-[#0B0F19] border-t sm:border border-white/10 rounded-t-[2.5rem] sm:rounded-[2.5rem] overflow-hidden flex flex-col max-h-[90vh] shadow-2xl z-10"
+                            className="relative w-full max-w-2xl bg-[#0B0F19] border border-white/10 rounded-t-[2.5rem] sm:rounded-[2.5rem] overflow-hidden flex flex-col max-h-[95vh] shadow-[0_30px_100px_rgba(0,0,0,0.8)] z-10"
                         >
-                            {/* Drag Handle for mobile */}
-                            <div className="w-full flex justify-center pt-4 pb-2 sm:hidden absolute top-0 z-20">
-                                <div className="w-12 h-1.5 bg-white/20 rounded-full" />
-                            </div>
+                            <div className="h-72 relative shrink-0">
+                                <Image src={selectedProduct.image} alt={selectedProduct.name} fill className="object-cover opacity-60" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F19] via-[#0B0F19]/40 to-transparent" />
+                                
+                                <button 
+                                    onClick={() => setSelectedProduct(null)}
+                                    className="absolute top-6 right-6 w-10 h-10 bg-black/40 backdrop-blur-md rounded-full border border-white/20 flex items-center justify-center text-white hover:bg-white hover:text-black transition-colors z-20"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
 
-                            <div className="h-64 relative shrink-0">
-                                <Image src={selectedProduct.image} alt={selectedProduct.name} fill className="object-cover opacity-50" />
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F19] to-transparent" />
-                                <div className="absolute bottom-6 left-6 right-6">
-                                    <div className="bg-red-500/10 backdrop-blur-md text-red-500 text-xs font-black px-3.5 py-1.5 rounded-full border border-red-500/20 w-fit mb-3 uppercase tracking-wider">
+                                <div className="absolute bottom-8 left-8 right-8">
+                                    <div className="bg-gradient-to-r from-red-600 to-orange-500 text-white text-[10px] font-black px-4 py-1.5 rounded-full border border-red-500/30 w-fit mb-4 uppercase tracking-widest shadow-lg">
                                         {selectedProduct.type}
                                     </div>
-                                    <h2 className="text-3xl font-black text-white uppercase tracking-tight">{selectedProduct.name}</h2>
+                                    <h2 className="text-4xl sm:text-5xl font-black text-white uppercase tracking-tighter leading-none drop-shadow-xl">{selectedProduct.name}</h2>
                                 </div>
                             </div>
 
-                            <div className="p-6 overflow-y-auto">
-                                <div className="flex items-center justify-between mb-8 pb-6 border-b border-white/5">
-                                    <span className="text-gray-400 font-black uppercase tracking-widest text-[10px]">{t('lube.price_station')}</span>
-                                    <span className="text-4xl font-black text-white">{selectedProduct.price} DH</span>
-                                </div>
-
-                                <h3 className="text-white font-extrabold text-sm uppercase tracking-wider mb-3 flex items-center gap-2">
-                                    <Info className="w-5 h-5 text-gray-500" /> {t('lube.desc')}
-                                </h3>
-                                <p className="text-gray-400 leading-relaxed mb-8 font-medium">{selectedProduct.description}</p>
-
-                                <h3 className="text-white font-extrabold text-sm uppercase tracking-wider mb-3 flex items-center gap-2">
-                                    <Shield className="w-5 h-5 text-gray-500" /> {t('lube.benefits')}
-                                </h3>
-                                <div className="flex flex-wrap gap-3 mb-8">
-                                    {selectedProduct.features.map((feat: string) => (
-                                        <div key={feat} className="bg-[#111827]/40 border border-white/5 px-4.5 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-gray-300 flex items-center gap-2 shadow-inner">
-                                            <Zap className="w-4 h-4 text-amber-500 animate-pulse" /> {feat}
-                                        </div>
-                                    ))}
-                                </div>
-
-                                <div className="bg-green-500/10 border border-green-500/20 p-5 rounded-2xl flex items-start gap-4 mb-4 mt-8">
-                                    <Check className="w-6 h-6 text-green-500 shrink-0" />
-                                    <div>
-                                        <h4 className="text-green-400 font-black text-sm uppercase tracking-wider mb-1">{t('lube.avail')}</h4>
-                                        <p className="text-green-500/70 text-sm font-semibold">{t('lube.avail.desc')}</p>
+                            <div className="p-8 overflow-y-auto flex-1 custom-scrollbar relative">
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-[60px] pointer-events-none" />
+                                
+                                <div className="flex items-center justify-between mb-10 pb-8 border-b border-white/10">
+                                    <div className="flex flex-col">
+                                        <span className="text-gray-500 font-black uppercase tracking-widest text-[9px] mb-1">{t('lube.price_station')}</span>
+                                        <span className="text-5xl font-black text-white tracking-tighter">{selectedProduct.price}<span className="text-xl text-gray-400 ml-2 font-bold tracking-normal">DH</span></span>
                                     </div>
                                 </div>
-                            </div>
-                            
-                            <div className="p-4 bg-[#111827]/60 border-t border-white/5">
-                                <button onClick={() => setSelectedProduct(null)} className="w-full py-4 bg-white/5 border border-white/10 hover:bg-white/10 rounded-xl font-black text-sm uppercase tracking-wider text-white transition-all">
-                                    {t('lube.close')}
-                                </button>
+
+                                <div className="space-y-10 relative z-10">
+                                    <div>
+                                        <h3 className="text-white font-black text-xs uppercase tracking-widest mb-4 flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
+                                                <Info className="w-4 h-4 text-gray-400" />
+                                            </div>
+                                            {t('lube.desc')}
+                                        </h3>
+                                        <p className="text-gray-400 leading-relaxed font-medium text-sm pl-11">{selectedProduct.description}</p>
+                                    </div>
+
+                                    <div>
+                                        <h3 className="text-white font-black text-xs uppercase tracking-widest mb-4 flex items-center gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center">
+                                                <Shield className="w-4 h-4 text-gray-400" />
+                                            </div>
+                                            {t('lube.benefits')}
+                                        </h3>
+                                        <div className="flex flex-wrap gap-3 pl-11">
+                                            {selectedProduct.features.map((feat: string) => (
+                                                <div key={feat} className="bg-gradient-to-br from-white/5 to-white/0 border border-white/10 px-5 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest text-gray-300 flex items-center gap-2.5 shadow-lg">
+                                                    <Zap className="w-3.5 h-3.5 text-amber-500" /> {feat}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20 p-6 rounded-3xl flex items-start gap-5">
+                                        <div className="p-3 bg-green-500/20 rounded-2xl">
+                                            <Check className="w-6 h-6 text-green-500" />
+                                        </div>
+                                        <div>
+                                            <h4 className="text-green-400 font-black text-sm uppercase tracking-widest mb-1.5">{t('lube.avail')}</h4>
+                                            <p className="text-green-500/70 text-xs font-bold leading-relaxed">{t('lube.avail.desc')}</p>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </motion.div>
                     </div>

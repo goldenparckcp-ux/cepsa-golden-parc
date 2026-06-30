@@ -95,6 +95,23 @@ export default function HotelPage() {
 
     useEffect(() => { fetchHero(); }, [fetchHero]);
 
+    // Carousel Auto-Scroll
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const container = document.getElementById("hotel-carousel-container");
+            if (!container) return;
+
+            const maxScroll = container.scrollWidth - container.clientWidth;
+            if (container.scrollLeft >= maxScroll - 5) {
+                container.scrollTo({ left: 0, behavior: "smooth" });
+            } else {
+                container.scrollBy({ left: container.clientWidth, behavior: "smooth" });
+            }
+        }, 4500);
+
+        return () => clearInterval(interval);
+    }, []);
+
     // Calculate Nights
     const nights = useMemo(() => {
         if (!dates.checkIn || !dates.checkOut) return 0;
@@ -382,6 +399,49 @@ export default function HotelPage() {
                         <span className="hotel-dot w-6 h-2 rounded-full bg-amber-500 transition-all duration-300" />
                         <span className="hotel-dot w-2 h-2 rounded-full bg-white/30 transition-all duration-300" />
                         <span className="hotel-dot w-2 h-2 rounded-full bg-white/30 transition-all duration-300" />
+                    </div>
+                </div>
+
+                {/* INFINITE IMAGES CAROUSEL */}
+                <div className="w-full overflow-hidden relative py-2 mb-2 group">
+                    <style dangerouslySetInnerHTML={{__html: `
+                        @keyframes marquee-images-hotel {
+                            0% { transform: translateX(0); }
+                            100% { transform: translateX(-50%); }
+                        }
+                        .animate-marquee-hotel {
+                            display: flex;
+                            width: max-content;
+                            animation: marquee-images-hotel 35s linear infinite;
+                        }
+                        .animate-marquee-hotel:hover {
+                            animation-play-state: paused;
+                        }
+                    `}} />
+                    
+                    <div className="absolute left-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-r from-[#0B0F19] to-transparent z-10 pointer-events-none" />
+                    <div className="absolute right-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-l from-[#0B0F19] to-transparent z-10 pointer-events-none" />
+                    
+                    <div className="animate-marquee-hotel flex gap-4">
+                        {[
+                            'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80',
+                            'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80',
+                            'https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=800&q=80',
+                            'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80',
+                            'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
+                            'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=800&q=80'
+                        ].concat([
+                            'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80',
+                            'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80',
+                            'https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=800&q=80',
+                            'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=800&q=80',
+                            'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
+                            'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=800&q=80'
+                        ]).map((src, idx) => (
+                            <div key={idx} className="relative w-40 h-28 md:w-64 md:h-40 rounded-[2rem] overflow-hidden shrink-0 border border-white/5 shadow-xl">
+                                <Image src={src} alt="Hotel Gallery" fill className="object-cover group-hover:scale-105 transition-all duration-1000" />
+                            </div>
+                        ))}
                     </div>
                 </div>
 

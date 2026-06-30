@@ -110,6 +110,23 @@ export default function PoolPage() {
         attemptAutoBook();
     }, []);
 
+    // Carousel Auto-Scroll
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const container = document.getElementById("pool-carousel-container");
+            if (!container) return;
+
+            const maxScroll = container.scrollWidth - container.clientWidth;
+            if (container.scrollLeft >= maxScroll - 5) {
+                container.scrollTo({ left: 0, behavior: "smooth" });
+            } else {
+                container.scrollBy({ left: container.clientWidth, behavior: "smooth" });
+            }
+        }, 4500);
+
+        return () => clearInterval(interval);
+    }, []);
+
     const handleBooking = useCallback(async () => {
         if (!selectedOption) return;
         setLoading(true);
@@ -273,6 +290,49 @@ export default function PoolPage() {
                         <span className="pool-dot w-6 h-2 rounded-full bg-cyan-500 transition-all duration-300" />
                         <span className="pool-dot w-2 h-2 rounded-full bg-white/30 transition-all duration-300" />
                         <span className="pool-dot w-2 h-2 rounded-full bg-white/30 transition-all duration-300" />
+                    </div>
+                </div>
+
+                {/* INFINITE IMAGES CAROUSEL */}
+                <div className="w-full overflow-hidden relative py-2 mb-2 group">
+                    <style dangerouslySetInnerHTML={{__html: `
+                        @keyframes marquee-images-pool {
+                            0% { transform: translateX(0); }
+                            100% { transform: translateX(-50%); }
+                        }
+                        .animate-marquee-pool {
+                            display: flex;
+                            width: max-content;
+                            animation: marquee-images-pool 35s linear infinite;
+                        }
+                        .animate-marquee-pool:hover {
+                            animation-play-state: paused;
+                        }
+                    `}} />
+                    
+                    <div className="absolute left-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-r from-[#0B0F19] to-transparent z-10 pointer-events-none" />
+                    <div className="absolute right-0 top-0 bottom-0 w-16 md:w-32 bg-gradient-to-l from-[#0B0F19] to-transparent z-10 pointer-events-none" />
+                    
+                    <div className="animate-marquee-pool flex gap-4">
+                        {[
+                            'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=800&q=80',
+                            'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
+                            'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80',
+                            'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80',
+                            'https://images.unsplash.com/photo-1622396481328-9b1b78cdd9fd?auto=format&fit=crop&w=800&q=80',
+                            'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=800&q=80'
+                        ].concat([
+                            'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=800&q=80',
+                            'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
+                            'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80',
+                            'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=800&q=80',
+                            'https://images.unsplash.com/photo-1622396481328-9b1b78cdd9fd?auto=format&fit=crop&w=800&q=80',
+                            'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?auto=format&fit=crop&w=800&q=80'
+                        ]).map((src, idx) => (
+                            <div key={idx} className="relative w-40 h-28 md:w-64 md:h-40 rounded-[2rem] overflow-hidden shrink-0 border border-white/5 shadow-xl">
+                                <Image src={src} alt="Pool Gallery" fill className="object-cover group-hover:scale-105 transition-all duration-1000" />
+                            </div>
+                        ))}
                     </div>
                 </div>
 

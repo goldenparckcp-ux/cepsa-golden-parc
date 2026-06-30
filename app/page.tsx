@@ -614,10 +614,10 @@ export default function Home() {
             <p className="text-gray-400 mt-2 font-medium">Ce que disent nos clients</p>
           </motion.div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
             {/* Left columns (2/3): Reviews List */}
-            <div className="lg:col-span-2 w-full">
-              <div ref={reviewsCarouselRef} className="flex overflow-x-auto gap-5 snap-x snap-mandatory pb-6 scrollbar-hide lg:grid lg:grid-cols-2 w-full">
+            <div className="md:col-span-2 w-full">
+              <div ref={reviewsCarouselRef} className="flex overflow-x-auto gap-5 snap-x snap-mandatory pb-6 scrollbar-hide md:grid md:grid-cols-2 w-full">
                 {reviews.map((avis, i) => (
                   <motion.div
                     key={i}
@@ -625,33 +625,33 @@ export default function Home() {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
                     transition={{ delay: i * 0.1 }}
-                    className="bg-[#111827] border border-white/8 rounded-[2rem] p-6 flex flex-col justify-between hover:border-amber-500/20 transition-colors snap-center min-w-[85vw] lg:min-w-0 flex-shrink-0 lg:flex-shrink min-h-[220px] w-[85vw] lg:w-auto"
+                    className="bg-[#111827]/60 backdrop-blur-md border border-white/10 rounded-[2rem] p-6 flex flex-col justify-between hover:border-amber-500/30 hover:bg-[#111827]/80 transition-all snap-center min-w-[85vw] md:min-w-0 flex-shrink-0 md:flex-shrink min-h-[220px] w-[85vw] md:w-auto shadow-lg"
                   >
                     <div className="space-y-4">
                       <div className="flex items-center justify-between gap-2 w-full">
                         <div className="flex items-center gap-1">
                           {Array.from({ length: 5 }).map((_, s) => (
-                            <Star key={s} className={`w-4 h-4 ${s < avis.stars ? 'text-amber-400 fill-amber-400' : 'text-gray-600'}`} />
+                            <Star key={s} className={`w-4 h-4 ${s < avis.stars ? 'text-amber-400 fill-amber-400 drop-shadow-[0_0_5px_rgba(251,191,36,0.5)]' : 'text-gray-700'}`} />
                           ))}
                         </div>
                         {avis.name === 'Mohammed A.' && (
-                          <div className="hidden md:flex items-center gap-2 text-[9px] font-black uppercase tracking-wider text-white bg-white/5 border border-white/10 px-2 py-1 rounded-lg shrink-0">
+                          <div className="hidden lg:flex items-center gap-2 text-[9px] font-black uppercase tracking-wider text-white bg-white/5 border border-white/10 px-2 py-1 rounded-lg shrink-0">
                             <span className="text-amber-400">⛽ Gasoil: {fuelPrices.gasoil}</span>
                             <span className="text-white/30">|</span>
                             <span className="text-emerald-400">⛽ Essence: {fuelPrices.essence}</span>
                           </div>
                         )}
                       </div>
-                      <p className="text-gray-300 text-sm leading-relaxed break-words whitespace-pre-wrap">&ldquo;{avis.text}&rdquo;</p>
+                      <p className="text-gray-300 text-sm leading-relaxed break-words whitespace-pre-wrap font-medium">&ldquo;{avis.text}&rdquo;</p>
                     </div>
-                    <div className="flex items-center justify-between mt-4">
+                    <div className="flex items-center justify-between mt-6 pt-4 border-t border-white/5">
                       <div className="flex items-center gap-3">
-                        <div className="w-9 h-9 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-black font-black text-sm">
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white font-black text-lg shadow-[0_0_15px_rgba(245,158,11,0.3)]">
                           {avis.name ? avis.name[0].toUpperCase() : 'C'}
                         </div>
                         <div>
-                          <div className="text-white font-bold text-sm">{avis.name}</div>
-                          <div className="text-gray-500 text-[10px]">{avis.date}</div>
+                          <div className="text-white font-bold text-sm tracking-wide">{avis.name}</div>
+                          <div className="text-gray-500 text-[10px] font-bold uppercase tracking-wider">{avis.date}</div>
                         </div>
                       </div>
                     </div>
@@ -661,56 +661,57 @@ export default function Home() {
             </div>
 
             {/* Right column (1/3): Submit Form */}
-            <div className="lg:col-span-1 w-full">
+            <div className="md:col-span-1 w-full sticky top-24">
               <motion.div
-                initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
-                className="bg-gradient-to-br from-[#1E293B] to-[#0F172A] border border-white/10 rounded-[2.5rem] p-6 md:p-8 relative overflow-hidden"
+                initial={{ opacity: 0, x: 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
+                className="bg-[#111827]/80 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-6 lg:p-8 relative overflow-hidden shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
               >
-                <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/5 rounded-full blur-[80px] pointer-events-none" />
+                <div className="absolute -top-20 -right-20 w-64 h-64 bg-amber-500/10 rounded-full blur-[80px] pointer-events-none" />
                 <div className="relative z-10">
-                  <h3 className="text-xl font-black text-white mb-1">Partagez votre expérience</h3>
-                  <p className="text-gray-400 text-sm mb-6">Votre avis aide les autres voyageurs</p>
+                  <h3 className="text-xl lg:text-2xl font-black text-white mb-2 leading-tight">Partagez votre expérience</h3>
+                  <p className="text-gray-400 text-sm mb-6 font-medium">Votre avis aide les autres voyageurs</p>
 
-                  <div className="flex flex-col gap-4">
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Votre prénom</label>
+                  <div className="flex flex-col gap-5">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Votre prénom</label>
                       <input
                         type="text"
                         value={newReview.name}
                         onChange={(e) => setNewReview({ ...newReview, name: e.target.value })}
                         placeholder="Ex: Mohammed"
-                        className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white placeholder-gray-500 outline-none focus:border-amber-500 transition-colors"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white placeholder-gray-600 outline-none focus:border-amber-500 focus:bg-white/10 transition-all font-medium"
                       />
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Note</label>
-                      <div className="flex items-center gap-2 h-[46px]">
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Note</label>
+                      <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-3 h-[52px]">
                         {[1, 2, 3, 4, 5].map(star => (
                           <button 
                             key={star} 
                             type="button"
                             onClick={() => setNewReview({ ...newReview, stars: star })}
-                            className={`text-2xl hover:scale-125 transition-transform ${star <= newReview.stars ? 'text-amber-400' : 'text-gray-600'}`}
+                            className={`text-2xl hover:scale-125 transition-transform drop-shadow-md ${star <= newReview.stars ? 'text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.5)]' : 'text-gray-700'}`}
                           >
                             ★
                           </button>
                         ))}
                       </div>
                     </div>
-                    <div className="space-y-1">
-                      <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Votre recommandation</label>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Votre recommandation</label>
                       <textarea
                         rows={3}
                         value={newReview.text}
                         onChange={(e) => setNewReview({ ...newReview, text: e.target.value })}
                         placeholder="Partagez votre expérience..."
-                        className="w-full bg-[#0F172A] border border-white/10 rounded-xl p-3 text-sm text-white placeholder-gray-500 outline-none focus:border-amber-500 transition-colors resize-none"
+                        className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 text-sm text-white placeholder-gray-600 outline-none focus:border-amber-500 focus:bg-white/10 transition-all resize-none font-medium"
                       />
                     </div>
                   </div>
 
                   {submitSuccess && (
-                    <div className="text-green-400 text-xs font-bold mt-3 animate-pulse">
+                    <div className="text-green-400 text-xs font-bold mt-4 animate-in fade-in flex items-center gap-2 bg-green-500/10 p-3 rounded-xl border border-green-500/20">
+                      <CheckCircle2 className="w-4 h-4" />
                       Merci ! Votre avis a bien été enregistré.
                     </div>
                   )}
@@ -718,10 +719,16 @@ export default function Home() {
                   <button 
                     onClick={handleSubmitReview}
                     disabled={submitting || !newReview.name.trim() || !newReview.text.trim()}
-                    className="mt-6 w-full px-8 py-3.5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black text-sm rounded-2xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                    className="mt-6 w-full px-8 py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-black text-sm rounded-2xl shadow-[0_10px_25px_rgba(245,158,11,0.3)] active:scale-95 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:active:scale-100"
                   >
-                    <Star className="w-4 h-4 fill-white" />
-                    {submitting ? "Envoi..." : "Envoyer mon avis"}
+                    {submitting ? (
+                      <RefreshCw className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <>
+                        <Star className="w-5 h-5 fill-white" />
+                        Envoyer mon avis
+                      </>
+                    )}
                   </button>
                 </div>
               </motion.div>
