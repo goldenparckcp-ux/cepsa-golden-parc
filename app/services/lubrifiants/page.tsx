@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { ChevronLeft, Info, Search, Droplet, Shield, Zap, Wrench, Check, ArrowRight } from "lucide-react";
+import { ChevronLeft, Info, Search, Droplet, Shield, Zap, Wrench, Check, ArrowRight, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
