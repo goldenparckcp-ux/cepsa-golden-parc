@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { ChevronLeft, CheckCircle2, Ticket, Sun, Users, Baby } from "lucide-react";
+import { ChevronLeft, CheckCircle2, Ticket, Sun, Users, Baby, Waves } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import Image from "next/image";
 import { supabase } from '@/lib/supabase';
