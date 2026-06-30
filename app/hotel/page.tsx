@@ -1,726 +1,727 @@
-"use client";
-
-import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { BedDouble, Calendar, ChevronLeft, CheckCircle2, Moon, Sun, AlertCircle } from "lucide-react";
-import { useRouter } from 'next/navigation';
-import Image from 'next/image';
-import { supabase } from '@/lib/supabase';
-import PaymentModal from '@/components/PaymentModal';
-import { useTranslation } from '@/lib/state/LanguageContext';
-// Force TS index update
-
-const ROOM_TYPES = [
-    {
-        id: 'standard',
-        nameKey: 'hotel.room.standard',
-        price: 300,
-        siestePrice: 150,
-        image: 'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=800&q=80',
-        featuresKeys: ['hotel.feat.wifi', 'hotel.feat.tv', 'hotel.feat.shower'],
-        capacity: 2
-    },
-    {
-        id: 'deluxe',
-        nameKey: 'hotel.room.deluxe',
-        price: 500,
-        siestePrice: 250,
-        image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=800&q=80',
-        featuresKeys: ['hotel.feat.view', 'hotel.feat.minibar', 'hotel.feat.salon', 'hotel.feat.bath'],
-        capacity: 2
-    },
-    {
-        id: 'family',
-        nameKey: 'hotel.room.family',
-        price: 700,
-        siestePrice: 350,
-        image: 'https://images.unsplash.com/photo-1596394516093-501ba68a0ba6?auto=format&fit=crop&w=800&q=80',
-        featuresKeys: ['hotel.feat.beds', 'hotel.feat.games', 'hotel.feat.kitchen', 'hotel.feat.terrace'],
-        capacity: 4
-    }
-];
-
-export default function HotelPage() {
-    const router = useRouter();
-    const { t, language } = useTranslation();
-    const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
-    const [bookingType, setBookingType] = useState<'night' | 'sieste'>('night');
-
-    // Dates Logic
-    const [dates, setDates] = useState(() => {
-        const today = new Date();
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-        return {
-            checkIn: today.toISOString().split('T')[0],
-            checkOut: tomorrow.toISOString().split('T')[0]
-        };
-    });
-    const [dateError, setDateError] = useState<string | null>(null);
-
-    const [siesteTime, setSiesteTime] = useState(() => ({
-        date: new Date().toISOString().split('T')[0],
-        hours: 3
-    }));
-    const [loading, setLoading] = useState(false);
-    const [showSuccess, setShowSuccess] = useState<string | null>(null);
-    const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card'>('card');
-    const [pendingPayment, setPendingPayment] = useState<{ id: string, amount: number, num: string, paymentType?: 'full_discounted' | 'deposit' | 'full' } | null>(null);
-
-    const activeRoom = ROOM_TYPES.find(r => r.id === selectedRoom);
-
-    // Hotel Hero Section
-    const [heroSlides, setHeroSlides] = useState<{
-        id: string;
-        title: string;
-        subtitle: string;
-        badge_text: string;
-        cta_text: string;
-        image_url: string;
-    }[]>([]);
-
-    const fetchHero = useCallback(async () => {
-        try {
-            const { data } = await supabase
-                .from('hero_sliders')
-                .select('*')
-                .eq('page', 'hotel')
-                .eq('is_active', true)
-                .order('order_index', { ascending: true });
-            
-            if (data && data.length > 0) setHeroSlides(data);
-        } catch {
-            // silently fail
-        }
-    }, []);
-
-    useEffect(() => { fetchHero(); }, [fetchHero]);
-
-    // Carousel Auto-Scroll
-    useEffect(() => {
-        const interval = setInterval(() => {
-            const container = document.getElementById("hotel-carousel-container");
-            if (!container) return;
-
-            const maxScroll = container.scrollWidth - container.clientWidth;
-            if (container.scrollLeft >= maxScroll - 5) {
-                container.scrollTo({ left: 0, behavior: "smooth" });
-            } else {
-                container.scrollBy({ left: container.clientWidth, behavior: "smooth" });
-            }
-        }, 4500);
-
-        return () => clearInterval(interval);
-    }, []);
-
-    // Calculate Nights
-    const nights = useMemo(() => {
-        if (!dates.checkIn || !dates.checkOut) return 0;
-        const start = new Date(dates.checkIn);
-        const end = new Date(dates.checkOut);
-        if (end <= start) return 0;
-        const diffTime = Math.abs(end.getTime() - start.getTime());
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        return diffDays;
-    }, [dates]);
-
-    // Dynamic Price Calculation
-    const totalPrice = useMemo(() => {
-        if (!activeRoom) return 0;
-        if (bookingType === 'sieste') {
-            return activeRoom.siestePrice;
-        }
-        return activeRoom.price * (nights || 1);
-    }, [activeRoom, bookingType, nights]);
-
-    // --- DATE HANDLERS ---
-    const handleCheckInChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newCheckIn = e.target.value;
-        const start = new Date(newCheckIn);
-        const nextDay = new Date(start);
-        nextDay.setDate(nextDay.getDate() + 1);
-        const newCheckOut = nextDay.toISOString().split('T')[0];
-
-        setDates({
-            checkIn: newCheckIn,
-            checkOut: newCheckOut
-        });
-        setDateError(null);
-    };
-
-    const handleCheckOutChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newCheckOut = e.target.value;
-        setDates(prev => ({ ...prev, checkOut: newCheckOut }));
-
-        if (newCheckOut <= dates.checkIn) {
-            setDateError(t('hotel.dates.error'));
-        } else {
-            setDateError(null);
-        }
-    };
-
-    // --- AUTO-BOOKING LOGIC ---
-    useEffect(() => {
-        const attemptAutoBook = async () => {
-            const pending = localStorage.getItem('pendingHotelBooking');
-            if (!pending) return;
-
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
-            const { data: profile } = await supabase.from('profiles').select('phone').eq('id', user.id).single();
-            if (!profile?.phone) return;
-
-            const bookingData = JSON.parse(pending);
-            setLoading(true);
-
-            const bookingNum = `HOTEL-${Date.now().toString().slice(-6)}`;
-
-            const isCard = bookingData.paymentMethod === 'card';
-            const finalPrice = isCard ? Math.round(bookingData.totalPrice * 0.90) : bookingData.totalPrice;
-
-            const { data, error } = await supabase.from('hotel_reservations').insert({
-                booking_number: bookingNum,
-                customer_phone: profile.phone,
-                room_type: bookingData.roomType,
-                booking_type: bookingData.bookingType,
-                check_in: bookingData.bookingType === 'night' ? bookingData.checkIn : bookingData.siesteDate,
-                check_out: bookingData.bookingType === 'night' ? bookingData.checkOut : bookingData.siesteDate,
-                nights: bookingData.bookingType === 'night' ? bookingData.nights : 0,
-                duration_hours: bookingData.bookingType === 'sieste' ? bookingData.siesteHours : null,
-                total_price: finalPrice,
-                status: 'pending',
-                user_id: user.id
-            }).select().single();
-
-            if (!error && data) {
-                if (isCard) {
-                    setPendingPayment({
-                        id: data.id,
-                        amount: finalPrice,
-                        num: bookingNum,
-                        paymentType: 'full_discounted'
-                    });
-                } else {
-                    setShowSuccess(bookingNum);
-                }
-                localStorage.removeItem('pendingHotelBooking');
-            }
-            setLoading(false);
-        };
-        attemptAutoBook();
-    }, []);
-
-    const handleBooking = async () => {
-        if (!selectedRoom || dateError) return;
-        setLoading(true);
-
-        const { data: { user } } = await supabase.auth.getUser();
-
-        const isCard = paymentMethod === 'card';
-        const finalPrice = isCard ? Math.round(totalPrice * 0.90) : totalPrice;
-
-        let userPhoneFromProfile = null;
-        if (user) {
-            const { data } = await supabase.from('profiles').select('phone').eq('id', user.id).single();
-            userPhoneFromProfile = data?.phone;
-        }
-
-        const commonData = {
-            roomType: selectedRoom,
-            bookingType,
-            totalPrice,
-            paymentMethod
-        };
-
-        const specificData = bookingType === 'night' ? {
-            checkIn: dates.checkIn,
-            checkOut: dates.checkOut,
-            nights
-        } : {
-            siesteDate: siesteTime.date,
-            siesteHours: siesteTime.hours
-        };
-
-        const finalBookingData = { ...commonData, ...specificData };
-
-        // Robust User/Phone check
-        // Try profile phone, then metadata phone, then fallback/null
-        const userPhone = userPhoneFromProfile || user?.user_metadata?.phone || null;
-
-        if (!user) {
-            localStorage.setItem('pendingHotelBooking', JSON.stringify(finalBookingData));
-            router.push('/profile?redirect=/hotel');
-            setLoading(false);
-            return;
-        }
-
-        const bookingNum = `HOTEL-${Date.now().toString().slice(-6)}`;
-
-        const { data, error } = await supabase.from('hotel_reservations').insert({
-            booking_number: bookingNum,
-            customer_phone: userPhone,
-            room_type: selectedRoom,
-            booking_type: bookingType,
-            check_in: bookingType === 'night' ? dates.checkIn : siesteTime.date,
-            check_out: bookingType === 'night' ? dates.checkOut : siesteTime.date,
-            nights: bookingType === 'night' ? nights : 0,
-            duration_hours: bookingType === 'sieste' ? siesteTime.hours : null,
-            total_price: finalPrice,
-            status: 'pending',
-            user_id: user.id
-        }).select().single();
-
-        if (error || !data) {
-            alert("Erreur: " + error?.message);
-        } else {
-            if (isCard) {
-                setPendingPayment({
-                    id: data.id,
-                    amount: finalPrice,
-                    num: bookingNum,
-                    paymentType: 'full_discounted'
-                });
-            } else {
-                setShowSuccess(bookingNum);
-            }
-        }
-        setLoading(false);
-    };
-
-    return (
-        <div className="min-h-screen pt-16 md:pt-20 pb-52 bg-[#0B0F19]">
-
-            {/* Page Header */}
-            <div className="pt-6 pb-2 px-4 max-w-6xl mx-auto relative z-20">
-                <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-4">
-                        <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg shadow-indigo-500/20">
-                            <Moon className="w-6 h-6 text-white" />
-                        </div>
-                        <div>
-                            <h1 className="text-2xl font-black text-white leading-none tracking-tight">{t('hotel.title')}</h1>
-                            <p className="text-sm text-gray-400 mt-1">Hôtel & Séjour</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-
-
-            <div className="p-3 md:p-6 space-y-8 max-w-6xl mx-auto relative z-10">
-                {/* Purple/Indigo glowing effect for high-end hotel ambiance */}
-                <div className="absolute top-[10%] left-[20%] w-[400px] h-[400px] bg-indigo-600/5 rounded-full blur-[130px] pointer-events-none -z-10" />
-                <div className="absolute bottom-[20%] right-[10%] w-[350px] h-[350px] bg-violet-600/5 rounded-full blur-[120px] pointer-events-none -z-10" />
-
-                {/* HERO BANNER CAROUSEL */}
-                <div className="relative w-full h-[200px] sm:h-[260px] rounded-[2.5rem] overflow-hidden border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] group">
-                    <div 
-                        id="hotel-carousel-container"
-                        onScroll={(e) => {
-                            const target = e.target as HTMLElement;
-                            const scrollLeft = target.scrollLeft;
-                            const width = target.clientWidth;
-                            const index = Math.round(scrollLeft / width);
-                            const dots = document.querySelectorAll('.hotel-dot');
-                            dots.forEach((dot, idx) => {
-                                if (idx === index) {
-                                    dot.classList.add('bg-amber-500', 'w-6');
-                                    dot.classList.remove('bg-white/30', 'w-2');
-                                } else {
-                                    dot.classList.remove('bg-amber-500', 'w-6');
-                                    dot.classList.add('bg-white/30', 'w-2');
-                                }
-                            });
-                        }}
-                        className="flex overflow-x-auto snap-x snap-mandatory gap-0 scrollbar-hide w-full h-full scroll-smooth"
-                    >
-                        {(heroSlides.length > 0 ? heroSlides : [
-                            {
-                                id: 'fallback-1',
-                                title: 'Votre Séjour de Rêve',
-                                subtitle: 'Détente et confort absolu au cœur du Golden Park',
-                                badge_text: 'OFFRE SPÉCIALE',
-                                cta_text: 'Réserver',
-                                image_url: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=80'
-                            },
-                            {
-                                id: 'fallback-2',
-                                title: 'Chambres Familiales',
-                                subtitle: 'Spacieuses, modernes et équipées pour toute la famille',
-                                badge_text: 'ESPACE FAMILLE',
-                                cta_text: 'Découvrir',
-                                image_url: 'https://images.unsplash.com/photo-1590490360182-c33d57733427?auto=format&fit=crop&w=1200&q=80'
-                            },
-                            {
-                                id: 'fallback-3',
-                                title: 'Piscine & Détente',
-                                subtitle: 'Accès gratuit à la piscine pour tous nos résidents',
-                                badge_text: 'INCLUS DANS LE SÉJOUR',
-                                cta_text: 'Explorer',
-                                image_url: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=1200&q=80'
-                            }
-                        ]).map((slide, idx) => (
-                            <div 
-                                key={slide.id || idx}
-                                className="relative w-full h-full shrink-0 snap-center flex items-center justify-between px-6 md:px-12 select-none"
-                                style={{ minWidth: '100%' }}
-                            >
-                                <Image
-                                    src={slide.image_url}
-                                    alt={slide.title}
-                                    fill
-                                    priority={idx === 0}
-                                    className="object-cover absolute inset-0 -z-10 brightness-[0.65] saturate-150 transition-transform duration-[20s] ease-linear hover:scale-110"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F19] via-transparent to-black/40 -z-10" />
-                                
-                                <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-12 z-10 bg-gradient-to-r from-black/50 to-transparent">
-                                    <div className="flex flex-col md:flex-row justify-between items-start md:items-end w-full gap-6">
-                                        {/* Left: badge + title + subtitle */}
-                                        <div className="flex flex-col gap-2 flex-1 min-w-0 text-left">
-                                            <span className="bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[9px] font-black px-3.5 py-1 rounded-full uppercase tracking-wider inline-flex items-center gap-1 w-fit shadow-lg shadow-orange-500/20">
-                                                🏨 {slide.badge_text}
-                                            </span>
-                                            <h2 className="text-white text-2xl sm:text-3xl md:text-5xl font-black uppercase tracking-tight leading-tight drop-shadow-lg">
-                                                {slide.title}
-                                            </h2>
-                                            <p className="text-white/80 text-[10px] sm:text-xs font-semibold line-clamp-2 drop-shadow leading-relaxed max-w-[400px]">
-                                                {slide.subtitle}
-                                            </p>
-                                        </div>
-
-                                        {/* Right: CTA button */}
-                                        <div className="flex flex-col items-start md:items-end gap-2 shrink-0 w-full md:w-auto">
-                                            <button
-                                                onClick={() => {
-                                                    document.getElementById('hotel-room-gallery')?.scrollIntoView({ behavior: 'smooth' });
-                                                }}
-                                                className="w-full md:w-auto py-3.5 px-6 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-[0_10px_20px_rgba(245,158,11,0.3)] active:scale-95 transition-all flex items-center justify-center gap-2 whitespace-nowrap"
-                                            >
-                                                <BedDouble className="w-4 h-4" />
-                                                <span>{slide.cta_text || 'Réserver'}</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {heroSlides.length > 1 && (
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
-                            {heroSlides.map((_, idx) => (
-                                <span 
-                                    key={idx} 
-                                    className={`hotel-dot h-2 rounded-full transition-all duration-300 ${idx === 0 ? 'bg-amber-500 w-6' : 'bg-white/30 w-2'}`} 
-                                />
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-
-                {/* MODE SWITCHER */}
-                <div className="flex flex-col items-center gap-2 max-w-md mx-auto w-full">
-                    <div className="relative bg-[#111827]/40 p-1.5 rounded-[2rem] border border-white/5 flex w-full shadow-2xl backdrop-blur-md">
-                        {/* Glowing slider */}
-                        <div className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded-3xl transition-all duration-500 ease-in-out shadow-lg
-                            ${bookingType === 'night'
-                                ? 'ltr:left-1.5 rtl:right-1.5 bg-gradient-to-br from-amber-500 to-orange-600 shadow-orange-500/30'
-                                : 'ltr:left-[calc(50%+4px)] rtl:right-[calc(50%+4px)] bg-gradient-to-br from-indigo-500 to-violet-600 shadow-indigo-500/30'
-                            }`}
-                        />
-                        {/* Night Button */}
-                        <button
-                            onClick={() => setBookingType('night')}
-                            className={`flex-1 flex items-center justify-center gap-2 py-4 px-4 rounded-3xl relative z-10 font-bold text-sm transition-all duration-300
-                                ${bookingType === 'night' ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
-                        >
-                            <Moon className={`w-4 h-4 transition-transform duration-300 ${bookingType === 'night' ? 'scale-110' : ''}`} />
-                            <span>{t('hotel.night_mode')}</span>
-                        </button>
-                        {/* Sieste Button */}
-                        <button
-                            onClick={() => setBookingType('sieste')}
-                            className={`flex-1 flex items-center justify-center gap-2 py-4 px-4 rounded-3xl relative z-10 font-bold text-sm transition-all duration-300
-                                ${bookingType === 'sieste' ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
-                        >
-                            <Sun className={`w-4 h-4 transition-transform duration-300 ${bookingType === 'sieste' ? 'scale-110 rotate-12' : ''}`} />
-                            <span>{t('hotel.siesta_mode')}</span>
-                        </button>
-                    </div>
-                    {/* Subtitle hint */}
-                    <p className="text-xs text-gray-400 font-semibold tracking-wide">
-                        {bookingType === 'night' ? '🌙 Réservation complète pour la nuit' : '☀️ Repos de quelques heures en journée'}
-                    </p>
-                </div>
-
-                {/* Room Gallery */}
-                <div id="hotel-room-gallery" className="space-y-4">
-                    <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('hotel.choose_room')}</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {ROOM_TYPES.map(room => (
-                            <div
-                                key={room.id}
-                                onClick={() => setSelectedRoom(room.id)}
-                                className={`rounded-[2rem] overflow-hidden border transition-all duration-500 relative group cursor-pointer h-full flex flex-col ${selectedRoom === room.id
-                                    ? 'border-amber-500 ring-4 ring-amber-500/10 shadow-2xl shadow-orange-500/10 transform md:-translate-y-2'
-                                    : 'border-white/5 bg-[#111827]/30 hover:border-white/20'
-                                    }`}
-                            >
-                                <div className="h-40 md:h-44 relative w-full">
-                                    <Image src={room.image} alt={t(room.nameKey)} fill title={t(room.nameKey)} className="w-full h-full object-cover transition-transform duration-[1200ms] ease-out group-hover:scale-105" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F19] via-transparent to-transparent" />
-                                    <div className="absolute bottom-4 left-5 right-5 flex justify-between items-end">
-                                        <h3 className="text-xl font-black text-white leading-tight uppercase tracking-tight">{t(room.nameKey)}</h3>
-                                        <div className="bg-black/55 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 text-amber-400 font-extrabold flex flex-col items-end shrink-0 shadow-lg">
-                                            {/* Dynamic Price Display */}
-                                            {bookingType === 'night'
-                                                ? <span className="text-sm">{room.price} DH <span className="text-[9px] text-white/60 font-medium">/{t('hotel.per_night')}</span></span>
-                                                : <span className="text-sm">{room.siestePrice} DH <span className="text-[9px] text-white/60 font-medium">/{t('hotel.per_siesta')}</span></span>
-                                            }
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <div className={`p-5 flex-1 transition-colors duration-500 flex flex-col justify-between ${selectedRoom === room.id ? 'bg-amber-500/5' : 'bg-[#111827]/40'}`}>
-                                    <div className="flex flex-wrap gap-2">
-                                        {room.featuresKeys.map(key => (
-                                            <span key={key} className="text-[9px] bg-white/5 border border-white/5 rounded-lg px-2.5 py-1 text-gray-300 font-bold uppercase tracking-wider">
-                                                {t(key)}
-                                            </span>
-                                        ))}
-                                    </div>
-                                </div>
-
-                                {selectedRoom === room.id && (
-                                    <div className="absolute top-4 right-4 bg-amber-500 text-black p-1.5 rounded-full shadow-lg z-10">
-                                        <CheckCircle2 className="w-5 h-5" />
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Mode de Paiement Selector */}
-                <div className="bg-[#111827]/40 backdrop-blur-md p-6 rounded-[2rem] border border-white/5 space-y-4 max-w-4xl mx-auto w-full shadow-2xl">
-                    <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                        {language === 'ar' ? 'طريقة الدفع' : 'Mode de Paiement'}
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        {/* Cash Option */}
-                        <button
-                            onClick={() => setPaymentMethod('cash')}
-                            className={`relative p-5 rounded-[1.5rem] border flex flex-col items-center gap-2 transition-all duration-300 text-center ${paymentMethod === 'cash'
-                                ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400 shadow-lg shadow-emerald-500/10'
-                                : 'bg-[#0B0F19]/60 border-white/5 text-gray-400 hover:bg-white/5 hover:text-white'
-                                }`}
-                        >
-                            <span className="text-2xl">💵</span>
-                            <span className="text-xs font-black uppercase tracking-wider">
-                                {language === 'ar' ? 'نقداً (في المحطة)' : 'Sur Place (Cash)'}
-                            </span>
-                            <span className="text-[10px] text-gray-500 font-medium">
-                                {language === 'ar' ? 'السعر العادي' : 'Prix normal'}
-                            </span>
-                            {paymentMethod === 'cash' && (
-                                <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]" />
-                            )}
-                        </button>
-
-                        {/* Card/PayPal Option */}
-                        <button
-                            onClick={() => setPaymentMethod('card')}
-                            className={`relative p-5 rounded-[1.5rem] border flex flex-col items-center gap-2 transition-all duration-300 text-center ${paymentMethod === 'card'
-                                ? 'bg-red-500/10 border-red-500 text-red-400 shadow-lg shadow-red-500/10'
-                                : 'bg-[#0B0F19]/60 border-white/5 text-gray-400 hover:bg-white/5 hover:text-white'
-                                }`}
-                        >
-                            <span className="absolute -top-2.5 -right-2.5 bg-red-600 text-white font-black text-[9px] px-2.5 py-1 rounded-full shadow-lg shadow-red-600/30 animate-pulse z-10">
-                                -10%
-                            </span>
-                            <span className="text-2xl">💳</span>
-                            <span className="text-xs font-black uppercase tracking-wider">
-                                {language === 'ar' ? 'دفع إلكتروني' : 'En ligne (-10%)'}
-                            </span>
-                            <span className="text-[10px] text-gray-500 font-medium">
-                                {language === 'ar' ? 'تخفيض فوري 10%' : '10% de remise incluse'}
-                            </span>
-                            {paymentMethod === 'card' && (
-                                <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-red-500 shadow-[0_0_10px_rgba(220,38,38,0.8)]" />
-                            )}
-                        </button>
-                    </div>
-                </div>
-
-                {/* Conditional Inputs: Dates vs Hours */}
-                <div className="bg-[#111827]/40 backdrop-blur-md p-6 rounded-[2rem] border border-white/5 space-y-4 max-w-4xl mx-auto w-full shadow-2xl">
-
-                    {bookingType === 'night' ? (
-                        /* Night Mode Inputs */
-                        <>
-                            <div className="flex items-center gap-2 mb-2">
-                                <Calendar className="w-5 h-5 text-amber-500" />
-                                <h3 className="font-bold text-white uppercase text-xs tracking-wider">{t('hotel.dates.stay')}</h3>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label htmlFor="checkInDate" className="text-[10px] font-black text-gray-400 uppercase mb-2 block tracking-wider">{t('hotel.dates.checkin')}</label>
-                                    <input
-                                        id="checkInDate"
-                                        type="date"
-                                        value={dates.checkIn}
-                                        onChange={handleCheckInChange}
-                                        min={new Date().toISOString().split('T')[0]}
-                                        className="w-full bg-[#0B0F19]/80 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-amber-500 font-bold h-[50px] appearance-none"
-                                    />
-                                </div>
-                                <div>
-                                    <label htmlFor="checkOutDate" className="text-[10px] font-black text-gray-400 uppercase mb-2 block tracking-wider">{t('hotel.dates.checkout')}</label>
-                                    <input
-                                        id="checkOutDate"
-                                        type="date"
-                                        value={dates.checkOut}
-                                        onChange={handleCheckOutChange}
-                                        min={dates.checkIn}
-                                        className={`w-full bg-[#0B0F19]/80 border rounded-xl p-3 text-white outline-none font-bold transition-all h-[50px] appearance-none ${dateError ? 'border-red-500 ring-1 ring-red-500/50' : 'border-white/10 focus:border-amber-500'
-                                            }`}
-                                    />
-                                </div>
-                            </div>
-                            {/* ERROR MESSAGE */}
-                            {dateError && (
-                                <div className="bg-red-500/10 border border-red-500/50 rounded-xl p-3 flex items-center gap-2 animate-shake">
-                                    <AlertCircle className="w-4 h-4 text-red-500" />
-                                    <span className="text-xs font-bold text-red-500">{dateError}</span>
-                                </div>
-                            )}
-                        </>
-                    ) : (
-                        /* Sieste Mode Inputs */
-                        <>
-                            <div className="flex items-center gap-2 mb-2">
-                                <Sun className="w-5 h-5 text-amber-500" />
-                                <h3 className="font-bold text-white uppercase text-xs tracking-wider">{t('hotel.siesta.fast')}</h3>
-                            </div>
-                            <div>
-                                <label htmlFor="siesteDate" className="text-[10px] font-black text-gray-400 uppercase mb-2 block tracking-wider">{t('hotel.siesta.date')}</label>
-                                <input
-                                    id="siesteDate"
-                                    type="date"
-                                    value={siesteTime.date}
-                                    onChange={(e) => setSiesteTime({ ...siesteTime, date: e.target.value })}
-                                    min={new Date().toISOString().split('T')[0]}
-                                    className="w-full bg-[#0B0F19]/80 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-amber-500 font-bold mb-4 h-[50px] appearance-none"
-                                />
-                                <label className="text-[10px] font-black text-gray-400 uppercase mb-2 block tracking-wider">{t('hotel.siesta.duration')}</label>
-                                <div className="flex gap-4 flex-wrap md:flex-nowrap">
-                                    {[2, 3, 4, 6].map(h => (
-                                        <button
-                                            key={h}
-                                            onClick={() => setSiesteTime({ ...siesteTime, hours: h })}
-                                            className={`flex-1 min-w-[60px] py-3.5 rounded-xl font-bold border transition-all ${siesteTime.hours === h ? 'bg-amber-500 text-black border-amber-500 shadow-lg' : 'bg-transparent text-gray-400 border-white/10 hover:bg-white/5 hover:text-white'}`}
-                                        >
-                                            {h}h
-                                        </button>
-                                    ))}
-                                </div>
-                                <p className="text-[10px] text-gray-500 mt-3 font-medium">{t('hotel.siesta.note')}</p>
-                            </div>
-                        </>
-                    )}
-                </div>
-            </div>
-
-            {/* FLOATING PILL FOOTER (Amber) */}
-            <div className="fixed bottom-[90px] left-0 right-0 z-40 animate-slide-up px-4 md:px-0">
-                <div className="max-w-xl mx-auto">
-                    <button
-                        onClick={handleBooking}
-                        disabled={!selectedRoom || loading || !!dateError}
-                        className="w-full bg-[#111827]/80 backdrop-blur-md flex-row-reverse rtl:flex-row border border-white/10 p-2.5 pl-4 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-between group active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed hover:border-amber-500/30"
-                    >
-                        {/* Price Right */}
-                        <div className="flex items-center gap-2 pl-2">
-                            <span className="text-white font-black text-lg">
-                                {dateError ? '--' : (paymentMethod === 'card' ? Math.round(totalPrice * 0.90) : totalPrice)}{' '}
-                                <span className="text-xs font-bold text-gray-400">DH</span>
-                                {paymentMethod === 'card' && totalPrice > 0 && !dateError && (
-                                    <span className="text-[10px] text-red-500 font-bold ml-1.5 bg-red-500/10 px-1.5 py-0.5 rounded animate-pulse">
-                                        -10%
-                                    </span>
-                                )}
-                            </span>
-                            <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white group-hover:bg-amber-500 group-hover:text-black transition-colors rotate-180 rtl:rotate-0">←</div>
-                        </div>
-
-                        {/* Badge / Quantity Left */}
-                        <div className="flex flex-row-reverse rtl:flex-row items-center gap-3">
-                            <div className="text-right rtl:text-left">
-                                <div className="text-white font-extrabold text-xs uppercase tracking-wider leading-tight">
-                                    {bookingType === 'night' ? t('hotel.book.night') : t('hotel.book.siesta')}
-                                </div>
-                                <div className="text-gray-400 text-[10px] font-bold uppercase tracking-wider">
-                                    {bookingType === 'night'
-                                        ? (dateError ? t('hotel.book.invalid') : `${nights} ${t('hotel.book.nights_count')}`)
-                                        : `${siesteTime.hours} ${t('hotel.book.hours_count')}`
-                                    }
-                                </div>
-                            </div>
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center text-black font-black shadow-lg ${dateError ? 'bg-red-500' : 'bg-amber-500 shadow-amber-500/25'}`}>
-                                {bookingType === 'night' ? (dateError ? '!' : nights) : '1'}
-                            </div>
-                        </div>
-                    </button>
-                </div>
-            </div>
-
-
-
-            {/* Success Modal */}
-            {showSuccess && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-2xl animate-in fade-in">
-                    <div className="bg-[#111827]/80 backdrop-blur-md border border-white/10 rounded-[2.5rem] p-8 max-w-sm w-full text-center shadow-2xl relative">
-                        <div className="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-orange-500/5">
-                            <BedDouble className="w-10 h-10 text-amber-500" />
-                        </div>
-                        <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">{t('hotel.success.title')}</h2>
-                        <p className="text-sm text-gray-400 mb-6 font-medium leading-relaxed">
-                            {t('hotel.success.desc').replace('{id}', showSuccess)}
-                        </p>
-                        <div className="space-y-3">
-                            <button
-                                onClick={() => router.push('/profile')}
-                                className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black text-sm uppercase tracking-wider rounded-2xl shadow-lg active:scale-95 transition-all"
-                            >
-                                {t('hotel.btn.view')}
-                            </button>
-                            <button
-                                onClick={() => setShowSuccess(null)}
-                                className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl font-black text-sm uppercase tracking-wider text-gray-400 hover:bg-white/10"
-                            >
-                                {t('hotel.btn.close')}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Payment Modal */}
-            {pendingPayment && (
-                <PaymentModal
-                    bookingId={pendingPayment.id}
-                    amount={pendingPayment.amount}
-                    serviceType="hotel"
-                    tableName="hotel_reservations"
-                    paymentType={pendingPayment.paymentType}
-                    onSuccess={() => {
-                        setPendingPayment(null);
-                        setShowSuccess(pendingPayment.num);
-                    }}
-                    onClose={() => setPendingPayment(null)}
-                />
-            )}
-        </div>
-    );
-}
+à"àuàsàeà àcàlàiàeànàtà"à;à
+à
+àiàmàpàoàràtà àRàeàaàcàtà,à à{à àuàsàeàSàtàaàtàeà,à àuàsàeàEàfàfàeàcàtà,à àuàsàeàMàeàmàoà,à àuàsàeàCàaàlàlàbàaàcàkà à}à àfàràoàmà à"àràeàaàcàtà"à;à
+àiàmàpàoàràtà à{à àBàeàdàDàoàuàbàlàeà,à àCàaàlàeànàdàaàrà,à àCàhàeàvàràoànàLàeàfàtà,à àCàhàeàcàkàCàiàràcàlàeà2à,à àMàoàoànà,à àSàuànà,à àAàlàeàràtàCàiàràcàlàeà à}à àfàràoàmà à"àlàuàcàiàdàeà-àràeàaàcàtà"à;à
+àiàmàpàoàràtà à{à àuàsàeàRàoàuàtàeàrà à}à àfàràoàmà à'ànàeàxàtà/ànàaàvàiàgàaàtàiàoànà'à;à
+àiàmàpàoàràtà àIàmàaàgàeà àfàràoàmà à'ànàeàxàtà/àiàmàaàgàeà'à;à
+àiàmàpàoàràtà à{à àsàuàpàaàbàaàsàeà à}à àfàràoàmà à'à@à/àlàiàbà/àsàuàpàaàbàaàsàeà'à;à
+àiàmàpàoàràtà àPàaàyàmàeànàtàMàoàdàaàlà àfàràoàmà à'à@à/àcàoàmàpàoànàeànàtàsà/àPàaàyàmàeànàtàMàoàdàaàlà'à;à
+àiàmàpàoàràtà à{à àuàsàeàTàràaànàsàlàaàtàiàoànà à}à àfàràoàmà à'à@à/àlàiàbà/àsàtàaàtàeà/àLàaànàgàuàaàgàeàCàoànàtàeàxàtà'à;à
+à/à/à àFàoàràcàeà àTàSà àiànàdàeàxà àuàpàdàaàtàeà
+à
+àcàoànàsàtà àRàOàOàMà_àTàYàPàEàSà à=à à[à
+à à à à à{à
+à à à à à à à à àiàdà:à à'àsàtàaànàdàaàràdà'à,à
+à à à à à à à à ànàaàmàeàKàeàyà:à à'àhàoàtàeàlà.àràoàoàmà.àsàtàaànàdàaàràdà'à,à
+à à à à à à à à àpàràiàcàeà:à à3à0à0à,à
+à à à à à à à à àsàiàeàsàtàeàPàràiàcàeà:à à1à5à0à,à
+à à à à à à à à àiàmàaàgàeà:à à'àhàtàtàpàsà:à/à/àiàmàaàgàeàsà.àuànàsàpàlàaàsàhà.àcàoàmà/àpàhàoàtàoà-à1à6à1à1à8à9à2à4à4à0à5à0à4à-à4à2àaà7à9à2àeà2à4àdà3à2à?àaàuàtàoà=àfàoàràmàaàtà&àfàiàtà=àcàràoàpà&àwà=à8à0à0à&àqà=à8à0à'à,à
+à à à à à à à à àfàeàaàtàuàràeàsàKàeàyàsà:à à[à'àhàoàtàeàlà.àfàeàaàtà.àwàiàfàià'à,à à'àhàoàtàeàlà.àfàeàaàtà.àtàvà'à,à à'àhàoàtàeàlà.àfàeàaàtà.àsàhàoàwàeàrà'à]à,à
+à à à à à à à à àcàaàpàaàcàiàtàyà:à à2à
+à à à à à}à,à
+à à à à à{à
+à à à à à à à à àiàdà:à à'àdàeàlàuàxàeà'à,à
+à à à à à à à à ànàaàmàeàKàeàyà:à à'àhàoàtàeàlà.àràoàoàmà.àdàeàlàuàxàeà'à,à
+à à à à à à à à àpàràiàcàeà:à à5à0à0à,à
+à à à à à à à à àsàiàeàsàtàeàPàràiàcàeà:à à2à5à0à,à
+à à à à à à à à àiàmàaàgàeà:à à'àhàtàtàpàsà:à/à/àiàmàaàgàeàsà.àuànàsàpàlàaàsàhà.àcàoàmà/àpàhàoàtàoà-à1à5à8à2à7à1à9à4à7à8à2à5à0à-àcà8à9àcàaàeà4àdàcà8à5àbà?àaàuàtàoà=àfàoàràmàaàtà&àfàiàtà=àcàràoàpà&àwà=à8à0à0à&àqà=à8à0à'à,à
+à à à à à à à à àfàeàaàtàuàràeàsàKàeàyàsà:à à[à'àhàoàtàeàlà.àfàeàaàtà.àvàiàeàwà'à,à à'àhàoàtàeàlà.àfàeàaàtà.àmàiànàiàbàaàrà'à,à à'àhàoàtàeàlà.àfàeàaàtà.àsàaàlàoànà'à,à à'àhàoàtàeàlà.àfàeàaàtà.àbàaàtàhà'à]à,à
+à à à à à à à à àcàaàpàaàcàiàtàyà:à à2à
+à à à à à}à,à
+à à à à à{à
+à à à à à à à à àiàdà:à à'àfàaàmàiàlàyà'à,à
+à à à à à à à à ànàaàmàeàKàeàyà:à à'àhàoàtàeàlà.àràoàoàmà.àfàaàmàiàlàyà'à,à
+à à à à à à à à àpàràiàcàeà:à à7à0à0à,à
+à à à à à à à à àsàiàeàsàtàeàPàràiàcàeà:à à3à5à0à,à
+à à à à à à à à àiàmàaàgàeà:à à'àhàtàtàpàsà:à/à/àiàmàaàgàeàsà.àuànàsàpàlàaàsàhà.àcàoàmà/àpàhàoàtàoà-à1à5à9à6à3à9à4à5à1à6à0à9à3à-à5à0à1àbàaà6à8àaà0àbàaà6à?àaàuàtàoà=àfàoàràmàaàtà&àfàiàtà=àcàràoàpà&àwà=à8à0à0à&àqà=à8à0à'à,à
+à à à à à à à à àfàeàaàtàuàràeàsàKàeàyàsà:à à[à'àhàoàtàeàlà.àfàeàaàtà.àbàeàdàsà'à,à à'àhàoàtàeàlà.àfàeàaàtà.àgàaàmàeàsà'à,à à'àhàoàtàeàlà.àfàeàaàtà.àkàiàtàcàhàeànà'à,à à'àhàoàtàeàlà.àfàeàaàtà.àtàeàràràaàcàeà'à]à,à
+à à à à à à à à àcàaàpàaàcàiàtàyà:à à4à
+à à à à à}à
+à]à;à
+à
+àeàxàpàoàràtà àdàeàfàaàuàlàtà àfàuànàcàtàiàoànà àHàoàtàeàlàPàaàgàeà(à)à à{à
+à à à à àcàoànàsàtà àràoàuàtàeàrà à=à àuàsàeàRàoàuàtàeàrà(à)à;à
+à à à à àcàoànàsàtà à{à àtà,à àlàaànàgàuàaàgàeà à}à à=à àuàsàeàTàràaànàsàlàaàtàiàoànà(à)à;à
+à à à à àcàoànàsàtà à[àsàeàlàeàcàtàeàdàRàoàoàmà,à àsàeàtàSàeàlàeàcàtàeàdàRàoàoàmà]à à=à àuàsàeàSàtàaàtàeà<àsàtàràiànàgà à|à ànàuàlàlà>à(ànàuàlàlà)à;à
+à à à à àcàoànàsàtà à[àbàoàoàkàiànàgàTàyàpàeà,à àsàeàtàBàoàoàkàiànàgàTàyàpàeà]à à=à àuàsàeàSàtàaàtàeà<à'ànàiàgàhàtà'à à|à à'àsàiàeàsàtàeà'à>à(à'ànàiàgàhàtà'à)à;à
+à
+à à à à à/à/à àDàaàtàeàsà àLàoàgàiàcà
+à à à à àcàoànàsàtà à[àdàaàtàeàsà,à àsàeàtàDàaàtàeàsà]à à=à àuàsàeàSàtàaàtàeà(à(à)à à=à>à à{à
+à à à à à à à à àcàoànàsàtà àtàoàdàaàyà à=à ànàeàwà àDàaàtàeà(à)à;à
+à à à à à à à à àcàoànàsàtà àtàoàmàoàràràoàwà à=à ànàeàwà àDàaàtàeà(àtàoàdàaàyà)à;à
+à à à à à à à à àtàoàmàoàràràoàwà.àsàeàtàDàaàtàeà(àtàoàmàoàràràoàwà.àgàeàtàDàaàtàeà(à)à à+à à1à)à;à
+à à à à à à à à àràeàtàuàrànà à{à
+à à à à à à à à à à à à àcàhàeàcàkàIànà:à àtàoàdàaàyà.àtàoàIàSàOàSàtàràiànàgà(à)à.àsàpàlàiàtà(à'àTà'à)à[à0à]à,à
+à à à à à à à à à à à à àcàhàeàcàkàOàuàtà:à àtàoàmàoàràràoàwà.àtàoàIàSàOàSàtàràiànàgà(à)à.àsàpàlàiàtà(à'àTà'à)à[à0à]à
+à à à à à à à à à}à;à
+à à à à à}à)à;à
+à à à à àcàoànàsàtà à[àdàaàtàeàEàràràoàrà,à àsàeàtàDàaàtàeàEàràràoàrà]à à=à àuàsàeàSàtàaàtàeà<àsàtàràiànàgà à|à ànàuàlàlà>à(ànàuàlàlà)à;à
+à
+à à à à àcàoànàsàtà à[àsàiàeàsàtàeàTàiàmàeà,à àsàeàtàSàiàeàsàtàeàTàiàmàeà]à à=à àuàsàeàSàtàaàtàeà(à(à)à à=à>à à(à{à
+à à à à à à à à àdàaàtàeà:à ànàeàwà àDàaàtàeà(à)à.àtàoàIàSàOàSàtàràiànàgà(à)à.àsàpàlàiàtà(à'àTà'à)à[à0à]à,à
+à à à à à à à à àhàoàuàràsà:à à3à
+à à à à à}à)à)à;à
+à à à à àcàoànàsàtà à[àlàoàaàdàiànàgà,à àsàeàtàLàoàaàdàiànàgà]à à=à àuàsàeàSàtàaàtàeà(àfàaàlàsàeà)à;à
+à à à à àcàoànàsàtà à[àsàhàoàwàSàuàcàcàeàsàsà,à àsàeàtàSàhàoàwàSàuàcàcàeàsàsà]à à=à àuàsàeàSàtàaàtàeà<àsàtàràiànàgà à|à ànàuàlàlà>à(ànàuàlàlà)à;à
+à à à à àcàoànàsàtà à[àpàaàyàmàeànàtàMàeàtàhàoàdà,à àsàeàtàPàaàyàmàeànàtàMàeàtàhàoàdà]à à=à àuàsàeàSàtàaàtàeà<à'àcàaàsàhà'à à|à à'àcàaàràdà'à>à(à'àcàaàràdà'à)à;à
+à à à à àcàoànàsàtà à[àpàeànàdàiànàgàPàaàyàmàeànàtà,à àsàeàtàPàeànàdàiànàgàPàaàyàmàeànàtà]à à=à àuàsàeàSàtàaàtàeà<à{à àiàdà:à àsàtàràiànàgà,à àaàmàoàuànàtà:à ànàuàmàbàeàrà,à ànàuàmà:à àsàtàràiànàgà,à àpàaàyàmàeànàtàTàyàpàeà?à:à à'àfàuàlàlà_àdàiàsàcàoàuànàtàeàdà'à à|à à'àdàeàpàoàsàiàtà'à à|à à'àfàuàlàlà'à à}à à|à ànàuàlàlà>à(ànàuàlàlà)à;à
+à
+à à à à àcàoànàsàtà àaàcàtàiàvàeàRàoàoàmà à=à àRàOàOàMà_àTàYàPàEàSà.àfàiànàdà(àrà à=à>à àrà.àiàdà à=à=à=à àsàeàlàeàcàtàeàdàRàoàoàmà)à;à
+à
+à à à à à/à/à àHàoàtàeàlà àHàeàràoà àSàeàcàtàiàoànà
+à à à à àcàoànàsàtà à[àhàeàràoàSàlàiàdàeàsà,à àsàeàtàHàeàràoàSàlàiàdàeàsà]à à=à àuàsàeàSàtàaàtàeà<à{à
+à à à à à à à à àiàdà:à àsàtàràiànàgà;à
+à à à à à à à à àtàiàtàlàeà:à àsàtàràiànàgà;à
+à à à à à à à à àsàuàbàtàiàtàlàeà:à àsàtàràiànàgà;à
+à à à à à à à à àbàaàdàgàeà_àtàeàxàtà:à àsàtàràiànàgà;à
+à à à à à à à à àcàtàaà_àtàeàxàtà:à àsàtàràiànàgà;à
+à à à à à à à à àiàmàaàgàeà_àuàràlà:à àsàtàràiànàgà;à
+à à à à à}à[à]à>à(à[à]à)à;à
+à
+à à à à àcàoànàsàtà àfàeàtàcàhàHàeàràoà à=à àuàsàeàCàaàlàlàbàaàcàkà(àaàsàyànàcà à(à)à à=à>à à{à
+à à à à à à à à àtàràyà à{à
+à à à à à à à à à à à à àcàoànàsàtà à{à àdàaàtàaà à}à à=à àaàwàaàiàtà àsàuàpàaàbàaàsàeà
+à à à à à à à à à à à à à à à à à.àfàràoàmà(à'àhàeàràoà_àsàlàiàdàeàràsà'à)à
+à à à à à à à à à à à à à à à à à.àsàeàlàeàcàtà(à'à*à'à)à
+à à à à à à à à à à à à à à à à à.àeàqà(à'àpàaàgàeà'à,à à'àhàoàtàeàlà'à)à
+à à à à à à à à à à à à à à à à à.àeàqà(à'àiàsà_àaàcàtàiàvàeà'à,à àtàràuàeà)à
+à à à à à à à à à à à à à à à à à.àoàràdàeàrà(à'àoàràdàeàrà_àiànàdàeàxà'à,à à{à àaàsàcàeànàdàiànàgà:à àtàràuàeà à}à)à;à
+à à à à à à à à à à à à à
+à à à à à à à à à à à à àiàfà à(àdàaàtàaà à&à&à àdàaàtàaà.àlàeànàgàtàhà à>à à0à)à àsàeàtàHàeàràoàSàlàiàdàeàsà(àdàaàtàaà)à;à
+à à à à à à à à à}à àcàaàtàcàhà à{à
+à à à à à à à à à à à à à/à/à àsàiàlàeànàtàlàyà àfàaàiàlà
+à à à à à à à à à}à
+à à à à à}à,à à[à]à)à;à
+à
+à à à à àuàsàeàEàfàfàeàcàtà(à(à)à à=à>à à{à àfàeàtàcàhàHàeàràoà(à)à;à à}à,à à[àfàeàtàcàhàHàeàràoà]à)à;à
+à
+à à à à à/à/à àCàaàràoàuàsàeàlà àAàuàtàoà-àSàcàràoàlàlà
+à à à à àuàsàeàEàfàfàeàcàtà(à(à)à à=à>à à{à
+à à à à à à à à àcàoànàsàtà àiànàtàeàràvàaàlà à=à àsàeàtàIànàtàeàràvàaàlà(à(à)à à=à>à à{à
+à à à à à à à à à à à à àcàoànàsàtà àcàoànàtàaàiànàeàrà à=à àdàoàcàuàmàeànàtà.àgàeàtàEàlàeàmàeànàtàBàyàIàdà(à"àhàoàtàeàlà-àcàaàràoàuàsàeàlà-àcàoànàtàaàiànàeàrà"à)à;à
+à à à à à à à à à à à à àiàfà à(à!àcàoànàtàaàiànàeàrà)à àràeàtàuàrànà;à
+à
+à à à à à à à à à à à à àcàoànàsàtà àmàaàxàSàcàràoàlàlà à=à àcàoànàtàaàiànàeàrà.àsàcàràoàlàlàWàiàdàtàhà à-à àcàoànàtàaàiànàeàrà.àcàlàiàeànàtàWàiàdàtàhà;à
+à à à à à à à à à à à à àiàfà à(àcàoànàtàaàiànàeàrà.àsàcàràoàlàlàLàeàfàtà à>à=à àmàaàxàSàcàràoàlàlà à-à à5à)à à{à
+à à à à à à à à à à à à à à à à àcàoànàtàaàiànàeàrà.àsàcàràoàlàlàTàoà(à{à àlàeàfàtà:à à0à,à àbàeàhàaàvàiàoàrà:à à"àsàmàoàoàtàhà"à à}à)à;à
+à à à à à à à à à à à à à}à àeàlàsàeà à{à
+à à à à à à à à à à à à à à à à àcàoànàtàaàiànàeàrà.àsàcàràoàlàlàBàyà(à{à àlàeàfàtà:à àcàoànàtàaàiànàeàrà.àcàlàiàeànàtàWàiàdàtàhà,à àbàeàhàaàvàiàoàrà:à à"àsàmàoàoàtàhà"à à}à)à;à
+à à à à à à à à à à à à à}à
+à à à à à à à à à}à,à à4à5à0à0à)à;à
+à
+à à à à à à à à àràeàtàuàrànà à(à)à à=à>à àcàlàeàaàràIànàtàeàràvàaàlà(àiànàtàeàràvàaàlà)à;à
+à à à à à}à,à à[à]à)à;à
+à
+à à à à à/à/à àCàaàlàcàuàlàaàtàeà àNàiàgàhàtàsà
+à à à à àcàoànàsàtà ànàiàgàhàtàsà à=à àuàsàeàMàeàmàoà(à(à)à à=à>à à{à
+à à à à à à à à àiàfà à(à!àdàaàtàeàsà.àcàhàeàcàkàIànà à|à|à à!àdàaàtàeàsà.àcàhàeàcàkàOàuàtà)à àràeàtàuàrànà à0à;à
+à à à à à à à à àcàoànàsàtà àsàtàaàràtà à=à ànàeàwà àDàaàtàeà(àdàaàtàeàsà.àcàhàeàcàkàIànà)à;à
+à à à à à à à à àcàoànàsàtà àeànàdà à=à ànàeàwà àDàaàtàeà(àdàaàtàeàsà.àcàhàeàcàkàOàuàtà)à;à
+à à à à à à à à àiàfà à(àeànàdà à<à=à àsàtàaàràtà)à àràeàtàuàrànà à0à;à
+à à à à à à à à àcàoànàsàtà àdàiàfàfàTàiàmàeà à=à àMàaàtàhà.àaàbàsà(àeànàdà.àgàeàtàTàiàmàeà(à)à à-à àsàtàaàràtà.àgàeàtàTàiàmàeà(à)à)à;à
+à à à à à à à à àcàoànàsàtà àdàiàfàfàDàaàyàsà à=à àMàaàtàhà.àcàeàiàlà(àdàiàfàfàTàiàmàeà à/à à(à1à0à0à0à à*à à6à0à à*à à6à0à à*à à2à4à)à)à;à
+à à à à à à à à àràeàtàuàrànà àdàiàfàfàDàaàyàsà;à
+à à à à à}à,à à[àdàaàtàeàsà]à)à;à
+à
+à à à à à/à/à àDàyànàaàmàiàcà àPàràiàcàeà àCàaàlàcàuàlàaàtàiàoànà
+à à à à àcàoànàsàtà àtàoàtàaàlàPàràiàcàeà à=à àuàsàeàMàeàmàoà(à(à)à à=à>à à{à
+à à à à à à à à àiàfà à(à!àaàcàtàiàvàeàRàoàoàmà)à àràeàtàuàrànà à0à;à
+à à à à à à à à àiàfà à(àbàoàoàkàiànàgàTàyàpàeà à=à=à=à à'àsàiàeàsàtàeà'à)à à{à
+à à à à à à à à à à à à àràeàtàuàrànà àaàcàtàiàvàeàRàoàoàmà.àsàiàeàsàtàeàPàràiàcàeà;à
+à à à à à à à à à}à
+à à à à à à à à àràeàtàuàrànà àaàcàtàiàvàeàRàoàoàmà.àpàràiàcàeà à*à à(ànàiàgàhàtàsà à|à|à à1à)à;à
+à à à à à}à,à à[àaàcàtàiàvàeàRàoàoàmà,à àbàoàoàkàiànàgàTàyàpàeà,à ànàiàgàhàtàsà]à)à;à
+à
+à à à à à/à/à à-à-à-à àDàAàTàEà àHàAàNàDàLàEàRàSà à-à-à-à
+à à à à àcàoànàsàtà àhàaànàdàlàeàCàhàeàcàkàIànàCàhàaànàgàeà à=à à(àeà:à àRàeàaàcàtà.àCàhàaànàgàeàEàvàeànàtà<àHàTàMàLàIànàpàuàtàEàlàeàmàeànàtà>à)à à=à>à à{à
+à à à à à à à à àcàoànàsàtà ànàeàwàCàhàeàcàkàIànà à=à àeà.àtàaàràgàeàtà.àvàaàlàuàeà;à
+à à à à à à à à àcàoànàsàtà àsàtàaàràtà à=à ànàeàwà àDàaàtàeà(ànàeàwàCàhàeàcàkàIànà)à;à
+à à à à à à à à àcàoànàsàtà ànàeàxàtàDàaàyà à=à ànàeàwà àDàaàtàeà(àsàtàaàràtà)à;à
+à à à à à à à à ànàeàxàtàDàaàyà.àsàeàtàDàaàtàeà(ànàeàxàtàDàaàyà.àgàeàtàDàaàtàeà(à)à à+à à1à)à;à
+à à à à à à à à àcàoànàsàtà ànàeàwàCàhàeàcàkàOàuàtà à=à ànàeàxàtàDàaàyà.àtàoàIàSàOàSàtàràiànàgà(à)à.àsàpàlàiàtà(à'àTà'à)à[à0à]à;à
+à
+à à à à à à à à àsàeàtàDàaàtàeàsà(à{à
+à à à à à à à à à à à à àcàhàeàcàkàIànà:à ànàeàwàCàhàeàcàkàIànà,à
+à à à à à à à à à à à à àcàhàeàcàkàOàuàtà:à ànàeàwàCàhàeàcàkàOàuàtà
+à à à à à à à à à}à)à;à
+à à à à à à à à àsàeàtàDàaàtàeàEàràràoàrà(ànàuàlàlà)à;à
+à à à à à}à;à
+à
+à à à à àcàoànàsàtà àhàaànàdàlàeàCàhàeàcàkàOàuàtàCàhàaànàgàeà à=à à(àeà:à àRàeàaàcàtà.àCàhàaànàgàeàEàvàeànàtà<àHàTàMàLàIànàpàuàtàEàlàeàmàeànàtà>à)à à=à>à à{à
+à à à à à à à à àcàoànàsàtà ànàeàwàCàhàeàcàkàOàuàtà à=à àeà.àtàaàràgàeàtà.àvàaàlàuàeà;à
+à à à à à à à à àsàeàtàDàaàtàeàsà(àpàràeàvà à=à>à à(à{à à.à.à.àpàràeàvà,à àcàhàeàcàkàOàuàtà:à ànàeàwàCàhàeàcàkàOàuàtà à}à)à)à;à
+à
+à à à à à à à à àiàfà à(ànàeàwàCàhàeàcàkàOàuàtà à<à=à àdàaàtàeàsà.àcàhàeàcàkàIànà)à à{à
+à à à à à à à à à à à à àsàeàtàDàaàtàeàEàràràoàrà(àtà(à'àhàoàtàeàlà.àdàaàtàeàsà.àeàràràoàrà'à)à)à;à
+à à à à à à à à à}à àeàlàsàeà à{à
+à à à à à à à à à à à à àsàeàtàDàaàtàeàEàràràoàrà(ànàuàlàlà)à;à
+à à à à à à à à à}à
+à à à à à}à;à
+à
+à à à à à/à/à à-à-à-à àAàUàTàOà-àBàOàOàKàIàNàGà àLàOàGàIàCà à-à-à-à
+à à à à àuàsàeàEàfàfàeàcàtà(à(à)à à=à>à à{à
+à à à à à à à à àcàoànàsàtà àaàtàtàeàmàpàtàAàuàtàoàBàoàoàkà à=à àaàsàyànàcà à(à)à à=à>à à{à
+à à à à à à à à à à à à àcàoànàsàtà àpàeànàdàiànàgà à=à àlàoàcàaàlàSàtàoàràaàgàeà.àgàeàtàIàtàeàmà(à'àpàeànàdàiànàgàHàoàtàeàlàBàoàoàkàiànàgà'à)à;à
+à à à à à à à à à à à à àiàfà à(à!àpàeànàdàiànàgà)à àràeàtàuàrànà;à
+à
+à à à à à à à à à à à à àcàoànàsàtà à{à àdàaàtàaà:à à{à àuàsàeàrà à}à à}à à=à àaàwàaàiàtà àsàuàpàaàbàaàsàeà.àaàuàtàhà.àgàeàtàUàsàeàrà(à)à;à
+à à à à à à à à à à à à àiàfà à(à!àuàsàeàrà)à àràeàtàuàrànà;à
+à à à à à à à à à à à à àcàoànàsàtà à{à àdàaàtàaà:à àpàràoàfàiàlàeà à}à à=à àaàwàaàiàtà àsàuàpàaàbàaàsàeà.àfàràoàmà(à'àpàràoàfàiàlàeàsà'à)à.àsàeàlàeàcàtà(à'àpàhàoànàeà'à)à.àeàqà(à'àiàdà'à,à àuàsàeàrà.àiàdà)à.àsàiànàgàlàeà(à)à;à
+à à à à à à à à à à à à àiàfà à(à!àpàràoàfàiàlàeà?à.àpàhàoànàeà)à àràeàtàuàrànà;à
+à
+à à à à à à à à à à à à àcàoànàsàtà àbàoàoàkàiànàgàDàaàtàaà à=à àJàSàOàNà.àpàaàràsàeà(àpàeànàdàiànàgà)à;à
+à à à à à à à à à à à à àsàeàtàLàoàaàdàiànàgà(àtàràuàeà)à;à
+à
+à à à à à à à à à à à à àcàoànàsàtà àbàoàoàkàiànàgàNàuàmà à=à à`àHàOàTàEàLà-à$à{àDàaàtàeà.ànàoàwà(à)à.àtàoàSàtàràiànàgà(à)à.àsàlàiàcàeà(à-à6à)à}à`à;à
+à
+à à à à à à à à à à à à àcàoànàsàtà àiàsàCàaàràdà à=à àbàoàoàkàiànàgàDàaàtàaà.àpàaàyàmàeànàtàMàeàtàhàoàdà à=à=à=à à'àcàaàràdà'à;à
+à à à à à à à à à à à à àcàoànàsàtà àfàiànàaàlàPàràiàcàeà à=à àiàsàCàaàràdà à?à àMàaàtàhà.àràoàuànàdà(àbàoàoàkàiànàgàDàaàtàaà.àtàoàtàaàlàPàràiàcàeà à*à à0à.à9à0à)à à:à àbàoàoàkàiànàgàDàaàtàaà.àtàoàtàaàlàPàràiàcàeà;à
+à
+à à à à à à à à à à à à àcàoànàsàtà à{à àdàaàtàaà,à àeàràràoàrà à}à à=à àaàwàaàiàtà àsàuàpàaàbàaàsàeà.àfàràoàmà(à'àhàoàtàeàlà_àràeàsàeàràvàaàtàiàoànàsà'à)à.àiànàsàeàràtà(à{à
+à à à à à à à à à à à à à à à à àbàoàoàkàiànàgà_ànàuàmàbàeàrà:à àbàoàoàkàiànàgàNàuàmà,à
+à à à à à à à à à à à à à à à à àcàuàsàtàoàmàeàrà_àpàhàoànàeà:à àpàràoàfàiàlàeà.àpàhàoànàeà,à
+à à à à à à à à à à à à à à à à àràoàoàmà_àtàyàpàeà:à àbàoàoàkàiànàgàDàaàtàaà.àràoàoàmàTàyàpàeà,à
+à à à à à à à à à à à à à à à à àbàoàoàkàiànàgà_àtàyàpàeà:à àbàoàoàkàiànàgàDàaàtàaà.àbàoàoàkàiànàgàTàyàpàeà,à
+à à à à à à à à à à à à à à à à àcàhàeàcàkà_àiànà:à àbàoàoàkàiànàgàDàaàtàaà.àbàoàoàkàiànàgàTàyàpàeà à=à=à=à à'ànàiàgàhàtà'à à?à àbàoàoàkàiànàgàDàaàtàaà.àcàhàeàcàkàIànà à:à àbàoàoàkàiànàgàDàaàtàaà.àsàiàeàsàtàeàDàaàtàeà,à
+à à à à à à à à à à à à à à à à àcàhàeàcàkà_àoàuàtà:à àbàoàoàkàiànàgàDàaàtàaà.àbàoàoàkàiànàgàTàyàpàeà à=à=à=à à'ànàiàgàhàtà'à à?à àbàoàoàkàiànàgàDàaàtàaà.àcàhàeàcàkàOàuàtà à:à àbàoàoàkàiànàgàDàaàtàaà.àsàiàeàsàtàeàDàaàtàeà,à
+à à à à à à à à à à à à à à à à ànàiàgàhàtàsà:à àbàoàoàkàiànàgàDàaàtàaà.àbàoàoàkàiànàgàTàyàpàeà à=à=à=à à'ànàiàgàhàtà'à à?à àbàoàoàkàiànàgàDàaàtàaà.ànàiàgàhàtàsà à:à à0à,à
+à à à à à à à à à à à à à à à à àdàuàràaàtàiàoànà_àhàoàuàràsà:à àbàoàoàkàiànàgàDàaàtàaà.àbàoàoàkàiànàgàTàyàpàeà à=à=à=à à'àsàiàeàsàtàeà'à à?à àbàoàoàkàiànàgàDàaàtàaà.àsàiàeàsàtàeàHàoàuàràsà à:à ànàuàlàlà,à
+à à à à à à à à à à à à à à à à àtàoàtàaàlà_àpàràiàcàeà:à àfàiànàaàlàPàràiàcàeà,à
+à à à à à à à à à à à à à à à à àsàtàaàtàuàsà:à à'àpàeànàdàiànàgà'à,à
+à à à à à à à à à à à à à à à à àuàsàeàrà_àiàdà:à àuàsàeàrà.àiàdà
+à à à à à à à à à à à à à}à)à.àsàeàlàeàcàtà(à)à.àsàiànàgàlàeà(à)à;à
+à
+à à à à à à à à à à à à àiàfà à(à!àeàràràoàrà à&à&à àdàaàtàaà)à à{à
+à à à à à à à à à à à à à à à à àiàfà à(àiàsàCàaàràdà)à à{à
+à à à à à à à à à à à à à à à à à à à à àsàeàtàPàeànàdàiànàgàPàaàyàmàeànàtà(à{à
+à à à à à à à à à à à à à à à à à à à à à à à à àiàdà:à àdàaàtàaà.àiàdà,à
+à à à à à à à à à à à à à à à à à à à à à à à à àaàmàoàuànàtà:à àfàiànàaàlàPàràiàcàeà,à
+à à à à à à à à à à à à à à à à à à à à à à à à ànàuàmà:à àbàoàoàkàiànàgàNàuàmà,à
+à à à à à à à à à à à à à à à à à à à à à à à à àpàaàyàmàeànàtàTàyàpàeà:à à'àfàuàlàlà_àdàiàsàcàoàuànàtàeàdà'à
+à à à à à à à à à à à à à à à à à à à à à}à)à;à
+à à à à à à à à à à à à à à à à à}à àeàlàsàeà à{à
+à à à à à à à à à à à à à à à à à à à à àsàeàtàSàhàoàwàSàuàcàcàeàsàsà(àbàoàoàkàiànàgàNàuàmà)à;à
+à à à à à à à à à à à à à à à à à}à
+à à à à à à à à à à à à à à à à àlàoàcàaàlàSàtàoàràaàgàeà.àràeàmàoàvàeàIàtàeàmà(à'àpàeànàdàiànàgàHàoàtàeàlàBàoàoàkàiànàgà'à)à;à
+à à à à à à à à à à à à à}à
+à à à à à à à à à à à à àsàeàtàLàoàaàdàiànàgà(àfàaàlàsàeà)à;à
+à à à à à à à à à}à;à
+à à à à à à à à àaàtàtàeàmàpàtàAàuàtàoàBàoàoàkà(à)à;à
+à à à à à}à,à à[à]à)à;à
+à
+à à à à àcàoànàsàtà àhàaànàdàlàeàBàoàoàkàiànàgà à=à àaàsàyànàcà à(à)à à=à>à à{à
+à à à à à à à à àiàfà à(à!àsàeàlàeàcàtàeàdàRàoàoàmà à|à|à àdàaàtàeàEàràràoàrà)à àràeàtàuàrànà;à
+à à à à à à à à àsàeàtàLàoàaàdàiànàgà(àtàràuàeà)à;à
+à
+à à à à à à à à àcàoànàsàtà à{à àdàaàtàaà:à à{à àuàsàeàrà à}à à}à à=à àaàwàaàiàtà àsàuàpàaàbàaàsàeà.àaàuàtàhà.àgàeàtàUàsàeàrà(à)à;à
+à
+à à à à à à à à àcàoànàsàtà àiàsàCàaàràdà à=à àpàaàyàmàeànàtàMàeàtàhàoàdà à=à=à=à à'àcàaàràdà'à;à
+à à à à à à à à àcàoànàsàtà àfàiànàaàlàPàràiàcàeà à=à àiàsàCàaàràdà à?à àMàaàtàhà.àràoàuànàdà(àtàoàtàaàlàPàràiàcàeà à*à à0à.à9à0à)à à:à àtàoàtàaàlàPàràiàcàeà;à
+à
+à à à à à à à à àlàeàtà àuàsàeàràPàhàoànàeàFàràoàmàPàràoàfàiàlàeà à=à ànàuàlàlà;à
+à à à à à à à à àiàfà à(àuàsàeàrà)à à{à
+à à à à à à à à à à à à àcàoànàsàtà à{à àdàaàtàaà à}à à=à àaàwàaàiàtà àsàuàpàaàbàaàsàeà.àfàràoàmà(à'àpàràoàfàiàlàeàsà'à)à.àsàeàlàeàcàtà(à'àpàhàoànàeà'à)à.àeàqà(à'àiàdà'à,à àuàsàeàrà.àiàdà)à.àsàiànàgàlàeà(à)à;à
+à à à à à à à à à à à à àuàsàeàràPàhàoànàeàFàràoàmàPàràoàfàiàlàeà à=à àdàaàtàaà?à.àpàhàoànàeà;à
+à à à à à à à à à}à
+à
+à à à à à à à à àcàoànàsàtà àcàoàmàmàoànàDàaàtàaà à=à à{à
+à à à à à à à à à à à à àràoàoàmàTàyàpàeà:à àsàeàlàeàcàtàeàdàRàoàoàmà,à
+à à à à à à à à à à à à àbàoàoàkàiànàgàTàyàpàeà,à
+à à à à à à à à à à à à àtàoàtàaàlàPàràiàcàeà,à
+à à à à à à à à à à à à àpàaàyàmàeànàtàMàeàtàhàoàdà
+à à à à à à à à à}à;à
+à
+à à à à à à à à àcàoànàsàtà àsàpàeàcàiàfàiàcàDàaàtàaà à=à àbàoàoàkàiànàgàTàyàpàeà à=à=à=à à'ànàiàgàhàtà'à à?à à{à
+à à à à à à à à à à à à àcàhàeàcàkàIànà:à àdàaàtàeàsà.àcàhàeàcàkàIànà,à
+à à à à à à à à à à à à àcàhàeàcàkàOàuàtà:à àdàaàtàeàsà.àcàhàeàcàkàOàuàtà,à
+à à à à à à à à à à à à ànàiàgàhàtàsà
+à à à à à à à à à}à à:à à{à
+à à à à à à à à à à à à àsàiàeàsàtàeàDàaàtàeà:à àsàiàeàsàtàeàTàiàmàeà.àdàaàtàeà,à
+à à à à à à à à à à à à àsàiàeàsàtàeàHàoàuàràsà:à àsàiàeàsàtàeàTàiàmàeà.àhàoàuàràsà
+à à à à à à à à à}à;à
+à
+à à à à à à à à àcàoànàsàtà àfàiànàaàlàBàoàoàkàiànàgàDàaàtàaà à=à à{à à.à.à.àcàoàmàmàoànàDàaàtàaà,à à.à.à.àsàpàeàcàiàfàiàcàDàaàtàaà à}à;à
+à
+à à à à à à à à à/à/à àRàoàbàuàsàtà àUàsàeàrà/àPàhàoànàeà àcàhàeàcàkà
+à à à à à à à à à/à/à àTàràyà àpàràoàfàiàlàeà àpàhàoànàeà,à àtàhàeànà àmàeàtàaàdàaàtàaà àpàhàoànàeà,à àtàhàeànà àfàaàlàlàbàaàcàkà/ànàuàlàlà
+à à à à à à à à àcàoànàsàtà àuàsàeàràPàhàoànàeà à=à àuàsàeàràPàhàoànàeàFàràoàmàPàràoàfàiàlàeà à|à|à àuàsàeàrà?à.àuàsàeàrà_àmàeàtàaàdàaàtàaà?à.àpàhàoànàeà à|à|à ànàuàlàlà;à
+à
+à à à à à à à à àiàfà à(à!àuàsàeàrà)à à{à
+à à à à à à à à à à à à àlàoàcàaàlàSàtàoàràaàgàeà.àsàeàtàIàtàeàmà(à'àpàeànàdàiànàgàHàoàtàeàlàBàoàoàkàiànàgà'à,à àJàSàOàNà.àsàtàràiànàgàiàfàyà(àfàiànàaàlàBàoàoàkàiànàgàDàaàtàaà)à)à;à
+à à à à à à à à à à à à àràoàuàtàeàrà.àpàuàsàhà(à'à/àpàràoàfàiàlàeà?àràeàdàiàràeàcàtà=à/àhàoàtàeàlà'à)à;à
+à à à à à à à à à à à à àsàeàtàLàoàaàdàiànàgà(àfàaàlàsàeà)à;à
+à à à à à à à à à à à à àràeàtàuàrànà;à
+à à à à à à à à à}à
+à
+à à à à à à à à àcàoànàsàtà àbàoàoàkàiànàgàNàuàmà à=à à`àHàOàTàEàLà-à$à{àDàaàtàeà.ànàoàwà(à)à.àtàoàSàtàràiànàgà(à)à.àsàlàiàcàeà(à-à6à)à}à`à;à
+à
+à à à à à à à à àcàoànàsàtà à{à àdàaàtàaà,à àeàràràoàrà à}à à=à àaàwàaàiàtà àsàuàpàaàbàaàsàeà.àfàràoàmà(à'àhàoàtàeàlà_àràeàsàeàràvàaàtàiàoànàsà'à)à.àiànàsàeàràtà(à{à
+à à à à à à à à à à à à àbàoàoàkàiànàgà_ànàuàmàbàeàrà:à àbàoàoàkàiànàgàNàuàmà,à
+à à à à à à à à à à à à àcàuàsàtàoàmàeàrà_àpàhàoànàeà:à àuàsàeàràPàhàoànàeà,à
+à à à à à à à à à à à à àràoàoàmà_àtàyàpàeà:à àsàeàlàeàcàtàeàdàRàoàoàmà,à
+à à à à à à à à à à à à àbàoàoàkàiànàgà_àtàyàpàeà:à àbàoàoàkàiànàgàTàyàpàeà,à
+à à à à à à à à à à à à àcàhàeàcàkà_àiànà:à àbàoàoàkàiànàgàTàyàpàeà à=à=à=à à'ànàiàgàhàtà'à à?à àdàaàtàeàsà.àcàhàeàcàkàIànà à:à àsàiàeàsàtàeàTàiàmàeà.àdàaàtàeà,à
+à à à à à à à à à à à à àcàhàeàcàkà_àoàuàtà:à àbàoàoàkàiànàgàTàyàpàeà à=à=à=à à'ànàiàgàhàtà'à à?à àdàaàtàeàsà.àcàhàeàcàkàOàuàtà à:à àsàiàeàsàtàeàTàiàmàeà.àdàaàtàeà,à
+à à à à à à à à à à à à ànàiàgàhàtàsà:à àbàoàoàkàiànàgàTàyàpàeà à=à=à=à à'ànàiàgàhàtà'à à?à ànàiàgàhàtàsà à:à à0à,à
+à à à à à à à à à à à à àdàuàràaàtàiàoànà_àhàoàuàràsà:à àbàoàoàkàiànàgàTàyàpàeà à=à=à=à à'àsàiàeàsàtàeà'à à?à àsàiàeàsàtàeàTàiàmàeà.àhàoàuàràsà à:à ànàuàlàlà,à
+à à à à à à à à à à à à àtàoàtàaàlà_àpàràiàcàeà:à àfàiànàaàlàPàràiàcàeà,à
+à à à à à à à à à à à à àsàtàaàtàuàsà:à à'àpàeànàdàiànàgà'à,à
+à à à à à à à à à à à à àuàsàeàrà_àiàdà:à àuàsàeàrà.àiàdà
+à à à à à à à à à}à)à.àsàeàlàeàcàtà(à)à.àsàiànàgàlàeà(à)à;à
+à
+à à à à à à à à àiàfà à(àeàràràoàrà à|à|à à!àdàaàtàaà)à à{à
+à à à à à à à à à à à à àaàlàeàràtà(à"àEàràràeàuàrà:à à"à à+à àeàràràoàrà?à.àmàeàsàsàaàgàeà)à;à
+à à à à à à à à à}à àeàlàsàeà à{à
+à à à à à à à à à à à à àiàfà à(àiàsàCàaàràdà)à à{à
+à à à à à à à à à à à à à à à à àsàeàtàPàeànàdàiànàgàPàaàyàmàeànàtà(à{à
+à à à à à à à à à à à à à à à à à à à à àiàdà:à àdàaàtàaà.àiàdà,à
+à à à à à à à à à à à à à à à à à à à à àaàmàoàuànàtà:à àfàiànàaàlàPàràiàcàeà,à
+à à à à à à à à à à à à à à à à à à à à ànàuàmà:à àbàoàoàkàiànàgàNàuàmà,à
+à à à à à à à à à à à à à à à à à à à à àpàaàyàmàeànàtàTàyàpàeà:à à'àfàuàlàlà_àdàiàsàcàoàuànàtàeàdà'à
+à à à à à à à à à à à à à à à à à}à)à;à
+à à à à à à à à à à à à à}à àeàlàsàeà à{à
+à à à à à à à à à à à à à à à à àsàeàtàSàhàoàwàSàuàcàcàeàsàsà(àbàoàoàkàiànàgàNàuàmà)à;à
+à à à à à à à à à à à à à}à
+à à à à à à à à à}à
+à à à à à à à à àsàeàtàLàoàaàdàiànàgà(àfàaàlàsàeà)à;à
+à à à à à}à;à
+à
+à à à à àràeàtàuàrànà à(à
+à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àmàiànà-àhà-àsàcàràeàeànà àpàtà-à1à6à àmàdà:àpàtà-à2à0à àpàbà-à5à2à àbàgà-à[à#à0àBà0àFà1à9à]à"à>à
+à
+à à à à à à à à à à à à à{à/à*à àPàaàgàeà àHàeàaàdàeàrà à*à/à}à
+à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àpàtà-à6à àpàbà-à2à àpàxà-à4à àmàaàxà-àwà-à6àxàlà àmàxà-àaàuàtàoà àràeàlàaàtàiàvàeà àzà-à2à0à"à>à
+à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àfàlàeàxà àiàtàeàmàsà-àcàeànàtàeàrà àjàuàsàtàiàfàyà-àbàeàtàwàeàeànà àmàbà-à4à"à>à
+à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àfàlàeàxà àiàtàeàmàsà-àcàeànàtàeàrà àgàaàpà-à4à"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àpà-à3à àbàgà-àgàràaàdàiàeànàtà-àtàoà-àbàrà àfàràoàmà-àiànàdàiàgàoà-à5à0à0à àtàoà-àpàuàràpàlàeà-à6à0à0à àràoàuànàdàeàdà-à2àxàlà àsàhàaàdàoàwà-àlàgà àsàhàaàdàoàwà-àiànàdàiàgàoà-à5à0à0à/à2à0à"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àMàoàoànà àcàlàaàsàsàNàaàmàeà=à"àwà-à6à àhà-à6à àtàeàxàtà-àwàhàiàtàeà"à à/à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àhà1à àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-à2àxàlà àfàoànàtà-àbàlàaàcàkà àtàeàxàtà-àwàhàiàtàeà àlàeàaàdàiànàgà-ànàoànàeà àtàràaàcàkàiànàgà-àtàiàgàhàtà"à>à{àtà(à'àhàoàtàeàlà.àtàiàtàlàeà'à)à}à<à/àhà1à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àpà àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-àsàmà àtàeàxàtà-àgàràaàyà-à4à0à0à àmàtà-à1à"à>àHàôàtàeàlà à&à àSàéàjàoàuàrà<à/àpà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à<à/àdàiàvà>à
+à
+à
+à
+à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àpà-à3à àmàdà:àpà-à6à àsàpàaàcàeà-àyà-à8à àmàaàxà-àwà-à6àxàlà àmàxà-àaàuàtàoà àràeàlàaàtàiàvàeà àzà-à1à0à"à>à
+à à à à à à à à à à à à à à à à à{à/à*à àPàuàràpàlàeà/àIànàdàiàgàoà àgàlàoàwàiànàgà àeàfàfàeàcàtà àfàoàrà àhàiàgàhà-àeànàdà àhàoàtàeàlà àaàmàbàiàaànàcàeà à*à/à}à
+à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àaàbàsàoàlàuàtàeà àtàoàpà-à[à1à0à%à]à àlàeàfàtà-à[à2à0à%à]à àwà-à[à4à0à0àpàxà]à àhà-à[à4à0à0àpàxà]à àbàgà-àiànàdàiàgàoà-à6à0à0à/à5à àràoàuànàdàeàdà-àfàuàlàlà àbàlàuàrà-à[à1à3à0àpàxà]à àpàoàiànàtàeàrà-àeàvàeànàtàsà-ànàoànàeà à-àzà-à1à0à"à à/à>à
+à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àaàbàsàoàlàuàtàeà àbàoàtàtàoàmà-à[à2à0à%à]à àràiàgàhàtà-à[à1à0à%à]à àwà-à[à3à5à0àpàxà]à àhà-à[à3à5à0àpàxà]à àbàgà-àvàiàoàlàeàtà-à6à0à0à/à5à àràoàuànàdàeàdà-àfàuàlàlà àbàlàuàrà-à[à1à2à0àpàxà]à àpàoàiànàtàeàrà-àeàvàeànàtàsà-ànàoànàeà à-àzà-à1à0à"à à/à>à
+à
+à à à à à à à à à à à à à à à à à{à/à*à àHàEàRàOà àBàAàNàNàEàRà àCàAàRàOàUàSàEàLà à*à/à}à
+à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àràeàlàaàtàiàvàeà àwà-àfàuàlàlà àhà-à[à2à0à0àpàxà]à àsàmà:àhà-à[à2à6à0àpàxà]à àràoàuànàdàeàdà-à[à2à.à5àràeàmà]à àoàvàeàràfàlàoàwà-àhàiàdàdàeànà àbàoàràdàeàrà àbàoàràdàeàrà-àwàhàiàtàeà/à1à0à àsàhàaàdàoàwà-à[à0à_à2à0àpàxà_à5à0àpàxà_àràgàbàaà(à0à,à0à,à0à,à0à.à5à)à]à àgàràoàuàpà"à>à
+à à à à à à à à à à à à à à à à à à à à à<àdàiàvà à
+à à à à à à à à à à à à à à à à à à à à à à à à àiàdà=à"àhàoàtàeàlà-àcàaàràoàuàsàeàlà-àcàoànàtàaàiànàeàrà"à
+à à à à à à à à à à à à à à à à à à à à à à à à àoànàSàcàràoàlàlà=à{à(àeà)à à=à>à à{à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à àcàoànàsàtà àtàaàràgàeàtà à=à àeà.àtàaàràgàeàtà àaàsà àHàTàMàLàEàlàeàmàeànàtà;à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à àcàoànàsàtà àsàcàràoàlàlàLàeàfàtà à=à àtàaàràgàeàtà.àsàcàràoàlàlàLàeàfàtà;à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à àcàoànàsàtà àwàiàdàtàhà à=à àtàaàràgàeàtà.àcàlàiàeànàtàWàiàdàtàhà;à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à àcàoànàsàtà àiànàdàeàxà à=à àMàaàtàhà.àràoàuànàdà(àsàcàràoàlàlàLàeàfàtà à/à àwàiàdàtàhà)à;à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à àcàoànàsàtà àdàoàtàsà à=à àdàoàcàuàmàeànàtà.àqàuàeàràyàSàeàlàeàcàtàoàràAàlàlà(à'à.àhàoàtàeàlà-àdàoàtà'à)à;à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à àdàoàtàsà.àfàoàràEàaàcàhà(à(àdàoàtà,à àiàdàxà)à à=à>à à{à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àiàfà à(àiàdàxà à=à=à=à àiànàdàeàxà)à à{à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àdàoàtà.àcàlàaàsàsàLàiàsàtà.àaàdàdà(à'àbàgà-àaàmàbàeàrà-à5à0à0à'à,à à'àwà-à6à'à)à;à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àdàoàtà.àcàlàaàsàsàLàiàsàtà.àràeàmàoàvàeà(à'àbàgà-àwàhàiàtàeà/à3à0à'à,à à'àwà-à2à'à)à;à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à}à àeàlàsàeà à{à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àdàoàtà.àcàlàaàsàsàLàiàsàtà.àràeàmàoàvàeà(à'àbàgà-àaàmàbàeàrà-à5à0à0à'à,à à'àwà-à6à'à)à;à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àdàoàtà.àcàlàaàsàsàLàiàsàtà.àaàdàdà(à'àbàgà-àwàhàiàtàeà/à3à0à'à,à à'àwà-à2à'à)à;à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à}à)à;à
+à à à à à à à à à à à à à à à à à à à à à à à à à}à}à
+à à à à à à à à à à à à à à à à à à à à à à à à àcàlàaàsàsàNàaàmàeà=à"àfàlàeàxà àoàvàeàràfàlàoàwà-àxà-àaàuàtàoà àsànàaàpà-àxà àsànàaàpà-àmàaànàdàaàtàoàràyà àgàaàpà-à0à àsàcàràoàlàlàbàaàrà-àhàiàdàeà àwà-àfàuàlàlà àhà-àfàuàlàlà àsàcàràoàlàlà-àsàmàoàoàtàhà"à
+à à à à à à à à à à à à à à à à à à à à à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à{à(àhàeàràoàSàlàiàdàeàsà.àlàeànàgàtàhà à>à à0à à?à àhàeàràoàSàlàiàdàeàsà à:à à[à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àiàdà:à à'àfàaàlàlàbàaàcàkà-à1à'à,à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àtàiàtàlàeà:à à'àVàoàtàràeà àSàéàjàoàuàrà àdàeà àRàêàvàeà'à,à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àsàuàbàtàiàtàlàeà:à à'àDàéàtàeànàtàeà àeàtà àcàoànàfàoàràtà àaàbàsàoàlàuà àaàuà àcàœàuàrà àdàuà àGàoàlàdàeànà àPàaàràkà'à,à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àbàaàdàgàeà_àtàeàxàtà:à à'àOàFàFàRàEà àSàPàÉàCàIàAàLàEà'à,à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àcàtàaà_àtàeàxàtà:à à'àRàéàsàeàràvàeàrà'à,à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àiàmàaàgàeà_àuàràlà:à à'àhàtàtàpàsà:à/à/àiàmàaàgàeàsà.àuànàsàpàlàaàsàhà.àcàoàmà/àpàhàoàtàoà-à1à5à6à6à0à7à3à7à7à1à2à5à9à-à6àaà8à5à0à6à0à9à9à9à4à5à?àaàuàtàoà=àfàoàràmàaàtà&àfàiàtà=àcàràoàpà&àwà=à1à2à0à0à&àqà=à8à0à'à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à}à,à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àiàdà:à à'àfàaàlàlàbàaàcàkà-à2à'à,à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àtàiàtàlàeà:à à'àCàhàaàmàbàràeàsà àFàaàmàiàlàiàaàlàeàsà'à,à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àsàuàbàtàiàtàlàeà:à à'àSàpàaàcàiàeàuàsàeàsà,à àmàoàdàeàrànàeàsà àeàtà àéàqàuàiàpàéàeàsà àpàoàuàrà àtàoàuàtàeà àlàaà àfàaàmàiàlàlàeà'à,à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àbàaàdàgàeà_àtàeàxàtà:à à'àEàSàPàAàCàEà àFàAàMàIàLàLàEà'à,à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àcàtàaà_àtàeàxàtà:à à'àDàéàcàoàuàvàràiàrà'à,à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àiàmàaàgàeà_àuàràlà:à à'àhàtàtàpàsà:à/à/àiàmàaàgàeàsà.àuànàsàpàlàaàsàhà.àcàoàmà/àpàhàoàtàoà-à1à5à9à0à4à9à0à3à6à0à1à8à2à-àcà3à3àdà5à7à7à3à3à4à2à7à?àaàuàtàoà=àfàoàràmàaàtà&àfàiàtà=àcàràoàpà&àwà=à1à2à0à0à&àqà=à8à0à'à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à}à,à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àiàdà:à à'àfàaàlàlàbàaàcàkà-à3à'à,à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àtàiàtàlàeà:à à'àPàiàsàcàiànàeà à&à àDàéàtàeànàtàeà'à,à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àsàuàbàtàiàtàlàeà:à à'àAàcàcàèàsà àgàràaàtàuàiàtà ààà àlàaà àpàiàsàcàiànàeà àpàoàuàrà àtàoàuàsà ànàoàsà àràéàsàiàdàeànàtàsà'à,à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àbàaàdàgàeà_àtàeàxàtà:à à'àIàNàCàLàUàSà àDàAàNàSà àLàEà àSàÉàJàOàUàRà'à,à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àcàtàaà_àtàeàxàtà:à à'àEàxàpàlàoàràeàrà'à,à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àiàmàaàgàeà_àuàràlà:à à'àhàtàtàpàsà:à/à/àiàmàaàgàeàsà.àuànàsàpàlàaàsàhà.àcàoàmà/àpàhàoàtàoà-à1à5à7à6à0à1à3à5à5à1à6à2à7à-à0àcàcà2à0àbà9à6àcà2àaà7à?àaàuàtàoà=àfàoàràmàaàtà&àfàiàtà=àcàràoàpà&àwà=à1à2à0à0à&àqà=à8à0à'à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à]à)à.àmàaàpà(à(àsàlàiàdàeà,à àiàdàxà)à à=à>à à(à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àkàeàyà=à{àsàlàiàdàeà.àiàdà à|à|à àiàdàxà}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àcàlàaàsàsàNàaàmàeà=à"àràeàlàaàtàiàvàeà àwà-àfàuàlàlà àhà-àfàuàlàlà àsàhàràiànàkà-à0à àsànàaàpà-àcàeànàtàeàrà àfàlàeàxà àiàtàeàmàsà-àcàeànàtàeàrà àjàuàsàtàiàfàyà-àbàeàtàwàeàeànà àpàxà-à6à àmàdà:àpàxà-à1à2à àsàeàlàeàcàtà-ànàoànàeà"à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àsàtàyàlàeà=à{à{à àmàiànàWàiàdàtàhà:à à'à1à0à0à%à'à à}à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àIàmàaàgàeà
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àsàràcà=à{àsàlàiàdàeà.àiàmàaàgàeà_àuàràlà}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àaàlàtà=à{àsàlàiàdàeà.àtàiàtàlàeà}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àfàiàlàlà
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àpàràiàoàràiàtàyà=à{àiàdàxà à=à=à=à à0à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àcàlàaàsàsàNàaàmàeà=à"àoàbàjàeàcàtà-àcàoàvàeàrà àaàbàsàoàlàuàtàeà àiànàsàeàtà-à0à à-àzà-à1à0à àbàràiàgàhàtànàeàsàsà-à[à0à.à6à5à]à àsàaàtàuàràaàtàeà-à1à5à0à àtàràaànàsàiàtàiàoànà-àtàràaànàsàfàoàràmà àdàuàràaàtàiàoànà-à[à2à0àsà]à àeàaàsàeà-àlàiànàeàaàrà àhàoàvàeàrà:àsàcàaàlàeà-à1à1à0à"à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à/à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àaàbàsàoàlàuàtàeà àiànàsàeàtà-à0à àbàgà-àgàràaàdàiàeànàtà-àtàoà-àtà àfàràoàmà-à[à#à0àBà0àFà1à9à]à àvàiàaà-àtàràaànàsàpàaàràeànàtà àtàoà-àbàlàaàcàkà/à4à0à à-àzà-à1à0à"à à/à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àaàbàsàoàlàuàtàeà àiànàsàeàtà-à0à àfàlàeàxà àfàlàeàxà-àcàoàlà àjàuàsàtàiàfàyà-àeànàdà àpà-à6à àmàdà:àpà-à1à2à àzà-à1à0à àbàgà-àgàràaàdàiàeànàtà-àtàoà-àrà àfàràoàmà-àbàlàaàcàkà/à5à0à àtàoà-àtàràaànàsàpàaàràeànàtà"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àfàlàeàxà àfàlàeàxà-àcàoàlà àmàdà:àfàlàeàxà-àràoàwà àjàuàsàtàiàfàyà-àbàeàtàwàeàeànà àiàtàeàmàsà-àsàtàaàràtà àmàdà:àiàtàeàmàsà-àeànàdà àwà-àfàuàlàlà àgàaàpà-à6à"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{à/à*à àLàeàfàtà:à àbàaàdàgàeà à+à àtàiàtàlàeà à+à àsàuàbàtàiàtàlàeà à*à/à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àfàlàeàxà àfàlàeàxà-àcàoàlà àgàaàpà-à2à àfàlàeàxà-à1à àmàiànà-àwà-à0à àtàeàxàtà-àlàeàfàtà"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àsàpàaànà àcàlàaàsàsàNàaàmàeà=à"àbàgà-àgàràaàdàiàeànàtà-àtàoà-àrà àfàràoàmà-àaàmàbàeàrà-à5à0à0à àtàoà-àoàràaànàgàeà-à6à0à0à àtàeàxàtà-àwàhàiàtàeà àtàeàxàtà-à[à9àpàxà]à àfàoànàtà-àbàlàaàcàkà àpàxà-à3à.à5à àpàyà-à1à àràoàuànàdàeàdà-àfàuàlàlà àuàpàpàeàràcàaàsàeà àtàràaàcàkàiànàgà-àwàiàdàeàrà àiànàlàiànàeà-àfàlàeàxà àiàtàeàmàsà-àcàeànàtàeàrà àgàaàpà-à1à àwà-àfàiàtà àsàhàaàdàoàwà-àlàgà àsàhàaàdàoàwà-àoàràaànàgàeà-à5à0à0à/à2à0à"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à🏨à à{àsàlàiàdàeà.àbàaàdàgàeà_àtàeàxàtà}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àsàpàaànà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àhà2à àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-àwàhàiàtàeà àtàeàxàtà-à2àxàlà àsàmà:àtàeàxàtà-à3àxàlà àmàdà:àtàeàxàtà-à5àxàlà àfàoànàtà-àbàlàaàcàkà àuàpàpàeàràcàaàsàeà àtàràaàcàkàiànàgà-àtàiàgàhàtà àlàeàaàdàiànàgà-àtàiàgàhàtà àdàràoàpà-àsàhàaàdàoàwà-àlàgà"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{àsàlàiàdàeà.àtàiàtàlàeà}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àhà2à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àpà àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-àwàhàiàtàeà/à8à0à àtàeàxàtà-à[à1à0àpàxà]à àsàmà:àtàeàxàtà-àxàsà àfàoànàtà-àsàeàmàiàbàoàlàdà àlàiànàeà-àcàlàaàmàpà-à2à àdàràoàpà-àsàhàaàdàoàwà àlàeàaàdàiànàgà-àràeàlàaàxàeàdà àmàaàxà-àwà-à[à4à0à0àpàxà]à"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{àsàlàiàdàeà.àsàuàbàtàiàtàlàeà}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àpà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{à/à*à àRàiàgàhàtà:à àCàTàAà àbàuàtàtàoànà à*à/à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àfàlàeàxà àfàlàeàxà-àcàoàlà àiàtàeàmàsà-àsàtàaàràtà àmàdà:àiàtàeàmàsà-àeànàdà àgàaàpà-à2à àsàhàràiànàkà-à0à àwà-àfàuàlàlà àmàdà:àwà-àaàuàtàoà"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àbàuàtàtàoànà
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àoànàCàlàiàcàkà=à{à(à)à à=à>à à{à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àdàoàcàuàmàeànàtà.àgàeàtàEàlàeàmàeànàtàBàyàIàdà(à'àhàoàtàeàlà-àràoàoàmà-àgàaàlàlàeàràyà'à)à?à.àsàcàràoàlàlàIànàtàoàVàiàeàwà(à{à àbàeàhàaàvàiàoàrà:à à'àsàmàoàoàtàhà'à à}à)à;à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à}à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àcàlàaàsàsàNàaàmàeà=à"àwà-àfàuàlàlà àmàdà:àwà-àaàuàtàoà àpàyà-à3à.à5à àpàxà-à6à àbàgà-àgàràaàdàiàeànàtà-àtàoà-àrà àfàràoàmà-àaàmàbàeàrà-à5à0à0à àtàoà-àoàràaànàgàeà-à6à0à0à àhàoàvàeàrà:àfàràoàmà-àaàmàbàeàrà-à6à0à0à àhàoàvàeàrà:àtàoà-àoàràaànàgàeà-à7à0à0à àtàeàxàtà-àwàhàiàtàeà àfàoànàtà-àbàlàaàcàkà àtàeàxàtà-àxàsà àuàpàpàeàràcàaàsàeà àtàràaàcàkàiànàgà-àwàiàdàeàrà àràoàuànàdàeàdà-à2àxàlà àsàhàaàdàoàwà-à[à0à_à1à0àpàxà_à2à0àpàxà_àràgàbàaà(à2à4à5à,à1à5à8à,à1à1à,à0à.à3à)à]à àaàcàtàiàvàeà:àsàcàaàlàeà-à9à5à àtàràaànàsàiàtàiàoànà-àaàlàlà àfàlàeàxà àiàtàeàmàsà-àcàeànàtàeàrà àjàuàsàtàiàfàyà-àcàeànàtàeàrà àgàaàpà-à2à àwàhàiàtàeàsàpàaàcàeà-ànàoàwàràaàpà"à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àBàeàdàDàoàuàbàlàeà àcàlàaàsàsàNàaàmàeà=à"àwà-à4à àhà-à4à"à à/à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àsàpàaànà>à{àsàlàiàdàeà.àcàtàaà_àtàeàxàtà à|à|à à'àRàéàsàeàràvàeàrà'à}à<à/àsàpàaànà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àbàuàtàtàoànà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à)à)à}à
+à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à
+à à à à à à à à à à à à à à à à à à à à à{àhàeàràoàSàlàiàdàeàsà.àlàeànàgàtàhà à>à à1à à&à&à à(à
+à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àaàbàsàoàlàuàtàeà àbàoàtàtàoàmà-à4à àlàeàfàtà-à1à/à2à à-àtàràaànàsàlàaàtàeà-àxà-à1à/à2à àfàlàeàxà àiàtàeàmàsà-àcàeànàtàeàrà àgàaàpà-à1à.à5à àzà-à2à0à"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{àhàeàràoàSàlàiàdàeàsà.àmàaàpà(à(à_à,à àiàdàxà)à à=à>à à(à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àsàpàaànà à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àkàeàyà=à{àiàdàxà}à à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àcàlàaàsàsàNàaàmàeà=à{à`àhàoàtàeàlà-àdàoàtà àhà-à2à àràoàuànàdàeàdà-àfàuàlàlà àtàràaànàsàiàtàiàoànà-àaàlàlà àdàuàràaàtàiàoànà-à3à0à0à à$à{àiàdàxà à=à=à=à à0à à?à à'àbàgà-àaàmàbàeàrà-à5à0à0à àwà-à6à'à à:à à'àbàgà-àwàhàiàtàeà/à3à0à àwà-à2à'à}à`à}à à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à/à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à)à)à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à)à}à
+à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à
+à
+à à à à à à à à à à à à à à à à à{à/à*à àMàOàDàEà àSàWàIàTàCàHàEàRà à*à/à}à
+à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àfàlàeàxà àfàlàeàxà-àcàoàlà àiàtàeàmàsà-àcàeànàtàeàrà àgàaàpà-à2à àmàaàxà-àwà-àmàdà àmàxà-àaàuàtàoà àwà-àfàuàlàlà"à>à
+à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àràeàlàaàtàiàvàeà àbàgà-à[à#à1à1à1à8à2à7à]à/à4à0à àpà-à1à.à5à àràoàuànàdàeàdà-à[à2àràeàmà]à àbàoàràdàeàrà àbàoàràdàeàrà-àwàhàiàtàeà/à5à àfàlàeàxà àwà-àfàuàlàlà àsàhàaàdàoàwà-à2àxàlà àbàaàcàkàdàràoàpà-àbàlàuàrà-àmàdà"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à{à/à*à àGàlàoàwàiànàgà àsàlàiàdàeàrà à*à/à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à{à`àaàbàsàoàlàuàtàeà àtàoàpà-à1à.à5à àbàoàtàtàoàmà-à1à.à5à àwà-à[àcàaàlàcà(à5à0à%à-à6àpàxà)à]à àràoàuànàdàeàdà-à3àxàlà àtàràaànàsàiàtàiàoànà-àaàlàlà àdàuàràaàtàiàoànà-à5à0à0à àeàaàsàeà-àiànà-àoàuàtà àsàhàaàdàoàwà-àlàgà
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à$à{àbàoàoàkàiànàgàTàyàpàeà à=à=à=à à'ànàiàgàhàtà'à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à?à à'àlàtàrà:àlàeàfàtà-à1à.à5à àràtàlà:àràiàgàhàtà-à1à.à5à àbàgà-àgàràaàdàiàeànàtà-àtàoà-àbàrà àfàràoàmà-àaàmàbàeàrà-à5à0à0à àtàoà-àoàràaànàgàeà-à6à0à0à àsàhàaàdàoàwà-àoàràaànàgàeà-à5à0à0à/à3à0à'à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à:à à'àlàtàrà:àlàeàfàtà-à[àcàaàlàcà(à5à0à%à+à4àpàxà)à]à àràtàlà:àràiàgàhàtà-à[àcàaàlàcà(à5à0à%à+à4àpàxà)à]à àbàgà-àgàràaàdàiàeànàtà-àtàoà-àbàrà àfàràoàmà-àiànàdàiàgàoà-à5à0à0à àtàoà-àvàiàoàlàeàtà-à6à0à0à àsàhàaàdàoàwà-àiànàdàiàgàoà-à5à0à0à/à3à0à'à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à}à`à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à/à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à{à/à*à àNàiàgàhàtà àBàuàtàtàoànà à*à/à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à<àbàuàtàtàoànà
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à àoànàCàlàiàcàkà=à{à(à)à à=à>à àsàeàtàBàoàoàkàiànàgàTàyàpàeà(à'ànàiàgàhàtà'à)à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à àcàlàaàsàsàNàaàmàeà=à{à`àfàlàeàxà-à1à àfàlàeàxà àiàtàeàmàsà-àcàeànàtàeàrà àjàuàsàtàiàfàyà-àcàeànàtàeàrà àgàaàpà-à2à àpàyà-à4à àpàxà-à4à àràoàuànàdàeàdà-à3àxàlà àràeàlàaàtàiàvàeà àzà-à1à0à àfàoànàtà-àbàoàlàdà àtàeàxàtà-àsàmà àtàràaànàsàiàtàiàoànà-àaàlàlà àdàuàràaàtàiàoànà-à3à0à0à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à$à{àbàoàoàkàiànàgàTàyàpàeà à=à=à=à à'ànàiàgàhàtà'à à?à à'àtàeàxàtà-àwàhàiàtàeà'à à:à à'àtàeàxàtà-àgàràaàyà-à5à0à0à àhàoàvàeàrà:àtàeàxàtà-àgàràaàyà-à3à0à0à'à}à`à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àMàoàoànà àcàlàaàsàsàNàaàmàeà=à{à`àwà-à4à àhà-à4à àtàràaànàsàiàtàiàoànà-àtàràaànàsàfàoàràmà àdàuàràaàtàiàoànà-à3à0à0à à$à{àbàoàoàkàiànàgàTàyàpàeà à=à=à=à à'ànàiàgàhàtà'à à?à à'àsàcàaàlàeà-à1à1à0à'à à:à à'à'à}à`à}à à/à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àsàpàaànà>à{àtà(à'àhàoàtàeàlà.ànàiàgàhàtà_àmàoàdàeà'à)à}à<à/àsàpàaànà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à<à/àbàuàtàtàoànà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à{à/à*à àSàiàeàsàtàeà àBàuàtàtàoànà à*à/à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à<àbàuàtàtàoànà
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à àoànàCàlàiàcàkà=à{à(à)à à=à>à àsàeàtàBàoàoàkàiànàgàTàyàpàeà(à'àsàiàeàsàtàeà'à)à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à àcàlàaàsàsàNàaàmàeà=à{à`àfàlàeàxà-à1à àfàlàeàxà àiàtàeàmàsà-àcàeànàtàeàrà àjàuàsàtàiàfàyà-àcàeànàtàeàrà àgàaàpà-à2à àpàyà-à4à àpàxà-à4à àràoàuànàdàeàdà-à3àxàlà àràeàlàaàtàiàvàeà àzà-à1à0à àfàoànàtà-àbàoàlàdà àtàeàxàtà-àsàmà àtàràaànàsàiàtàiàoànà-àaàlàlà àdàuàràaàtàiàoànà-à3à0à0à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à$à{àbàoàoàkàiànàgàTàyàpàeà à=à=à=à à'àsàiàeàsàtàeà'à à?à à'àtàeàxàtà-àwàhàiàtàeà'à à:à à'àtàeàxàtà-àgàràaàyà-à5à0à0à àhàoàvàeàrà:àtàeàxàtà-àgàràaàyà-à3à0à0à'à}à`à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àSàuànà àcàlàaàsàsàNàaàmàeà=à{à`àwà-à4à àhà-à4à àtàràaànàsàiàtàiàoànà-àtàràaànàsàfàoàràmà àdàuàràaàtàiàoànà-à3à0à0à à$à{àbàoàoàkàiànàgàTàyàpàeà à=à=à=à à'àsàiàeàsàtàeà'à à?à à'àsàcàaàlàeà-à1à1à0à àràoàtàaàtàeà-à1à2à'à à:à à'à'à}à`à}à à/à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àsàpàaànà>à{àtà(à'àhàoàtàeàlà.àsàiàeàsàtàaà_àmàoàdàeà'à)à}à<à/àsàpàaànà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à<à/àbàuàtàtàoànà>à
+à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à{à/à*à àSàuàbàtàiàtàlàeà àhàiànàtà à*à/à}à
+à à à à à à à à à à à à à à à à à à à à à<àpà àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-àxàsà àtàeàxàtà-àgàràaàyà-à4à0à0à àfàoànàtà-àsàeàmàiàbàoàlàdà àtàràaàcàkàiànàgà-àwàiàdàeà"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à{àbàoàoàkàiànàgàTàyàpàeà à=à=à=à à'ànàiàgàhàtà'à à?à à'à🌙à àRàéàsàeàràvàaàtàiàoànà àcàoàmàpàlàèàtàeà àpàoàuàrà àlàaà ànàuàiàtà'à à:à à'à☀à️à àRàeàpàoàsà àdàeà àqàuàeàlàqàuàeàsà àhàeàuàràeàsà àeànà àjàoàuàrànàéàeà'à}à
+à à à à à à à à à à à à à à à à à à à à à<à/àpà>à
+à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à
+à à à à à à à à à à à à à à à à à{à/à*à àRàoàoàmà àGàaàlàlàeàràyà à*à/à}à
+à à à à à à à à à à à à à à à à à<àdàiàvà àiàdà=à"àhàoàtàeàlà-àràoàoàmà-àgàaàlàlàeàràyà"à àcàlàaàsàsàNàaàmàeà=à"àsàpàaàcàeà-àyà-à4à"à>à
+à à à à à à à à à à à à à à à à à à à à à<àhà3à àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-à[à1à0àpàxà]à àfàoànàtà-àbàlàaàcàkà àtàeàxàtà-àgàràaàyà-à4à0à0à àuàpàpàeàràcàaàsàeà àtàràaàcàkàiànàgà-àwàiàdàeàsàtà"à>à{àtà(à'àhàoàtàeàlà.àcàhàoàoàsàeà_àràoàoàmà'à)à}à<à/àhà3à>à
+à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àgàràiàdà àgàràiàdà-àcàoàlàsà-à1à àmàdà:àgàràiàdà-àcàoàlàsà-à3à àgàaàpà-à6à"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à{àRàOàOàMà_àTàYàPàEàSà.àmàaàpà(àràoàoàmà à=à>à à(à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àkàeàyà=à{àràoàoàmà.àiàdà}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àoànàCàlàiàcàkà=à{à(à)à à=à>à àsàeàtàSàeàlàeàcàtàeàdàRàoàoàmà(àràoàoàmà.àiàdà)à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àcàlàaàsàsàNàaàmàeà=à{à`àràoàuànàdàeàdà-à[à2àràeàmà]à àoàvàeàràfàlàoàwà-àhàiàdàdàeànà àbàoàràdàeàrà àtàràaànàsàiàtàiàoànà-àaàlàlà àdàuàràaàtàiàoànà-à5à0à0à àràeàlàaàtàiàvàeà àgàràoàuàpà àcàuàràsàoàrà-àpàoàiànàtàeàrà àhà-àfàuàlàlà àfàlàeàxà àfàlàeàxà-àcàoàlà à$à{àsàeàlàeàcàtàeàdàRàoàoàmà à=à=à=à àràoàoàmà.àiàdà
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à?à à'àbàoàràdàeàrà-àaàmàbàeàrà-à5à0à0à àràiànàgà-à4à àràiànàgà-àaàmàbàeàrà-à5à0à0à/à1à0à àsàhàaàdàoàwà-à2àxàlà àsàhàaàdàoàwà-àoàràaànàgàeà-à5à0à0à/à1à0à àtàràaànàsàfàoàràmà àmàdà:à-àtàràaànàsàlàaàtàeà-àyà-à2à'à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à:à à'àbàoàràdàeàrà-àwàhàiàtàeà/à5à àbàgà-à[à#à1à1à1à8à2à7à]à/à3à0à àhàoàvàeàrà:àbàoàràdàeàrà-àwàhàiàtàeà/à2à0à'à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à}à`à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àhà-à4à0à àmàdà:àhà-à4à4à àràeàlàaàtàiàvàeà àwà-àfàuàlàlà"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àIàmàaàgàeà àsàràcà=à{àràoàoàmà.àiàmàaàgàeà}à àaàlàtà=à{àtà(àràoàoàmà.ànàaàmàeàKàeàyà)à}à àfàiàlàlà àtàiàtàlàeà=à{àtà(àràoàoàmà.ànàaàmàeàKàeàyà)à}à àcàlàaàsàsàNàaàmàeà=à"àwà-àfàuàlàlà àhà-àfàuàlàlà àoàbàjàeàcàtà-àcàoàvàeàrà àtàràaànàsàiàtàiàoànà-àtàràaànàsàfàoàràmà àdàuàràaàtàiàoànà-à[à1à2à0à0àmàsà]à àeàaàsàeà-àoàuàtà àgàràoàuàpà-àhàoàvàeàrà:àsàcàaàlàeà-à1à0à5à"à à/à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àaàbàsàoàlàuàtàeà àiànàsàeàtà-à0à àbàgà-àgàràaàdàiàeànàtà-àtàoà-àtà àfàràoàmà-à[à#à0àBà0àFà1à9à]à àvàiàaà-àtàràaànàsàpàaàràeànàtà àtàoà-àtàràaànàsàpàaàràeànàtà"à à/à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àaàbàsàoàlàuàtàeà àbàoàtàtàoàmà-à4à àlàeàfàtà-à5à àràiàgàhàtà-à5à àfàlàeàxà àjàuàsàtàiàfàyà-àbàeàtàwàeàeànà àiàtàeàmàsà-àeànàdà"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àhà3à àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-àxàlà àfàoànàtà-àbàlàaàcàkà àtàeàxàtà-àwàhàiàtàeà àlàeàaàdàiànàgà-àtàiàgàhàtà àuàpàpàeàràcàaàsàeà àtàràaàcàkàiànàgà-àtàiàgàhàtà"à>à{àtà(àràoàoàmà.ànàaàmàeàKàeàyà)à}à<à/àhà3à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àbàgà-àbàlàaàcàkà/à5à5à àbàaàcàkàdàràoàpà-àbàlàuàrà-àmàdà àpàxà-à3à àpàyà-à1à.à5à àràoàuànàdàeàdà-àxàlà àbàoàràdàeàrà àbàoàràdàeàrà-àwàhàiàtàeà/à1à0à àtàeàxàtà-àaàmàbàeàrà-à4à0à0à àfàoànàtà-àeàxàtàràaàbàoàlàdà àfàlàeàxà àfàlàeàxà-àcàoàlà àiàtàeàmàsà-àeànàdà àsàhàràiànàkà-à0à àsàhàaàdàoàwà-àlàgà"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{à/à*à àDàyànàaàmàiàcà àPàràiàcàeà àDàiàsàpàlàaàyà à*à/à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{àbàoàoàkàiànàgàTàyàpàeà à=à=à=à à'ànàiàgàhàtà'à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à?à à<àsàpàaànà àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-àsàmà"à>à{àràoàoàmà.àpàràiàcàeà}à àDàHà à<àsàpàaànà àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-à[à9àpàxà]à àtàeàxàtà-àwàhàiàtàeà/à6à0à àfàoànàtà-àmàeàdàiàuàmà"à>à/à{àtà(à'àhàoàtàeàlà.àpàeàrà_ànàiàgàhàtà'à)à}à<à/àsàpàaànà>à<à/àsàpàaànà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à:à à<àsàpàaànà àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-àsàmà"à>à{àràoàoàmà.àsàiàeàsàtàeàPàràiàcàeà}à àDàHà à<àsàpàaànà àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-à[à9àpàxà]à àtàeàxàtà-àwàhàiàtàeà/à6à0à àfàoànàtà-àmàeàdàiàuàmà"à>à/à{àtà(à'àhàoàtàeàlà.àpàeàrà_àsàiàeàsàtàaà'à)à}à<à/àsàpàaànà>à<à/àsàpàaànà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à{à`àpà-à5à àfàlàeàxà-à1à àtàràaànàsàiàtàiàoànà-àcàoàlàoàràsà àdàuàràaàtàiàoànà-à5à0à0à àfàlàeàxà àfàlàeàxà-àcàoàlà àjàuàsàtàiàfàyà-àbàeàtàwàeàeànà à$à{àsàeàlàeàcàtàeàdàRàoàoàmà à=à=à=à àràoàoàmà.àiàdà à?à à'àbàgà-àaàmàbàeàrà-à5à0à0à/à5à'à à:à à'àbàgà-à[à#à1à1à1à8à2à7à]à/à4à0à'à}à`à}à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àfàlàeàxà àfàlàeàxà-àwàràaàpà àgàaàpà-à2à"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{àràoàoàmà.àfàeàaàtàuàràeàsàKàeàyàsà.àmàaàpà(àkàeàyà à=à>à à(à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àsàpàaànà àkàeàyà=à{àkàeàyà}à àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-à[à9àpàxà]à àbàgà-àwàhàiàtàeà/à5à àbàoàràdàeàrà àbàoàràdàeàrà-àwàhàiàtàeà/à5à àràoàuànàdàeàdà-àlàgà àpàxà-à2à.à5à àpàyà-à1à àtàeàxàtà-àgàràaàyà-à3à0à0à àfàoànàtà-àbàoàlàdà àuàpàpàeàràcàaàsàeà àtàràaàcàkàiànàgà-àwàiàdàeàrà"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{àtà(àkàeàyà)à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àsàpàaànà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à)à)à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{àsàeàlàeàcàtàeàdàRàoàoàmà à=à=à=à àràoàoàmà.àiàdà à&à&à à(à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àaàbàsàoàlàuàtàeà àtàoàpà-à4à àràiàgàhàtà-à4à àbàgà-àaàmàbàeàrà-à5à0à0à àtàeàxàtà-àbàlàaàcàkà àpà-à1à.à5à àràoàuànàdàeàdà-àfàuàlàlà àsàhàaàdàoàwà-àlàgà àzà-à1à0à"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àCàhàeàcàkàCàiàràcàlàeà2à àcàlàaàsàsàNàaàmàeà=à"àwà-à5à àhà-à5à"à à/à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à)à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à)à)à}à
+à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à
+à à à à à à à à à à à à à à à à à{à/à*à àMàoàdàeà àdàeà àPàaàiàeàmàeànàtà àSàeàlàeàcàtàoàrà à*à/à}à
+à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àbàgà-à[à#à1à1à1à8à2à7à]à/à4à0à àbàaàcàkàdàràoàpà-àbàlàuàrà-àmàdà àpà-à6à àràoàuànàdàeàdà-à[à2àràeàmà]à àbàoàràdàeàrà àbàoàràdàeàrà-àwàhàiàtàeà/à5à àsàpàaàcàeà-àyà-à4à àmàaàxà-àwà-à4àxàlà àmàxà-àaàuàtàoà àwà-àfàuàlàlà àsàhàaàdàoàwà-à2àxàlà"à>à
+à à à à à à à à à à à à à à à à à à à à à<àhà3à àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-à[à1à0àpàxà]à àfàoànàtà-àbàlàaàcàkà àtàeàxàtà-àgàràaàyà-à4à0à0à àuàpàpàeàràcàaàsàeà àtàràaàcàkàiànàgà-àwàiàdàeàsàtà"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à{àlàaànàgàuàaàgàeà à=à=à=à à'àaàrà'à à?à à'àطàرàيàقàةà àاàلàدàفàعà'à à:à à'àMàoàdàeà àdàeà àPàaàiàeàmàeànàtà'à}à
+à à à à à à à à à à à à à à à à à à à à à<à/àhà3à>à
+à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àgàràiàdà àgàràiàdà-àcàoàlàsà-à1à àmàdà:àgàràiàdà-àcàoàlàsà-à2à àgàaàpà-à4à"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à{à/à*à àCàaàsàhà àOàpàtàiàoànà à*à/à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à<àbàuàtàtàoànà
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à àoànàCàlàiàcàkà=à{à(à)à à=à>à àsàeàtàPàaàyàmàeànàtàMàeàtàhàoàdà(à'àcàaàsàhà'à)à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à àcàlàaàsàsàNàaàmàeà=à{à`àràeàlàaàtàiàvàeà àpà-à5à àràoàuànàdàeàdà-à[à1à.à5àràeàmà]à àbàoàràdàeàrà àfàlàeàxà àfàlàeàxà-àcàoàlà àiàtàeàmàsà-àcàeànàtàeàrà àgàaàpà-à2à àtàràaànàsàiàtàiàoànà-àaàlàlà àdàuàràaàtàiàoànà-à3à0à0à àtàeàxàtà-àcàeànàtàeàrà à$à{àpàaàyàmàeànàtàMàeàtàhàoàdà à=à=à=à à'àcàaàsàhà'à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à?à à'àbàgà-àeàmàeàràaàlàdà-à5à0à0à/à1à0à àbàoàràdàeàrà-àeàmàeàràaàlàdà-à5à0à0à àtàeàxàtà-àeàmàeàràaàlàdà-à4à0à0à àsàhàaàdàoàwà-àlàgà àsàhàaàdàoàwà-àeàmàeàràaàlàdà-à5à0à0à/à1à0à'à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à:à à'àbàgà-à[à#à0àBà0àFà1à9à]à/à6à0à àbàoàràdàeàrà-àwàhàiàtàeà/à5à àtàeàxàtà-àgàràaàyà-à4à0à0à àhàoàvàeàrà:àbàgà-àwàhàiàtàeà/à5à àhàoàvàeàrà:àtàeàxàtà-àwàhàiàtàeà'à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à}à`à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àsàpàaànà àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-à2àxàlà"à>à💵à<à/àsàpàaànà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àsàpàaànà àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-àxàsà àfàoànàtà-àbàlàaàcàkà àuàpàpàeàràcàaàsàeà àtàràaàcàkàiànàgà-àwàiàdàeàrà"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{àlàaànàgàuàaàgàeà à=à=à=à à'àaàrà'à à?à à'àنàقàدàاàًà à(àفàيà àاàلàمàحàطàةà)à'à à:à à'àSàuàrà àPàlàaàcàeà à(àCàaàsàhà)à'à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àsàpàaànà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àsàpàaànà àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-à[à1à0àpàxà]à àtàeàxàtà-àgàràaàyà-à5à0à0à àfàoànàtà-àmàeàdàiàuàmà"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{àlàaànàgàuàaàgàeà à=à=à=à à'àaàrà'à à?à à'àاàلàسàعàرà àاàلàعàاàدàيà'à à:à à'àPàràiàxà ànàoàràmàaàlà'à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àsàpàaànà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{àpàaàyàmàeànàtàMàeàtàhàoàdà à=à=à=à à'àcàaàsàhà'à à&à&à à(à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àaàbàsàoàlàuàtàeà àtàoàpà-à3à àràiàgàhàtà-à3à àwà-à2à àhà-à2à àràoàuànàdàeàdà-àfàuàlàlà àbàgà-àeàmàeàràaàlàdà-à5à0à0à àsàhàaàdàoàwà-à[à0à_à0à_à1à0àpàxà_àràgàbàaà(à1à6à,à1à8à5à,à1à2à9à,à0à.à8à)à]à"à à/à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à)à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à<à/àbàuàtàtàoànà>à
+à
+à à à à à à à à à à à à à à à à à à à à à à à à à{à/à*à àCàaàràdà/àPàaàyàPàaàlà àOàpàtàiàoànà à*à/à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à<àbàuàtàtàoànà
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à àoànàCàlàiàcàkà=à{à(à)à à=à>à àsàeàtàPàaàyàmàeànàtàMàeàtàhàoàdà(à'àcàaàràdà'à)à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à àcàlàaàsàsàNàaàmàeà=à{à`àràeàlàaàtàiàvàeà àpà-à5à àràoàuànàdàeàdà-à[à1à.à5àràeàmà]à àbàoàràdàeàrà àfàlàeàxà àfàlàeàxà-àcàoàlà àiàtàeàmàsà-àcàeànàtàeàrà àgàaàpà-à2à àtàràaànàsàiàtàiàoànà-àaàlàlà àdàuàràaàtàiàoànà-à3à0à0à àtàeàxàtà-àcàeànàtàeàrà à$à{àpàaàyàmàeànàtàMàeàtàhàoàdà à=à=à=à à'àcàaàràdà'à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à?à à'àbàgà-àràeàdà-à5à0à0à/à1à0à àbàoàràdàeàrà-àràeàdà-à5à0à0à àtàeàxàtà-àràeàdà-à4à0à0à àsàhàaàdàoàwà-àlàgà àsàhàaàdàoàwà-àràeàdà-à5à0à0à/à1à0à'à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à:à à'àbàgà-à[à#à0àBà0àFà1à9à]à/à6à0à àbàoàràdàeàrà-àwàhàiàtàeà/à5à àtàeàxàtà-àgàràaàyà-à4à0à0à àhàoàvàeàrà:àbàgà-àwàhàiàtàeà/à5à àhàoàvàeàrà:àtàeàxàtà-àwàhàiàtàeà'à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à}à`à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àsàpàaànà àcàlàaàsàsàNàaàmàeà=à"àaàbàsàoàlàuàtàeà à-àtàoàpà-à2à.à5à à-àràiàgàhàtà-à2à.à5à àbàgà-àràeàdà-à6à0à0à àtàeàxàtà-àwàhàiàtàeà àfàoànàtà-àbàlàaàcàkà àtàeàxàtà-à[à9àpàxà]à àpàxà-à2à.à5à àpàyà-à1à àràoàuànàdàeàdà-àfàuàlàlà àsàhàaàdàoàwà-àlàgà àsàhàaàdàoàwà-àràeàdà-à6à0à0à/à3à0à àaànàiàmàaàtàeà-àpàuàlàsàeà àzà-à1à0à"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à-à1à0à%à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àsàpàaànà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àsàpàaànà àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-à2àxàlà"à>à💳à<à/àsàpàaànà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àsàpàaànà àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-àxàsà àfàoànàtà-àbàlàaàcàkà àuàpàpàeàràcàaàsàeà àtàràaàcàkàiànàgà-àwàiàdàeàrà"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{àlàaànàgàuàaàgàeà à=à=à=à à'àaàrà'à à?à à'àدàفàعà àإàلàكàتàرàوàنàيà'à à:à à'àEànà àlàiàgànàeà à(à-à1à0à%à)à'à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àsàpàaànà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àsàpàaànà àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-à[à1à0àpàxà]à àtàeàxàtà-àgàràaàyà-à5à0à0à àfàoànàtà-àmàeàdàiàuàmà"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{àlàaànàgàuàaàgàeà à=à=à=à à'àaàrà'à à?à à'àتàخàفàيàضà àفàوàرàيà à1à0à%à'à à:à à'à1à0à%à àdàeà àràeàmàiàsàeà àiànàcàlàuàsàeà'à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àsàpàaànà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{àpàaàyàmàeànàtàMàeàtàhàoàdà à=à=à=à à'àcàaàràdà'à à&à&à à(à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àaàbàsàoàlàuàtàeà àtàoàpà-à3à àràiàgàhàtà-à3à àwà-à2à àhà-à2à àràoàuànàdàeàdà-àfàuàlàlà àbàgà-àràeàdà-à5à0à0à àsàhàaàdàoàwà-à[à0à_à0à_à1à0àpàxà_àràgàbàaà(à2à2à0à,à3à8à,à3à8à,à0à.à8à)à]à"à à/à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à)à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à<à/àbàuàtàtàoànà>à
+à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à
+à à à à à à à à à à à à à à à à à{à/à*à àCàoànàdàiàtàiàoànàaàlà àIànàpàuàtàsà:à àDàaàtàeàsà àvàsà àHàoàuàràsà à*à/à}à
+à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àbàgà-à[à#à1à1à1à8à2à7à]à/à4à0à àbàaàcàkàdàràoàpà-àbàlàuàrà-àmàdà àpà-à6à àràoàuànàdàeàdà-à[à2àràeàmà]à àbàoàràdàeàrà àbàoàràdàeàrà-àwàhàiàtàeà/à5à àsàpàaàcàeà-àyà-à4à àmàaàxà-àwà-à4àxàlà àmàxà-àaàuàtàoà àwà-àfàuàlàlà àsàhàaàdàoàwà-à2àxàlà"à>à
+à
+à à à à à à à à à à à à à à à à à à à à à{àbàoàoàkàiànàgàTàyàpàeà à=à=à=à à'ànàiàgàhàtà'à à?à à(à
+à à à à à à à à à à à à à à à à à à à à à à à à à/à*à àNàiàgàhàtà àMàoàdàeà àIànàpàuàtàsà à*à/à
+à à à à à à à à à à à à à à à à à à à à à à à à à<à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àfàlàeàxà àiàtàeàmàsà-àcàeànàtàeàrà àgàaàpà-à2à àmàbà-à2à"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àCàaàlàeànàdàaàrà àcàlàaàsàsàNàaàmàeà=à"àwà-à5à àhà-à5à àtàeàxàtà-àaàmàbàeàrà-à5à0à0à"à à/à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àhà3à àcàlàaàsàsàNàaàmàeà=à"àfàoànàtà-àbàoàlàdà àtàeàxàtà-àwàhàiàtàeà àuàpàpàeàràcàaàsàeà àtàeàxàtà-àxàsà àtàràaàcàkàiànàgà-àwàiàdàeàrà"à>à{àtà(à'àhàoàtàeàlà.àdàaàtàeàsà.àsàtàaàyà'à)à}à<à/àhà3à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àgàràiàdà àgàràiàdà-àcàoàlàsà-à1à àmàdà:àgàràiàdà-àcàoàlàsà-à2à àgàaàpà-à6à"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àlàaàbàeàlà àhàtàmàlàFàoàrà=à"àcàhàeàcàkàIànàDàaàtàeà"à àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-à[à1à0àpàxà]à àfàoànàtà-àbàlàaàcàkà àtàeàxàtà-àgàràaàyà-à4à0à0à àuàpàpàeàràcàaàsàeà àmàbà-à2à àbàlàoàcàkà àtàràaàcàkàiànàgà-àwàiàdàeàrà"à>à{àtà(à'àhàoàtàeàlà.àdàaàtàeàsà.àcàhàeàcàkàiànà'à)à}à<à/àlàaàbàeàlà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àiànàpàuàtà
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àiàdà=à"àcàhàeàcàkàIànàDàaàtàeà"à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àtàyàpàeà=à"àdàaàtàeà"à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àvàaàlàuàeà=à{àdàaàtàeàsà.àcàhàeàcàkàIànà}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àoànàCàhàaànàgàeà=à{àhàaànàdàlàeàCàhàeàcàkàIànàCàhàaànàgàeà}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àmàiànà=à{ànàeàwà àDàaàtàeà(à)à.àtàoàIàSàOàSàtàràiànàgà(à)à.àsàpàlàiàtà(à'àTà'à)à[à0à]à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àcàlàaàsàsàNàaàmàeà=à"àwà-àfàuàlàlà àbàgà-à[à#à0àBà0àFà1à9à]à/à8à0à àbàoàràdàeàrà àbàoàràdàeàrà-àwàhàiàtàeà/à1à0à àràoàuànàdàeàdà-àxàlà àpà-à3à àtàeàxàtà-àwàhàiàtàeà àoàuàtàlàiànàeà-ànàoànàeà àfàoàcàuàsà:àbàoàràdàeàrà-àaàmàbàeàrà-à5à0à0à àfàoànàtà-àbàoàlàdà àhà-à[à5à0àpàxà]à àaàpàpàeàaàràaànàcàeà-ànàoànàeà"à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à/à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àlàaàbàeàlà àhàtàmàlàFàoàrà=à"àcàhàeàcàkàOàuàtàDàaàtàeà"à àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-à[à1à0àpàxà]à àfàoànàtà-àbàlàaàcàkà àtàeàxàtà-àgàràaàyà-à4à0à0à àuàpàpàeàràcàaàsàeà àmàbà-à2à àbàlàoàcàkà àtàràaàcàkàiànàgà-àwàiàdàeàrà"à>à{àtà(à'àhàoàtàeàlà.àdàaàtàeàsà.àcàhàeàcàkàoàuàtà'à)à}à<à/àlàaàbàeàlà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àiànàpàuàtà
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àiàdà=à"àcàhàeàcàkàOàuàtàDàaàtàeà"à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àtàyàpàeà=à"àdàaàtàeà"à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àvàaàlàuàeà=à{àdàaàtàeàsà.àcàhàeàcàkàOàuàtà}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àoànàCàhàaànàgàeà=à{àhàaànàdàlàeàCàhàeàcàkàOàuàtàCàhàaànàgàeà}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àmàiànà=à{àdàaàtàeàsà.àcàhàeàcàkàIànà}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àcàlàaàsàsàNàaàmàeà=à{à`àwà-àfàuàlàlà àbàgà-à[à#à0àBà0àFà1à9à]à/à8à0à àbàoàràdàeàrà àràoàuànàdàeàdà-àxàlà àpà-à3à àtàeàxàtà-àwàhàiàtàeà àoàuàtàlàiànàeà-ànàoànàeà àfàoànàtà-àbàoàlàdà àtàràaànàsàiàtàiàoànà-àaàlàlà àhà-à[à5à0àpàxà]à àaàpàpàeàaàràaànàcàeà-ànàoànàeà à$à{àdàaàtàeàEàràràoàrà à?à à'àbàoàràdàeàrà-àràeàdà-à5à0à0à àràiànàgà-à1à àràiànàgà-àràeàdà-à5à0à0à/à5à0à'à à:à à'àbàoàràdàeàrà-àwàhàiàtàeà/à1à0à àfàoàcàuàsà:àbàoàràdàeàrà-àaàmàbàeàrà-à5à0à0à'à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à}à`à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à/à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{à/à*à àEàRàRàOàRà àMàEàSàSàAàGàEà à*à/à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{àdàaàtàeàEàràràoàrà à&à&à à(à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àbàgà-àràeàdà-à5à0à0à/à1à0à àbàoàràdàeàrà àbàoàràdàeàrà-àràeàdà-à5à0à0à/à5à0à àràoàuànàdàeàdà-àxàlà àpà-à3à àfàlàeàxà àiàtàeàmàsà-àcàeànàtàeàrà àgàaàpà-à2à àaànàiàmàaàtàeà-àsàhàaàkàeà"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àAàlàeàràtàCàiàràcàlàeà àcàlàaàsàsàNàaàmàeà=à"àwà-à4à àhà-à4à àtàeàxàtà-àràeàdà-à5à0à0à"à à/à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àsàpàaànà àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-àxàsà àfàoànàtà-àbàoàlàdà àtàeàxàtà-àràeàdà-à5à0à0à"à>à{àdàaàtàeàEàràràoàrà}à<à/àsàpàaànà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à)à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à<à/à>à
+à à à à à à à à à à à à à à à à à à à à à)à à:à à(à
+à à à à à à à à à à à à à à à à à à à à à à à à à/à*à àSàiàeàsàtàeà àMàoàdàeà àIànàpàuàtàsà à*à/à
+à à à à à à à à à à à à à à à à à à à à à à à à à<à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àfàlàeàxà àiàtàeàmàsà-àcàeànàtàeàrà àgàaàpà-à2à àmàbà-à2à"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àSàuànà àcàlàaàsàsàNàaàmàeà=à"àwà-à5à àhà-à5à àtàeàxàtà-àaàmàbàeàrà-à5à0à0à"à à/à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àhà3à àcàlàaàsàsàNàaàmàeà=à"àfàoànàtà-àbàoàlàdà àtàeàxàtà-àwàhàiàtàeà àuàpàpàeàràcàaàsàeà àtàeàxàtà-àxàsà àtàràaàcàkàiànàgà-àwàiàdàeàrà"à>à{àtà(à'àhàoàtàeàlà.àsàiàeàsàtàaà.àfàaàsàtà'à)à}à<à/àhà3à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àlàaàbàeàlà àhàtàmàlàFàoàrà=à"àsàiàeàsàtàeàDàaàtàeà"à àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-à[à1à0àpàxà]à àfàoànàtà-àbàlàaàcàkà àtàeàxàtà-àgàràaàyà-à4à0à0à àuàpàpàeàràcàaàsàeà àmàbà-à2à àbàlàoàcàkà àtàràaàcàkàiànàgà-àwàiàdàeàrà"à>à{àtà(à'àhàoàtàeàlà.àsàiàeàsàtàaà.àdàaàtàeà'à)à}à<à/àlàaàbàeàlà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àiànàpàuàtà
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àiàdà=à"àsàiàeàsàtàeàDàaàtàeà"à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àtàyàpàeà=à"àdàaàtàeà"à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àvàaàlàuàeà=à{àsàiàeàsàtàeàTàiàmàeà.àdàaàtàeà}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àoànàCàhàaànàgàeà=à{à(àeà)à à=à>à àsàeàtàSàiàeàsàtàeàTàiàmàeà(à{à à.à.à.àsàiàeàsàtàeàTàiàmàeà,à àdàaàtàeà:à àeà.àtàaàràgàeàtà.àvàaàlàuàeà à}à)à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àmàiànà=à{ànàeàwà àDàaàtàeà(à)à.àtàoàIàSàOàSàtàràiànàgà(à)à.àsàpàlàiàtà(à'àTà'à)à[à0à]à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àcàlàaàsàsàNàaàmàeà=à"àwà-àfàuàlàlà àbàgà-à[à#à0àBà0àFà1à9à]à/à8à0à àbàoàràdàeàrà àbàoàràdàeàrà-àwàhàiàtàeà/à1à0à àràoàuànàdàeàdà-àxàlà àpà-à3à àtàeàxàtà-àwàhàiàtàeà àoàuàtàlàiànàeà-ànàoànàeà àfàoàcàuàsà:àbàoàràdàeàrà-àaàmàbàeàrà-à5à0à0à àfàoànàtà-àbàoàlàdà àmàbà-à4à àhà-à[à5à0àpàxà]à àaàpàpàeàaàràaànàcàeà-ànàoànàeà"à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à/à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àlàaàbàeàlà àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-à[à1à0àpàxà]à àfàoànàtà-àbàlàaàcàkà àtàeàxàtà-àgàràaàyà-à4à0à0à àuàpàpàeàràcàaàsàeà àmàbà-à2à àbàlàoàcàkà àtàràaàcàkàiànàgà-àwàiàdàeàrà"à>à{àtà(à'àhàoàtàeàlà.àsàiàeàsàtàaà.àdàuàràaàtàiàoànà'à)à}à<à/àlàaàbàeàlà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àfàlàeàxà àgàaàpà-à4à àfàlàeàxà-àwàràaàpà àmàdà:àfàlàeàxà-ànàoàwàràaàpà"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{à[à2à,à à3à,à à4à,à à6à]à.àmàaàpà(àhà à=à>à à(à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àbàuàtàtàoànà
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àkàeàyà=à{àhà}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àoànàCàlàiàcàkà=à{à(à)à à=à>à àsàeàtàSàiàeàsàtàeàTàiàmàeà(à{à à.à.à.àsàiàeàsàtàeàTàiàmàeà,à àhàoàuàràsà:à àhà à}à)à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àcàlàaàsàsàNàaàmàeà=à{à`àfàlàeàxà-à1à àmàiànà-àwà-à[à6à0àpàxà]à àpàyà-à3à.à5à àràoàuànàdàeàdà-àxàlà àfàoànàtà-àbàoàlàdà àbàoàràdàeàrà àtàràaànàsàiàtàiàoànà-àaàlàlà à$à{àsàiàeàsàtàeàTàiàmàeà.àhàoàuàràsà à=à=à=à àhà à?à à'àbàgà-àaàmàbàeàrà-à5à0à0à àtàeàxàtà-àbàlàaàcàkà àbàoàràdàeàrà-àaàmàbàeàrà-à5à0à0à àsàhàaàdàoàwà-àlàgà'à à:à à'àbàgà-àtàràaànàsàpàaàràeànàtà àtàeàxàtà-àgàràaàyà-à4à0à0à àbàoàràdàeàrà-àwàhàiàtàeà/à1à0à àhàoàvàeàrà:àbàgà-àwàhàiàtàeà/à5à àhàoàvàeàrà:àtàeàxàtà-àwàhàiàtàeà'à}à`à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{àhà}àhà
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àbàuàtàtàoànà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à)à)à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àpà àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-à[à1à0àpàxà]à àtàeàxàtà-àgàràaàyà-à5à0à0à àmàtà-à3à àfàoànàtà-àmàeàdàiàuàmà"à>à{àtà(à'àhàoàtàeàlà.àsàiàeàsàtàaà.ànàoàtàeà'à)à}à<à/àpà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à<à/à>à
+à à à à à à à à à à à à à à à à à à à à à)à}à
+à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à<à/àdàiàvà>à
+à
+à à à à à à à à à à à à à{à/à*à àFàLàOàAàTàIàNàGà àPàIàLàLà àFàOàOàTàEàRà à(àAàmàbàeàrà)à à*à/à}à
+à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àfàiàxàeàdà àbàoàtàtàoàmà-à[à1à2à0àpàxà]à àlàeàfàtà-à0à àràiàgàhàtà-à0à àzà-à4à0à àaànàiàmàaàtàeà-àsàlàiàdàeà-àuàpà àpàxà-à4à àmàdà:àpàxà-à0à"à>à
+à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àmàaàxà-àwà-àxàlà àmàxà-àaàuàtàoà"à>à
+à à à à à à à à à à à à à à à à à à à à à<àbàuàtàtàoànà
+à à à à à à à à à à à à à à à à à à à à à à à à àoànàCàlàiàcàkà=à{àhàaànàdàlàeàBàoàoàkàiànàgà}à
+à à à à à à à à à à à à à à à à à à à à à à à à àdàiàsàaàbàlàeàdà=à{à!àsàeàlàeàcàtàeàdàRàoàoàmà à|à|à àlàoàaàdàiànàgà à|à|à à!à!àdàaàtàeàEàràràoàrà}à
+à à à à à à à à à à à à à à à à à à à à à à à à àcàlàaàsàsàNàaàmàeà=à"àwà-àfàuàlàlà àbàgà-à[à#à1à1à1à8à2à7à]à/à8à0à àbàaàcàkàdàràoàpà-àbàlàuàrà-àmàdà àfàlàeàxà-àràoàwà-àràeàvàeàràsàeà àràtàlà:àfàlàeàxà-àràoàwà àbàoàràdàeàrà àbàoàràdàeàrà-àwàhàiàtàeà/à1à0à àpà-à2à.à5à àpàlà-à4à àràoàuànàdàeàdà-à[à2à.à5àràeàmà]à àsàhàaàdàoàwà-à[à0à_à2à0àpàxà_à5à0àpàxà_àràgàbàaà(à0à,à0à,à0à,à0à.à5à)à]à àfàlàeàxà àiàtàeàmàsà-àcàeànàtàeàrà àjàuàsàtàiàfàyà-àbàeàtàwàeàeànà àgàràoàuàpà àaàcàtàiàvàeà:àsàcàaàlàeà-à[à0à.à9à8à]à àtàràaànàsàiàtàiàoànà-àaàlàlà àdàiàsàaàbàlàeàdà:àoàpàaàcàiàtàyà-à5à0à àdàiàsàaàbàlàeàdà:àsàcàaàlàeà-à1à0à0à àdàiàsàaàbàlàeàdà:àcàuàràsàoàrà-ànàoàtà-àaàlàlàoàwàeàdà àhàoàvàeàrà:àbàoàràdàeàrà-àaàmàbàeàrà-à5à0à0à/à3à0à"à
+à à à à à à à à à à à à à à à à à à à à à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à{à/à*à àPàràiàcàeà àRàiàgàhàtà à*à/à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àfàlàeàxà àiàtàeàmàsà-àcàeànàtàeàrà àgàaàpà-à2à àpàlà-à2à"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àsàpàaànà àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-àwàhàiàtàeà àfàoànàtà-àbàlàaàcàkà àtàeàxàtà-àlàgà"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{àdàaàtàeàEàràràoàrà à?à à'à-à-à'à à:à à(àpàaàyàmàeànàtàMàeàtàhàoàdà à=à=à=à à'àcàaàràdà'à à?à àMàaàtàhà.àràoàuànàdà(àtàoàtàaàlàPàràiàcàeà à*à à0à.à9à0à)à à:à àtàoàtàaàlàPàràiàcàeà)à}à{à'à à'à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àsàpàaànà àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-àxàsà àfàoànàtà-àbàoàlàdà àtàeàxàtà-àgàràaàyà-à4à0à0à"à>àDàHà<à/àsàpàaànà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{àpàaàyàmàeànàtàMàeàtàhàoàdà à=à=à=à à'àcàaàràdà'à à&à&à àtàoàtàaàlàPàràiàcàeà à>à à0à à&à&à à!àdàaàtàeàEàràràoàrà à&à&à à(à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àsàpàaànà àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-à[à1à0àpàxà]à àtàeàxàtà-àràeàdà-à5à0à0à àfàoànàtà-àbàoàlàdà àmàlà-à1à.à5à àbàgà-àràeàdà-à5à0à0à/à1à0à àpàxà-à1à.à5à àpàyà-à0à.à5à àràoàuànàdàeàdà àaànàiàmàaàtàeà-àpàuàlàsàeà"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à-à1à0à%à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àsàpàaànà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à)à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àsàpàaànà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àwà-à8à àhà-à8à àràoàuànàdàeàdà-àfàuàlàlà àbàgà-àwàhàiàtàeà/à5à àbàoàràdàeàrà àbàoàràdàeàrà-àwàhàiàtàeà/à1à0à àfàlàeàxà àiàtàeàmàsà-àcàeànàtàeàrà àjàuàsàtàiàfàyà-àcàeànàtàeàrà àtàeàxàtà-àwàhàiàtàeà àgàràoàuàpà-àhàoàvàeàrà:àbàgà-àaàmàbàeàrà-à5à0à0à àgàràoàuàpà-àhàoàvàeàrà:àtàeàxàtà-àbàlàaàcàkà àtàràaànàsàiàtàiàoànà-àcàoàlàoàràsà àràoàtàaàtàeà-à1à8à0à àràtàlà:àràoàtàaàtàeà-à0à"à>à←à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à
+à à à à à à à à à à à à à à à à à à à à à à à à à{à/à*à àBàaàdàgàeà à/à àQàuàaànàtàiàtàyà àLàeàfàtà à*à/à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àfàlàeàxà àfàlàeàxà-àràoàwà-àràeàvàeàràsàeà àràtàlà:àfàlàeàxà-àràoàwà àiàtàeàmàsà-àcàeànàtàeàrà àgàaàpà-à3à"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-àràiàgàhàtà àràtàlà:àtàeàxàtà-àlàeàfàtà"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-àwàhàiàtàeà àfàoànàtà-àeàxàtàràaàbàoàlàdà àtàeàxàtà-àxàsà àuàpàpàeàràcàaàsàeà àtàràaàcàkàiànàgà-àwàiàdàeàrà àlàeàaàdàiànàgà-àtàiàgàhàtà"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{àbàoàoàkàiànàgàTàyàpàeà à=à=à=à à'ànàiàgàhàtà'à à?à àtà(à'àhàoàtàeàlà.àbàoàoàkà.ànàiàgàhàtà'à)à à:à àtà(à'àhàoàtàeàlà.àbàoàoàkà.àsàiàeàsàtàaà'à)à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-àgàràaàyà-à4à0à0à àtàeàxàtà-à[à1à0àpàxà]à àfàoànàtà-àbàoàlàdà àuàpàpàeàràcàaàsàeà àtàràaàcàkàiànàgà-àwàiàdàeàrà"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{àbàoàoàkàiànàgàTàyàpàeà à=à=à=à à'ànàiàgàhàtà'à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à?à à(àdàaàtàeàEàràràoàrà à?à àtà(à'àhàoàtàeàlà.àbàoàoàkà.àiànàvàaàlàiàdà'à)à à:à à`à$à{ànàiàgàhàtàsà}à à$à{àtà(à'àhàoàtàeàlà.àbàoàoàkà.ànàiàgàhàtàsà_àcàoàuànàtà'à)à}à`à)à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à:à à`à$à{àsàiàeàsàtàeàTàiàmàeà.àhàoàuàràsà}à à$à{àtà(à'àhàoàtàeàlà.àbàoàoàkà.àhàoàuàràsà_àcàoàuànàtà'à)à}à`à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à{à`àwà-à1à0à àhà-à1à0à àràoàuànàdàeàdà-àfàuàlàlà àfàlàeàxà àiàtàeàmàsà-àcàeànàtàeàrà àjàuàsàtàiàfàyà-àcàeànàtàeàrà àtàeàxàtà-àbàlàaàcàkà àfàoànàtà-àbàlàaàcàkà àsàhàaàdàoàwà-àlàgà à$à{àdàaàtàeàEàràràoàrà à?à à'àbàgà-àràeàdà-à5à0à0à'à à:à à'àbàgà-àaàmàbàeàrà-à5à0à0à àsàhàaàdàoàwà-àaàmàbàeàrà-à5à0à0à/à2à5à'à}à`à}à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{àbàoàoàkàiànàgàTàyàpàeà à=à=à=à à'ànàiàgàhàtà'à à?à à(àdàaàtàeàEàràràoàrà à?à à'à!à'à à:à ànàiàgàhàtàsà)à à:à à'à1à'à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à<à/àbàuàtàtàoànà>à
+à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à<à/àdàiàvà>à
+à
+à
+à
+à à à à à à à à à à à à à{à/à*à àSàuàcàcàeàsàsà àMàoàdàaàlà à*à/à}à
+à à à à à à à à à à à à à{àsàhàoàwàSàuàcàcàeàsàsà à&à&à à(à
+à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àfàiàxàeàdà àiànàsàeàtà-à0à àzà-à[à6à0à]à àfàlàeàxà àiàtàeàmàsà-àcàeànàtàeàrà àjàuàsàtàiàfàyà-àcàeànàtàeàrà àpà-à4à àbàgà-àbàlàaàcàkà/à9à0à àbàaàcàkàdàràoàpà-àbàlàuàrà-à2àxàlà àaànàiàmàaàtàeà-àiànà àfàaàdàeà-àiànà"à>à
+à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àbàgà-à[à#à1à1à1à8à2à7à]à/à8à0à àbàaàcàkàdàràoàpà-àbàlàuàrà-àmàdà àbàoàràdàeàrà àbàoàràdàeàrà-àwàhàiàtàeà/à1à0à àràoàuànàdàeàdà-à[à2à.à5àràeàmà]à àpà-à8à àmàaàxà-àwà-àsàmà àwà-àfàuàlàlà àtàeàxàtà-àcàeànàtàeàrà àsàhàaàdàoàwà-à2àxàlà àràeàlàaàtàiàvàeà"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àwà-à2à0à àhà-à2à0à àbàgà-àaàmàbàeàrà-à5à0à0à/à1à0à àràoàuànàdàeàdà-àfàuàlàlà àfàlàeàxà àiàtàeàmàsà-àcàeànàtàeàrà àjàuàsàtàiàfàyà-àcàeànàtàeàrà àmàxà-àaàuàtàoà àmàbà-à6à àsàhàaàdàoàwà-àlàgà àsàhàaàdàoàwà-àoàràaànàgàeà-à5à0à0à/à5à"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àBàeàdàDàoàuàbàlàeà àcàlàaàsàsàNàaàmàeà=à"àwà-à1à0à àhà-à1à0à àtàeàxàtà-àaàmàbàeàrà-à5à0à0à"à à/à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à<àhà2à àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-à2àxàlà àfàoànàtà-àbàlàaàcàkà àtàeàxàtà-àwàhàiàtàeà àmàbà-à2à àuàpàpàeàràcàaàsàeà àtàràaàcàkàiànàgà-àtàiàgàhàtà"à>à{àtà(à'àhàoàtàeàlà.àsàuàcàcàeàsàsà.àtàiàtàlàeà'à)à}à<à/àhà2à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à<àpà àcàlàaàsàsàNàaàmàeà=à"àtàeàxàtà-àsàmà àtàeàxàtà-àgàràaàyà-à4à0à0à àmàbà-à6à àfàoànàtà-àmàeàdàiàuàmà àlàeàaàdàiànàgà-àràeàlàaàxàeàdà"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{àtà(à'àhàoàtàeàlà.àsàuàcàcàeàsàsà.àdàeàsàcà'à)à.àràeàpàlàaàcàeà(à'à{àiàdà}à'à,à àsàhàoàwàSàuàcàcàeàsàsà)à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à<à/àpà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à<àdàiàvà àcàlàaàsàsàNàaàmàeà=à"àsàpàaàcàeà-àyà-à3à"à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àbàuàtàtàoànà
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àoànàCàlàiàcàkà=à{à(à)à à=à>à àràoàuàtàeàrà.àpàuàsàhà(à'à/àpàràoàfàiàlàeà'à)à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àcàlàaàsàsàNàaàmàeà=à"àwà-àfàuàlàlà àpàyà-à4à àbàgà-àgàràaàdàiàeànàtà-àtàoà-àrà àfàràoàmà-àaàmàbàeàrà-à5à0à0à àtàoà-àoàràaànàgàeà-à6à0à0à àhàoàvàeàrà:àfàràoàmà-àaàmàbàeàrà-à6à0à0à àhàoàvàeàrà:àtàoà-àoàràaànàgàeà-à7à0à0à àtàeàxàtà-àwàhàiàtàeà àfàoànàtà-àbàlàaàcàkà àtàeàxàtà-àsàmà àuàpàpàeàràcàaàsàeà àtàràaàcàkàiànàgà-àwàiàdàeàrà àràoàuànàdàeàdà-à2àxàlà àsàhàaàdàoàwà-àlàgà àaàcàtàiàvàeà:àsàcàaàlàeà-à9à5à àtàràaànàsàiàtàiàoànà-àaàlàlà"à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{àtà(à'àhàoàtàeàlà.àbàtànà.àvàiàeàwà'à)à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àbàuàtàtàoànà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<àbàuàtàtàoànà
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àoànàCàlàiàcàkà=à{à(à)à à=à>à àsàeàtàSàhàoàwàSàuàcàcàeàsàsà(ànàuàlàlà)à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à àcàlàaàsàsàNàaàmàeà=à"àwà-àfàuàlàlà àpàyà-à4à àbàgà-àwàhàiàtàeà/à5à àbàoàràdàeàrà àbàoàràdàeàrà-àwàhàiàtàeà/à1à0à àràoàuànàdàeàdà-à2àxàlà àfàoànàtà-àbàlàaàcàkà àtàeàxàtà-àsàmà àuàpàpàeàràcàaàsàeà àtàràaàcàkàiànàgà-àwàiàdàeàrà àtàeàxàtà-àgàràaàyà-à4à0à0à àhàoàvàeàrà:àbàgà-àwàhàiàtàeà/à1à0à"à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à>à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à à{àtà(à'àhàoàtàeàlà.àbàtànà.àcàlàoàsàeà'à)à}à
+à à à à à à à à à à à à à à à à à à à à à à à à à à à à à<à/àbàuàtàtàoànà>à
+à à à à à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à à à à à<à/àdàiàvà>à
+à à à à à à à à à à à à à)à}à
+à
+à à à à à à à à à à à à à{à/à*à àPàaàyàmàeànàtà àMàoàdàaàlà à*à/à}à
+à à à à à à à à à à à à à{àpàeànàdàiànàgàPàaàyàmàeànàtà à&à&à à(à
+à à à à à à à à à à à à à à à à à<àPàaàyàmàeànàtàMàoàdàaàlà
+à à à à à à à à à à à à à à à à à à à à àbàoàoàkàiànàgàIàdà=à{àpàeànàdàiànàgàPàaàyàmàeànàtà.àiàdà}à
+à à à à à à à à à à à à à à à à à à à à àaàmàoàuànàtà=à{àpàeànàdàiànàgàPàaàyàmàeànàtà.àaàmàoàuànàtà}à
+à à à à à à à à à à à à à à à à à à à à àsàeàràvàiàcàeàTàyàpàeà=à"àhàoàtàeàlà"à
+à à à à à à à à à à à à à à à à à à à à àtàaàbàlàeàNàaàmàeà=à"àhàoàtàeàlà_àràeàsàeàràvàaàtàiàoànàsà"à
+à à à à à à à à à à à à à à à à à à à à àpàaàyàmàeànàtàTàyàpàeà=à{àpàeànàdàiànàgàPàaàyàmàeànàtà.àpàaàyàmàeànàtàTàyàpàeà}à
+à à à à à à à à à à à à à à à à à à à à àoànàSàuàcàcàeàsàsà=à{à(à)à à=à>à à{à
+à à à à à à à à à à à à à à à à à à à à à à à à àsàeàtàPàeànàdàiànàgàPàaàyàmàeànàtà(ànàuàlàlà)à;à
+à à à à à à à à à à à à à à à à à à à à à à à à àsàeàtàSàhàoàwàSàuàcàcàeàsàsà(àpàeànàdàiànàgàPàaàyàmàeànàtà.ànàuàmà)à;à
+à à à à à à à à à à à à à à à à à à à à à}à}à
+à à à à à à à à à à à à à à à à à à à à àoànàCàlàoàsàeà=à{à(à)à à=à>à àsàeàtàPàeànàdàiànàgàPàaàyàmàeànàtà(ànàuàlàlà)à}à
+à à à à à à à à à à à à à à à à à/à>à
+à à à à à à à à à à à à à)à}à
+à à à à à à à à à<à/àdàiàvà>à
+à à à à à)à;à
+à}à
+à
