@@ -174,24 +174,26 @@ export default function PoolPage() {
         }
         setLoading(false);
     }, [selectedOption, activeOption, category, date, adults, children, totalPrice, paymentMethod, router, t]);
-
     return (
-        <div className="min-h-screen pt-16 md:pt-20 pb-40 bg-[#0F172A]">
+        <div className="min-h-screen pt-16 md:pt-20 pb-52 bg-[#0B0F19]">
 
             {/* Header */}
-            <div className="sticky top-[64px] md:top-[80px] z-20 bg-[#0F172A]/95 backdrop-blur-xl border-b border-white/10 p-4 pt-6 md:px-8">
+            <div className="sticky top-[64px] md:top-[80px] z-20 bg-[#0B0F19]/90 backdrop-blur-xl border-b border-white/5 p-4 pt-6 md:px-8">
                 <div className="max-w-5xl mx-auto flex items-center gap-4">
                     <button onClick={() => router.back()} className="p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all font-bold rtl:rotate-180" aria-label="Retour">
                         <ChevronLeft className="w-5 h-5 text-white" />
                     </button>
-                    <h1 className="text-xl font-bold text-white">{t('pool.title')}</h1>
+                    <h1 className="text-xl font-black text-white uppercase tracking-wider">{t('pool.title')}</h1>
                 </div>
             </div>
 
-            <div className="p-3 md:p-4 space-y-4 max-w-5xl mx-auto">
+            <div className="p-3 md:p-6 space-y-8 max-w-5xl mx-auto relative z-10">
+                {/* Cyan glowing effect for pool vibe */}
+                <div className="absolute top-[15%] right-[20%] w-[350px] h-[350px] bg-cyan-600/5 rounded-full blur-[130px] pointer-events-none -z-10" />
+                <div className="absolute bottom-[25%] left-[10%] w-[300px] h-[300px] bg-emerald-600/5 rounded-full blur-[120px] pointer-events-none -z-10" />
 
                 {/* POOL HERO CAROUSEL */}
-                <div className="relative w-full h-[200px] sm:h-[240px] rounded-[2rem] overflow-hidden border border-white/10 shadow-2xl group">
+                <div className="relative w-full h-[200px] sm:h-[260px] rounded-[2.5rem] overflow-hidden border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] group">
                     <div 
                         id="pool-carousel-container"
                         onScroll={(e) => {
@@ -200,10 +202,10 @@ export default function PoolPage() {
                             const dots = document.querySelectorAll('.pool-dot');
                             dots.forEach((dot, idx) => {
                                 if (idx === index) {
-                                    dot.classList.add('bg-red-500', 'w-6');
+                                    dot.classList.add('bg-cyan-500', 'w-6');
                                     dot.classList.remove('bg-white/30', 'w-2');
                                 } else {
-                                    dot.classList.remove('bg-red-500', 'w-6');
+                                    dot.classList.remove('bg-cyan-500', 'w-6');
                                     dot.classList.add('bg-white/30', 'w-2');
                                 }
                             });
@@ -232,7 +234,7 @@ export default function PoolPage() {
                         ].map((slide, idx) => (
                             <div 
                                 key={idx}
-                                className="relative w-full h-full shrink-0 snap-center flex items-center justify-between px-5 md:px-8 select-none"
+                                className="relative w-full h-full shrink-0 snap-center flex items-center justify-between px-6 md:px-12 select-none"
                                 style={{ minWidth: '100%' }}
                             >
                                 {/* Background Image */}
@@ -241,23 +243,23 @@ export default function PoolPage() {
                                     alt={slide.title}
                                     fill
                                     priority={idx === 0}
-                                    className="object-cover group-hover:scale-[1.01] transition-transform duration-700 pointer-events-none"
+                                    className="object-cover group-hover:scale-105 transition-transform duration-[2000ms] ease-out pointer-events-none"
                                 />
                                 {/* Full dark overlay */}
-                                <div className="absolute inset-0 bg-black/55" />
+                                <div className="absolute inset-0 bg-black/60" />
                                 {/* Glow FX */}
-                                <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/10 rounded-full blur-[100px] pointer-events-none" />
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-cyan-500/10 rounded-full blur-[100px] pointer-events-none" />
 
                                 {/* Content */}
                                 <div className="relative z-10 w-full flex items-center justify-between gap-4">
-                                    <div className="flex flex-col gap-1 flex-1 min-w-0 text-left">
-                                        <span className="bg-gradient-to-r from-red-500 to-orange-600 text-white text-[9px] font-black px-3 py-1 rounded-full uppercase tracking-wider inline-flex items-center gap-1 w-fit shadow-lg">
+                                    <div className="flex flex-col gap-2 flex-1 min-w-0 text-left">
+                                        <span className="bg-gradient-to-r from-cyan-500 to-emerald-600 text-white text-[9px] font-black px-3.5 py-1 rounded-full uppercase tracking-wider inline-flex items-center gap-1 w-fit shadow-lg shadow-cyan-500/20">
                                             💦 {slide.badge}
                                         </span>
-                                        <h2 className="text-white text-2xl sm:text-3xl md:text-4xl font-black uppercase tracking-tight leading-tight drop-shadow-md">
+                                        <h2 className="text-white text-2xl sm:text-3xl md:text-5xl font-black uppercase tracking-tight leading-tight drop-shadow-lg">
                                             {slide.title}
                                         </h2>
-                                        <p className="text-white/75 text-[10px] sm:text-xs font-medium line-clamp-2 drop-shadow leading-relaxed max-w-[280px]">
+                                        <p className="text-white/70 text-[10px] sm:text-xs font-semibold line-clamp-2 drop-shadow leading-relaxed max-w-[320px]">
                                             {slide.subtitle}
                                         </p>
                                     </div>
@@ -268,92 +270,92 @@ export default function PoolPage() {
 
                     {/* Pagination Dots Indicator */}
                     <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
-                        <span className="pool-dot w-6 h-2 rounded-full bg-red-500 transition-all duration-300" />
+                        <span className="pool-dot w-6 h-2 rounded-full bg-cyan-500 transition-all duration-300" />
                         <span className="pool-dot w-2 h-2 rounded-full bg-white/30 transition-all duration-300" />
                         <span className="pool-dot w-2 h-2 rounded-full bg-white/30 transition-all duration-300" />
                     </div>
                 </div>
 
                 {/* 1. Ambiance / Category Selector */}
-                <div>
-                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">{t('pool.ambiance.title')}</h3>
+                <div className="space-y-4">
+                    <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('pool.ambiance.title')}</h3>
                     <div className="grid grid-cols-3 gap-4 md:gap-6">
                         {/* Famille */}
                         <button
                             onClick={() => setCategory('family')}
-                            className={`p-2 py-2 md:py-3 rounded-xl border flex flex-col items-center gap-2 transition-all relative ${category === 'family'
-                                ? 'bg-red-600 border-red-500 shadow-lg shadow-red-500/20'
-                                : 'bg-[#1E293B] border-white/5 hover:bg-[#1E293B]/80'
+                            className={`p-3 py-4 rounded-[1.8rem] border flex flex-col items-center gap-3 transition-all duration-300 relative ${category === 'family'
+                                ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400 shadow-xl shadow-cyan-500/10'
+                                : 'bg-[#111827]/30 border-white/5 text-gray-400 hover:bg-white/5 hover:text-white'
                                 }`}
                         >
-                            <span className="text-lg md:text-xl mb-1">👨‍👩‍👧‍👦</span>
-                            <span className={`text-[10px] md:text-sm font-bold leading-tight text-center ${category === 'family' ? 'text-white' : 'text-gray-300'}`}>{t('pool.ambiance.family')}</span>
-                            <div className="bg-red-600 text-white text-[9px] md:text-xs font-black px-2 md:px-3 py-1 md:py-1.5 rounded-full shadow-md">
+                            <span className="text-2xl md:text-3xl mb-1">👨‍👩‍👧‍👦</span>
+                            <span className="text-xs md:text-sm font-black uppercase tracking-wider text-center">{t('pool.ambiance.family')}</span>
+                            <div className="bg-cyan-600 text-white text-[9px] md:text-xs font-black px-2.5 py-1 rounded-full shadow-md">
                                 {t('pool.ambiance.family_day')}
                             </div>
-                            {category === 'family' && <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-white absolute top-2 right-2 rtl:right-auto rtl:left-2" />}
+                            {category === 'family' && <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-cyan-400 absolute top-3 right-3" />}
                         </button>
 
                         {/* Mixte */}
                         <button
                             onClick={() => setCategory('mixed')}
-                            className={`p-2 py-2 md:py-3 rounded-xl border flex flex-col items-center gap-2 transition-all relative ${category === 'mixed'
-                                ? 'bg-red-600 border-red-500 shadow-lg shadow-red-500/20'
-                                : 'bg-[#1E293B] border-white/5 hover:bg-[#1E293B]/80'
+                            className={`p-3 py-4 rounded-[1.8rem] border flex flex-col items-center gap-3 transition-all duration-300 relative ${category === 'mixed'
+                                ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400 shadow-xl shadow-cyan-500/10'
+                                : 'bg-[#111827]/30 border-white/5 text-gray-400 hover:bg-white/5 hover:text-white'
                                 }`}
                         >
-                            <span className="text-lg md:text-xl mb-1">👫</span>
-                            <span className={`text-[10px] md:text-sm font-bold leading-tight text-center ${category === 'mixed' ? 'text-white' : 'text-gray-300'}`}>{t('pool.ambiance.mixed')}</span>
-                            <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white text-[9px] md:text-xs font-black px-2 md:px-3 py-1 md:py-1.5 rounded-full shadow-md">
+                            <span className="text-2xl md:text-3xl mb-1">👫</span>
+                            <span className="text-xs md:text-sm font-black uppercase tracking-wider text-center">{t('pool.ambiance.mixed')}</span>
+                            <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white text-[9px] md:text-xs font-black px-2.5 py-1 rounded-full shadow-md">
                                 {t('pool.ambiance.mixed_day')}
                             </div>
-                            {category === 'mixed' && <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-white absolute top-2 right-2 rtl:right-auto rtl:left-2" />}
+                            {category === 'mixed' && <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-cyan-400 absolute top-3 right-3" />}
                         </button>
 
                         {/* Femmes */}
                         <button
                             onClick={() => setCategory('women')}
-                            className={`p-2 py-2 md:py-3 rounded-xl border flex flex-col items-center gap-2 transition-all relative ${category === 'women'
-                                ? 'bg-red-600 border-red-500 shadow-lg shadow-red-500/20'
-                                : 'bg-[#1E293B] border-white/5 hover:bg-[#1E293B]/80'
+                            className={`p-3 py-4 rounded-[1.8rem] border flex flex-col items-center gap-3 transition-all duration-300 relative ${category === 'women'
+                                ? 'bg-cyan-500/10 border-cyan-500 text-cyan-400 shadow-xl shadow-cyan-500/10'
+                                : 'bg-[#111827]/30 border-white/5 text-gray-400 hover:bg-white/5 hover:text-white'
                                 }`}
                         >
-                            <span className="text-lg md:text-xl mb-1">💃</span>
-                            <span className={`text-[10px] md:text-sm font-bold leading-tight text-center ${category === 'women' ? 'text-white' : 'text-gray-300'}`}>{t('pool.ambiance.women')}</span>
-                            <div className="bg-purple-600 text-white text-[9px] md:text-xs font-black px-2 md:px-3 py-1 md:py-1.5 rounded-full shadow-md">
+                            <span className="text-2xl md:text-3xl mb-1">💃</span>
+                            <span className="text-xs md:text-sm font-black uppercase tracking-wider text-center">{t('pool.ambiance.women')}</span>
+                            <div className="bg-purple-600 text-white text-[9px] md:text-xs font-black px-2.5 py-1 rounded-full shadow-md">
                                 {t('pool.ambiance.women_day')}
                             </div>
-                            {category === 'women' && <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-white absolute top-2 right-2 rtl:right-auto rtl:left-2" />}
+                            {category === 'women' && <CheckCircle2 className="w-4 h-4 md:w-5 md:h-5 text-cyan-400 absolute top-3 right-3" />}
                         </button>
                     </div>
                 </div>
 
                 {/* 2. Time Slot Options (Detailed Pricing) */}
-                <div>
-                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider mb-3">{t('pool.formula.title')}</h3>
+                <div className="space-y-4">
+                    <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('pool.formula.title')}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {POOL_OPTIONS.map(opt => (
                             <button
                                 key={opt.id}
                                 onClick={() => setSelectedOption(opt.id)}
-                                className={`w-full p-3 md:p-4 rounded-xl border flex flex-col items-start justify-between gap-4 transition-all text-left rtl:text-right group min-h-[140px] ${selectedOption === opt.id
-                                    ? 'bg-red-600/20 border-red-500 shadow-[0_0_20px_rgba(6,182,212,0.2)]'
-                                    : 'bg-[#1E293B] border-white/5 hover:bg-[#1E293B]/80'
+                                className={`w-full p-5 rounded-[2rem] border flex flex-col items-start justify-between gap-4 transition-all duration-300 text-left rtl:text-right group min-h-[150px] ${selectedOption === opt.id
+                                    ? 'bg-cyan-500/10 border-cyan-500 shadow-xl shadow-cyan-500/10'
+                                    : 'bg-[#111827]/30 border-white/5 hover:border-white/20'
                                     }`}
                             >
                                 <div className="w-full">
-                                    <div className={`font-bold flex items-center justify-between gap-2 mb-2 ${selectedOption === opt.id ? 'text-red-400' : 'text-white'}`}>
+                                    <div className={`font-black flex items-center justify-between gap-2 mb-2 ${selectedOption === opt.id ? 'text-cyan-400' : 'text-white'}`}>
                                         <div className="flex items-center gap-2">
-                                            {opt.id === 'morning' ? <Sun className="w-5 h-5 text-yellow-500" /> : opt.id === 'afternoon' ? <Sun className="w-5 h-5 text-orange-500" /> : <Ticket className="w-5 h-5 text-purple-500" />}
-                                            <span className="text-lg">{t(opt.labelKey)}</span>
+                                            {opt.id === 'morning' ? <Sun className="w-5 h-5 text-yellow-500" /> : opt.id === 'afternoon' ? <Sun className="w-5 h-5 text-orange-500 animate-spin-slow" /> : <Ticket className="w-5 h-5 text-cyan-400" />}
+                                            <span className="text-lg uppercase tracking-tight">{t(opt.labelKey)}</span>
                                         </div>
-                                        {selectedOption === opt.id && <CheckCircle2 className="w-5 h-5 text-red-500" />}
+                                        {selectedOption === opt.id && <CheckCircle2 className="w-5 h-5 text-cyan-400 animate-scale-in" />}
                                     </div>
-                                    <div className="text-xs text-gray-400 mb-4">{opt.hours}</div>
+                                    <div className="text-xs text-gray-400 font-semibold mb-4">{opt.hours}</div>
 
                                     <div className="flex gap-2">
-                                        <span className="bg-white/5 border border-white/5 text-gray-300 text-xs px-2 py-1 rounded">{t('pool.price.adult')} {opt.priceAdult} DH</span>
-                                        <span className="bg-white/5 border border-white/5 text-gray-300 text-xs px-2 py-1 rounded">{t('pool.price.child')} {opt.priceChild} DH</span>
+                                        <span className="bg-white/5 border border-white/5 text-gray-300 text-[10px] px-2.5 py-1 rounded-lg font-bold">{t('pool.price.adult')} {opt.priceAdult} DH</span>
+                                        <span className="bg-white/5 border border-white/5 text-gray-300 text-[10px] px-2.5 py-1 rounded-lg font-bold">{t('pool.price.child')} {opt.priceChild} DH</span>
                                     </div>
                                 </div>
                             </button>
@@ -362,92 +364,92 @@ export default function PoolPage() {
                 </div>
 
                 {/* Mode de Paiement Selector */}
-                <div className="bg-[#1E293B] p-6 rounded-xl border border-white/10 space-y-4">
-                    <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">
+                <div className="bg-[#111827]/40 backdrop-blur-md p-6 rounded-[2rem] border border-white/5 space-y-4 shadow-2xl">
+                    <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
                         {language === 'ar' ? 'طريقة الدفع' : 'Mode de Paiement'}
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Cash Option */}
                         <button
                             onClick={() => setPaymentMethod('cash')}
-                            className={`relative p-4 rounded-xl border flex flex-col items-center gap-2 transition-all text-center ${paymentMethod === 'cash'
-                                ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400'
-                                : 'bg-[#0F172A] border-white/10 text-gray-500 hover:bg-white/5'
+                            className={`relative p-5 rounded-[1.5rem] border flex flex-col items-center gap-2 transition-all duration-300 text-center ${paymentMethod === 'cash'
+                                ? 'bg-emerald-500/10 border-emerald-500 text-emerald-400 shadow-lg shadow-emerald-500/10'
+                                : 'bg-[#0B0F19]/60 border-white/5 text-gray-400 hover:bg-white/5 hover:text-white'
                                 }`}
                         >
-                            <span className="text-xl">💵</span>
-                            <span className="text-xs font-bold">
+                            <span className="text-2xl">💵</span>
+                            <span className="text-xs font-black uppercase tracking-wider">
                                 {language === 'ar' ? 'نقداً (في المحطة)' : 'Sur Place (Cash)'}
                             </span>
-                            <span className="text-[10px] text-gray-400">
+                            <span className="text-[10px] text-gray-500 font-medium">
                                 {language === 'ar' ? 'السعر العادي' : 'Prix normal'}
                             </span>
                             {paymentMethod === 'cash' && (
-                                <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                                <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.8)]" />
                             )}
                         </button>
 
                         {/* Card/PayPal Option */}
                         <button
                             onClick={() => setPaymentMethod('card')}
-                            className={`relative p-4 rounded-xl border flex flex-col items-center gap-2 transition-all text-center ${paymentMethod === 'card'
-                                ? 'bg-red-600/10 border-red-500 text-red-400'
-                                : 'bg-[#0F172A] border-white/10 text-gray-500 hover:bg-white/5'
+                            className={`relative p-5 rounded-[1.5rem] border flex flex-col items-center gap-2 transition-all duration-300 text-center ${paymentMethod === 'card'
+                                ? 'bg-red-500/10 border-red-500 text-red-400 shadow-lg shadow-red-500/10'
+                                : 'bg-[#0B0F19]/60 border-white/5 text-gray-400 hover:bg-white/5 hover:text-white'
                                 }`}
                         >
-                            <span className="absolute -top-2 -right-2 bg-red-600 text-white font-black text-[9px] px-2 py-0.5 rounded-full shadow animate-pulse z-10">
+                            <span className="absolute -top-2.5 -right-2.5 bg-red-600 text-white font-black text-[9px] px-2.5 py-1 rounded-full shadow-lg shadow-red-600/30 animate-pulse z-10">
                                 -10%
                             </span>
-                            <span className="text-xl">💳</span>
-                            <span className="text-xs font-bold">
+                            <span className="text-2xl">💳</span>
+                            <span className="text-xs font-black uppercase tracking-wider">
                                 {language === 'ar' ? 'دفع إلكتروني' : 'En ligne (-10%)'}
                             </span>
-                            <span className="text-[10px] text-gray-400">
+                            <span className="text-[10px] text-gray-500 font-medium">
                                 {language === 'ar' ? 'تخفيض فوري 10%' : '10% de remise incluse'}
                             </span>
                             {paymentMethod === 'card' && (
-                                <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-red-500 shadow-[0_0_10px_rgba(220,38,38,0.5)]" />
+                                <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-red-500 shadow-[0_0_10px_rgba(220,38,38,0.8)]" />
                             )}
                         </button>
                     </div>
                 </div>
 
                 {/* 3. Date & Guests Counters */}
-                <div className="bg-[#1E293B] p-6 rounded-xl border border-white/10 space-y-6">
+                <div className="bg-[#111827]/40 backdrop-blur-md p-6 rounded-[2rem] border border-white/5 space-y-6 shadow-2xl">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         <div>
-                            <label className="text-xs font-bold text-gray-400 mb-2 block uppercase">{t('pool.date_label')}</label>
+                            <label className="text-[10px] font-black text-gray-400 mb-2 block uppercase tracking-wider">{t('pool.date_label')}</label>
                             <input
                                 type="date"
                                 value={date}
                                 onChange={(e) => setDate(e.target.value)}
                                 min={new Date().toISOString().split('T')[0]}
                                 aria-label="Date de réservation"
-                                className="w-full bg-[#0F172A] border border-white/10 rounded-lg p-3 text-white outline-none focus:border-red-500 transition-colors font-bold text-sm h-[50px] appearance-none"
+                                className="w-full bg-[#0B0F19]/80 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-cyan-500 transition-colors font-bold text-sm h-[50px] appearance-none"
                             />
                         </div>
 
                         {/* Adultes Counter */}
                         <div>
-                            <label className="text-[10px] font-bold text-gray-400 mb-2 uppercase flex items-center gap-1">
-                                <Users className="w-3 h-3" /> {t('pool.guests.adults')} ({activeOption?.priceAdult || '--'} DH)
+                            <label className="text-[10px] font-black text-gray-400 mb-2 uppercase flex items-center gap-1 tracking-wider">
+                                <Users className="w-3.5 h-3.5 text-cyan-400" /> {t('pool.guests.adults')} ({activeOption?.priceAdult || '--'} DH)
                             </label>
-                            <div className="flex items-center bg-[#0F172A] border border-white/10 rounded-lg overflow-hidden h-[50px] flex-row-reverse rtl:flex-row">
-                                <button onClick={() => setAdults(adults + 1)} className="px-4 text-gray-400 hover:text-white hover:bg-white/5 h-full text-xl">+</button>
+                            <div className="flex items-center bg-[#0B0F19]/80 border border-white/10 rounded-xl overflow-hidden h-[50px] flex-row-reverse rtl:flex-row shadow-inner">
+                                <button onClick={() => setAdults(adults + 1)} className="px-5 text-gray-400 hover:text-white hover:bg-white/5 h-full text-xl font-bold">+</button>
                                 <span className="flex-1 text-center font-bold text-white text-lg">{adults}</span>
-                                <button onClick={() => setAdults(Math.max(1, adults - 1))} className="px-4 text-gray-400 hover:text-white hover:bg-white/5 h-full text-xl">-</button>
+                                <button onClick={() => setAdults(Math.max(1, adults - 1))} className="px-5 text-gray-400 hover:text-white hover:bg-white/5 h-full text-xl font-bold">-</button>
                             </div>
                         </div>
 
                         {/* Enfants Counter */}
                         <div>
-                            <label className="text-[10px] font-bold text-gray-400 mb-2 uppercase flex items-center gap-1">
-                                <Baby className="w-3 h-3" /> {t('pool.guests.children')} ({activeOption?.priceChild || '--'} DH)
+                            <label className="text-[10px] font-black text-gray-400 mb-2 uppercase flex items-center gap-1 tracking-wider">
+                                <Baby className="w-3.5 h-3.5 text-cyan-400" /> {t('pool.guests.children')} ({activeOption?.priceChild || '--'} DH)
                             </label>
-                            <div className="flex items-center bg-[#0F172A] border border-white/10 rounded-lg overflow-hidden h-[50px] flex-row-reverse rtl:flex-row">
-                                <button onClick={() => setChildren(children + 1)} className="px-4 text-gray-400 hover:text-white hover:bg-white/5 h-full text-xl">+</button>
+                            <div className="flex items-center bg-[#0B0F19]/80 border border-white/10 rounded-xl overflow-hidden h-[50px] flex-row-reverse rtl:flex-row shadow-inner">
+                                <button onClick={() => setChildren(children + 1)} className="px-5 text-gray-400 hover:text-white hover:bg-white/5 h-full text-xl font-bold">+</button>
                                 <span className="flex-1 text-center font-bold text-white text-lg">{children}</span>
-                                <button onClick={() => setChildren(Math.max(0, children - 1))} className="px-4 text-gray-400 hover:text-white hover:bg-white/5 h-full text-xl">-</button>
+                                <button onClick={() => setChildren(Math.max(0, children - 1))} className="px-5 text-gray-400 hover:text-white hover:bg-white/5 h-full text-xl font-bold">-</button>
                             </div>
                         </div>
                     </div>
@@ -461,7 +463,7 @@ export default function PoolPage() {
                     <button
                         onClick={handleBooking}
                         disabled={!selectedOption || loading}
-                        className="w-full bg-[#1e293b] flex-row-reverse rtl:flex-row border border-white/10 p-2 pl-3 rounded-[2rem] shadow-2xl flex items-center justify-between group active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed hover:bg-[#253248]"
+                        className="w-full bg-[#111827]/80 backdrop-blur-md flex-row-reverse rtl:flex-row border border-white/10 p-2.5 pl-4 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-between group active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100 disabled:cursor-not-allowed hover:border-cyan-500/30"
                     >
                         {/* Price Right */}
                         <div className="flex items-center gap-2 pl-2">
@@ -469,23 +471,23 @@ export default function PoolPage() {
                                 {paymentMethod === 'card' ? Math.round(totalPrice * 0.90) : totalPrice}{' '}
                                 <span className="text-xs font-bold text-gray-400">DH</span>
                                 {paymentMethod === 'card' && totalPrice > 0 && (
-                                    <span className="text-[10px] text-red-500 font-bold ml-1.5 bg-red-500/10 px-1 rounded animate-pulse">
+                                    <span className="text-[10px] text-red-500 font-bold ml-1.5 bg-red-500/10 px-1.5 py-0.5 rounded animate-pulse">
                                         -10%
                                     </span>
                                 )}
                             </span>
-                            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white group-hover:bg-red-500 group-hover:text-black transition-colors rotate-180 rtl:rotate-0">←</div>
+                            <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-white group-hover:bg-cyan-500 group-hover:text-black transition-colors rotate-180 rtl:rotate-0">←</div>
                         </div>
 
                         {/* Badge / Price Left */}
                         <div className="flex flex-row-reverse rtl:flex-row items-center gap-3">
                             <div className="text-right rtl:text-left">
-                                <div className="text-white font-bold text-sm leading-tight">{t('pool.book.btn')}</div>
-                                <div className="text-gray-400 text-[10px] font-medium">
+                                <div className="text-white font-extrabold text-xs uppercase tracking-wider leading-tight">{t('pool.book.btn')}</div>
+                                <div className="text-gray-400 text-[10px] font-bold uppercase tracking-wider">
                                     {activeOption ? activeOption.hours : t('pool.book.choose')}
                                 </div>
                             </div>
-                            <div className="w-10 h-10 rounded-full bg-red-500 flex items-center justify-center text-black font-bold shadow-lg shadow-red-500/20">
+                            <div className="w-10 h-10 rounded-full bg-cyan-500 flex items-center justify-center text-black font-black shadow-lg shadow-cyan-500/25">
                                 {adults + children}
                             </div>
                         </div>
@@ -494,30 +496,30 @@ export default function PoolPage() {
             </div>
 
             {/* Curtain for Scroll Mask */}
-            <div className="fixed inset-x-0 bottom-0 h-[100px] bg-gradient-to-t from-[#0F172A] to-transparent z-30 pointer-events-none" />
+            <div className="fixed inset-x-0 bottom-0 h-[100px] bg-gradient-to-t from-[#0B0F19] to-transparent z-30 pointer-events-none" />
 
 
             {/* Success Modal */}
             {showSuccess && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-xl animate-in fade-in">
-                    <div className="bg-[#1E293B] border border-white/10 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl relative">
-                        <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
-                            <Ticket className="w-10 h-10 text-red-500" />
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-2xl animate-in fade-in">
+                    <div className="bg-[#111827]/80 backdrop-blur-md border border-white/10 rounded-[2.5rem] p-8 max-w-sm w-full text-center shadow-2xl relative">
+                        <div className="w-20 h-20 bg-cyan-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-cyan-500/5">
+                            <Ticket className="w-10 h-10 text-cyan-400" />
                         </div>
-                        <h2 className="text-2xl font-black text-white mb-2">{t('pool.success.title')}</h2>
-                        <p className="text-sm text-gray-400 mb-6">
+                        <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">{t('pool.success.title')}</h2>
+                        <p className="text-sm text-gray-400 mb-6 font-medium leading-relaxed">
                             {t('pool.success.desc').replace('{count}', (adults + children).toString())}
                         </p>
                         <div className="space-y-3">
                             <button
                                 onClick={() => router.push('/profile')}
-                                className="w-full py-4 bg-red-600 rounded-xl font-bold text-white shadow-lg"
+                                className="w-full py-4 bg-gradient-to-r from-cyan-500 to-emerald-600 hover:from-cyan-600 hover:to-emerald-700 text-white font-black text-sm uppercase tracking-wider rounded-2xl shadow-lg active:scale-95 transition-all"
                             >
                                 {t('pool.btn.view')}
                             </button>
                             <button
                                 onClick={() => setShowSuccess(null)}
-                                className="w-full py-4 bg-white/5 rounded-xl font-bold text-gray-400 hover:bg-white/10"
+                                className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl font-black text-sm uppercase tracking-wider text-gray-400 hover:bg-white/10"
                             >
                                 {t('hotel.btn.close')}
                             </button>

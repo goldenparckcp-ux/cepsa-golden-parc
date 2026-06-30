@@ -82,7 +82,7 @@ const MenuItemCard = React.memo(function MenuItemCard({
         <button
             onClick={onClick}
             type="button"
-            className="group bg-[#111827] border border-white/5 rounded-2xl md:rounded-[2rem] overflow-hidden text-left flex flex-col hover:border-white/20 transition-all shadow-xl hover:shadow-2xl relative"
+            className="group bg-[#111827]/40 backdrop-blur-md border border-white/5 rounded-2xl md:rounded-[2rem] overflow-hidden text-left flex flex-col hover:border-amber-500/20 transition-all duration-300 shadow-xl hover:shadow-[0_15px_30px_rgba(0,0,0,0.4)] relative w-full"
         >
             <div className={`relative overflow-hidden w-full ${item.name.includes("Couscous") ? "h-40" : "h-32 md:h-40"}`}>
                 {item.image && (
@@ -91,25 +91,24 @@ const MenuItemCard = React.memo(function MenuItemCard({
                         alt={item.name}
                         fill
                         sizes="(max-width: 768px) 50vw, 250px"
-                        className={`object-cover transition duration-700 group-hover:scale-110 ${item.name.includes("Couscous") ? "object-bottom" : "object-center"}`}
+                        className={`object-cover transition duration-[1500ms] ease-out group-hover:scale-105 ${item.name.includes("Couscous") ? "object-bottom" : "object-center"}`}
                     />
                 )}
                 {item.badge && (
-                    <div className="absolute top-2 left-2 bg-red-600 text-white text-[9px] font-black px-2 py-1 rounded-full shadow-lg uppercase tracking-wider z-20">
+                    <div className="absolute top-3 left-3 bg-red-600 text-white text-[9px] font-black px-2.5 py-1.5 rounded-full shadow-lg uppercase tracking-wider z-20">
                         {item.badge}
                     </div>
                 )}
-                <div className="absolute inset-0 bg-gradient-to-t from-[#111827] via-[#111827]/40 to-transparent opacity-95" />
-                <div className="absolute bottom-3 left-3 right-3 flex justify-between items-end z-10">
-                    <div className="text-lg md:text-xl font-black text-white drop-shadow-md">{formatDh(item.basePrice)}</div>
-                    <div className="w-7 h-7 md:w-8 md:h-8 rounded-full bg-white text-black flex items-center justify-center shadow-lg group-hover:bg-red-500 group-hover:text-white transition-colors shrink-0">
-                        <Plus className="w-4 h-4 md:w-5 md:h-5" />
-                    </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F19]/90 via-transparent to-transparent pointer-events-none" />
+                <div className="absolute bottom-3 right-3 bg-black/60 backdrop-blur-md px-3 py-1 rounded-xl border border-white/10 text-amber-400 font-extrabold text-xs shadow-md">
+                    {formatDh(item.basePrice)}
                 </div>
             </div>
-            <div className="p-3 md:p-4 pt-1 flex-1 flex flex-col">
-                <h3 className="text-sm md:text-base font-bold text-white leading-tight mb-1 group-hover:text-red-400 transition-colors line-clamp-2">{name}</h3>
-                <p className="text-[11px] md:text-xs text-gray-400 line-clamp-2 leading-relaxed">{description}</p>
+            <div className="p-4 flex-1 flex flex-col justify-between w-full text-left">
+                <div className="w-full text-left">
+                    <h4 className="text-white text-sm font-black group-hover:text-amber-400 transition-colors line-clamp-1 uppercase tracking-tight">{name}</h4>
+                    <p className="text-gray-400 text-[10px] line-clamp-2 mt-1 leading-normal font-medium">{description}</p>
+                </div>
             </div>
         </button>
     );
@@ -946,27 +945,31 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
     };
 
     return (
-        <div className="min-h-screen pt-20 md:pt-28 pb-40 bg-[#070A13]">
+        <div className="min-h-screen pt-20 md:pt-28 pb-40 bg-[#0B0F19] relative overflow-hidden">
+            {/* Background Glow Accents */}
+            <div className="absolute top-[10%] left-[20%] w-[380px] h-[380px] bg-amber-600/5 rounded-full blur-[130px] pointer-events-none -z-10" />
+            <div className="absolute bottom-[30%] right-[15%] w-[320px] h-[320px] bg-orange-600/5 rounded-full blur-[120px] pointer-events-none -z-10" />
+
             {showSuccess && (
-                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in duration-300">
-                    <div className="bg-gradient-to-br from-[#1E293B] to-[#0F172A] border border-white/10 rounded-3xl p-8 max-w-sm w-full text-center shadow-2xl scale-100 animate-in zoom-in-95 duration-300">
-                        <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-6">
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-2xl animate-in fade-in duration-300">
+                    <div className="bg-[#111827]/80 backdrop-blur-md border border-white/10 rounded-[2.5rem] p-8 max-w-sm w-full text-center shadow-2xl scale-100 animate-in zoom-in-95 duration-300">
+                        <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg shadow-green-500/5">
                             <Check className="w-10 h-10 text-green-500" />
                         </div>
-                        <h2 className="text-2xl font-black text-white mb-2">{t('restaurant.success.title')}</h2>
-                        <p className="text-gray-400 mb-6">
+                        <h2 className="text-2xl font-black text-white mb-2 uppercase tracking-tight">{t('restaurant.success.title')}</h2>
+                        <p className="text-sm text-gray-400 mb-6 font-medium leading-relaxed">
                             {t('restaurant.success.desc').replace('{id}', showSuccess)}
                         </p>
                         <div className="space-y-3">
                             <button
                                 onClick={() => router.push('/profile')}
-                                className="w-full py-4 bg-red-600 rounded-xl font-bold text-white shadow-lg hover:bg-red-500 transition-all"
+                                className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black text-sm uppercase tracking-wider rounded-2xl shadow-lg active:scale-95 transition-all"
                             >
                                 {t('restaurant.btn.track')}
                             </button>
                             <button
                                 onClick={() => setShowSuccess(null)}
-                                className="w-full py-4 bg-white/5 rounded-xl font-bold text-gray-400 hover:bg-white/10 transition-all"
+                                className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl font-black text-sm uppercase tracking-wider text-gray-400 hover:bg-white/10 transition-all"
                             >
                                 {t('hotel.btn.close')}
                             </button>

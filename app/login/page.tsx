@@ -70,8 +70,11 @@ export default function LoginPage() {
     };
 
     return (
-        <div className="min-h-screen bg-[#0F172A] flex items-center justify-center p-4">
-            <div className="max-w-md w-full bg-[#1E293B] rounded-3xl border border-white/10 p-8 shadow-2xl flex flex-col items-center relative overflow-hidden">
+        <div className="min-h-screen bg-[#0B0F19] flex items-center justify-center p-4 relative overflow-hidden">
+            <div className="absolute top-[20%] left-[20%] w-[350px] h-[350px] bg-amber-600/5 rounded-full blur-[130px] pointer-events-none -z-10" />
+            <div className="absolute bottom-[20%] right-[20%] w-[350px] h-[350px] bg-red-600/5 rounded-full blur-[130px] pointer-events-none -z-10" />
+
+            <div className="max-w-md w-full bg-[#111827]/40 backdrop-blur-md rounded-[2.5rem] border border-white/5 p-8 shadow-2xl flex flex-col items-center relative overflow-hidden">
                 <div className="absolute -top-12 -right-12 w-32 h-32 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
                 <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-red-600/10 rounded-full blur-3xl pointer-events-none" />
 
@@ -79,8 +82,8 @@ export default function LoginPage() {
                     <Lock className="w-8 h-8 text-black" />
                 </div>
 
-                <h2 className="text-2xl font-black text-white text-center mb-1">Portail Staff Golden Parc</h2>
-                <p className="text-xs text-gray-400 text-center mb-8 font-medium">Saisissez votre code PIN pour accéder au panneau</p>
+                <h2 className="text-2xl font-black text-white text-center mb-1 uppercase tracking-tight">Portail Staff Golden Parc</h2>
+                <p className="text-xs text-gray-400 text-center mb-8 font-semibold uppercase tracking-wider">Saisissez votre code PIN pour accéder au panneau</p>
 
                 <div className="flex gap-4 mb-8">
                     {[0, 1, 2, 3].map(i => (
@@ -90,13 +93,13 @@ export default function LoginPage() {
                                 pin.length > i
                                     ? "bg-amber-500 border-amber-500 scale-110 shadow-lg shadow-amber-500/30"
                                     : "border-white/20 bg-transparent"
-                            }`}
+                             }`}
                         />
                     ))}
                 </div>
 
                 {errorMsg && (
-                    <div className="bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-2 text-center text-red-400 font-bold text-xs mb-6 w-full animate-shake">
+                    <div className="bg-red-500/10 border border-red-500/20 rounded-xl px-4 py-2 text-center text-red-400 font-bold text-xs mb-6 w-full animate-shake">
                         {errorMsg}
                     </div>
                 )}
