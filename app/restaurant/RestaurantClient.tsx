@@ -91,6 +91,7 @@ const MenuItemCard = React.memo(function MenuItemCard({
                         alt={item.name}
                         fill
                         sizes="(max-width: 768px) 50vw, 250px"
+                        loading="lazy"
                         className={`object-cover transition duration-[1500ms] ease-out group-hover:scale-105 ${item.name.includes("Couscous") ? "object-bottom" : "object-center"}`}
                     />
                 )}
@@ -1231,9 +1232,9 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                         {/* Subtle background glow */}
                         <div className="absolute top-[20%] right-[10%] w-72 h-72 bg-amber-500/5 rounded-full blur-[90px] pointer-events-none -z-10" />
 
-                        <div className="p-6 pb-[250px] space-y-8 overflow-y-auto custom-scrollbar">
+                        <div className="p-6 pb-[140px] space-y-8 overflow-y-auto custom-scrollbar">
                             <div className="rounded-3xl overflow-hidden h-48 w-full relative -mt-4 shadow-2xl border border-white/10">
-                                {customizeItem.image && <Image src={customizeItem.image} alt={customizeItem.name} fill className="object-cover animate-in zoom-in-95 duration-[2000ms]" />}
+                                {customizeItem.image && <Image src={customizeItem.image} alt={customizeItem.name} fill className="object-cover animate-in zoom-in-95 duration-[2000ms]" loading="lazy" />}
                                 <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F19] via-transparent to-transparent" />
                             </div>
 
@@ -1331,46 +1332,43 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
 
                         <div className="absolute bottom-0 left-0 right-0 z-50">
                             <div className="h-16 bg-gradient-to-t from-[#0B0F19] to-transparent pointer-events-none" />
-                            <div className="bg-[#0B0F19] p-5 pt-0 pb-8 border-t border-white/5 shadow-[0_-20px_50px_rgba(0,0,0,0.8)]">
-                                {/* Quantity Stepper */}
-                                <div className="flex items-center justify-between mb-4 px-2">
-                                    <span className="text-gray-400 font-bold text-sm">
-                                        {language === "ar" ? "الكمية" : "Quantité"}
-                                    </span>
-                                    <div className="flex items-center gap-4 bg-white/5 p-1 rounded-xl border border-white/5">
-                                        <button
-                                            type="button"
-                                            onClick={() => setCustomizeQty(q => Math.max(1, q - 1))}
-                                            className="w-10 h-10 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all text-white font-black text-lg"
-                                        >
-                                            -
-                                        </button>
-                                        <span className="font-black text-lg text-white w-6 text-center">{customizeQty}</span>
-                                        <button
-                                            type="button"
-                                            onClick={() => setCustomizeQty(q => q + 1)}
-                                            className="w-10 h-10 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center hover:from-amber-600 hover:to-orange-600 active:scale-95 transition-all text-white font-black text-lg shadow-md"
-                                        >
-                                            +
-                                        </button>
+                            <div className="bg-[#0B0F19]/90 backdrop-blur-md p-4 pb-6 border-t border-white/5 shadow-[0_-15px_30px_rgba(0,0,0,0.6)]">
+                                <div className="flex items-center justify-between gap-4">
+                                    {/* Left: Total Price */}
+                                    <div className="flex flex-col shrink-0">
+                                        <span className="text-[10px] text-gray-500 font-black uppercase tracking-widest leading-none">Total</span>
+                                        <span className="text-2xl font-black text-white leading-none mt-1.5">{formatDh(customizationPrice * customizeQty)}</span>
                                     </div>
-                                </div>
 
-                                <div className="flex items-end justify-between mb-5 px-2">
-                                    <div className="flex flex-col">
-                                        <span className="text-gray-500 text-[10px] font-black uppercase tracking-widest">Total</span>
-                                        <span className="text-4xl font-black text-white leading-none mt-1">{formatDh(customizationPrice * customizeQty)}</span>
+                                    {/* Right: Quantity Stepper & Add Button grouped on one horizontal line */}
+                                    <div className="flex items-center gap-3 flex-1 justify-end">
+                                        <div className="flex items-center bg-white/5 p-1 rounded-xl border border-white/5 shrink-0">
+                                            <button
+                                                type="button"
+                                                onClick={() => setCustomizeQty(q => Math.max(1, q - 1))}
+                                                className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center hover:bg-white/10 active:scale-95 transition-all text-white font-black text-sm"
+                                            >
+                                                -
+                                            </button>
+                                            <span className="font-black text-sm text-white w-6 text-center">{customizeQty}</span>
+                                            <button
+                                                type="button"
+                                                onClick={() => setCustomizeQty(q => q + 1)}
+                                                className="w-8 h-8 rounded-lg bg-gradient-to-r from-amber-500 to-orange-500 flex items-center justify-center hover:from-amber-600 hover:to-orange-600 active:scale-95 transition-all text-white font-black text-sm shadow-sm"
+                                            >
+                                                +
+                                            </button>
+                                        </div>
+
+                                        <button
+                                            onClick={handleAddToCart}
+                                            className="py-3 px-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 rounded-xl font-black text-xs text-white uppercase tracking-wider shadow-[0_5px_15px_rgba(245,158,11,0.2)] active:scale-[0.98] transition-all flex items-center justify-center gap-2 max-w-[140px]"
+                                        >
+                                            <span>{t('restaurant.btn.add').replace('Ajouter au Panier', 'Ajouter')}</span>
+                                            <Plus className="w-3.5 h-3.5 text-white shrink-0" />
+                                        </button>
                                     </div>
                                 </div>
-                                <button
-                                    onClick={handleAddToCart}
-                                    className="w-full py-5 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 rounded-2xl font-black text-xl text-white shadow-[0_10px_25px_rgba(245,158,11,0.25)] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
-                                >
-                                    <span>{t('restaurant.btn.add')}</span>
-                                    <div className="bg-black/20 rounded-full p-1.5">
-                                        <Plus className="w-5 h-5 text-white" />
-                                    </div>
-                                </button>
                             </div>
                         </div>
                     </div>
