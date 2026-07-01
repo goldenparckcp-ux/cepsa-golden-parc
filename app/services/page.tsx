@@ -16,7 +16,7 @@ function ServicesContent() {
     const type = searchParams.get("type");
 
     useEffect(() => {
-        if (type === "pool") router.replace("/pool");
+        if (type === "pool") router.replace("/services/pool");
         if (type === "auto") router.replace("/services");
     }, [type, router]);
 
@@ -34,7 +34,7 @@ function ServicesContent() {
             key: "pool",
             title: t('services.pool.title') || "Piscine",
             desc: t('services.pool.desc') || "Heated pool · lifeguard on duty · family-friendly",
-            to: "/pool",
+            to: "/services/pool",
             icon: Waves,
             image: "https://images.unsplash.com/photo-1500375592092-40eb2168fd21?w=1200",
             badge: "Relax"
