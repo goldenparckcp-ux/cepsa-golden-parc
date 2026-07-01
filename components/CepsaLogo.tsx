@@ -9,79 +9,39 @@ export default function CepsaLogo({ className = "w-8 h-8", color = "text-white" 
             xmlns="http://www.w3.org/2000/svg"
         >
             <defs>
-                {/* Red/Crimson gradient for the logo body */}
-                <linearGradient id="gpc-red-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#EF4444" /> {/* red-500 */}
-                    <stop offset="50%" stopColor="#DC2626" /> {/* red-600 */}
-                    <stop offset="100%" stopColor="#991B1B" /> {/* red-800 */}
+                <linearGradient id="gpc-gold-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#F59E0B" />
+                    <stop offset="100%" stopColor="#D97706" />
                 </linearGradient>
-                {/* Silver/White gradient for highlights */}
-                <linearGradient id="gpc-white-grad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#FFFFFF" />
-                    <stop offset="100%" stopColor="#E2E8F0" />
+                <linearGradient id="gpc-red-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#EF4444" />
+                    <stop offset="100%" stopColor="#B91C1C" />
                 </linearGradient>
             </defs>
 
-            {/* MAIN LOGO GRAPHIC */}
-            <g transform="translate(2, 2) scale(0.96)">
-                {/* --- Outer 'G' Ribbon --- */}
-                {/* Main Red top loop */}
-                <path
-                    d="M 76 16 C 50 14, 18 24, 7 50 C 5 58, 14 80, 39 90 C 43 88, 43 84, 39 82 C 22 77, 12 57, 16 47 C 20 37, 50 24, 76 22 Z"
-                    fill="url(#gpc-red-grad)"
-                />
-                {/* White inlay line in top loop */}
-                <path
-                    d="M 72 19 C 50 17, 24 28, 16 44 C 13 50, 15 58, 18 61"
-                    stroke="url(#gpc-white-grad)"
-                    strokeWidth="3.5"
-                    strokeLinecap="round"
-                />
+            {/* Mathematically Generated G outer path */}
+            <path
+                d="M 76.87 23.13 A 38 38 0 1 0 76.87 76.87 L 58 76.87 L 58 50"
+                stroke="url(#gpc-red-grad)"
+                strokeWidth="6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+            />
 
-                {/* --- Inner Star / Wings --- */}
-                
-                {/* Top-Center Wing */}
-                <path
-                    d="M 40 40 C 45 34, 65 32, 74 40 C 76 42, 72 46, 68 47 C 58 50, 48 46, 40 40 Z"
-                    fill="url(#gpc-red-grad)"
-                />
-                <path
-                    d="M 45 38 C 52 35, 64 36, 70 40"
-                    stroke="url(#gpc-white-grad)"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                />
+            {/* Inner P loop forming the monogram */}
+            <path
+                d="M 50 25 A 25 25 0 1 1 50 75 A 25 25 0 0 1 50 25"
+                stroke="url(#gpc-red-grad)"
+                strokeWidth="6"
+                strokeLinecap="round"
+                opacity="0.3"
+            />
 
-                {/* Right-Hand Wing (sweeping down-right) - White/Silver as requested */}
-                <path
-                    d="M 52 50 C 65 50, 85 57, 88 80 C 88 82, 84 82, 82 78 C 75 64, 62 57, 52 50 Z"
-                    fill="url(#gpc-white-grad)"
-                />
-
-                {/* Bottom Wing (pointing down) */}
-                <path
-                    d="M 46 56 C 46 70, 43 87, 41 95 C 39 95, 37 87, 37 70 C 37 56, 41 52, 46 56 Z"
-                    fill="url(#gpc-red-grad)"
-                />
-                <path
-                    d="M 42 62 L 42 87"
-                    stroke="url(#gpc-white-grad)"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                />
-
-                {/* --- Inward G-Arrow / Left Wing --- */}
-                <path
-                    d="M 12 57 C 10 67, 18 80, 38 90 C 42 88, 42 84, 38 82 C 22 77, 18 67, 22 60 Z"
-                    fill="url(#gpc-red-grad)"
-                />
-                <path
-                    d="M 16 64 C 18 72, 26 79, 34 83"
-                    stroke="url(#gpc-white-grad)"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                />
-            </g>
+            {/* Star Spark representing quality & GPS direction */}
+            <path
+                d="M 50 32 Q 50 50 68 50 Q 50 50 50 68 Q 50 50 32 50 Q 50 50 50 32 Z"
+                fill="url(#gpc-gold-grad)"
+            />
         </svg>
     );
 }
