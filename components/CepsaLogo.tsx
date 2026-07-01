@@ -52,16 +52,10 @@ export default function CepsaLogo({ className = "w-8 h-8", color = "text-white" 
                     strokeLinecap="round"
                 />
 
-                {/* Right-Hand Wing (sweeping down-right) */}
+                {/* Right-Hand Wing (sweeping down-right) - White/Silver as requested */}
                 <path
                     d="M 52 50 C 65 50, 85 57, 88 80 C 88 82, 84 82, 82 78 C 75 64, 62 57, 52 50 Z"
-                    fill="url(#gpc-red-grad)"
-                />
-                <path
-                    d="M 58 52 C 68 55, 78 62, 82 72"
-                    stroke="url(#gpc-white-grad)"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
+                    fill="url(#gpc-white-grad)"
                 />
 
                 {/* Bottom Wing (pointing down) */}
