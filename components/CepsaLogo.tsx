@@ -9,72 +9,48 @@ export default function CepsaLogo({ className = "w-8 h-8", color = "text-white" 
             xmlns="http://www.w3.org/2000/svg"
         >
             <defs>
-                {/* Vibrant red gradient for G ribbon & wings */}
+                {/* Premium Red Gradient */}
                 <linearGradient id="gpc-red" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stopColor="#EF4444" />
                     <stop offset="50%" stopColor="#DC2626" />
                     <stop offset="100%" stopColor="#991B1B" />
                 </linearGradient>
-                {/* Silver/white gradient for highlights */}
+                {/* Premium Gold/Orange Gradient */}
+                <linearGradient id="gpc-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="#FBBF24" />
+                    <stop offset="50%" stopColor="#F59E0B" />
+                    <stop offset="100%" stopColor="#D97706" />
+                </linearGradient>
+                {/* Silver/White Highlight Gradient */}
                 <linearGradient id="gpc-silver" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stopColor="#FFFFFF" />
-                    <stop offset="50%" stopColor="#E2E8F0" />
-                    <stop offset="100%" stopColor="#94A3B8" />
+                    <stop offset="100%" stopColor="#CBD5E1" />
                 </linearGradient>
             </defs>
 
-            {/* Scale and center the group */}
-            <g transform="translate(4, 4) scale(0.92)">
+            {/* Mathematically Symmetrical Geometric G & Star Design */}
+            <g transform="translate(2, 2) scale(0.96)">
+                {/* Outer G Loop */}
+                <path
+                    d="M 75 30 A 35 35 0 1 0 75 70 L 55 70 L 55 52"
+                    stroke="url(#gpc-red)"
+                    strokeWidth="9"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                />
                 
-                {/* 1. Large Top Loop (G Ribbon) */}
+                {/* Silver Inline Highlight on G */}
                 <path
-                    d="M 76 20 C 50 18, 18 28, 8 50 C 6 56, 14 76, 38 86 C 42 84, 42 80, 38 78 C 22 73, 14 55, 18 45 C 22 35, 50 24, 76 22 Z"
-                    fill="url(#gpc-red)"
-                />
-                {/* Silver inlay highlights for the top loop */}
-                <path
-                    d="M 70 21 C 50 19, 24 28, 17 44"
-                    stroke="url(#gpc-silver)"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                />
-
-                {/* 2. Large Bottom Loop (Mirrored G Ribbon) - identical protrusion at the bottom */}
-                <path
-                    d="M 76 80 C 50 82, 18 72, 8 50 C 6 44, 14 24, 38 14 C 42 16, 42 20, 38 22 C 22 27, 14 45, 18 55 C 22 65, 50 76, 76 78 Z"
-                    fill="url(#gpc-red)"
-                />
-                {/* Silver inlay highlights for the bottom loop */}
-                <path
-                    d="M 70 79 C 50 81, 24 72, 17 56"
-                    stroke="url(#gpc-silver)"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                />
-
-                {/* 3. Center Star Wings */}
-                {/* Top-Center Red Wing */}
-                <path
-                    d="M 40 40 C 45 34, 65 32, 74 40 C 76 42, 72 46, 68 47 C 58 50, 48 46, 40 40 Z"
-                    fill="url(#gpc-red)"
-                />
-                <path
-                    d="M 45 38 C 52 35, 64 36, 70 40"
+                    d="M 74 32 A 31 31 0 1 0 74 68 L 57 68"
                     stroke="url(#gpc-silver)"
                     strokeWidth="2.5"
                     strokeLinecap="round"
                 />
 
-                {/* Bottom-Center Red Wing (Symmetrical to Top-Center) */}
+                {/* Symmetrical 4-Pointed GPS Star */}
                 <path
-                    d="M 40 60 C 45 66, 65 68, 74 60 C 76 58, 72 54, 68 53 C 58 50, 48 54, 40 60 Z"
-                    fill="url(#gpc-red)"
-                />
-                <path
-                    d="M 45 62 C 52 65, 64 64, 70 60"
-                    stroke="url(#gpc-silver)"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
+                    d="M 50 28 Q 50 50 72 50 Q 50 50 50 72 Q 50 50 28 50 Q 50 50 50 28 Z"
+                    fill="url(#gpc-gold)"
                 />
             </g>
         </svg>
