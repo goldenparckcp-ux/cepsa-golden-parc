@@ -5,7 +5,7 @@ const config: CapacitorConfig = {
   appName: 'Cepsa Golden Park',
   webDir: 'public',
   server: {
-    url: 'https://cepsa-golden-parc.vercel.app',
+    url: 'https://www.goldenparkstation.com',
     cleartext: true
   }
 };

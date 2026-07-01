@@ -12,7 +12,7 @@ const inter = Inter({ subsets: ["latin"] });
 const outfit = Outfit({ subsets: ["latin"], variable: '--font-outfit' });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://cepsa-golden-parc.vercel.app"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://goldenparkstation.com"),
   title: {
     default: "Golden Parc Cepsa — Station-Service, Hôtel & Restaurant Premium",
     template: "%s | Golden Parc Cepsa"
@@ -78,11 +78,11 @@ const jsonLd = {
   "@graph": [
     {
       "@type": "GasStation",
-      "@id": "https://cepsa-golden-parc.vercel.app/#station",
+      "@id": "https://goldenparkstation.com/#station",
       "name": "Golden Parc Cepsa",
       "alternateName": ["Golden Park", "Golden Parc Station", "Station Cepsa Outat El Haj", "Station Golden Parc"],
       "description": "Station-service premium Cepsa avec espace détente, restaurant gastronomique, hôtel L'Escale et piscine.",
-      "url": "https://cepsa-golden-parc.vercel.app",
+      "url": "https://goldenparkstation.com",
       "logo": "https://vktqecgylkjogquhsymz.supabase.co/storage/v1/object/public/images/cepsa-logo.png",
       "image": "https://vktqecgylkjogquhsymz.supabase.co/storage/v1/object/public/images/cepsa-logo.png",
       "address": {
@@ -108,10 +108,10 @@ const jsonLd = {
     },
     {
       "@type": "Hotel",
-      "@id": "https://cepsa-golden-parc.vercel.app/#hotel",
+      "@id": "https://goldenparkstation.com/#hotel",
       "name": "Hôtel L'Escale - Golden Parc",
       "description": "Hôtel de charme moderne sur la RN15 à Outat El Haj avec chambres climatisées de haut standing.",
-      "url": "https://cepsa-golden-parc.vercel.app/hotel",
+      "url": "https://goldenparkstation.com/hotel",
       "address": {
         "@type": "PostalAddress",
         "streetAddress": "Route Nationale 15",
@@ -121,10 +121,10 @@ const jsonLd = {
     },
     {
       "@type": "Restaurant",
-      "@id": "https://cepsa-golden-parc.vercel.app/#restaurant",
+      "@id": "https://goldenparkstation.com/#restaurant",
       "name": "Restaurant Golden Parc",
       "description": "Restaurant gastronomique avec menu varié, boulangerie et boissons premium.",
-      "url": "https://cepsa-golden-parc.vercel.app/restaurant",
+      "url": "https://goldenparkstation.com/restaurant",
       "servesCuisine": "Marocaine, Internationale",
       "address": {
         "@type": "PostalAddress",
