@@ -22,6 +22,43 @@ export function Chatbot() {
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
+    const renderMessageText = (text: string) => {
+        // Match standard markdown links: [Label](url)
+        const linkRegex = /\[([^\]]+)\]\(([^)]+)\)/g;
+        const parts = [];
+        let lastIndex = 0;
+        let match;
+
+        while ((match = linkRegex.exec(text)) !== null) {
+            const matchIndex = match.index;
+            if (matchIndex > lastIndex) {
+                parts.push(<span key={lastIndex}>{text.substring(lastIndex, matchIndex)}</span>);
+            }
+
+            const label = match[1];
+            const url = match[2];
+            
+            parts.push(
+                <span key={matchIndex} className="block mt-2">
+                    <a
+                        href={url}
+                        className="inline-flex items-center gap-1.5 bg-red-600 hover:bg-red-500 text-white font-extrabold px-3 py-2 rounded-xl text-xs transition-all active:scale-95 shadow-md shadow-red-600/10"
+                    >
+                        {label} <ChevronRight className="w-3.5 h-3.5" />
+                    </a>
+                </span>
+            );
+
+            lastIndex = linkRegex.lastIndex;
+        }
+
+        if (lastIndex < text.length) {
+            parts.push(<span key={lastIndex}>{text.substring(lastIndex)}</span>);
+        }
+
+        return parts.length > 0 ? parts : text;
+    };
+
     // Initial greeting
     useEffect(() => {
         if (isOpen && messages.length === 0) {
@@ -146,7 +183,7 @@ export function Chatbot() {
                                             ? 'bg-red-600 text-white rounded-br-none' 
                                             : 'bg-[#1E293B] text-gray-200 border border-white/5 rounded-bl-none'
                                     }`}>
-                                        {msg.text}
+                                        {renderMessageText(msg.text)}
                                     </div>
                                 </motion.div>
                             ))}

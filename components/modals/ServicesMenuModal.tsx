@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { Waves, ShoppingBag, ChevronRight } from 'lucide-react';
+import { Waves, ShoppingBag, ChevronRight, HelpCircle } from 'lucide-react';
 import { useTranslation } from "@/lib/state/LanguageContext";
 import Image from 'next/image';
 
@@ -39,6 +39,17 @@ export function ServicesMenuModal({ isOpen, onClose }: ServicesMenuModalProps) {
             border: 'border-white/5',
             image: '/images/oil.jpg',
             route: '/services/lubrifiants'
+        },
+        {
+            id: 'faq',
+            name: 'FAQ & Assistance',
+            icon: HelpCircle,
+            description: 'Questions fréquentes • Support 24/7',
+            color: 'text-amber-400',
+            bg: 'bg-amber-500/10 hover:border-amber-500/25',
+            border: 'border-white/5',
+            image: 'https://images.unsplash.com/photo-1557200134-90327ee9fafa?w=1200',
+            route: '/faq'
         }
     ];
 

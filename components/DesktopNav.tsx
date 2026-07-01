@@ -1,7 +1,7 @@
 "use client";
 
 import Link from 'next/link';
-import { Home, UtensilsCrossed, BedDouble, User, Waves, Droplets, Wrench } from 'lucide-react';
+import { Home, UtensilsCrossed, BedDouble, User, Waves, Droplets, Wrench, HelpCircle } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 import CepsaLogo from './CepsaLogo';
 import { useTranslation } from '@/lib/state/LanguageContext';
@@ -20,6 +20,7 @@ export default function DesktopNav() {
         { href: '/hotel', label: t('nav.hotel'), icon: BedDouble },
         { href: '/services/pool', label: t('nav.piscine'), icon: Waves },
         { href: '/services/lubrifiants', label: t('lube.catalog.title'), icon: Wrench },
+        { href: '/faq', label: 'FAQ', icon: HelpCircle },
         { href: '/profile', label: t('nav.profile'), icon: User },
     ];
 
