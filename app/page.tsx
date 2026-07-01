@@ -42,6 +42,7 @@ export default function Home() {
   const [distance, setDistance] = useState<number | null>(null);
   const [isLoaded, setIsLoaded] = useState(false);
   const [promos, setPromos] = useState<any[]>([]);
+  const [openFaq, setOpenFaq] = useState<number | null>(null);
 
   // Reviews States
   const [reviews, setReviews] = useState<any[]>([
@@ -825,6 +826,73 @@ export default function Home() {
 
           </div>
         </div>
+
+        {/* FAQ Accordion Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mt-20 w-full mb-16"
+        >
+          <div className="text-center mb-12">
+            <div className="inline-block bg-red-600/10 border border-red-500/20 text-red-500 text-xs font-black px-4 py-2 rounded-xl uppercase tracking-wider mb-3">
+              FAQ
+            </div>
+            <h2 className="text-3xl md:text-5xl font-black text-white uppercase tracking-tight">
+              Questions Fréquentes
+            </h2>
+            <p className="text-gray-400 text-sm mt-3 max-w-xl mx-auto font-medium">
+              Toutes les réponses à vos questions sur les services et les horaires de Golden Parc Station.
+            </p>
+          </div>
+
+          <div className="max-w-3xl mx-auto space-y-4">
+            {[
+              {
+                q: "Quels sont les services proposés par Golden Parc ?",
+                a: "Golden Parc est un complexe autoroutier premium comprenant une station-service Cepsa (carburants et lubrifiants de pointe), le Restaurant gastronomique Golden Parc (plats marocains et internationaux, boulangerie), l'Hôtel moderne L'Escale, et une piscine extérieure pour se détendre."
+              },
+              {
+                q: "Quels sont les horaires d'ouverture de la station et du restaurant ?",
+                a: "La station-service Cepsa et sa boutique sont ouvertes 24h/24 et 7j/7. Le Restaurant est ouvert de 06:00 à minuit (00:00). Le comptoir de vidange et lubrifiants est ouvert de 08:00 à 20:00."
+              },
+              {
+                q: "Comment réserver une chambre à l'Hôtel L'Escale ?",
+                a: "Vous pouvez réserver directement en ligne via l'onglet 'Hôtel' de notre plateforme en sélectionnant vos dates de séjour (Nuitée ou Sieste de jour) avec une confirmation immédiate."
+              },
+              {
+                q: "La piscine est-elle accessible à tout le monde ?",
+                a: "Oui, la piscine est ouverte pendant la saison estivale de 09:00 à 19:00. L'accès est organisé avec des journées dédiées (Familles, Mixte, ou Femmes) pour le confort de tous. Vous pouvez réserver vos tickets d'accès directement sur le site."
+              },
+              {
+                q: "Où est située la station exactement ?",
+                a: "Nous sommes situés sur la Route Nationale 15 (RN15) à Outat El Haj. C'est l'escale idéale et reposante lors de vos trajets routiers au Maroc."
+              }
+            ].map((item, idx) => (
+              <div
+                key={idx}
+                className="bg-[#1E293B]/40 backdrop-blur-md border border-white/5 rounded-3xl overflow-hidden transition-all duration-300"
+              >
+                <button
+                  onClick={() => setOpenFaq(openFaq === idx ? null : idx)}
+                  className="w-full p-6 text-left flex justify-between items-center text-white font-bold hover:bg-white/5 transition-colors focus:outline-none"
+                >
+                  <span className="text-lg md:text-xl pr-4">{item.q}</span>
+                  <span className={`text-2xl transition-transform duration-300 ${openFaq === idx ? 'rotate-45 text-red-500' : 'text-gray-400'}`}>
+                    +
+                  </span>
+                </button>
+                <div
+                  className={`transition-all duration-300 ease-in-out overflow-hidden ${openFaq === idx ? 'max-h-60 border-t border-white/5' : 'max-h-0'}`}
+                >
+                  <p className="p-6 text-gray-300 text-sm md:text-base leading-relaxed font-medium">
+                    {item.a}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </motion.div>
 
       </div>
       <Chatbot />
