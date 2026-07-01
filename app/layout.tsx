@@ -19,11 +19,13 @@ export const metadata: Metadata = {
   },
   description: "L'escale premium par excellence sur la RN15 à Outat El Haj. Station-service Cepsa, Hôtel L'Escale, restaurant gourmand, café haut de gamme, piscine et espace d'entretien auto.",
   keywords: [
-    "GPC", "GPS", "GPC Station", "GPS Station", "Golden Parc Station GPS", "Golden Parc Cepsa",
-    "Golden Parc", "Golden Park", "Station Golden Parc", "Station service Outat El Haj", 
-    "Cepsa Outat El Haj", "Hôtel L'Escale", "Hôtel Outat El Haj", "Restaurant Golden Parc", 
-    "Piscine Outat El Haj", "RN15 Maroc", "Vidange voiture Outat El Haj", "Café Premium Outat El Haj",
-    "Escale RN15", "Station service Maroc", "Outat El Hadj"
+    "Golden", "Park", "Parc", "Station", "GPC", "GPS", "GPC Station", "GPS Station", "Golden Parc Station GPS",
+    "Golden Parc Cepsa", "Golden Park Cepsa", "Cepsa Golden Parc", "Cepsa Golden Park", "Station Cepsa Outat El Haj",
+    "Escale", "L'Escale", "Hôtel L'Escale", "Hotel Escale", "Hotel Outat El Haj", "Hôtel Outat El Haj",
+    "Rest", "Restaurant", "Restaurant Golden Parc", "Restaurant Golden Park", "Restaurant Outat El Haj",
+    "Pool", "Piscine", "Piscine Outat El Haj", "Piscine Golden Parc", "Vidange", "Lube", "Lubrifiants", 
+    "Vidange Outat El Haj", "Entretien auto", "RN15", "RN 15", "Route Nationale 15", "Outat El Haj", "Outat El Hadj",
+    "Maroc", "Morocco", "Fès", "Meknès", "Escale RN15", "Station service Maroc"
   ],
   authors: [{ name: "Golden Parc Team" }],
   creator: "Golden Parc Cepsa",
