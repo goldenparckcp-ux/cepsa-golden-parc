@@ -44,10 +44,10 @@ export const metadata: Metadata = {
     type: "website",
     images: [
       {
-        url: "https://vktqecgylkjogquhsymz.supabase.co/storage/v1/object/public/images/cepsa-logo.png",
-        width: 800,
-        height: 600,
-        alt: "Logo Golden Parc Cepsa",
+        url: "https://vktqecgylkjogquhsymz.supabase.co/storage/v1/object/public/images/cepsa-hero.jpg",
+        width: 1200,
+        height: 675,
+        alt: "Golden Parc Cepsa Outat El Haj",
       }
     ],
   },
@@ -55,7 +55,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Golden Parc Station GPS (GPC) — Escale Premium & Services",
     description: "Station-service, hôtel, restaurant et piscine sur la RN15 à Outat El Haj.",
-    images: ["https://vktqecgylkjogquhsymz.supabase.co/storage/v1/object/public/images/cepsa-logo.png"],
+    images: ["https://vktqecgylkjogquhsymz.supabase.co/storage/v1/object/public/images/cepsa-hero.jpg"],
   },
   robots: {
     index: true,
@@ -70,8 +70,13 @@ export const metadata: Metadata = {
   },
   manifest: "/manifest.json",
   icons: {
-    icon: "https://vktqecgylkjogquhsymz.supabase.co/storage/v1/object/public/images/cepsa-logo.png",
-    apple: "https://vktqecgylkjogquhsymz.supabase.co/storage/v1/object/public/images/cepsa-logo.png",
+    icon: [
+      { url: "/favicon.ico" },
+      { url: "/icon.png", sizes: "32x32", type: "image/png" }
+    ],
+    apple: [
+      { url: "/apple-icon.png", sizes: "180x180", type: "image/png" }
+    ]
   }
 };
 
