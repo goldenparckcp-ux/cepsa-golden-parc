@@ -77,7 +77,7 @@ export async function POST(request: Request) {
         resolvedRole = 'services';
         resolvedName = 'Service Manager';
       } else if (pin === pinCaisse) {
-        resolvedRole = 'services'; // fallback to services role (dashboard has redirection for caisse based on name or local checks)
+        resolvedRole = 'caisse';
         resolvedName = 'Caisse Principale';
       }
     }

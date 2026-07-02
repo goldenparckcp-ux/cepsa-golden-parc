@@ -20,7 +20,7 @@ export function DarkSheet({ open, onClose, title, children }: DarkSheetProps) {
             />
 
             {/* Sheet */}
-            <div className="relative w-full max-w-md bg-[#1E293B] border-l border-white/10 shadow-2xl h-full flex flex-col animate-slide-up sm:animate-slide-in-right transform transition-transform duration-300">
+            <div className="relative w-full max-w-md bg-[#1E293B] border-l border-white/10 shadow-2xl h-full flex flex-col rounded-t-[2rem] sm:rounded-t-none sm:rounded-l-[2.5rem] overflow-hidden animate-slide-up sm:animate-slide-in-right transform transition-transform duration-300">
                 {/* Header */}
                 <div className="flex items-center justify-between p-4 border-b border-white/10 bg-[#0F172A]">
                     <h2 className="text-lg font-bold text-white">{title}</h2>

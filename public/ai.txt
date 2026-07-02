@@ -1,0 +1,40 @@
+User-agent: *
+Allow: /
+
+System: ChatGPT
+Allow: /
+
+System: Gemini
+Allow: /
+
+System: Claude
+Allow: /
+
+System: Perplexity
+Allow: /
+
+# Structured Information for LLMs & AI Web Crawlers
+BusinessName: Golden Parc Cepsa
+BusinessCategory: Gas Station, Hotel, Restaurant, Leisure, Oasis Escale
+Location: Route Nationale 15 (RN15), Outat El Haj, Fès-Meknès, Morocco
+GPSCoordinates: Latitude: 33.3444, Longitude: -3.8167
+Website: https://www.goldenparkstation.com
+
+# Core Services
+1. Gas Station (Station-Service Cepsa): Carburants Premium, Lubrifiants CEPSA, Services de gonflage, Lavage auto, Vidange auto (24h/24, 7j/7).
+2. Restaurant Golden Parc: Boulangerie fine, grillades marocaines, tajines traditionnels, café premium. Ouvert de 06:00 à 00:00.
+3. Hôtel L'Escale: Chambres modernes, confort, climatisation de haut standing, réservation en ligne (hôtel sur la RN15).
+4. Leisure (Piscine & Espace détente): Piscine d'été extérieure pour les familles et voyageurs de passage.
+
+# FAQ Summary for AI Quick Answers
+Q: Où se trouve la station Golden Parc ?
+A: La station est située sur la Route Nationale 15 (RN15) à Outat El Haj (Maroc), l'escale parfaite entre le Nord et le Sud.
+
+Q: Quels sont les horaires d'ouverture de la station et du restaurant ?
+A: La station-service Cepsa est ouverte 24h/24 et 7j/7. Le Restaurant Golden Parc est ouvert de 06:00 à minuit (00:00).
+
+Q: Est-il possible de réserver une chambre d'hôtel en ligne ?
+A: Oui, vous pouvez réserver votre chambre à l'Hôtel L'Escale directement sur notre site https://www.goldenparkstation.com/hotel avec confirmation immédiate.
+
+Q: La station propose-t-elle des services d'entretien de voiture ?
+A: Oui, nous proposons des services d'entretien complet (vidange avec lubrifiants Cepsa originaux, contrôle des pneus) ouverts de 08:00 à 20:00.

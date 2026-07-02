@@ -19,7 +19,7 @@ function ProfileContent() {
     const { clear, addItem } = useCart();
 
     // Auth States
-    const [step, setStep] = useState<'phone' | 'otp' | 'profile' | 'dashboard' | 'email' | 'email-sent'>('phone');
+    const [step, setStep] = useState<'phone' | 'otp' | 'profile' | 'dashboard' | 'email' | 'email-sent'>('email');
     const [phone, setPhone] = useState('');
     const [email, setEmail] = useState('');
     const [otp, setOtp] = useState('');
@@ -714,7 +714,7 @@ function ProfileContent() {
 
     const handleLogout = async () => {
         await supabase.auth.signOut();
-        setStep('phone');
+        setStep('email');
         setPhone('');
         setOtp('');
         setOrders([]);
@@ -738,7 +738,7 @@ function ProfileContent() {
     };
 
     // --- LOADING SCREEN ---
-    if (isLoading && step === 'phone') {
+    if (isLoading && step === 'email') {
         return (
             <div className="min-h-screen bg-[#0F172A] flex items-center justify-center">
                 <Loader2 className="w-8 h-8 text-red-600 animate-spin" />
@@ -1290,29 +1290,31 @@ function ProfileContent() {
                         <div className="w-full bg-[#1E293B]/80 hover:bg-[#1E293B]/90 transition-colors border border-white/10 p-8 rounded-[2rem] shadow-2xl backdrop-blur-xl relative overflow-hidden group">
                             <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
 
-                            {step === 'phone' && (
-                                <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 relative z-10">
-                                    <div className="space-y-2">
-                                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider ml-1">Numéro de Téléphone</label>
-                                        <div className="flex items-center gap-3 bg-black/40 border border-white/10 p-4 rounded-2xl focus-within:border-amber-500/50 focus-within:ring-1 focus-within:ring-amber-500/50 transition-all">
-                                            <Smartphone className="text-gray-500 w-5 h-5" />
-                                            <span className="text-gray-400 font-bold text-lg">+212</span>
-                                            <input
-                                                type="tel"
-                                                value={phone}
-                                                onChange={e => setPhone(e.target.value)}
-                                                placeholder="6 00 00 00 00"
-                                                className="bg-transparent outline-none text-white font-bold w-full text-lg tracking-wider placeholder:tracking-normal placeholder:text-gray-600"
-                                            />
-                                        </div>
+                            {/* E-mail Input Step */}
+                            {step === 'email' && (
+                                <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500 relative z-10">
+                                    <div className="text-center">
+                                        <h2 className="text-xl font-bold text-white mb-1">Connexion par E-mail</h2>
+                                        <p className="text-sm text-gray-400">Saisissez votre adresse Gmail ou E-mail pour continuer.</p>
                                     </div>
-
+                                    <div className="flex items-center gap-3 bg-black/40 border border-white/10 p-4 rounded-2xl focus-within:border-amber-500/50 transition-colors">
+                                        <Mail className="text-gray-500 w-5 h-5" />
+                                        <input
+                                            type="email"
+                                            value={email}
+                                            onChange={e => setEmail(e.target.value)}
+                                            placeholder="votre.email@gmail.com"
+                                            className="bg-transparent outline-none text-white font-bold w-full text-lg placeholder:text-gray-600"
+                                            required
+                                            autoFocus
+                                        />
+                                    </div>
                                     <button
-                                        onClick={handleSendOtp}
-                                        disabled={isLoading || phone.length < 9}
-                                        className="w-full py-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 rounded-xl font-black text-white shadow-lg shadow-red-600/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:grayscale"
+                                        onClick={handleEmailLogin}
+                                        disabled={isLoading || !email}
+                                        className="w-full py-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 rounded-xl font-black text-white shadow-lg shadow-red-600/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                                     >
-                                        {isLoading ? <Loader2 className="animate-spin" /> : <>Continuer <ArrowRight className="w-5 h-5" /></>}
+                                        {isLoading ? <Loader2 className="animate-spin" /> : "Envoyer le lien"}
                                     </button>
 
                                     <div className="relative py-2">
@@ -1370,45 +1372,6 @@ function ProfileContent() {
                                             Facebook
                                         </button>
                                     </div>
-
-                                    {/* E-mail / Gmail manually */}
-                                    <button
-                                        onClick={() => setStep('email')}
-                                        className="w-full py-4 bg-white/5 border border-white/10 hover:bg-white/10 text-white rounded-xl font-bold flex items-center justify-center gap-2 active:scale-[0.98] transition-all text-sm"
-                                    >
-                                        <Mail className="w-5 h-5 text-gray-400 flex-shrink-0" />
-                                        E-mail / Gmail
-                                    </button>
-                                </div>
-                            )}
-
-                            {/* E-mail Input Step */}
-                            {step === 'email' && (
-                                <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500 relative z-10">
-                                    <div className="text-center">
-                                        <h2 className="text-xl font-bold text-white mb-1">Connexion par E-mail</h2>
-                                        <p className="text-sm text-gray-400">Saisissez votre adresse Gmail ou E-mail pour continuer.</p>
-                                    </div>
-                                    <div className="flex items-center gap-3 bg-black/40 border border-white/10 p-4 rounded-2xl focus-within:border-amber-500/50 transition-colors">
-                                        <Mail className="text-gray-500 w-5 h-5" />
-                                        <input
-                                            type="email"
-                                            value={email}
-                                            onChange={e => setEmail(e.target.value)}
-                                            placeholder="votre.email@gmail.com"
-                                            className="bg-transparent outline-none text-white font-bold w-full text-lg placeholder:text-gray-600"
-                                            required
-                                            autoFocus
-                                        />
-                                    </div>
-                                    <button
-                                        onClick={handleEmailLogin}
-                                        disabled={isLoading || !email}
-                                        className="w-full py-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-500 hover:to-red-600 rounded-xl font-black text-white shadow-lg shadow-red-600/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
-                                    >
-                                        {isLoading ? <Loader2 className="animate-spin" /> : "Envoyer le lien"}
-                                    </button>
-                                    <button onClick={() => setStep('phone')} className="text-xs text-gray-500 w-full text-center hover:text-white transition-colors">Retour au téléphone</button>
                                 </div>
                             )}
 
@@ -1424,7 +1387,7 @@ function ProfileContent() {
                                         Veuillez cliquer sur le lien dans votre boîte de réception pour vous connecter.
                                     </p>
                                     <button
-                                        onClick={() => setStep('phone')}
+                                        onClick={() => setStep('email')}
                                         className="w-full py-4 bg-white/5 border border-white/10 rounded-xl text-white font-bold hover:bg-white/10 transition-colors"
                                     >
                                         Retour à la connexion

@@ -287,7 +287,7 @@ export default function HotelPage() {
     };
 
     return (
-        <div className="min-h-screen pt-16 md:pt-20 pb-52 bg-[#0B0F19]">
+        <div className="min-h-screen pt-16 md:pt-20 pb-52 bg-[#0B0F19] overflow-x-hidden w-full relative">
 
             {/* Page Header */}
             <div className="pt-6 pb-2 px-4 max-w-6xl mx-auto relative z-20">

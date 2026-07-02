@@ -150,7 +150,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" suppressHydrationWarning>
-      <body className={`${inter.className} ${outfit.variable} bg-[#0F172A]`}>
+      <body className={`${inter.className} ${outfit.variable} bg-[#0F172A] overflow-x-hidden w-full relative`}>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

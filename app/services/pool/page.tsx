@@ -218,7 +218,7 @@ export default function PoolPage() {
         setLoading(false);
     }, [selectedOption, activeOption, category, date, adults, children, totalPrice, paymentMethod, router, t]);
     return (
-        <div className="min-h-screen pt-16 md:pt-20 pb-52 bg-[#0B0F19]">
+        <div className="min-h-screen pt-16 md:pt-20 pb-52 bg-[#0B0F19] overflow-x-hidden w-full relative">
 
             {/* Page Header */}
             <div className="pt-6 pb-2 px-4 max-w-5xl mx-auto relative z-20">
@@ -243,7 +243,7 @@ export default function PoolPage() {
                 <div className="absolute bottom-[25%] left-[10%] w-[300px] h-[300px] bg-emerald-600/5 rounded-full blur-[120px] pointer-events-none -z-10" />
 
                 {/* POOL HERO CAROUSEL */}
-                <div className="relative w-full h-[200px] sm:h-[260px] rounded-full overflow-hidden border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] group">
+                <div className="relative w-full h-[200px] sm:h-[260px] rounded-[2.5rem] overflow-hidden border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] group">
                     <div 
                         id="pool-carousel-container"
                         onScroll={(e) => {                            const target = e.target as HTMLElement;

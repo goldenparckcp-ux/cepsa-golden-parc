@@ -50,16 +50,16 @@ export default function LoginPage() {
                 setErrorMsg(data.error || "Code PIN incorrect ou refusé.");
                 setPin("");
             } else {
-                localStorage.setItem("staff_session", JSON.stringify({
-                    role: data.role,
-                    name: data.name || "Personnel"
-                }));
-                
-                // Redirect based on role
-                if (data.role === 'kitchen') router.push('/admin/kitchen');
-                else if (data.role === 'services') router.push('/admin/services');
-                else if (data.role === 'hotel') router.push('/admin/hotel');
-                else router.push('/admin');
+                if (data.role === 'admin') {
+                    localStorage.setItem("staff_session", JSON.stringify({
+                        role: data.role,
+                        name: data.name || "Directeur"
+                    }));
+                    router.push('/admin');
+                } else {
+                    setErrorMsg("Accès admin uniquement. Utilisez le portail Employés (/staff).");
+                    setPin("");
+                }
             }
         } catch (err) {
             setErrorMsg("Erreur réseau. Essai hors ligne...");
