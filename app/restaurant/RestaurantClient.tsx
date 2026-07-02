@@ -1075,98 +1075,105 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
                 </div>
             </div>
 
-            {/* HERO CAROUSEL */}
-            <div className="px-4 max-w-7xl mx-auto mb-6 relative z-10 animate-in fade-in duration-500">
-                <div className="relative w-full h-[200px] sm:h-[260px] rounded-[2.5rem] overflow-hidden border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] group">
-                    <div 
-                        id="resto-carousel-container"
-                        onScroll={(e) => {
-                            const target = e.target as HTMLElement;
-                            const scrollLeft = target.scrollLeft;
-                            const width = target.clientWidth;
-                            const index = Math.round(scrollLeft / width);
-                            const dots = document.querySelectorAll('.resto-dot');
-                            dots.forEach((dot, idx) => {
-                                if (idx === index) {
-                                    dot.classList.add('bg-amber-500', 'w-6');
-                                    dot.classList.remove('bg-white/30', 'w-2');
-                                } else {
-                                    dot.classList.remove('bg-amber-500', 'w-6');
-                                    dot.classList.add('bg-white/30', 'w-2');
-                                }
-                            });
-                        }}
-                        className="flex overflow-x-auto snap-x snap-mandatory gap-0 scrollbar-hide w-full h-full scroll-smooth"
-                    >
-                        {(heroSlides.length > 0 ? heroSlides : [
-                            {
-                                id: 'fallback-1',
-                                title: t('restaurant.hero.title') || "Délices du Golden Park",
-                                subtitle: t('restaurant.hero.sub1') || "Une cuisine généreuse et des saveurs authentiques cuisinées avec passion",
-                                badge_text: "MENU DU JOUR",
-                                image_url: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=1200&q=80"
-                            },
-                            {
-                                id: 'fallback-2',
-                                title: "Tajines & Spécialités",
-                                subtitle: "Découvrez notre authentique Tajine de Veau et nos grillades au feu de bois",
-                                badge_text: "TRADITION MAROCAINE",
-                                image_url: "https://images.unsplash.com/photo-1541518763669-27fef04b14ea?auto=format&fit=crop&w=1200&q=80"
-                            },
-                            {
-                                id: 'fallback-3',
-                                title: "Burgers & Fast Food",
-                                subtitle: "Des ingrédients frais pour des recettes gourmandes et généreuses",
-                                badge_text: "100% FAIT MAISON",
-                                image_url: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=1200&q=80"
-                            }
-                        ]).map((slide, idx) => (
-                            <div 
-                                key={slide.id || idx}
-                                className="relative w-full h-full shrink-0 snap-center flex items-center justify-between px-6 md:px-12 select-none"
-                                style={{ minWidth: '100%' }}
-                            >
-                                {/* Background Image */}
-                                <Image
-                                    src={slide.image_url}
-                                    alt={slide.title}
-                                    fill
-                                    priority={idx === 0}
-                                    className="object-cover absolute inset-0 -z-10 brightness-[0.65] saturate-150 transition-transform duration-[20s] ease-linear hover:scale-110 pointer-events-none"
-                                />
-                                {/* Full dark overlay */}
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F19] via-transparent to-black/40 -z-10" />
-
-                                {/* Content */}
-                                <div className="relative z-10 w-full flex items-center justify-between gap-4 h-full pb-6">
-                                    <div className="flex flex-col gap-1.5 flex-1 min-w-0 text-left justify-end h-full">
-                                        <span className="bg-amber-500/20 border border-amber-500/30 text-amber-400 text-[8px] sm:text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider inline-flex items-center gap-1 w-fit shadow-lg backdrop-blur-sm">
-                                            🍽️ {slide.badge_text}
-                                        </span>
-                                        <h2 className="text-white text-xl sm:text-2xl md:text-4xl font-black uppercase tracking-tight leading-tight drop-shadow-lg">
-                                            {slide.title}
-                                        </h2>
-                                        <p className="text-white/80 text-[9px] sm:text-[10px] md:text-xs font-medium line-clamp-2 drop-shadow leading-relaxed max-w-[280px] sm:max-w-[400px]">
-                                            {slide.subtitle}
-                                        </p>
+            {/* Featured Special Carousel */}
+            {activeCategory === "all" && dbItems.filter(i => i.isFeatured).length > 0 && (
+                <div className="px-4 max-w-7xl mx-auto mb-6 relative group z-10 animate-in fade-in duration-500">
+                    <div className="relative w-full h-[200px] sm:h-[260px] rounded-[2.5rem] overflow-hidden border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)]">
+                        <div 
+                            id="resto-carousel-container"
+                            onScroll={(e) => {
+                                const target = e.currentTarget;
+                                const index = Math.round(target.scrollLeft / target.clientWidth);
+                                const dots = document.querySelectorAll('.resto-dot');
+                                dots.forEach((dot, idx) => {
+                                    if (idx === index) {
+                                        dot.classList.add('bg-amber-500', 'w-6');
+                                        dot.classList.remove('bg-white/30', 'w-2');
+                                    } else {
+                                        dot.classList.remove('bg-amber-500', 'w-6');
+                                        dot.classList.add('bg-white/30', 'w-2');
+                                    }
+                                });
+                            }}
+                            className="flex overflow-x-auto snap-x snap-mandatory gap-0 scrollbar-hide w-full h-full scroll-smooth"
+                        >
+                            {dbItems.filter(i => i.isFeatured).map((item) => {
+                                const name = language === "ar" ? (item.name_ar || item.name) : item.name;
+                                const description = language === "ar" ? (item.description_ar || item.description) : item.description;
+                                return (
+                                    <div 
+                                        key={item.id}
+                                        onClick={() => handleItemClick(item)}
+                                        className="relative w-full h-full px-6 md:px-12 shrink-0 snap-center cursor-pointer select-none flex items-center"
+                                        style={{ minWidth: '100%' }}
+                                    >
+                                        {/* Background Image */}
+                                        {item.image && (
+                                            <Image 
+                                                src={item.image} 
+                                                alt={item.name}
+                                                fill
+                                                className="object-cover absolute inset-0 -z-10 brightness-[0.65] saturate-150 transition-transform duration-[20s] ease-linear hover:scale-110 pointer-events-none"
+                                            />
+                                        )}
+                                        {/* Dark/Gradient Overlay */}
+                                        <div className="absolute inset-0 bg-gradient-to-t from-[#0B0F19] via-transparent to-black/40 -z-10" />
+                                        
+                                        {/* Content Overlay */}
+                                        <div className="relative z-10 w-full flex items-center justify-between gap-4 h-full pb-6">
+                                            <div className="flex flex-col gap-1.5 flex-1 min-w-0 text-left justify-end h-full">
+                                                <span className="bg-gradient-to-r from-amber-500 to-orange-600 text-white text-[8px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider inline-flex items-center gap-1 w-fit shadow-lg backdrop-blur-sm">
+                                                    🌟 {language === "ar" ? "عرض خاص" : "Offre Spéciale"}
+                                                </span>
+                                                <h2 className="text-white text-xl sm:text-2xl md:text-4xl font-black uppercase tracking-tight leading-tight drop-shadow-lg truncate">
+                                                    {name}
+                                                </h2>
+                                                <p className="text-white/80 text-[9px] sm:text-[10px] md:text-xs font-medium line-clamp-2 drop-shadow leading-relaxed max-w-[280px] sm:max-w-[400px]">
+                                                    {description}
+                                                </p>
+                                            </div>
+                                            
+                                            {/* Price and CTA */}
+                                            <div className="flex flex-col items-end justify-end h-full shrink-0 pb-1">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="bg-white/10 backdrop-blur-md border border-white/15 px-3 py-1.5 rounded-xl flex flex-col justify-center text-left">
+                                                        <span className="text-[7px] text-gray-300 font-bold uppercase tracking-wider leading-none mb-0.5">Prix</span>
+                                                        <span className="text-white text-xs sm:text-sm font-black leading-none">
+                                                            {formatDh(item.basePrice)}
+                                                        </span>
+                                                    </div>
+                                                    
+                                                    <button 
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            handleItemClick(item);
+                                                        }}
+                                                        className="py-2.5 px-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-black text-[10px] uppercase tracking-wider rounded-xl shadow-lg active:scale-95 transition-all flex items-center gap-1.5"
+                                                    >
+                                                        <Plus className="w-3.5 h-3.5" />
+                                                        <span>{language === "ar" ? "طلب" : "Commander"}</span>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
                                     </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-
-                    {(heroSlides.length > 1 || heroSlides.length === 0) && (
-                        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
-                            {(heroSlides.length > 0 ? heroSlides : [1, 2, 3]).map((_, idx) => (
-                                <span 
-                                    key={idx} 
-                                    className={`resto-dot h-2 rounded-full transition-all duration-300 ${idx === 0 ? 'bg-amber-500 w-6' : 'bg-white/30 w-2'}`} 
-                                />
-                            ))}
+                                );
+                            })}
                         </div>
-                    )}
+
+                        {dbItems.filter(i => i.isFeatured).length > 1 && (
+                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-1.5 z-20">
+                                {dbItems.filter(i => i.isFeatured).map((_, idx) => (
+                                    <span 
+                                        key={idx} 
+                                        className={`resto-dot h-2 rounded-full transition-all duration-300 ${idx === 0 ? 'bg-amber-500 w-6' : 'bg-white/30 w-2'}`} 
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
-            </div>
+            )}
 
 
             

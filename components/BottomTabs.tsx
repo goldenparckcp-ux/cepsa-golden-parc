@@ -54,7 +54,7 @@ export default function BottomTabs() {
     return (
         <>
             {/* Main Navigation Bar */}
-            <nav className="fixed bottom-0 left-0 right-0 z-[60] safe-area-bottom md:hidden rounded-t-[2.2rem] overflow-hidden">
+            <nav className="fixed bottom-0 left-0 right-0 z-[60] safe-area-bottom md:hidden">
                 {/* Glass Background with Gradient Border Top */}
                 <div className="absolute inset-0 bg-[#0F172A]/90 backdrop-blur-xl border-t border-white/10 rounded-t-[2.2rem] shadow-[0_-10px_40px_rgba(0,0,0,0.4)]"></div>
 
