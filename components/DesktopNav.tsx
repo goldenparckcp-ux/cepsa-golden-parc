@@ -29,8 +29,10 @@ export default function DesktopNav() {
             <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
 
                 {/* Logo - Centered Left */}
-                <Link href="/" className="flex items-center gap-2 group shrink-0">
-                    <CepsaLogo className="w-11 h-11 transform rotate-3 group-hover:rotate-0 transition-transform drop-shadow-[0_0_12px_rgba(220,38,38,0.4)]" />
+                <Link href="/" className="flex items-center gap-3 group shrink-0">
+                    <div className="w-10 h-10 bg-red-600 rounded-lg flex items-center justify-center transform rotate-3 group-hover:rotate-0 transition-transform shadow-[0_0_15px_rgba(220,38,38,0.5)]">
+                        <CepsaLogo className="w-6 h-6 text-white" />
+                    </div>
                     <div>
                         <h1 className="text-2xl font-black text-white tracking-tight leading-none">
                             GOLDEN <span className="text-red-600">PARC</span>

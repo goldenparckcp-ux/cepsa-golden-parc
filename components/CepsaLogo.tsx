@@ -3,56 +3,19 @@ import React from "react";
 export default function CepsaLogo({ className = "w-8 h-8", color = "text-white" }: { className?: string, color?: string }) {
     return (
         <svg
-            viewBox="0 0 100 100"
+            viewBox="0 0 53 49"
             className={`${className} ${color}`}
-            fill="none"
+            fill="currentColor"
             xmlns="http://www.w3.org/2000/svg"
         >
-            <defs>
-                {/* Premium Red Gradient */}
-                <linearGradient id="gpc-red" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#EF4444" />
-                    <stop offset="50%" stopColor="#DC2626" />
-                    <stop offset="100%" stopColor="#991B1B" />
-                </linearGradient>
-                {/* Premium Gold/Orange Gradient */}
-                <linearGradient id="gpc-gold" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#FBBF24" />
-                    <stop offset="50%" stopColor="#F59E0B" />
-                    <stop offset="100%" stopColor="#D97706" />
-                </linearGradient>
-                {/* Silver/White Highlight Gradient */}
-                <linearGradient id="gpc-silver" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#FFFFFF" />
-                    <stop offset="100%" stopColor="#CBD5E1" />
-                </linearGradient>
-            </defs>
-
-            {/* Mathematically Symmetrical Geometric G & Star Design */}
-            <g transform="translate(2, 2) scale(0.96)">
-                {/* Outer G Loop */}
-                <path
-                    d="M 75 30 A 35 35 0 1 0 75 70 L 55 70 L 55 52"
-                    stroke="url(#gpc-red)"
-                    strokeWidth="9"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                />
-                
-                {/* Silver Inline Highlight on G */}
-                <path
-                    d="M 74 32 A 31 31 0 1 0 74 68 L 57 68"
-                    stroke="url(#gpc-silver)"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                />
-
-                {/* Symmetrical 4-Pointed GPS Star */}
-                <path
-                    d="M 50 28 Q 50 50 72 50 Q 50 50 50 72 Q 50 50 28 50 Q 50 50 50 28 Z"
-                    fill="url(#gpc-gold)"
-                />
-            </g>
+            {/* Top-Right wing */}
+            <path d="M51.1,16.4l-14.1,0c-1,0-1.1-0.5-1-1l2.9-14.5c0.2-0.9-0.6-1-1-0.6l-5.7,4.6c-0.6,0.5-1.5,1.3-1.7,2.7 c-0.6,3.1-1.4,6.8-2,9.8c-0.7,3.5,2,5.7,5.3,5.7l9.7,0c0.8,0,1.5-0.2,2.1-0.7c0.3-0.3,5-4,5.6-4.6C52.2,16.9,51.7,16.4,51.1,16.4z" />
+            {/* Top-Left wing */}
+            <path d="M27.5,10.2c0.2-0.9-0.5-1.1-1.3-0.6l-7.7,6.3c-0.4,0.3-1,0.6-1.5,0.6H10c-0.8,0-1.5,0.2-2.1,0.7 c-0.3,0.3-5,4-5.6,4.6c-1,0.8-0.5,1.3,0.2,1.3L19,23c3,0,6.4-2.5,6.9-4.8L27.5,10.2z" />
+            {/* Bottom-Left wing */}
+            <path d="M18,25.1l-9.7,0c-0.8,0-1.5,0.2-2.1,0.7c-0.3,0.3-5,4-5.6,4.6c-1,0.8-0.5,1.3,0.2,1.3l14.1,0 c1,0,1.1,0.5,1,1.1l-2.9,14.5c-0.2,0.9,0.6,1,1,0.6l5.3-4.3c0.7-0.5,1.8-1.3,2.1-2.7c0,0,1.4-7.2,2.1-10.1 C24,27.3,21.4,25.1,18,25.1z" />
+            {/* Bottom-Right wing */}
+            <path d="M49.4,25.1l-16.6,0c-3,0-6.4,2.5-6.9,4.8l-1.6,8c-0.2,0.9,0.5,1.1,1.3,0.6l7.7-6.2c0.4-0.3,1-0.6,1.5-0.6 l7.1,0c0.8,0,1.5-0.2,2.1-0.7c0.3-0.3,5-4,5.6-4.6C50.6,25.6,50,25.1,49.4,25.1z" />
         </svg>
     );
 }
