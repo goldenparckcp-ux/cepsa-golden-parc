@@ -57,7 +57,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/api/webhooks') ||
     pathname.startsWith('/api/checkout') ||
     pathname.startsWith('/api/chat') ||
-    pathname.startsWith('/api/orders')
+    pathname.startsWith('/api/orders') ||
+    pathname.startsWith('/api/temp-migrate')
   ) {
     return NextResponse.next();
   }

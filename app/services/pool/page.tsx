@@ -5,8 +5,8 @@ import { ChevronLeft, CheckCircle2, Ticket, Sun, Users, Baby, Waves } from "luci
 import { useRouter } from 'next/navigation';
 import Image from "next/image";
 import { supabase } from '@/lib/supabase';
-// Import PaymentModal properly
-import PaymentModal from '@/components/PaymentModal';
+import dynamic from 'next/dynamic';
+const PaymentModal = dynamic(() => import('@/components/PaymentModal'), { ssr: false });
 import { useTranslation } from '@/lib/state/LanguageContext';
 
 const POOL_OPTIONS = [

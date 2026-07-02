@@ -4,8 +4,9 @@ import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { BedDouble, Calendar, ChevronLeft, CheckCircle2, Moon, Sun, AlertCircle } from "lucide-react";
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
+const PaymentModal = dynamic(() => import('@/components/PaymentModal'), { ssr: false });
 import { supabase } from '@/lib/supabase';
-import PaymentModal from '@/components/PaymentModal';
 import { useTranslation } from '@/lib/state/LanguageContext';
 // Force TS index update
 

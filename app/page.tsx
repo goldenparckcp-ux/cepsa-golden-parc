@@ -43,6 +43,7 @@ export default function Home() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [promos, setPromos] = useState<any[]>([]);
   const [openFaq, setOpenFaq] = useState<number | null>(null);
+  const [gallery, setGallery] = useState<{ src: string; alt: string }[]>([]);
 
   // Reviews States
   const [reviews, setReviews] = useState<any[]>([
@@ -171,8 +172,25 @@ export default function Home() {
       }
     };
 
+    // Load station photo gallery from database
+    const loadGallery = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('station_gallery')
+          .select('*')
+          .order('order_index', { ascending: true });
+        
+        if (!error && data && data.length > 0) {
+          setGallery(data.map(item => ({ src: item.image_url, alt: item.caption })));
+        }
+      } catch (err) {
+        console.error("Failed to load station gallery:", err);
+      }
+    };
+
     loadPromos();
     loadReviews();
+    loadGallery();
   }, []);
 
   const handleSubmitReview = async () => {
@@ -548,14 +566,14 @@ export default function Home() {
             
             <div className="animate-marquee-images flex gap-6">
               {/* Duplicate the array of images to achieve a seamless loop */}
-              {[
+              {(gallery.length > 0 ? gallery : [
                 { src: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80', alt: 'Station Carburant' },
                 { src: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80', alt: "Hôtel L'Escale" },
                 { src: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=800&q=80', alt: 'Piscine Privée' },
                 { src: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=800&q=80', alt: 'Restaurant Beldi' },
                 { src: 'https://images.unsplash.com/photo-1599839619722-39751411ea63?auto=format&fit=crop&w=800&q=80', alt: 'Entretien & Lubrifiants' },
                 { src: 'https://images.unsplash.com/photo-1470723710355-95304d8aece4?auto=format&fit=crop&w=800&q=80', alt: 'Espace Café & Repos' }
-              ].concat([
+              ]).concat(gallery.length > 0 ? gallery : [
                 { src: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?auto=format&fit=crop&w=800&q=80', alt: 'Station Carburant' },
                 { src: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80', alt: "Hôtel L'Escale" },
                 { src: 'https://images.unsplash.com/photo-1576013551627-0cc20b96c2a7?auto=format&fit=crop&w=800&q=80', alt: 'Piscine Privée' },
