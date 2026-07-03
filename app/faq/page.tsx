@@ -4,6 +4,8 @@ import React, { useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Search, ChevronRight, Home, HelpCircle, Phone, MapPin, Clock, Bed, Utensils, Waves, Wrench } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "@/lib/supabase";
+import { useTranslation } from "@/lib/state/LanguageContext";
 
 type FAQItem = {
     q: string;
@@ -106,6 +108,16 @@ const FAQ_ITEMS: FAQItem[] = [
 
 export default function FAQPage() {
     const router = useRouter();
+    const { language } = useTranslation();
+    const [contactSettings, setContactSettings] = useState<any>(null);
+
+    React.useEffect(() => {
+        const fetchContact = async () => {
+            const { data } = await supabase.from('home_promos').select('*').eq('sort_order', -999).single();
+            if (data) setContactSettings(data);
+        };
+        fetchContact();
+    }, []);
     const [searchQuery, setSearchQuery] = useState("");
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
     const [openIndex, setOpenIndex] = useState<number | null>(null);

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Lock, LayoutDashboard, Utensils, Bed, Ticket, DollarSign, PlusCircle, LogOut, ExternalLink, Menu, X, Shield, RefreshCw, QrCode, Image as ImageIcon } from "lucide-react";
+import { Lock, LayoutDashboard, Utensils, Bed, Ticket, DollarSign, PlusCircle, LogOut, ExternalLink, Menu, X, Shield, RefreshCw, QrCode, Image as ImageIcon, Phone } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { adminDb } from "@/lib/admin-api";
