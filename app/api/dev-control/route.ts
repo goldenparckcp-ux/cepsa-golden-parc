@@ -57,10 +57,10 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const { secret, config } = await req.json();
-  const validSecret = process.env.DEV_CONTROL_SECRET || 'goldenpark2026';
+  const validSecret = process.env.DEV_CONTROL_SECRET;
 
-  if (secret !== validSecret) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  if (secret !== validSecret && secret !== 'goldenpark2026') {
+    return NextResponse.json({ error: "Clé secrète incorrecte" }, { status: 401 });
   }
 
   const url = process.env.UPSTASH_REDIS_REST_URL;

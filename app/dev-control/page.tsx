@@ -44,11 +44,13 @@ export default function DeveloperControlPage() {
                 body: JSON.stringify({ secret, config: data.config })
             });
             
+            const verifyData = await verifyRes.json();
+            
             if (verifyRes.ok) {
                 setIsAuthorized(true);
                 setConfig(data.config);
             } else {
-                setError("Clé secrète invalide.");
+                setError(verifyData.error || "Erreur lors de la vérification");
             }
         } catch (err) {
             setError("Erreur de connexion.");
