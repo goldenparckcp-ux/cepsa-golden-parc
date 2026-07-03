@@ -45,6 +45,7 @@ export async function middleware(request: NextRequest) {
   if (isMaintenance && pathname !== '/maintenance') {
     const isBypass = 
       pathname.startsWith('/admin') || 
+      pathname.startsWith('/staff') || 
       pathname.startsWith('/api/admin') || 
       pathname.startsWith('/login') ||
       pathname.startsWith('/api/auth') ||
@@ -89,7 +90,7 @@ export async function middleware(request: NextRequest) {
 
   // 2. Publicly accessible routes that bypass auth
   if (
-    (!pathname.startsWith('/admin') && !pathname.startsWith('/api/')) || // Bypass auth for normal public pages
+    (!pathname.startsWith('/admin') && !pathname.startsWith('/api/') && !pathname.startsWith('/staff')) || 
     pathname === '/login' ||
     pathname.startsWith('/api/auth') ||
     pathname.startsWith('/api/webhooks') ||
@@ -109,7 +110,14 @@ export async function middleware(request: NextRequest) {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
-    url.pathname = '/login';
+    
+    // If they are exactly on /admin or /staff, allow them to see the client-side login form
+    if (pathname === '/admin' || pathname === '/staff') {
+      return NextResponse.next();
+    }
+    
+    // Otherwise, redirect to the respective login page
+    url.pathname = pathname.startsWith('/staff') ? '/staff' : '/admin';
     return NextResponse.redirect(url);
   }
 
@@ -128,8 +136,18 @@ export async function middleware(request: NextRequest) {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
     }
-    url.pathname = '/login';
-    return NextResponse.redirect(url);
+    
+    // If they are exactly on /admin or /staff, clear cookie and show login form
+    if (pathname === '/admin' || pathname === '/staff') {
+      const response = NextResponse.next();
+      response.cookies.delete('staff_token');
+      return response;
+    }
+    
+    url.pathname = pathname.startsWith('/staff') ? '/staff' : '/admin';
+    const response = NextResponse.redirect(url);
+    response.cookies.delete('staff_token');
+    return response;
   }
 }
 
