@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { AlertTriangle, PhoneCall, Mail, Clock } from "lucide-react";
+import { AlertTriangle, Mail, Clock } from "lucide-react";
 
 export default function MaintenancePage() {
     return (
@@ -26,7 +26,7 @@ export default function MaintenancePage() {
                         Maintenance en cours
                     </h1>
                     <p className="text-gray-400 text-sm font-medium leading-relaxed pt-2">
-                        Le service est momentanément indisponible. Pour réactiver le service ou pour toute réclamation, veuillez contacter le développeur en charge du projet.
+                        Le service est momentanément indisponible. Pour réactiver le service ou pour toute réclamation, veuillez contacter le développeur en charge du projet en laissant un message.
                     </p>
                 </div>
 
@@ -36,25 +36,10 @@ export default function MaintenancePage() {
                         <Clock className="w-4 h-4 text-amber-500 shrink-0" />
                         <span className="text-xs font-semibold">Temps de résolution : En attente d'action</span>
                     </div>
-                    <div className="flex items-center gap-3 text-gray-300">
-                        <Mail className="w-4 h-4 text-amber-500 shrink-0" />
-                        <span className="text-xs font-semibold">Contact : support@goldenparkstation.com</span>
-                    </div>
-                </div>
-
-                {/* Call Developer Actions */}
-                <div className="pt-2 flex flex-col gap-3">
-                    <a 
-                        href="tel:+212600000000" 
-                        className="py-4 px-6 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-black font-black text-sm uppercase tracking-wider rounded-2xl shadow-lg hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-2"
-                    >
-                        <PhoneCall className="w-4 h-4" />
-                        <span>Contacter le Développeur</span>
-                    </a>
                 </div>
 
                 {/* Brand watermark */}
-                <div className="text-[9px] font-black text-gray-600 uppercase tracking-widest">
+                <div className="text-[9px] font-black text-gray-600 uppercase tracking-widest pt-4">
                     Golden Parc Station
                 </div>
             </div>

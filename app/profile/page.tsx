@@ -88,14 +88,21 @@ function ProfileContent() {
             return;
         }
 
-        const { error } = await supabase.from('profiles').update(updates).eq('id', userId);
-
-        if (error) {
-            alert('Erreur: ' + error.message);
-        } else {
+        try {
+            const res = await fetch('/api/profile', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ userId, updates })
+            });
+            const data = await res.json();
+            
+            if (!res.ok) throw new Error(data.error || 'Erreur inconnue');
+            
             setFullName(editName);
             setPhone(editPhone);
             setIsEditing(false);
+        } catch (err: any) {
+            alert('Erreur: ' + err.message);
         }
         setIsLoading(false);
     };
