@@ -22,6 +22,24 @@ export async function middleware(request: NextRequest) {
   const url = request.nextUrl.clone();
   const pathname = url.pathname;
 
+  // 0. Maintenance Mode Redirection
+  const isMaintenance = process.env.NEXT_PUBLIC_MAINTENANCE_MODE === 'true';
+  
+  if (isMaintenance && pathname !== '/maintenance') {
+    const isBypass = 
+      pathname.startsWith('/admin') || 
+      pathname.startsWith('/api/admin') || 
+      pathname.startsWith('/login') ||
+      pathname.startsWith('/api/auth') ||
+      pathname.startsWith('/_next') ||
+      pathname.startsWith('/favicon.ico');
+      
+    if (!isBypass) {
+      url.pathname = '/maintenance';
+      return NextResponse.redirect(url);
+    }
+  }
+
   // 1. Rate Limiting for all API routes at the Edge
   if (pathname.startsWith('/api/')) {
     const ip = request.headers.get('x-forwarded-for') || 'unknown';
@@ -96,7 +114,13 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/admin/:path*',
-    '/api/:path*',
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico, favicon.png, icon.png, apple-icon.png (icon files)
+     * - vercel.svg, next.svg, globe.svg (vector files)
+     */
+    '/((?!_next/static|_next/image|favicon.ico|favicon.png|icon.png|apple-icon.png|.*\\.svg|.*\\.png|.*\\.jpg|.*\\.jpeg).*)',
   ],
 };
