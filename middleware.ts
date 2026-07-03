@@ -28,7 +28,9 @@ export async function middleware(request: NextRequest) {
     restaurant: false,
     pool: false,
     lubrifiants: false,
-    hotel: false
+    hotel: false,
+    admin: false,
+    staff: false
   };
   const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
   const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -59,10 +61,6 @@ export async function middleware(request: NextRequest) {
   
   const isBypass = 
     pathname === '/maintenance' ||
-    pathname.startsWith('/admin') || 
-    pathname.startsWith('/staff') || 
-    pathname.startsWith('/api/admin') || 
-    pathname.startsWith('/login') ||
     pathname.startsWith('/api/auth') ||
     pathname.startsWith('/dev-control') ||
     pathname.startsWith('/api/dev-control') ||
@@ -72,6 +70,8 @@ export async function middleware(request: NextRequest) {
   if (!isBypass) {
     let block = false;
     if (maintenanceConfig.global) block = true;
+    else if ((pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) && maintenanceConfig.admin) block = true;
+    else if (pathname.startsWith('/staff') && maintenanceConfig.staff) block = true;
     else if (pathname.startsWith('/restaurant') && maintenanceConfig.restaurant) block = true;
     else if (pathname.startsWith('/services/pool') && maintenanceConfig.pool) block = true;
     else if (pathname.startsWith('/services/lubrifiants') && maintenanceConfig.lubrifiants) block = true;

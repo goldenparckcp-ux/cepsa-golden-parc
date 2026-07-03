@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Lock, Unlock, Server, Power, AlertTriangle, ShieldCheck, Settings, Globe, Utensils, Waves, Droplet, Bed } from "lucide-react";
+import { Lock, Unlock, Server, Power, AlertTriangle, ShieldCheck, Settings, Globe, Utensils, Waves, Droplet, Bed, UserCircle, Users } from "lucide-react";
 
 type Config = {
   global: boolean;
@@ -9,6 +9,8 @@ type Config = {
   pool: boolean;
   lubrifiants: boolean;
   hotel: boolean;
+  admin: boolean;
+  staff: boolean;
 };
 
 export default function DeveloperControlPage() {
@@ -19,7 +21,9 @@ export default function DeveloperControlPage() {
         restaurant: false,
         pool: false,
         lubrifiants: false,
-        hotel: false
+        hotel: false,
+        admin: false,
+        staff: false
     });
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState("");
@@ -118,6 +122,8 @@ export default function DeveloperControlPage() {
 
     const sections = [
         { key: 'global', name: 'Site Global', icon: Globe, desc: 'Bloque l\'accès à tout le site' },
+        { key: 'admin', name: 'Admin Panel', icon: UserCircle, desc: 'Bloque l\'accès au panel administrateur' },
+        { key: 'staff', name: 'Staff Panel', icon: Users, desc: 'Bloque l\'accès au panel staff' },
         { key: 'restaurant', name: 'Restaurant', icon: Utensils, desc: 'Bloque uniquement /restaurant' },
         { key: 'pool', name: 'Piscine', icon: Waves, desc: 'Bloque uniquement /services/pool' },
         { key: 'lubrifiants', name: 'Lavage & Vidange', icon: Droplet, desc: 'Bloque uniquement /services/lubrifiants' },

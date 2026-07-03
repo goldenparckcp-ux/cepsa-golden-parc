@@ -5,7 +5,9 @@ const DEFAULT_CONFIG = {
   restaurant: false,
   pool: false,
   lubrifiants: false,
-  hotel: false
+  hotel: false,
+  admin: false,
+  staff: false
 };
 
 export async function GET() {
