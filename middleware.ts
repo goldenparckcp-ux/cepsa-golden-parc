@@ -23,38 +23,61 @@ export async function middleware(request: NextRequest) {
   const pathname = url.pathname;
 
   // 0. Maintenance Mode Redirection
-  let isMaintenance = false;
+  let maintenanceConfig = {
+    global: false,
+    restaurant: false,
+    pool: false,
+    lubrifiants: false,
+    hotel: false
+  };
   const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
   const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
   
   if (redisUrl && redisToken) {
     try {
-      const res = await fetch(`${redisUrl}/get/site_maintenance_mode`, {
+      const res = await fetch(`${redisUrl}/get/site_maintenance_config`, {
         headers: { Authorization: `Bearer ${redisToken}` },
         cache: 'no-store'
       });
       if (res.ok) {
         const data = await res.json();
-        isMaintenance = data.result === "true";
+        if (data.result) {
+            try { maintenanceConfig = { ...maintenanceConfig, ...JSON.parse(data.result) }; } catch(e){}
+        } else {
+            // Migration fallback
+            const oldRes = await fetch(`${redisUrl}/get/site_maintenance_mode`, { headers: { Authorization: `Bearer ${redisToken}` }});
+            if (oldRes.ok) {
+                const oldData = await oldRes.json();
+                if (oldData.result === 'true') maintenanceConfig.global = true;
+            }
+        }
       }
     } catch (e) {
       console.warn("Failed to check maintenance mode in Redis", e);
     }
   }
   
-  if (isMaintenance && pathname !== '/maintenance') {
-    const isBypass = 
-      pathname.startsWith('/admin') || 
-      pathname.startsWith('/staff') || 
-      pathname.startsWith('/api/admin') || 
-      pathname.startsWith('/login') ||
-      pathname.startsWith('/api/auth') ||
-      pathname.startsWith('/dev-control') ||
-      pathname.startsWith('/api/dev-control') ||
-      pathname.startsWith('/_next') ||
-      pathname.startsWith('/favicon.ico');
+  const isBypass = 
+    pathname === '/maintenance' ||
+    pathname.startsWith('/admin') || 
+    pathname.startsWith('/staff') || 
+    pathname.startsWith('/api/admin') || 
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/api/auth') ||
+    pathname.startsWith('/dev-control') ||
+    pathname.startsWith('/api/dev-control') ||
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/favicon.ico');
       
-    if (!isBypass) {
+  if (!isBypass) {
+    let block = false;
+    if (maintenanceConfig.global) block = true;
+    else if (pathname.startsWith('/restaurant') && maintenanceConfig.restaurant) block = true;
+    else if (pathname.startsWith('/services/pool') && maintenanceConfig.pool) block = true;
+    else if (pathname.startsWith('/services/lubrifiants') && maintenanceConfig.lubrifiants) block = true;
+    else if (pathname.startsWith('/hotel') && maintenanceConfig.hotel) block = true;
+
+    if (block) {
       url.pathname = '/maintenance';
       return NextResponse.redirect(url);
     }

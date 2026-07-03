@@ -1,5 +1,13 @@
 import { NextResponse } from 'next/server';
 
+const DEFAULT_CONFIG = {
+  global: false,
+  restaurant: false,
+  pool: false,
+  lubrifiants: false,
+  hotel: false
+};
+
 export async function GET() {
   const url = process.env.UPSTASH_REDIS_REST_URL;
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
@@ -9,24 +17,44 @@ export async function GET() {
   }
 
   try {
-    const res = await fetch(`${url}/get/site_maintenance_mode`, {
-      headers: { Authorization: `Bearer ${token}` },
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(["GET", "site_maintenance_config"]),
       cache: 'no-store'
     });
     
     if (!res.ok) throw new Error("Failed to fetch");
     const data = await res.json();
-    const isMaintenance = data.result === "true";
     
-    return NextResponse.json({ isMaintenance });
+    let config = { ...DEFAULT_CONFIG };
+    if (data.result) {
+        try {
+            config = { ...config, ...JSON.parse(data.result) };
+        } catch(e) {}
+    } else {
+        // Migration from old single boolean key
+        const oldRes = await fetch(`${url}/get/site_maintenance_mode`, { headers: { Authorization: `Bearer ${token}` }});
+        if (oldRes.ok) {
+            const oldData = await oldRes.json();
+            if (oldData.result === 'true') {
+                config.global = true;
+            }
+        }
+    }
+    
+    return NextResponse.json({ config });
   } catch (error) {
     console.error("Redis fetch error:", error);
-    return NextResponse.json({ isMaintenance: false }); // default safe
+    return NextResponse.json({ config: DEFAULT_CONFIG });
   }
 }
 
 export async function POST(req: Request) {
-  const { secret, isMaintenance } = await req.json();
+  const { secret, config } = await req.json();
   const validSecret = process.env.DEV_CONTROL_SECRET || 'goldenpark2026';
 
   if (secret !== validSecret) {
@@ -41,13 +69,17 @@ export async function POST(req: Request) {
   }
 
   try {
-    const res = await fetch(`${url}/set/site_maintenance_mode/${isMaintenance ? 'true' : 'false'}`, {
+    const res = await fetch(url, {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` }
+      headers: { 
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(["SET", "site_maintenance_config", JSON.stringify(config)])
     });
     
     if (!res.ok) throw new Error("Failed to set");
-    return NextResponse.json({ success: true, isMaintenance });
+    return NextResponse.json({ success: true, config });
   } catch (error) {
     console.error("Redis set error:", error);
     return NextResponse.json({ error: "Failed to update status" }, { status: 500 });
