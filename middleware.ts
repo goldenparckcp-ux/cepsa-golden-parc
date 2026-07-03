@@ -23,7 +23,24 @@ export async function middleware(request: NextRequest) {
   const pathname = url.pathname;
 
   // 0. Maintenance Mode Redirection
-  const isMaintenance = process.env.NEXT_PUBLIC_MAINTENANCE_MODE === 'true';
+  let isMaintenance = false;
+  const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
+  const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+  
+  if (redisUrl && redisToken) {
+    try {
+      const res = await fetch(`${redisUrl}/get/site_maintenance_mode`, {
+        headers: { Authorization: `Bearer ${redisToken}` },
+        cache: 'no-store'
+      });
+      if (res.ok) {
+        const data = await res.json();
+        isMaintenance = data.result === "true";
+      }
+    } catch (e) {
+      console.warn("Failed to check maintenance mode in Redis", e);
+    }
+  }
   
   if (isMaintenance && pathname !== '/maintenance') {
     const isBypass = 
@@ -31,6 +48,8 @@ export async function middleware(request: NextRequest) {
       pathname.startsWith('/api/admin') || 
       pathname.startsWith('/login') ||
       pathname.startsWith('/api/auth') ||
+      pathname.startsWith('/dev-control') ||
+      pathname.startsWith('/api/dev-control') ||
       pathname.startsWith('/_next') ||
       pathname.startsWith('/favicon.ico');
       
