@@ -1,0 +1,86 @@
+version: "2"
+type: frontend
+tech_stack:
+  - TypeScript
+  - Next.js
+  - TailwindCSS
+  - Supabase
+  - Lucide React
+  - React QR Scanner
+routes:
+  - path: /
+    file: app/page.tsx
+    auth_required: false
+    description: Public landing page
+  - path: /restaurant
+    file: app/restaurant/page.tsx
+    auth_required: false
+    description: Restaurant menu and ordering
+  - path: /hotel
+    file: app/hotel/page.tsx
+    auth_required: false
+    description: Hotel room booking
+  - path: /services/pool
+    file: app/services/pool/page.tsx
+    auth_required: false
+    description: Pool booking
+  - path: /scan
+    file: app/scan/page.tsx
+    auth_required: false
+    description: QR Scanner for table/room codes
+  - path: /profile
+    file: app/profile/page.tsx
+    auth_required: false
+    description: User profile and auth
+  - path: /login
+    file: app/login/page.tsx
+    auth_required: false
+    description: Redirects to /profile
+  - path: /admin
+    file: app/admin/page.tsx
+    auth_required: true
+    description: Admin dashboard
+  - path: /staff
+    file: app/staff/page.tsx
+    auth_required: true
+    description: Staff login portal
+features:
+  - name: User Login and Profile
+    description: Phone number authentication via OTP
+    files:
+      - app/profile/page.tsx
+    entry_route: /profile
+    user_interactions:
+      - Fill phone number
+      - Receive and enter OTP
+      - View wallet balance and history
+    api_calls:
+      - method: POST
+        endpoint: /api/auth/otp
+    auth_required: false
+  - name: QR Code Scanning
+    description: Scan table or room QR codes to access specific services
+    files:
+      - app/scan/page.tsx
+    entry_route: /scan
+    user_interactions:
+      - Open camera
+      - Scan QR code
+      - Redirect to mapped route based on token
+    api_calls: []
+    auth_required: false
+  - name: Restaurant Ordering
+    description: Browse menu and add items to cart, then checkout
+    files:
+      - app/restaurant/page.tsx
+      - app/restaurant/RestaurantClient.tsx
+    entry_route: /restaurant
+    user_interactions:
+      - Browse categories
+      - Add items to cart
+      - Checkout with cash or online payment
+    api_calls:
+      - method: POST
+        endpoint: /api/orders
+    auth_required: false
+known_limitations: []

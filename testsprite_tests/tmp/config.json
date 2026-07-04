@@ -1,0 +1,17 @@
+{
+  "status": "commited",
+  "type": "frontend",
+  "scope": "codebase",
+  "localEndpoint": "http://localhost:3000",
+  "executionArgs": {
+    "projectName": "cepsa-golden-park",
+    "projectPath": "c:\\Users\\lv\\OneDrive\\Desktop\\woork\\golden parck cepsa\\cepsa-golden-park",
+    "testIds": [],
+    "additionalInstruction": "",
+    "serverMode": "development",
+    "envs": {
+      "API_KEY": "sk-user-yOldlZLMNuPjPa3k5iNYO-ceia717TkJYbvrvhRrmjDL9X5Nfi47xqR88uHmWGt5bZ7sFS_Uzf_JuGpcLMArA-vjlvvuSqFC54rlbHXGcFoa0H8mWkGTMv0_qJdr94PuKxY"
+    }
+  },
+  "serverPort": 53441
+}

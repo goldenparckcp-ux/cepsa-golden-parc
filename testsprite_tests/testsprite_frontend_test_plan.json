@@ -1,0 +1,988 @@
+[
+  {
+    "id": "TC001",
+    "title": "Reach the protected admin area after authentication",
+    "description": "Verifies that an authenticated admin user can access the protected admin area and see the admin dashboard.",
+    "category": "Protected access for /staff and /admin after authentication",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the admin area entry point"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the admin dashboard is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC002",
+    "title": "Reach the protected staff area after authentication",
+    "description": "Verifies that an authenticated staff user can access the protected staff area and see the staff dashboard.",
+    "category": "Protected access for /staff and /admin after authentication",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the login credentials with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the login form"
+      },
+      {
+        "type": "action",
+        "description": "Click the staff area entry point"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the staff dashboard is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC003",
+    "title": "Submit a restaurant order with cash payment",
+    "description": "Verifies that a guest can add menu items to the cart, complete checkout with cash payment, and see the order confirmation state.",
+    "category": "Restaurant Ordering",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /restaurant"
+      },
+      {
+        "type": "action",
+        "description": "Browse menu categories"
+      },
+      {
+        "type": "action",
+        "description": "Add an item to the cart"
+      },
+      {
+        "type": "action",
+        "description": "Proceed to checkout"
+      },
+      {
+        "type": "action",
+        "description": "Choose cash payment"
+      },
+      {
+        "type": "action",
+        "description": "Submit the order"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a confirmation state is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an active order state is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC004",
+    "title": "Admin can reach the management dashboard after signing in",
+    "description": "This verifies that an administrator can authenticate and reach the protected admin dashboard successfully.",
+    "category": "Admin Dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the management dashboard is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC005",
+    "title": "Complete restaurant checkout with dining location",
+    "description": "Verifies that a guest can add items to the cart, choose a dining location during checkout, and successfully submit the order.",
+    "category": "Restaurant Ordering",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /restaurant"
+      },
+      {
+        "type": "action",
+        "description": "Add an item to the cart"
+      },
+      {
+        "type": "action",
+        "description": "Proceed to checkout"
+      },
+      {
+        "type": "action",
+        "description": "Choose a dining location"
+      },
+      {
+        "type": "action",
+        "description": "Submit the order"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a confirmation state is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an active order state is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC006",
+    "title": "Staff can reach the protected portal after signing in",
+    "description": "This verifies that a staff member can authenticate and reach the protected staff area successfully.",
+    "category": "Staff Portal",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /staff"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the staff dashboard is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC007",
+    "title": "Submit a restaurant order with online payment",
+    "description": "Verifies that a guest can add items to the cart, complete checkout with online payment, and see the order confirmation state.",
+    "category": "Restaurant Ordering",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /restaurant"
+      },
+      {
+        "type": "action",
+        "description": "Browse menu categories"
+      },
+      {
+        "type": "action",
+        "description": "Add an item to the cart"
+      },
+      {
+        "type": "action",
+        "description": "Proceed to checkout"
+      },
+      {
+        "type": "action",
+        "description": "Choose online payment"
+      },
+      {
+        "type": "action",
+        "description": "Submit the order"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a confirmation state is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify an active order state is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC008",
+    "title": "Admin can open the dashboard from the protected route",
+    "description": "This verifies that an authenticated administrator can access the admin area directly from the protected route.",
+    "category": "Admin Dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify protected admin content is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC009",
+    "title": "Request and verify phone OTP to access the profile",
+    "description": "Verifies that a customer can request phone OTP authentication, complete verification, and load profile details with wallet and history.",
+    "category": "Phone OTP Authentication and Profile Access",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /profile"
+      },
+      {
+        "type": "action",
+        "description": "Enter a valid phone number"
+      },
+      {
+        "type": "action",
+        "description": "Request OTP"
+      },
+      {
+        "type": "action",
+        "description": "Enter the received OTP"
+      },
+      {
+        "type": "action",
+        "description": "Submit the OTP"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify profile details are displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify wallet balance and history are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC010",
+    "title": "Staff can open the portal from the protected route",
+    "description": "This verifies that a staff member who signs in can access the staff portal directly from the protected route.",
+    "category": "Staff Portal",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /staff"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify protected staff content is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC011",
+    "title": "Open the mapped service route by scanning a valid QR code",
+    "description": "Verifies that scanning a valid QR code in the scanner opens the mapped destination service route.",
+    "category": "QR Code Scanning",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /scan"
+      },
+      {
+        "type": "action",
+        "description": "Open the camera"
+      },
+      {
+        "type": "action",
+        "description": "Scan a valid QR code"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the mapped service route is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC012",
+    "title": "Admin dashboard remains available after authentication",
+    "description": "This verifies that authenticated administrators can load the admin dashboard and see the management portal content they need.",
+    "category": "Admin Dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /admin"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the admin portal content is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC013",
+    "title": "Staff dashboard remains available after authentication",
+    "description": "This verifies that authenticated staff can load the staff dashboard and see the portal content they need.",
+    "category": "Staff Portal",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /login"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the email field with {{LOGIN_USER}}"
+      },
+      {
+        "type": "action",
+        "description": "Fill in the password field with {{LOGIN_PASSWORD}}"
+      },
+      {
+        "type": "action",
+        "description": "Submit the form"
+      },
+      {
+        "type": "action",
+        "description": "Navigate to /staff"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the staff portal content is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC014",
+    "title": "Book a hotel stay with valid dates",
+    "description": "Verifies that a guest can select a room, choose a valid stay range, and receive a booking confirmation.",
+    "category": "Hotel Room Booking",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /hotel"
+      },
+      {
+        "type": "action",
+        "description": "Select a room type"
+      },
+      {
+        "type": "action",
+        "description": "Choose a valid check-in date"
+      },
+      {
+        "type": "action",
+        "description": "Choose a valid check-out date"
+      },
+      {
+        "type": "action",
+        "description": "Submit the reservation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a booking confirmation is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC015",
+    "title": "Admin route requires authentication before access",
+    "description": "This verifies that a user must authenticate before reaching the admin dashboard from the protected route.",
+    "category": "Admin Dashboard",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /admin"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the admin sign-in experience is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC016",
+    "title": "Keep shopping and see updated restaurant totals",
+    "description": "Verifies that a guest can continue shopping after adding items and see the cart totals update before checkout.",
+    "category": "Restaurant Ordering",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /restaurant"
+      },
+      {
+        "type": "action",
+        "description": "Browse menu categories"
+      },
+      {
+        "type": "action",
+        "description": "Add an item to the cart"
+      },
+      {
+        "type": "action",
+        "description": "Continue shopping"
+      },
+      {
+        "type": "action",
+        "description": "Add another item to the cart"
+      },
+      {
+        "type": "action",
+        "description": "Review the cart"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify updated cart totals are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC017",
+    "title": "Staff route requires authentication before access",
+    "description": "This verifies that a user must authenticate before reaching the staff dashboard from the protected route.",
+    "category": "Staff Portal",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /staff"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the staff sign-in experience is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC018",
+    "title": "Reserve a hotel room with valid dates",
+    "description": "A customer can select a hotel room, choose a valid stay range, and receive a booking confirmation.",
+    "category": "Hotel Room Booking",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /hotel"
+      },
+      {
+        "type": "action",
+        "description": "Select an available room type"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid check-in date into the check-in date field"
+      },
+      {
+        "type": "action",
+        "description": "Fill a valid check-out date into the check-out date field"
+      },
+      {
+        "type": "action",
+        "description": "Submit the reservation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a booking confirmation is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the reservation details are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC019",
+    "title": "Book pool access with a valid ticket selection",
+    "description": "Verifies that a guest can choose a valid pool ticket quantity and type and submit a successful booking.",
+    "category": "Pool Booking",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /services/pool"
+      },
+      {
+        "type": "action",
+        "description": "Select a ticket type"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid ticket quantity"
+      },
+      {
+        "type": "action",
+        "description": "Submit the booking"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a booking confirmation is displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC020",
+    "title": "Book pool access tickets successfully",
+    "description": "A customer can choose a pool ticket quantity and type, submit the booking, and receive a confirmation.",
+    "category": "Pool Booking",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /services/pool"
+      },
+      {
+        "type": "action",
+        "description": "Select a valid ticket quantity"
+      },
+      {
+        "type": "action",
+        "description": "Select a ticket type"
+      },
+      {
+        "type": "action",
+        "description": "Submit the booking"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a pool reservation confirmation is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the booking details are displayed"
+      }
+    ],
+    "priority": "High"
+  },
+  {
+    "id": "TC021",
+    "title": "Update profile details successfully",
+    "description": "A customer can edit personal details in the profile area and see the updated profile information after saving.",
+    "category": "User Profile Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /profile"
+      },
+      {
+        "type": "action",
+        "description": "Edit personal details with valid information"
+      },
+      {
+        "type": "action",
+        "description": "Save the changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated profile information is displayed"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a success confirmation is visible"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC022",
+    "title": "Edit profile details and save updates",
+    "description": "Verifies that an authenticated customer can update personal profile details and see the saved information reflected in the profile view.",
+    "category": "Phone OTP Authentication and Profile Access",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /profile"
+      },
+      {
+        "type": "action",
+        "description": "Enter a valid phone number"
+      },
+      {
+        "type": "action",
+        "description": "Request OTP"
+      },
+      {
+        "type": "action",
+        "description": "Enter the received OTP"
+      },
+      {
+        "type": "action",
+        "description": "Submit the OTP"
+      },
+      {
+        "type": "action",
+        "description": "Open profile editing"
+      },
+      {
+        "type": "action",
+        "description": "Update personal details with valid values"
+      },
+      {
+        "type": "action",
+        "description": "Save the profile changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a successful save confirmation is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the updated profile details are displayed"
+      }
+    ],
+    "priority": "Medium"
+  },
+  {
+    "id": "TC023",
+    "title": "See restaurant checkout validation when required selections are missing",
+    "description": "Verifies that a guest who reaches checkout without completing required selections sees validation feedback and remains in checkout.",
+    "category": "Restaurant Ordering",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /restaurant"
+      },
+      {
+        "type": "action",
+        "description": "Add an item to the cart"
+      },
+      {
+        "type": "action",
+        "description": "Proceed to checkout"
+      },
+      {
+        "type": "action",
+        "description": "Submit the order without completing required selections"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a validation error is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the checkout step remains open"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC024",
+    "title": "See hotel date validation for an invalid stay range",
+    "description": "Verifies that selecting an invalid hotel date range shows validation feedback and prevents reservation submission.",
+    "category": "Hotel Room Booking",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /hotel"
+      },
+      {
+        "type": "action",
+        "description": "Select a room type"
+      },
+      {
+        "type": "action",
+        "description": "Choose an invalid check-in and check-out date range"
+      },
+      {
+        "type": "action",
+        "description": "Submit the reservation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a date validation error is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the reservation form remains open"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC025",
+    "title": "Keep profile data unchanged when validation fails",
+    "description": "A customer entering invalid profile details sees validation feedback and the existing profile data remains unchanged.",
+    "category": "User Profile Management",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /profile"
+      },
+      {
+        "type": "action",
+        "description": "Edit personal details with invalid input"
+      },
+      {
+        "type": "action",
+        "description": "Save the changes"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a validation error is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the current profile information remains displayed"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC026",
+    "title": "Reject an incorrect phone OTP",
+    "description": "Verifies that entering an incorrect OTP on the profile authentication step shows validation feedback and keeps the user on the verification step.",
+    "category": "Phone OTP Authentication and Profile Access",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /profile"
+      },
+      {
+        "type": "action",
+        "description": "Enter a valid phone number"
+      },
+      {
+        "type": "action",
+        "description": "Request OTP"
+      },
+      {
+        "type": "action",
+        "description": "Enter an incorrect OTP"
+      },
+      {
+        "type": "action",
+        "description": "Submit the OTP"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify OTP validation feedback is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the verification step remains open"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC027",
+    "title": "Reject an invalid pool ticket quantity",
+    "description": "A customer entering an invalid pool ticket quantity sees validation feedback and cannot complete the booking.",
+    "category": "Pool Booking",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /services/pool"
+      },
+      {
+        "type": "action",
+        "description": "Select an invalid ticket quantity"
+      },
+      {
+        "type": "action",
+        "description": "Select a ticket type"
+      },
+      {
+        "type": "action",
+        "description": "Submit the booking"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a quantity validation error is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the booking form remains available"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC028",
+    "title": "See pool ticket quantity validation for an invalid selection",
+    "description": "Verifies that choosing a zero or invalid pool ticket quantity shows validation feedback and blocks booking submission.",
+    "category": "Pool Booking",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /services/pool"
+      },
+      {
+        "type": "action",
+        "description": "Select a ticket type"
+      },
+      {
+        "type": "action",
+        "description": "Select an invalid ticket quantity"
+      },
+      {
+        "type": "action",
+        "description": "Submit the booking"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a quantity validation error is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the booking form remains open"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC029",
+    "title": "Reject a hotel booking with an invalid stay range",
+    "description": "A customer who enters an invalid hotel date range sees validation feedback and stays on the booking form.",
+    "category": "Hotel Room Booking",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /hotel"
+      },
+      {
+        "type": "action",
+        "description": "Select an available room type"
+      },
+      {
+        "type": "action",
+        "description": "Fill an invalid stay range into the date fields"
+      },
+      {
+        "type": "action",
+        "description": "Submit the reservation"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a date validation error is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the booking form remains available"
+      }
+    ],
+    "priority": "Low"
+  },
+  {
+    "id": "TC030",
+    "title": "Show feedback when a QR code cannot be mapped",
+    "description": "Verifies that scanning an unmapped or invalid QR code shows failure feedback and does not leave the scanner flow.",
+    "category": "QR Code Scanning",
+    "steps": [
+      {
+        "type": "action",
+        "description": "Navigate to /scan"
+      },
+      {
+        "type": "action",
+        "description": "Open the camera"
+      },
+      {
+        "type": "action",
+        "description": "Scan an unmapped QR code"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify a scan failure message is visible"
+      },
+      {
+        "type": "assertion",
+        "description": "Verify the scanner view remains open"
+      }
+    ],
+    "priority": "Low"
+  }
+]

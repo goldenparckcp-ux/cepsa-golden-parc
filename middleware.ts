@@ -72,10 +72,7 @@ export async function middleware(request: NextRequest) {
     if (maintenanceConfig.global) block = true;
     else if ((pathname.startsWith('/admin') || pathname.startsWith('/api/admin')) && maintenanceConfig.admin) block = true;
     else if (pathname.startsWith('/staff') && maintenanceConfig.staff) block = true;
-    else if (pathname.startsWith('/restaurant') && maintenanceConfig.restaurant) block = true;
-    else if (pathname.startsWith('/services/pool') && maintenanceConfig.pool) block = true;
-    else if (pathname.startsWith('/services/lubrifiants') && maintenanceConfig.lubrifiants) block = true;
-    else if (pathname.startsWith('/hotel') && maintenanceConfig.hotel) block = true;
+    else if (maintenanceConfig.client && !pathname.startsWith('/admin') && !pathname.startsWith('/staff')) block = true;
 
     if (block) {
       url.pathname = '/maintenance';

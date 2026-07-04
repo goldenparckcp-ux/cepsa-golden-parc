@@ -4,14 +4,17 @@ import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import {
   Utensils, Waves, BedDouble, ChevronRight, MapPin,
-  Loader2, XCircle, ShieldAlert, Banknote, CreditCard, CheckCircle2
+  Loader2, XCircle, ShieldAlert, Banknote, CreditCard, CheckCircle2, Camera
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import dynamic from "next/dynamic";
+
+const Scanner = dynamic(() => import('@yudiel/react-qr-scanner').then(mod => mod.Scanner), { ssr: false });
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 type LocationType = "restaurant" | "pool" | "hotel";
 type PaymentMethod = "cash" | "online";
-type Step = "checking" | "valid" | "invalid" | "error" | "payment";
+type Step = "checking" | "valid" | "invalid" | "error" | "payment" | "scan_camera";
 
 const TYPE_META = {
   restaurant: {
@@ -58,7 +61,7 @@ function ScanContent() {
 
   // ── 1. Verify token ────────────────────────────────────────────────────────
   useEffect(() => {
-    if (!token) { setStep("invalid"); setReady(true); return; }
+    if (!token) { setStep("scan_camera"); setReady(true); return; }
 
     async function verifyToken() {
       try {
@@ -115,6 +118,50 @@ function ScanContent() {
           <p className="text-white font-bold text-lg">Vérification...</p>
           <p className="text-gray-500 text-sm mt-1">Validation du QR code</p>
         </div>
+      </main>
+    );
+  }
+
+  // ── SCAN CAMERA ────────────────────────────────────────────────────────────
+  if (step === "scan_camera") {
+    return (
+      <main className="min-h-screen bg-[#070A13] flex flex-col items-center justify-center p-6 text-white">
+        <div className="w-full max-w-md text-center mb-6">
+          <h1 className="text-2xl font-black mb-2 text-white flex items-center justify-center gap-2">
+            <Camera className="w-6 h-6 text-amber-500" />
+            Scanner le QR Code
+          </h1>
+          <p className="text-gray-400 text-sm">Veuillez scanner le QR Code présent sur votre table ou dans votre chambre.</p>
+        </div>
+        
+        <div className="w-72 h-72 sm:w-80 sm:h-80 rounded-[2rem] overflow-hidden border-4 border-amber-500/50 shadow-2xl relative mb-8">
+            <Scanner
+                onScan={(result) => {
+                    if (result && result.length > 0) {
+                        const code = result[0].rawValue.trim();
+                        // Parse url and extract ?t= if possible, or assume it's the url
+                        if (code.includes('?t=')) {
+                            const urlParams = new URL(code).searchParams;
+                            const t = urlParams.get('t');
+                            if (t) {
+                                router.replace('/scan?t=' + t);
+                                return;
+                            }
+                        }
+                        // Fallback
+                        router.replace(code);
+                    }
+                }}
+                onError={(e) => console.log(e?.message)}
+            />
+        </div>
+        
+        <button
+          onClick={() => router.push("/")}
+          className="px-8 py-3.5 rounded-2xl font-bold text-white bg-white/10 hover:bg-white/15 border border-white/10 transition-all"
+        >
+          Retour à l'accueil
+        </button>
       </main>
     );
   }

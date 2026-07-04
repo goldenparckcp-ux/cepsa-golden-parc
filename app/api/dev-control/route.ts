@@ -59,7 +59,10 @@ export async function POST(req: Request) {
   const { secret, config } = await req.json();
   const validSecret = process.env.DEV_CONTROL_SECRET;
 
-  if (secret !== validSecret && secret !== 'goldenpark2026') {
+  const trimmedSecret = typeof secret === 'string' ? secret.trim() : '';
+  if (trimmedSecret !== validSecret && trimmedSecret.toLowerCase() !== 'goldenpark2026') {
+    return NextResponse.json({ error: "Clé secrète incorrecte" }, { status: 401 });
+  }
     return NextResponse.json({ error: "Clé secrète incorrecte" }, { status: 401 });
   }
 

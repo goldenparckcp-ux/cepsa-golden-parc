@@ -44,7 +44,7 @@ export default function HotelPage() {
     const router = useRouter();
     const { t, language } = useTranslation();
     const [selectedRoom, setSelectedRoom] = useState<string | null>(null);
-    const [bookingType, setBookingType] = useState<'night' | 'sieste'>('night');
+    const bookingType = 'night' as const;
 
     // Dates Logic
     const [dates, setDates] = useState(() => {
@@ -313,7 +313,7 @@ export default function HotelPage() {
                 <div className="absolute bottom-[20%] right-[10%] w-[350px] h-[350px] bg-violet-600/5 rounded-full blur-[120px] pointer-events-none -z-10" />
 
                 {/* HERO BANNER CAROUSEL */}
-                <div className="relative w-full h-[200px] sm:h-[260px] rounded-[2.5rem] overflow-hidden border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] group">
+                <div className="relative w-full h-[240px] sm:h-[300px] rounded-[2.5rem] overflow-hidden border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.5)] group">
                     <div 
                         id="hotel-carousel-container"
                         onScroll={(e) => {
@@ -420,40 +420,6 @@ export default function HotelPage() {
                 </div>
 
 
-                {/* MODE SWITCHER */}
-                <div className="flex flex-col items-center gap-2 max-w-md mx-auto w-full">
-                    <div className="relative bg-[#111827]/40 p-1.5 rounded-full border border-white/5 flex w-full shadow-2xl backdrop-blur-md">
-                        {/* Glowing slider */}
-                        <div className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded-full transition-all duration-500 ease-in-out shadow-lg
-                            ${bookingType === 'night'
-                                ? 'ltr:left-1.5 rtl:right-1.5 bg-gradient-to-br from-amber-500 to-orange-600 shadow-orange-500/30'
-                                : 'ltr:left-[calc(50%+4px)] rtl:right-[calc(50%+4px)] bg-gradient-to-br from-indigo-500 to-violet-600 shadow-indigo-500/30'
-                            }`}
-                        />
-                        {/* Night Button */}
-                        <button
-                            onClick={() => setBookingType('night')}
-                            className={`flex-1 flex items-center justify-center gap-2 py-4 px-4 rounded-3xl relative z-10 font-bold text-sm transition-all duration-300
-                                ${bookingType === 'night' ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
-                        >
-                            <Moon className={`w-4 h-4 transition-transform duration-300 ${bookingType === 'night' ? 'scale-110' : ''}`} />
-                            <span>{t('hotel.night_mode')}</span>
-                        </button>
-                        {/* Sieste Button */}
-                        <button
-                            onClick={() => setBookingType('sieste')}
-                            className={`flex-1 flex items-center justify-center gap-2 py-4 px-4 rounded-3xl relative z-10 font-bold text-sm transition-all duration-300
-                                ${bookingType === 'sieste' ? 'text-white' : 'text-gray-500 hover:text-gray-300'}`}
-                        >
-                            <Sun className={`w-4 h-4 transition-transform duration-300 ${bookingType === 'sieste' ? 'scale-110 rotate-12' : ''}`} />
-                            <span>{t('hotel.siesta_mode')}</span>
-                        </button>
-                    </div>
-                    {/* Subtitle hint */}
-                    <p className="text-xs text-gray-400 font-semibold tracking-wide">
-                        {bookingType === 'night' ? '🌙 Réservation complète pour la nuit' : '☀️ Repos de quelques heures en journée'}
-                    </p>
-                </div>
 
                 {/* Room Gallery */}
                 <div id="hotel-room-gallery" className="space-y-4">
@@ -475,10 +441,7 @@ export default function HotelPage() {
                                         <h3 className="text-xl font-black text-white leading-tight uppercase tracking-tight">{t(room.nameKey)}</h3>
                                         <div className="bg-black/55 backdrop-blur-md px-3 py-1.5 rounded-xl border border-white/10 text-amber-400 font-extrabold flex flex-col items-end shrink-0 shadow-lg">
                                             {/* Dynamic Price Display */}
-                                            {bookingType === 'night'
-                                                ? <span className="text-sm">{room.price} DH <span className="text-[9px] text-white/60 font-medium">/{t('hotel.per_night')}</span></span>
-                                                : <span className="text-sm">{room.siestePrice} DH <span className="text-[9px] text-white/60 font-medium">/{t('hotel.per_siesta')}</span></span>
-                                            }
+                                            <span className="text-sm">{room.price} DH <span className="text-[9px] text-white/60 font-medium">/{t('hotel.per_night')}</span></span>
                                         </div>
                                     </div>
                                 </div>
@@ -557,79 +520,45 @@ export default function HotelPage() {
                 {/* Conditional Inputs: Dates vs Hours */}
                 <div className="bg-[#111827]/40 backdrop-blur-md p-6 rounded-[2rem] border border-white/5 space-y-4 max-w-4xl mx-auto w-full shadow-2xl">
 
-                    {bookingType === 'night' ? (
-                        /* Night Mode Inputs */
-                        <>
-                            <div className="flex items-center gap-2 mb-2">
-                                <Calendar className="w-5 h-5 text-amber-500" />
-                                <h3 className="font-bold text-white uppercase text-xs tracking-wider">{t('hotel.dates.stay')}</h3>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <div>
-                                    <label htmlFor="checkInDate" className="text-[10px] font-black text-gray-400 uppercase mb-2 block tracking-wider">{t('hotel.dates.checkin')}</label>
-                                    <input
-                                        id="checkInDate"
-                                        type="date"
-                                        value={dates.checkIn}
-                                        onChange={handleCheckInChange}
-                                        min={new Date().toISOString().split('T')[0]}
-                                        className="w-full bg-[#0B0F19]/80 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-amber-500 font-bold h-[50px] appearance-none"
-                                    />
-                                </div>
-                                <div>
-                                    <label htmlFor="checkOutDate" className="text-[10px] font-black text-gray-400 uppercase mb-2 block tracking-wider">{t('hotel.dates.checkout')}</label>
-                                    <input
-                                        id="checkOutDate"
-                                        type="date"
-                                        value={dates.checkOut}
-                                        onChange={handleCheckOutChange}
-                                        min={dates.checkIn}
-                                        className={`w-full bg-[#0B0F19]/80 border rounded-xl p-3 text-white outline-none font-bold transition-all h-[50px] appearance-none ${dateError ? 'border-red-500 ring-1 ring-red-500/50' : 'border-white/10 focus:border-amber-500'
-                                            }`}
-                                    />
-                                </div>
-                            </div>
-                            {/* ERROR MESSAGE */}
-                            {dateError && (
-                                <div className="bg-red-500/10 border border-red-500/50 rounded-xl p-3 flex items-center gap-2 animate-shake">
-                                    <AlertCircle className="w-4 h-4 text-red-500" />
-                                    <span className="text-xs font-bold text-red-500">{dateError}</span>
-                                </div>
-                            )}
-                        </>
-                    ) : (
-                        /* Sieste Mode Inputs */
-                        <>
-                            <div className="flex items-center gap-2 mb-2">
-                                <Sun className="w-5 h-5 text-amber-500" />
-                                <h3 className="font-bold text-white uppercase text-xs tracking-wider">{t('hotel.siesta.fast')}</h3>
+                    {/* Night Mode Inputs */}
+                    <>
+                        <div className="flex items-center gap-2 mb-2">
+                            <Calendar className="w-5 h-5 text-amber-500" />
+                            <h3 className="font-bold text-white uppercase text-xs tracking-wider">{t('hotel.dates.stay')}</h3>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label htmlFor="checkInDate" className="text-[10px] font-black text-gray-400 uppercase mb-2 block tracking-wider">{t('hotel.dates.checkin')}</label>
+                                <input
+                                    id="checkInDate"
+                                    type="date"
+                                    value={dates.checkIn}
+                                    onChange={handleCheckInChange}
+                                    min={new Date().toISOString().split('T')[0]}
+                                    className="w-full bg-[#0B0F19]/80 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-amber-500 font-bold h-[50px] appearance-none"
+                                />
                             </div>
                             <div>
-                                <label htmlFor="siesteDate" className="text-[10px] font-black text-gray-400 uppercase mb-2 block tracking-wider">{t('hotel.siesta.date')}</label>
+                                <label htmlFor="checkOutDate" className="text-[10px] font-black text-gray-400 uppercase mb-2 block tracking-wider">{t('hotel.dates.checkout')}</label>
                                 <input
-                                    id="siesteDate"
+                                    id="checkOutDate"
                                     type="date"
-                                    value={siesteTime.date}
-                                    onChange={(e) => setSiesteTime({ ...siesteTime, date: e.target.value })}
-                                    min={new Date().toISOString().split('T')[0]}
-                                    className="w-full bg-[#0B0F19]/80 border border-white/10 rounded-xl p-3 text-white outline-none focus:border-amber-500 font-bold mb-4 h-[50px] appearance-none"
+                                    value={dates.checkOut}
+                                    onChange={handleCheckOutChange}
+                                    min={dates.checkIn}
+                                    className={`w-full bg-[#0B0F19]/80 border rounded-xl p-3 text-white outline-none font-bold transition-all h-[50px] appearance-none ${dateError ? 'border-red-500 ring-1 ring-red-500/50' : 'border-white/10 focus:border-amber-500'
+                                        }`}
                                 />
-                                <label className="text-[10px] font-black text-gray-400 uppercase mb-2 block tracking-wider">{t('hotel.siesta.duration')}</label>
-                                <div className="flex gap-4 flex-wrap md:flex-nowrap">
-                                    {[2, 3, 4, 6].map(h => (
-                                        <button
-                                            key={h}
-                                            onClick={() => setSiesteTime({ ...siesteTime, hours: h })}
-                                            className={`flex-1 min-w-[60px] py-3.5 rounded-xl font-bold border transition-all ${siesteTime.hours === h ? 'bg-amber-500 text-black border-amber-500 shadow-lg' : 'bg-transparent text-gray-400 border-white/10 hover:bg-white/5 hover:text-white'}`}
-                                        >
-                                            {h}h
-                                        </button>
-                                    ))}
-                                </div>
-                                <p className="text-[10px] text-gray-500 mt-3 font-medium">{t('hotel.siesta.note')}</p>
                             </div>
-                        </>
-                    )}
+                        </div>
+                        {/* ERROR MESSAGE */}
+                        {dateError && (
+                            <div className="bg-red-500/10 border border-red-500/50 rounded-xl p-3 flex items-center gap-2 animate-shake">
+                                <AlertCircle className="w-4 h-4 text-red-500" />
+                                <span className="text-xs font-bold text-red-500">{dateError}</span>
+                            </div>
+                        )}
+                    </>
                 </div>
             </div>
 

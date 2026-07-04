@@ -41,8 +41,13 @@ export async function GET(request: NextRequest) {
             targetUrl.searchParams.set('session_loaded', '1')
             return NextResponse.redirect(targetUrl.toString())
         }
+        // Pass error details to error page
+        const errorUrl = new URL('/auth/auth-code-error', absoluteOrigin)
+        errorUrl.searchParams.set('error', error.message || 'unknown_error')
+        if (error.status) errorUrl.searchParams.set('status', String(error.status))
+        return NextResponse.redirect(errorUrl.toString())
     }
 
     // return the user to an error page with instructions
-    return NextResponse.redirect(`${absoluteOrigin}/auth/auth-code-error`)
+    return NextResponse.redirect(`${absoluteOrigin}/auth/auth-code-error?error=no_code_provided`)
 }

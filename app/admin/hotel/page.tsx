@@ -52,16 +52,17 @@ export default function AdminHotelReservationsPage() {
     const fetchHero = async () => {
         try {
             const { data, error } = await supabase
-                .from('hotel_hero')
+                .from('hero_sliders')
                 .select('*')
-                .order('created_at', { ascending: false })
+                .eq('page', 'hotel')
+                .order('order_index', { ascending: true })
                 .limit(1)
                 .maybeSingle();
             if (!error && data) {
                 setHeroData(data);
                 setHeroTableExists(true);
             } else if (error && error.code !== '42P01') {
-                setHeroTableExists(true); // table exists, just no data
+                setHeroTableExists(true);
             }
         } catch {
             // table may not exist yet
@@ -72,23 +73,24 @@ export default function AdminHotelReservationsPage() {
         setHeroSaving(true);
         try {
             if (heroData.id) {
-                await supabase.from('hotel_hero').update({
-                    title: heroData.title,
-                    subtitle: heroData.subtitle,
-                    badge_text: heroData.badge_text,
-                    cta_text: heroData.cta_text,
-                    image_url: heroData.image_url,
-                    is_active: heroData.is_active,
-                    updated_at: new Date().toISOString()
-                }).eq('id', heroData.id);
-            } else {
-                const { data } = await supabase.from('hotel_hero').insert({
+                await supabase.from('hero_sliders').update({
                     title: heroData.title,
                     subtitle: heroData.subtitle,
                     badge_text: heroData.badge_text,
                     cta_text: heroData.cta_text,
                     image_url: heroData.image_url,
                     is_active: heroData.is_active
+                }).eq('id', heroData.id);
+            } else {
+                const { data } = await supabase.from('hero_sliders').insert({
+                    page: 'hotel',
+                    title: heroData.title,
+                    subtitle: heroData.subtitle,
+                    badge_text: heroData.badge_text,
+                    cta_text: heroData.cta_text,
+                    image_url: heroData.image_url,
+                    is_active: heroData.is_active,
+                    order_index: 0
                 }).select().single();
                 if (data) setHeroData(prev => ({ ...prev, id: data.id }));
             }
