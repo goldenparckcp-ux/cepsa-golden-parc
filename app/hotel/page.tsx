@@ -127,11 +127,8 @@ export default function HotelPage() {
     // Dynamic Price Calculation
     const totalPrice = useMemo(() => {
         if (!activeRoom) return 0;
-        if (bookingType === 'sieste') {
-            return activeRoom.siestePrice;
-        }
         return activeRoom.price * (nights || 1);
-    }, [activeRoom, bookingType, nights]);
+    }, [activeRoom, nights]);
 
     // --- DATE HANDLERS ---
     const handleCheckInChange = (e: React.ChangeEvent<HTMLInputElement>) => {
