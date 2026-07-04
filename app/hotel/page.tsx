@@ -229,13 +229,10 @@ export default function HotelPage() {
             paymentMethod
         };
 
-        const specificData = bookingType === 'night' ? {
+        const specificData = {
             checkIn: dates.checkIn,
             checkOut: dates.checkOut,
             nights
-        } : {
-            siesteDate: siesteTime.date,
-            siesteHours: siesteTime.hours
         };
 
         const finalBookingData = { ...commonData, ...specificData };
@@ -257,11 +254,11 @@ export default function HotelPage() {
             booking_number: bookingNum,
             customer_phone: userPhone,
             room_type: selectedRoom,
-            booking_type: bookingType,
-            check_in: bookingType === 'night' ? dates.checkIn : siesteTime.date,
-            check_out: bookingType === 'night' ? dates.checkOut : siesteTime.date,
-            nights: bookingType === 'night' ? nights : 0,
-            duration_hours: bookingType === 'sieste' ? siesteTime.hours : null,
+            booking_type: 'night',
+            check_in: dates.checkIn,
+            check_out: dates.checkOut,
+            nights: nights,
+            duration_hours: null,
             total_price: finalPrice,
             status: 'pending',
             user_id: user.id
@@ -585,17 +582,14 @@ export default function HotelPage() {
                         <div className="flex flex-row-reverse rtl:flex-row items-center gap-3">
                             <div className="text-right rtl:text-left">
                                 <div className="text-white font-extrabold text-xs uppercase tracking-wider leading-tight">
-                                    {bookingType === 'night' ? t('hotel.book.night') : t('hotel.book.siesta')}
+                                    {t('hotel.book.night')}
                                 </div>
                                 <div className="text-gray-400 text-[10px] font-bold uppercase tracking-wider">
-                                    {bookingType === 'night'
-                                        ? (dateError ? t('hotel.book.invalid') : `${nights} ${t('hotel.book.nights_count')}`)
-                                        : `${siesteTime.hours} ${t('hotel.book.hours_count')}`
-                                    }
+                                    {dateError ? t('hotel.book.invalid') : `${nights} ${t('hotel.book.nights_count')}`}
                                 </div>
                             </div>
                             <div className={`w-10 h-10 rounded-full flex items-center justify-center text-black font-black shadow-lg ${dateError ? 'bg-red-500' : 'bg-amber-500 shadow-amber-500/25'}`}>
-                                {bookingType === 'night' ? (dateError ? '!' : nights) : '1'}
+                                {dateError ? '!' : nights}
                             </div>
                         </div>
                     </button>
