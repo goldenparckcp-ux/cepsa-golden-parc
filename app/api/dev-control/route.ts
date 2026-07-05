@@ -60,7 +60,7 @@ export async function POST(req: Request) {
   const validSecret = process.env.DEV_CONTROL_SECRET;
 
   const trimmedSecret = typeof secret === 'string' ? secret.trim() : '';
-  if (trimmedSecret !== validSecret && trimmedSecret !== 'marzouk12@3') {
+  if (!validSecret || trimmedSecret !== validSecret) {
     return NextResponse.json({ error: "Clé secrète incorrecte" }, { status: 401 });
   }
   const url = process.env.UPSTASH_REDIS_REST_URL;

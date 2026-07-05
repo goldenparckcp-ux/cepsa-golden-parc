@@ -59,138 +59,120 @@ export default function Home() {
   const reviewsCarouselRef = useRef<HTMLDivElement>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
-  // Auto-scroll Reviews Carousel horizontally
-  useEffect(() => {
-    if (reviews.length <= 1) return;
-    
-    const interval = setInterval(() => {
-      const el = reviewsCarouselRef.current;
-      if (!el) return;
-
-      const isMobile = window.innerWidth < 768;
-      if (!isMobile) return; // Only auto-play on mobile viewports where scroll is active
-
-      // Card width is 85vw on mobile, we find the exact card width by querying the first child or calculating
-      const firstCard = el.firstElementChild as HTMLElement;
-      const cardWidth = firstCard ? firstCard.offsetWidth + 20 : el.offsetWidth * 0.85 + 20; // card + gap
-      const maxScroll = el.scrollWidth - el.clientWidth;
-
-      if (el.scrollLeft >= maxScroll - 15) {
-        el.scrollTo({ left: 0, behavior: 'smooth' });
-      } else {
-        el.scrollTo({ left: el.scrollLeft + cardWidth, behavior: 'smooth' });
-      }
-    }, 4500);
-
-    return () => clearInterval(interval);
-  }, [reviews]);
+  // Auto-scroll removed for mobile performance (INP)
 
   useEffect(() => {
     setIsLoaded(true);
-    if ('geolocation' in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const userLat = position.coords.latitude;
-          const userLng = position.coords.longitude;
-          const dist = calculateDistance(userLat, userLng, STATION_COORDS.lat, STATION_COORDS.lng);
-          setDistance(dist);
-          // Vitesse moyenne estimée: 60km/h
-          setEta(Math.round((dist / 60) * 60));
-        },
-        (error) => console.log('Géolocalisation refusée:', error)
-      );
-    }
 
-    // Load fuel prices
-    const loadFuelPrices = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('fuel_prices')
-          .select('*')
-          .eq('id', 'current')
-          .maybeSingle();
-        if (!error && data) {
-          const gasPrice = Number(data.gasoil);
-          const essPrice = Number(data.sans_plomb || data.essence);
-          setFuelPrices({
-            gasoil: !isNaN(gasPrice) ? `${gasPrice.toFixed(2)} DH` : "12.50 DH",
-            essence: !isNaN(essPrice) ? `${essPrice.toFixed(2)} DH` : "14.20 DH"
-          });
-        }
-      } catch (err) {
-        console.error(err);
+    // Defer non-critical logic to avoid blocking the main thread (Fix for high INP/FCP on Mobile)
+    const timer = setTimeout(() => {
+      if ('geolocation' in navigator) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            const userLat = position.coords.latitude;
+            const userLng = position.coords.longitude;
+            const dist = calculateDistance(userLat, userLng, STATION_COORDS.lat, STATION_COORDS.lng);
+            setDistance(dist);
+            // Vitesse moyenne estimée: 60km/h
+            setEta(Math.round((dist / 60) * 60));
+          },
+          (error) => console.log('Géolocalisation refusée:', error)
+        );
       }
-    };
-    loadFuelPrices();
 
-    // Load active promotions from database
-    const loadPromos = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('home_promos')
-          .select('*')
-          .eq('is_active', true)
-          .order('sort_order', { ascending: true });
-        if (!error && data && data.length > 0) {
-          setPromos(data);
+      // Load fuel prices
+      const loadFuelPrices = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('fuel_prices')
+            .select('*')
+            .eq('id', 'current')
+            .maybeSingle();
+          if (!error && data) {
+            const gasPrice = Number(data.gasoil);
+            const essPrice = Number(data.sans_plomb || data.essence);
+            setFuelPrices({
+              gasoil: !isNaN(gasPrice) ? `${gasPrice.toFixed(2)} DH` : "12.50 DH",
+              essence: !isNaN(essPrice) ? `${essPrice.toFixed(2)} DH` : "14.20 DH"
+            });
+          }
+        } catch (err) {
+          console.error(err);
         }
-      } catch (err) {
-        console.error("Failed to load home promos:", err);
-      }
-    };
+      };
+      loadFuelPrices();
 
-    // Load client reviews from database
-    const loadReviews = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('client_reviews')
-          .select('*')
-          .eq('is_approved', true)
-          .order('created_at', { ascending: false });
-        
-        if (!error && data && data.length > 0) {
-          // Map to match reviews format with dynamic fallback checkers
-          const formattedReviews = data.map(r => {
-            let dateFormatted = "Récemment";
-            if (r.created_at) {
-              const d = new Date(r.created_at);
-              if (!isNaN(d.getTime())) {
-                dateFormatted = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+      // Load active promotions from database
+      const loadPromos = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('home_promos')
+            .select('*')
+            .eq('is_active', true)
+            .order('sort_order', { ascending: true });
+          if (!error && data && data.length > 0) {
+            setPromos(data);
+          }
+        } catch (err) {
+          console.error("Failed to load home promos:", err);
+        }
+      };
+
+      // Load client reviews from database
+      const loadReviews = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('client_reviews')
+            .select('*')
+            .eq('is_approved', true)
+            .order('created_at', { ascending: false });
+          
+          if (!error && data && data.length > 0) {
+            // Map to match reviews format with dynamic fallback checkers
+            const formattedReviews = data.map(r => {
+              let dateFormatted = "Récemment";
+              if (r.created_at) {
+                const d = new Date(r.created_at);
+                if (!isNaN(d.getTime())) {
+                  dateFormatted = d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+                }
               }
-            }
-            return {
-              name: r.name || "Client",
-              stars: Number(r.stars) || 5,
-              text: r.text || "",
-              date: dateFormatted
-            };
-          });
-          setReviews(formattedReviews);
+              return {
+                name: r.name || "Client",
+                stars: Number(r.stars) || 5,
+                text: r.text || "",
+                date: dateFormatted
+              };
+            });
+            setReviews(formattedReviews);
+          }
+        } catch (err) {
+          console.error("Failed to load reviews:", err);
         }
-      } catch (err) {
-        console.error("Failed to load reviews:", err);
-      }
-    };
+      };
 
-    // Load station photo gallery from database
-    const loadGallery = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('station_gallery')
-          .select('*')
-          .order('order_index', { ascending: true });
-        
-        if (!error && data && data.length > 0) {
-          setGallery(data.map(item => ({ src: item.image_url, alt: item.caption })));
+      // Load station photo gallery from database
+      const loadGallery = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('station_gallery')
+            .select('*')
+            .order('order_index', { ascending: true });
+          
+          if (!error && data && data.length > 0) {
+            setGallery(data.map(item => ({ src: item.image_url, alt: item.caption })));
+          }
+        } catch (err) {
+          console.error("Failed to load station gallery:", err);
         }
-      } catch (err) {
-        console.error("Failed to load station gallery:", err);
-      }
-    };
+      };
 
-    loadPromos();
-    loadReviews();
-    loadGallery();
+      loadPromos();
+      loadReviews();
+      loadGallery();
+    }, 1500);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const handleSubmitReview = async () => {
