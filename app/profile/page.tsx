@@ -1280,7 +1280,7 @@ function ProfileContent() {
                     </div>
                 ) : (
                     /* --- AUTH FORMS - PREMIUM --- */
-                    <div className="flex-1 flex flex-col items-center justify-center p-6 z-10 w-full max-w-md mx-auto relative">
+                    <div className="flex-1 flex flex-col items-center justify-center p-6 pb-28 z-10 w-full max-w-md mx-auto relative">
                         {/* Auth Background glow */}
                         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-lg bg-red-600/5 blur-[120px] rounded-full pointer-events-none" />
 

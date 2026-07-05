@@ -425,8 +425,8 @@ export default function HotelPage() {
                     <div className="relative bg-[#111827]/40 p-1.5 rounded-full border border-white/5 flex w-full shadow-2xl backdrop-blur-md">
                         <div className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] rounded-full transition-all duration-500 ease-in-out shadow-lg
                             ${bookingType === 'night'
-                                ? 'ltr:left-1.5 rtl:right-1.5 bg-gradient-to-br from-amber-500 to-orange-600 shadow-orange-500/30'
-                                : 'ltr:left-[calc(50%+4px)] rtl:right-[calc(50%+4px)] bg-gradient-to-br from-indigo-500 to-violet-600 shadow-indigo-500/30'
+                                ? 'left-1.5 bg-gradient-to-br from-amber-500 to-orange-600 shadow-orange-500/30'
+                                : 'left-[calc(50%+4px)] bg-gradient-to-br from-indigo-500 to-violet-600 shadow-indigo-500/30'
                             }`}
                         />
                         <button
