@@ -273,6 +273,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             label: "QR Codes",
             icon: QrCode,
             roles: ["admin"]
+        },
+        {
+            href: "/admin/blog",
+            label: "Gestion du Blog",
+            icon: LayoutDashboard, // reusing an imported icon just to be safe without changing imports
+            roles: ["admin"]
         }
     ];
 

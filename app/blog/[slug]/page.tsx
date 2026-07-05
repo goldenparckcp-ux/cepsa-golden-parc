@@ -2,15 +2,22 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import Link from 'next/link';
-import { blogPosts } from '@/lib/data/blog';
 import { Calendar, ChevronLeft, MapPin } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 
 type Props = {
   params: { slug: string };
 };
 
+export const revalidate = 60; // Revalidate every minute
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const post = blogPosts.find((p) => p.slug === params.slug);
+  const { data: post } = await supabase
+    .from('blog_posts')
+    .select('*')
+    .eq('slug', params.slug)
+    .single();
+
   if (!post) return { title: 'Article introuvable | Golden Parc Station' };
 
   return {
@@ -20,13 +27,17 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     openGraph: {
       title: post.title,
       description: post.excerpt,
-      images: [post.image],
+      images: [post.image_url],
     },
   };
 }
 
-export default function BlogPostPage({ params }: Props) {
-  const post = blogPosts.find((p) => p.slug === params.slug);
+export default async function BlogPostPage({ params }: Props) {
+  const { data: post } = await supabase
+    .from('blog_posts')
+    .select('*')
+    .eq('slug', params.slug)
+    .single();
 
   if (!post) {
     notFound();
@@ -46,7 +57,7 @@ export default function BlogPostPage({ params }: Props) {
         {/* Header */}
         <header className="space-y-6 mb-12">
           <div className="flex flex-wrap gap-2">
-            {post.keywords.map((kw, i) => (
+            {Array.isArray(post.keywords) && post.keywords.map((kw: string, i: number) => (
               <span key={i} className="text-xs font-bold text-red-400 uppercase tracking-wider bg-red-500/10 px-3 py-1.5 rounded-lg border border-red-500/20">
                 {kw}
               </span>
@@ -58,7 +69,7 @@ export default function BlogPostPage({ params }: Props) {
           <div className="flex items-center gap-6 text-gray-400 text-sm font-medium">
             <div className="flex items-center gap-2">
               <Calendar className="w-4 h-4 text-red-500" />
-              {post.date}
+              {new Date(post.created_at).toLocaleDateString('fr-FR')}
             </div>
             <div className="flex items-center gap-2">
               <MapPin className="w-4 h-4 text-red-500" />
@@ -68,19 +79,21 @@ export default function BlogPostPage({ params }: Props) {
         </header>
 
         {/* Hero Image */}
-        <div className="relative w-full aspect-video rounded-[2.5rem] overflow-hidden mb-12 shadow-2xl border border-white/10">
-          <Image
-            src={post.image}
-            alt={post.title}
-            fill
-            className="object-cover"
-            priority
-          />
-        </div>
+        {post.image_url && (
+          <div className="relative w-full aspect-video rounded-[2.5rem] overflow-hidden mb-12 shadow-2xl border border-white/10">
+            <Image
+              src={post.image_url}
+              alt={post.title}
+              fill
+              className="object-cover"
+              priority
+            />
+          </div>
+        )}
 
         {/* Content (HTML) */}
         <div 
-          className="prose prose-invert prose-lg max-w-none prose-headings:font-black prose-headings:text-white prose-h2:text-3xl prose-h2:mt-12 prose-h2:mb-6 prose-h2:border-b prose-h2:border-white/10 prose-h2:pb-4 prose-h3:text-2xl prose-h3:text-red-100 prose-p:text-gray-300 prose-p:leading-relaxed prose-a:text-red-400 prose-a:no-underline hover:prose-a:underline prose-li:text-gray-300 prose-strong:text-white"
+          className="prose prose-invert prose-lg max-w-none prose-headings:font-black prose-headings:text-white prose-h2:text-3xl prose-h2:mt-12 prose-h2:mb-6 prose-h2:border-b prose-h2:border-white/10 prose-h2:pb-4 prose-h3:text-2xl prose-h3:text-red-100 prose-p:text-gray-300 prose-p:leading-relaxed prose-a:text-red-400 prose-a:no-underline hover:prose-a:underline prose-li:text-gray-300 prose-strong:text-white whitespace-pre-wrap font-mono text-[1rem]"
           dangerouslySetInnerHTML={{ __html: post.content }}
         />
 
