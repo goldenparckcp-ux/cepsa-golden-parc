@@ -248,7 +248,6 @@ export default function AdminHotelReservationsPage() {
                                     : "text-gray-400 hover:text-white"
                             }`}
                         >
-                            {'icon' in tab && tab.icon}
                             <span className="hidden md:inline">{tab.label}</span>
                             {'count' in tab && (tab.count as number) > 0 && (
                                 <span className={`px-1.5 py-0.5 rounded-md text-[9px] font-black text-black ${'color' in tab ? tab.color : 'bg-gray-700 text-gray-300'}`}>
