@@ -93,25 +93,41 @@ export default async function BlogPostPage({ params }: Props) {
           </div>
         )}
 
-        {/* Content (HTML) */}
+        {/* Content (Plain Text) */}
         <div 
-          className="prose prose-invert prose-lg max-w-none prose-headings:font-black prose-headings:text-white prose-h2:text-3xl prose-h2:mt-12 prose-h2:mb-6 prose-h2:border-b prose-h2:border-white/10 prose-h2:pb-4 prose-h3:text-2xl prose-h3:text-red-100 prose-p:text-gray-300 prose-p:leading-relaxed prose-a:text-red-400 prose-a:no-underline hover:prose-a:underline prose-li:text-gray-300 prose-strong:text-white whitespace-pre-wrap font-mono text-[1rem]"
-          dangerouslySetInnerHTML={{ __html: post.content }}
-        />
+          className="prose prose-invert prose-lg max-w-none prose-headings:font-black prose-headings:text-white prose-h2:text-3xl prose-h2:mt-12 prose-h2:mb-6 prose-h2:border-b prose-h2:border-white/10 prose-h2:pb-4 prose-h3:text-2xl prose-h3:text-red-100 prose-p:text-gray-300 prose-p:leading-relaxed prose-a:text-red-400 prose-a:no-underline hover:prose-a:underline prose-li:text-gray-300 prose-strong:text-white whitespace-pre-wrap text-[1.1rem] leading-8 font-sans"
+        >
+          {post.content}
+        </div>
 
         {/* Call to action */}
-        <div className="mt-16 bg-[#111827] border border-white/5 p-8 rounded-3xl text-center space-y-4">
-          <h3 className="text-2xl font-bold text-white">Prêt pour une pause inoubliable ?</h3>
-          <p className="text-gray-400">Passez nous voir au Golden Parc Station sur la RN15.</p>
-          <div className="flex justify-center gap-4 pt-4">
-            <Link href="/hotel" className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-full font-bold transition-all">
-              Réserver une chambre
-            </Link>
-            <Link href="/restaurant" className="bg-white/10 hover:bg-white/20 text-white px-6 py-3 rounded-full font-bold transition-all">
-              Voir le Menu
-            </Link>
+        {(!post.cta_type || post.cta_type !== 'none') && (
+          <div className="mt-16 bg-[#111827] border border-white/5 p-8 rounded-3xl text-center space-y-4">
+            <h3 className="text-2xl font-bold text-white">
+              {post.cta_type === 'hotel' && "Besoin d'une bonne nuit de sommeil ?"}
+              {(!post.cta_type || post.cta_type === 'restaurant') && "Prêt pour un repas inoubliable ?"}
+              {post.cta_type === 'pool' && "Envie de vous rafraîchir ?"}
+            </h3>
+            <p className="text-gray-400">Passez nous voir au Golden Parc Station sur la RN15.</p>
+            <div className="flex justify-center gap-4 pt-4">
+              {post.cta_type === 'hotel' && (
+                <Link href="/hotel" className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-full font-bold transition-all">
+                  Réserver une chambre
+                </Link>
+              )}
+              {(!post.cta_type || post.cta_type === 'restaurant') && (
+                <Link href="/restaurant" className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-full font-bold transition-all">
+                  Voir le Menu
+                </Link>
+              )}
+              {post.cta_type === 'pool' && (
+                <Link href="/services/pool" className="bg-red-600 hover:bg-red-700 text-white px-6 py-3 rounded-full font-bold transition-all">
+                  Découvrir la Piscine
+                </Link>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </article>
     </div>
   );

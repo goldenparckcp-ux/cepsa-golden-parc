@@ -11,6 +11,7 @@ export default function EditBlogPostPage({ params }: { params: Promise<{ id: str
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
+  const [imageFile, setImageFile] = useState<File | null>(null);
   
   const [formData, setFormData] = useState({
     title: "",
@@ -19,6 +20,7 @@ export default function EditBlogPostPage({ params }: { params: Promise<{ id: str
     content: "",
     image_url: "",
     keywords: "",
+    cta_type: "restaurant",
     is_published: true
   });
 
@@ -41,6 +43,7 @@ export default function EditBlogPostPage({ params }: { params: Promise<{ id: str
             content: data.content,
             image_url: data.image_url,
             keywords: Array.isArray(data.keywords) ? data.keywords.join(', ') : "",
+            cta_type: data.cta_type || "restaurant",
             is_published: data.is_published
           });
         }
@@ -73,11 +76,46 @@ export default function EditBlogPostPage({ params }: { params: Promise<{ id: str
     });
   };
 
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setImageFile(e.target.files[0]);
+      // Clear manual URL if they select a file
+      setFormData(prev => ({ ...prev, image_url: "" }));
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
+      let finalImageUrl = formData.image_url;
+
+      // Handle file upload if a file was selected
+      if (imageFile) {
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const filePath = `blog/${fileName}`;
+
+        const { error: uploadError } = await supabase.storage
+          .from('images')
+          .upload(filePath, imageFile);
+
+        if (uploadError) {
+          throw new Error("Erreur lors de l'upload de l'image : " + uploadError.message);
+        }
+
+        const { data: publicUrlData } = supabase.storage
+          .from('images')
+          .getPublicUrl(filePath);
+
+        finalImageUrl = publicUrlData.publicUrl;
+      }
+
+      if (!finalImageUrl) {
+        throw new Error("Veuillez fournir une image (Upload ou URL)");
+      }
+
       const keywordsArray = formData.keywords
         .split(',')
         .map(k => k.trim())
@@ -90,8 +128,9 @@ export default function EditBlogPostPage({ params }: { params: Promise<{ id: str
           slug: formData.slug,
           excerpt: formData.excerpt,
           content: formData.content,
-          image_url: formData.image_url,
+          image_url: finalImageUrl,
           keywords: keywordsArray,
+          cta_type: formData.cta_type,
           is_published: formData.is_published
         })
         .eq('id', resolvedParams.id);
@@ -161,21 +200,36 @@ export default function EditBlogPostPage({ params }: { params: Promise<{ id: str
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-300">Image (URL) / رابط الصورة *</label>
-          <div className="flex gap-4">
+          <label className="text-sm font-medium text-gray-300 flex justify-between">
+            <span>Image / الصورة *</span>
+            <span className="text-xs text-gray-500">Uploadez une image ou collez une URL</span>
+          </label>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="relative">
+              <input 
+                type="file" 
+                accept="image/*"
+                onChange={handleImageChange}
+                className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2 text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-red-600 file:text-white hover:file:bg-red-700 transition-all"
+              />
+            </div>
             <div className="relative flex-1">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <ImageIcon className="h-5 w-5 text-gray-500" />
               </div>
               <input 
                 type="url" 
-                required
                 value={formData.image_url}
-                onChange={e => setFormData({...formData, image_url: e.target.value})}
+                onChange={e => {
+                  setFormData({...formData, image_url: e.target.value});
+                  setImageFile(null); // Clear file if URL is typed
+                }}
                 className="w-full bg-white/5 border border-white/10 rounded-lg pl-10 pr-4 py-2.5 text-white focus:outline-none focus:border-red-500 transition-all"
+                placeholder="Ou URL de l'image: https://..."
               />
             </div>
           </div>
+          {imageFile && <p className="text-xs text-green-400 mt-1">Image sélectionnée: {imageFile.name}</p>}
         </div>
 
         <div className="space-y-2">
@@ -199,19 +253,35 @@ export default function EditBlogPostPage({ params }: { params: Promise<{ id: str
             rows={12}
             value={formData.content}
             onChange={e => setFormData({...formData, content: e.target.value})}
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-red-500 transition-all font-sans text-sm"
+            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-red-500 transition-all font-sans text-sm whitespace-pre-wrap"
           />
         </div>
 
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-300">Mots-clés / الكلمات الدلالية</label>
-          <input 
-            type="text" 
-            value={formData.keywords}
-            onChange={e => setFormData({...formData, keywords: e.target.value})}
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-red-500 transition-all"
-            placeholder="voyage, rn15..."
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-300">Bouton d'action (CTA) / زر الإجراء</label>
+            <select
+              value={formData.cta_type}
+              onChange={e => setFormData({...formData, cta_type: e.target.value})}
+              className="w-full bg-[#1f2937] border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-red-500 transition-all"
+            >
+              <option value="restaurant">Restaurant (Voir le Menu)</option>
+              <option value="hotel">Hôtel (Réserver une chambre)</option>
+              <option value="pool">Piscine (Découvrir)</option>
+              <option value="none">Aucun / بدون زر</option>
+            </select>
+          </div>
+
+          <div className="space-y-2">
+            <label className="text-sm font-medium text-gray-300">Mots-clés / الكلمات الدلالية</label>
+            <input 
+              type="text" 
+              value={formData.keywords}
+              onChange={e => setFormData({...formData, keywords: e.target.value})}
+              className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-red-500 transition-all"
+              placeholder="voyage, rn15..."
+            />
+          </div>
         </div>
 
         <div className="flex items-center gap-3 pt-4 border-t border-white/10">
