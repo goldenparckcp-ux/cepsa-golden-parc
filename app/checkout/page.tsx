@@ -7,9 +7,9 @@ import Link from 'next/link';
 export default async function CheckoutPage({
   searchParams,
 }: {
-  searchParams: { bookingId?: string; type?: string; payment?: string; amount?: string }
+  searchParams: Promise<{ bookingId?: string; type?: string; payment?: string; amount?: string }>
 }) {
-  const { bookingId, type, payment, amount } = searchParams;
+  const { bookingId, type, payment, amount } = await searchParams;
 
   if (!bookingId || !type) {
     redirect('/');
