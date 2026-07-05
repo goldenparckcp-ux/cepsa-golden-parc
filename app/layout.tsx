@@ -1,6 +1,7 @@
 import { Inter, Outfit } from "next/font/google";
 import "./globals.css";
 import ClientShell from "@/components/ClientShell";
+import Footer from "@/components/Footer";
 import { CartProvider } from "@/lib/state/CartContext";
 import { UIProvider } from "@/lib/state/UIContext";
 import { AuthProvider } from "@/lib/state/AuthProvider";
@@ -165,6 +166,7 @@ export default function RootLayout({
                 {/* ClientShell: nav + tabs + widgets — all lazy, client-only */}
                 <ClientShell />
                 {children}
+                <Footer />
               </CartProvider>
             </UIProvider>
           </AuthProvider>

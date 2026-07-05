@@ -1,14 +1,17 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useTranslation } from "@/lib/state/LanguageContext";
 import { MapPin, PhoneCall, Mail, ChevronRight, Fuel, Bed, Utensils, Waves } from "lucide-react";
 
 export default function Footer() {
   const { t } = useTranslation();
+  const pathname = usePathname();
+  const isHome = pathname === "/";
   
   return (
-    <footer className="w-full bg-[#070A13] border-t border-white/10 pt-16 pb-32 px-4 relative z-10">
+    <footer className={`w-full bg-[#070A13] border-t border-white/10 pt-16 pb-32 px-4 relative z-10 ${isHome ? 'block' : 'hidden md:block'}`}>
       <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
         {/* Brand & Address */}
         <div className="space-y-6">

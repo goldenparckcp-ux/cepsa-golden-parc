@@ -904,9 +904,6 @@ export default function Home() {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {/* Footer is now only shown on the home page */}
-      <Footer />
     </main>
   );
 }
