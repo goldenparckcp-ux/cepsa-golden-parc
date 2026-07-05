@@ -12,10 +12,11 @@ type Props = {
 export const revalidate = 60; // Revalidate every minute
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { slug } = await params;
   const { data: post } = await supabase
     .from('blog_posts')
     .select('*')
-    .eq('slug', params.slug)
+    .eq('slug', slug)
     .single();
 
   if (!post) return { title: 'Article introuvable | Golden Parc Station' };
@@ -33,10 +34,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function BlogPostPage({ params }: Props) {
+  const { slug } = await params;
   const { data: post } = await supabase
     .from('blog_posts')
     .select('*')
-    .eq('slug', params.slug)
+    .eq('slug', slug)
     .single();
 
   if (!post) {

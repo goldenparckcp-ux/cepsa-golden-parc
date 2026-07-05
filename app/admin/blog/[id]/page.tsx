@@ -1,12 +1,13 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, use } from "react";
 import { supabase } from "@/lib/supabase";
 import { ArrowLeft, Save, Loader2, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
-export default function EditBlogPostPage({ params }: { params: { id: string } }) {
+export default function EditBlogPostPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
@@ -27,7 +28,7 @@ export default function EditBlogPostPage({ params }: { params: { id: string } })
         const { data, error } = await supabase
           .from('blog_posts')
           .select('*')
-          .eq('id', params.id)
+          .eq('id', resolvedParams.id)
           .single();
 
         if (error) throw error;
@@ -52,7 +53,7 @@ export default function EditBlogPostPage({ params }: { params: { id: string } })
     };
     
     fetchPost();
-  }, [params.id]);
+  }, [resolvedParams.id]);
 
   const generateSlug = (text: string) => {
     return text
@@ -93,7 +94,7 @@ export default function EditBlogPostPage({ params }: { params: { id: string } })
           keywords: keywordsArray,
           is_published: formData.is_published
         })
-        .eq('id', params.id);
+        .eq('id', resolvedParams.id);
 
       if (error) {
         if (error.code === '23505') {
@@ -122,20 +123,22 @@ export default function EditBlogPostPage({ params }: { params: { id: string } })
 
   return (
     <div className="max-w-4xl space-y-6">
-      <div className="flex items-center gap-4">
-        <Link 
-          href="/admin/blog"
-          className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Link>
-        <h1 className="text-2xl font-bold text-white">Modifier l'Article</h1>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <Link 
+            href="/admin/blog"
+            className="p-2 hover:bg-white/5 rounded-lg text-gray-400 hover:text-white transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <h1 className="text-2xl font-bold text-white">Modifier l'Article / تعديل المقال</h1>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="bg-[#111827] border border-white/10 rounded-xl p-6 space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-300">Titre de l'article *</label>
+            <label className="text-sm font-medium text-gray-300">Titre / عنوان المقال *</label>
             <input 
               type="text" 
               required
@@ -146,7 +149,7 @@ export default function EditBlogPostPage({ params }: { params: { id: string } })
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium text-gray-300">Lien URL (Slug) *</label>
+            <label className="text-sm font-medium text-gray-300">Lien URL / الرابط *</label>
             <input 
               type="text" 
               required
@@ -158,7 +161,7 @@ export default function EditBlogPostPage({ params }: { params: { id: string } })
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-300">Image de couverture (URL) *</label>
+          <label className="text-sm font-medium text-gray-300">Image (URL) / رابط الصورة *</label>
           <div className="flex gap-4">
             <div className="relative flex-1">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -176,7 +179,7 @@ export default function EditBlogPostPage({ params }: { params: { id: string } })
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-300">Résumé (Excerpt) *</label>
+          <label className="text-sm font-medium text-gray-300">Résumé / ملخص قصير *</label>
           <textarea 
             required
             rows={2}
@@ -188,25 +191,26 @@ export default function EditBlogPostPage({ params }: { params: { id: string } })
 
         <div className="space-y-2">
           <label className="text-sm font-medium text-gray-300 flex justify-between">
-            <span>Contenu de l'article *</span>
-            <span className="text-xs text-gray-500">HTML autorisé (&lt;br/&gt;, &lt;b&gt;)</span>
+            <span>Contenu / محتوى المقال *</span>
+            <span className="text-xs text-gray-500">Écrivez normalement, tapez sur Entrée pour une nouvelle ligne</span>
           </label>
           <textarea 
             required
             rows={12}
             value={formData.content}
             onChange={e => setFormData({...formData, content: e.target.value})}
-            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-red-500 transition-all font-mono text-sm"
+            className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-red-500 transition-all font-sans text-sm"
           />
         </div>
 
         <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-300">Mots-clés SEO (séparés par des virgules)</label>
+          <label className="text-sm font-medium text-gray-300">Mots-clés / الكلمات الدلالية</label>
           <input 
             type="text" 
             value={formData.keywords}
             onChange={e => setFormData({...formData, keywords: e.target.value})}
             className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-2.5 text-white focus:outline-none focus:border-red-500 transition-all"
+            placeholder="voyage, rn15..."
           />
         </div>
 
@@ -220,7 +224,7 @@ export default function EditBlogPostPage({ params }: { params: { id: string } })
             />
             <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-red-600"></div>
             <span className="ml-3 text-sm font-medium text-gray-300">
-              {formData.is_published ? "Publier immédiatement" : "Sauvegarder comme brouillon"}
+              {formData.is_published ? "Publier / نشر المقال" : "Sauvegarder / حفظ كمسودة"}
             </span>
           </label>
         </div>
@@ -232,7 +236,7 @@ export default function EditBlogPostPage({ params }: { params: { id: string } })
             className="flex items-center gap-2 bg-red-600 hover:bg-red-700 disabled:bg-red-600/50 text-white px-6 py-2.5 rounded-lg font-medium transition-colors"
           >
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-            <span>Mettre à jour l'article</span>
+            <span>Mettre à jour / تحديث</span>
           </button>
         </div>
       </form>

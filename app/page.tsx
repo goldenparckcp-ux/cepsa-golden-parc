@@ -8,7 +8,6 @@ import { useTranslation } from '@/lib/state/LanguageContext';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import { supabase } from '@/lib/supabase';
-import Footer from "@/components/Footer";
 
 // Lazy load Chatbot - heavy component, not needed immediately
 const Chatbot = dynamic(() => import('@/components/ui/Chatbot').then(m => ({ default: m.Chatbot })), { ssr: false, loading: () => null });
