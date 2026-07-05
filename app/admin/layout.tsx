@@ -319,25 +319,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         <span>Opérateur: {session.name}</span>
                         <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
                     </div>
-                    {activeNavItems.map(item => {
+                    {activeNavItems.map((item) => {
                         const Icon = item.icon;
                         const active = pathname === item.href;
                         return (
-                            <button
-                                key={item.href}
-                                onClick={() => {
-                                    setMobileMenuOpen(false);
-                                    router.push(item.href);
-                                }}
-                                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl font-black text-sm transition-all border ${
-                                    active
-                                        ? "bg-gradient-to-r from-amber-500/10 to-transparent border-amber-500/20 text-amber-400"
-                                        : "bg-transparent border-transparent text-gray-400 hover:bg-white/5 hover:text-white"
-                                }`}
-                            >
-                                <Icon className={`w-4 h-4 ${active ? 'text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]' : ''}`} />
-                                {item.label}
-                            </button>
+                            <React.Fragment key={item.href}>
+                                {item.href === '/admin/prices' && (
+                                    <div className="text-[10px] text-gray-500 font-black uppercase tracking-wider mt-4 mb-1 px-3">Paramètres & Contenu</div>
+                                )}
+                                <button
+                                    onClick={() => {
+                                        setMobileMenuOpen(false);
+                                        router.push(item.href);
+                                    }}
+                                    className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl font-black text-sm transition-all border ${
+                                        active
+                                            ? "bg-gradient-to-r from-amber-500/10 to-transparent border-amber-500/20 text-amber-400"
+                                            : "bg-transparent border-transparent text-gray-400 hover:bg-white/5 hover:text-white"
+                                    }`}
+                                >
+                                    <Icon className={`w-4 h-4 ${active ? 'text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]' : ''}`} />
+                                    {item.label}
+                                </button>
+                            </React.Fragment>
                         );
                     })}
                     <div className="border-t border-white/5 my-2 pt-2">
@@ -378,23 +382,27 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
                 <nav className="flex-1 space-y-1.5 overflow-y-auto pr-2 custom-scrollbar">
                     <div className="text-[10px] font-black text-gray-600 uppercase tracking-widest mb-3 px-2">Menu Principal</div>
-                    {activeNavItems.map(item => {
+                    {activeNavItems.map((item) => {
                         const Icon = item.icon;
                         const active = pathname === item.href;
                         return (
-                            <button
-                                key={item.href}
-                                onClick={() => router.push(item.href)}
-                                className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl font-black text-sm transition-all group relative overflow-hidden ${
-                                    active
-                                        ? "bg-gradient-to-r from-amber-500/10 to-transparent border border-amber-500/20 text-amber-400"
-                                        : "bg-transparent border border-transparent text-gray-400 hover:bg-white/5 hover:text-white"
-                                }`}
-                            >
-                                {active && <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-500 rounded-r-full shadow-[0_0_10px_rgba(245,158,11,0.5)]" />}
-                                <Icon className={`w-4 h-4 transition-transform group-hover:scale-110 ${active ? 'text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]' : ''}`} />
-                                {item.label}
-                            </button>
+                            <React.Fragment key={item.href}>
+                                {item.href === '/admin/prices' && (
+                                    <div className="text-[10px] font-black text-gray-600 uppercase tracking-widest mt-6 mb-3 px-2">Paramètres & Contenu</div>
+                                )}
+                                <button
+                                    onClick={() => router.push(item.href)}
+                                    className={`w-full flex items-center gap-3 px-4 py-3.5 rounded-2xl font-black text-sm transition-all group relative overflow-hidden ${
+                                        active
+                                            ? "bg-gradient-to-r from-amber-500/10 to-transparent border border-amber-500/20 text-amber-400"
+                                            : "bg-transparent border border-transparent text-gray-400 hover:bg-white/5 hover:text-white"
+                                    }`}
+                                >
+                                    {active && <div className="absolute left-0 top-0 bottom-0 w-1 bg-amber-500 rounded-r-full shadow-[0_0_10px_rgba(245,158,11,0.5)]" />}
+                                    <Icon className={`w-4 h-4 transition-transform group-hover:scale-110 ${active ? 'text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]' : ''}`} />
+                                    {item.label}
+                                </button>
+                            </React.Fragment>
                         );
                     })}
                 </nav>

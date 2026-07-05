@@ -166,7 +166,6 @@ export default function RootLayout({
                 {/* ClientShell: nav + tabs + widgets — all lazy, client-only */}
                 <ClientShell />
                 {children}
-                <Footer />
               </CartProvider>
             </UIProvider>
           </AuthProvider>
