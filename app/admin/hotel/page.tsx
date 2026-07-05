@@ -244,7 +244,7 @@ export default function AdminHotelReservationsPage() {
                             onClick={() => setActiveTab(tab.id as any)}
                             className={`flex-1 rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 transition-all ${
                                 activeTab === tab.id
-                                    ? tab.id === 'hero' ? 'bg-amber-500/20 text-amber-400 shadow-sm' : 'bg-white/10 text-white shadow-sm'
+                                    ? 'bg-white/10 text-white shadow-sm'
                                     : "text-gray-400 hover:text-white"
                             }`}
                         >
