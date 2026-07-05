@@ -620,7 +620,7 @@ function ProfileContent() {
             const { error } = await supabase.auth.signInWithOtp({
                 email: email,
                 options: {
-                    emailRedirectTo: `${window.location.origin}/auth/callback?next=/profile`,
+                    emailRedirectTo: `${window.location.origin}/profile`,
                 },
             });
 
@@ -1337,13 +1337,10 @@ function ProfileContent() {
                                         <button
                                             onClick={() => {
                                                 setIsLoading(true);
-                                                const callbackUrl = new URL('/auth/callback', window.location.origin);
-                                                callbackUrl.searchParams.set('next', '/profile');
-
                                                 supabase.auth.signInWithOAuth({
                                                     provider: 'google',
                                                     options: {
-                                                        redirectTo: callbackUrl.toString(),
+                                                        redirectTo: `${window.location.origin}/profile`,
                                                     }
                                                 });
                                             }}
@@ -1361,13 +1358,10 @@ function ProfileContent() {
                                         <button
                                             onClick={() => {
                                                 setIsLoading(true);
-                                                const callbackUrl = new URL('/auth/callback', window.location.origin);
-                                                callbackUrl.searchParams.set('next', '/profile');
-
                                                 supabase.auth.signInWithOAuth({
                                                     provider: 'facebook',
                                                     options: {
-                                                        redirectTo: callbackUrl.toString(),
+                                                        redirectTo: `${window.location.origin}/profile`,
                                                     }
                                                 });
                                             }}
