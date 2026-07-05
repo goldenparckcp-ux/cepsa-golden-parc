@@ -17,6 +17,10 @@ export async function GET(request: NextRequest) {
     const absoluteOrigin = `${proto}://${host}`
 
     const cookieStore = await cookies()
+    const targetUrl = new URL(next, absoluteOrigin)
+    targetUrl.searchParams.set('session_loaded', '1')
+    const response = NextResponse.redirect(targetUrl.toString())
+
     const supabase = createServerClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -27,9 +31,11 @@ export async function GET(request: NextRequest) {
                 },
                 set(name: string, value: string, options: CookieOptions) {
                     cookieStore.set({ name, value, ...options })
+                    response.cookies.set({ name, value, ...options })
                 },
                 remove(name: string, options: CookieOptions) {
                     cookieStore.delete({ name, ...options })
+                    response.cookies.delete({ name, ...options })
                 },
             },
         }
@@ -39,9 +45,7 @@ export async function GET(request: NextRequest) {
     if (code) {
         const { error } = await supabase.auth.exchangeCodeForSession(code)
         if (!error) {
-            const targetUrl = new URL(next, absoluteOrigin)
-            targetUrl.searchParams.set('session_loaded', '1')
-            return NextResponse.redirect(targetUrl.toString())
+            return response
         }
         const errorUrl = new URL('/auth/auth-code-error', absoluteOrigin)
         errorUrl.searchParams.set('error', error.message || 'unknown_error')
@@ -53,9 +57,7 @@ export async function GET(request: NextRequest) {
     if (token_hash && type) {
         const { error } = await supabase.auth.verifyOtp({ token_hash, type })
         if (!error) {
-            const targetUrl = new URL(next, absoluteOrigin)
-            targetUrl.searchParams.set('session_loaded', '1')
-            return NextResponse.redirect(targetUrl.toString())
+            return response
         }
         const errorUrl = new URL('/auth/auth-code-error', absoluteOrigin)
         errorUrl.searchParams.set('error', error.message || 'token_verification_failed')
