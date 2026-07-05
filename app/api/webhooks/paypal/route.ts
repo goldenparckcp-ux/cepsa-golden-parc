@@ -44,10 +44,10 @@ async function verifyPayPalWebhookSignature(req: Request, body: any): Promise<bo
     const transmissionTime = req.headers.get('paypal-transmission-time');
     const webhookId = process.env.PAYPAL_WEBHOOK_ID;
 
-    // Skip verification if webhook ID is not configured (e.g. initial setup)
+    // Reject verification if webhook ID is not configured
     if (!webhookId) {
-        console.warn("PAYPAL_WEBHOOK_ID is not configured. Webhook signature verification skipped.");
-        return true; 
+        console.error("PAYPAL_WEBHOOK_ID is not configured. Rejecting webhook.");
+        return false; 
     }
     
     if (!authAlgo || !certUrl || !transmissionId || !transmissionSig || !transmissionTime) {

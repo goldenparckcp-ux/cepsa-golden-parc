@@ -116,6 +116,9 @@ export async function POST(req: Request) {
         // Auth check
         const auth = await verifyStaffAuth();
         if (!auth.success) return auth.response;
+        if (auth.payload.role !== 'admin' && auth.payload.role !== 'reception') {
+            return NextResponse.json({ error: 'Forbidden: Insufficient privileges' }, { status: 403 });
+        }
 
 
 

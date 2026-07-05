@@ -92,9 +92,8 @@ export async function POST(req: Request) {
         
         // Simple tolerance check (e.g. within 10% due to exchange rate differences)
         if (Math.abs(paidAmountUsd - expectedAmountUsd) > (expectedAmountUsd * 0.15)) {
-            console.warn(`Amount mismatch: Paid ${paidAmountUsd} USD, expected ~${expectedAmountUsd} USD`);
-            // We can log a warning but still accept the order or block it depending on strictness.
-            // Let's accept it but log a warning to be safe against exchange rate changes.
+            console.error(`Amount mismatch: Paid ${paidAmountUsd} USD, expected ~${expectedAmountUsd} USD`);
+            return NextResponse.json({ error: 'Amount mismatch detected. Payment rejected.' }, { status: 400 });
         }
 
         // 2. Securely update booking database state via Admin Client

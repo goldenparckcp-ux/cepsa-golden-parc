@@ -1,15 +1,42 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 
 export async function POST(req: Request) {
     try {
-        const { userId, updates } = await req.json();
+        const { updates } = await req.json();
 
-        if (!userId || !updates) {
+        if (!updates) {
             return NextResponse.json({ error: "Missing parameters" }, { status: 400 });
         }
 
+        const cookieStore = await cookies();
         const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+        const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+        
+        const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+            cookies: {
+                get(name: string) {
+                    return cookieStore.get(name)?.value;
+                },
+                set(name: string, value: string, options: any) {
+                    cookieStore.set({ name, value, ...options });
+                },
+                remove(name: string, options: any) {
+                    cookieStore.delete({ name, ...options });
+                },
+            },
+        });
+
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+
+        if (authError || !user) {
+            return NextResponse.json({ error: 'Non autorisé. Veuillez vous connecter.' }, { status: 401 });
+        }
+
+        const userId = user.id;
+
         const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
         
         if (!supabaseKey) {

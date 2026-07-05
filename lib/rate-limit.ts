@@ -1,5 +1,27 @@
 // Redis-based Rate Limiting Utility using Upstash REST API
 
+const inMemoryCache: Record<string, { count: number; reset: number }> = {};
+
+function inMemoryRateLimit(key: string, limit: number, windowMs: number, now: number) {
+  const entry = inMemoryCache[key];
+  if (entry && now < entry.reset) {
+    entry.count += 1;
+    return {
+      success: entry.count <= limit,
+      limit,
+      remaining: Math.max(0, limit - entry.count),
+      reset: entry.reset,
+    };
+  }
+  inMemoryCache[key] = { count: 1, reset: now + windowMs };
+  return {
+    success: 1 <= limit,
+    limit,
+    remaining: Math.max(0, limit - 1),
+    reset: now + windowMs,
+  };
+}
+
 export async function rateLimit(
   ip: string,
   limit: number = 100, // max requests
@@ -13,13 +35,8 @@ export async function rateLimit(
   const token = process.env.UPSTASH_REDIS_REST_TOKEN;
 
   if (!url || !token) {
-    console.warn("Upstash Redis credentials missing. Falling back to fail-open.");
-    return {
-      success: true,
-      limit,
-      remaining: limit,
-      reset: now + windowMs,
-    };
+    console.warn("Upstash Redis credentials missing. Falling back to in-memory cache.");
+    return inMemoryRateLimit(key, limit, windowMs, now);
   }
 
   try {
@@ -57,12 +74,7 @@ export async function rateLimit(
       reset,
     };
   } catch (err) {
-    console.error("Rate limiter Redis call failed, failing open:", err);
-    return {
-      success: true,
-      limit,
-      remaining: limit,
-      reset: now + windowMs,
-    };
+    console.error("Rate limiter Redis call failed, falling back to in-memory cache:", err);
+    return inMemoryRateLimit(key, limit, windowMs, now);
   }
 }

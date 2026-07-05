@@ -18,8 +18,9 @@ export async function GET(request: Request) {
   try {
     const auth = await verifyStaffAuth();
     if (!auth.success) return auth.response;
-
-
+    if (auth.payload.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+    }
 
     const supabase = getAdminSupabase();
     if (!supabase) {
@@ -29,7 +30,7 @@ export async function GET(request: Request) {
       );
     }
 
-    // Fetch all necessary admin data securely
+    // Fetch all necessary admin data securely with limits to prevent performance issues
     const [
       { data: orders, error: ordersErr },
       { data: reservations, error: resErr },
@@ -37,11 +38,11 @@ export async function GET(request: Request) {
       { data: serviceBookings, error: servErr },
       { data: users, error: usersErr },
     ] = await Promise.all([
-      supabase.from("restaurant_orders").select("*").order("created_at", { ascending: false }),
-      supabase.from("hotel_reservations").select("*").order("created_at", { ascending: false }),
-      supabase.from("pool_bookings").select("*").order("created_at", { ascending: false }),
-      supabase.from("service_bookings").select("*").order("created_at", { ascending: false }),
-      supabase.from("profiles").select("*")
+      supabase.from("restaurant_orders").select("*").order("created_at", { ascending: false }).limit(100),
+      supabase.from("hotel_reservations").select("*").order("created_at", { ascending: false }).limit(100),
+      supabase.from("pool_bookings").select("*").order("created_at", { ascending: false }).limit(100),
+      supabase.from("service_bookings").select("*").order("created_at", { ascending: false }).limit(100),
+      supabase.from("profiles").select("*").limit(100)
     ]);
 
     if (ordersErr) console.error("Orders Error:", ordersErr);

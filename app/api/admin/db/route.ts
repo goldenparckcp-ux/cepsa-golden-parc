@@ -29,6 +29,9 @@ export async function POST(request: Request) {
   try {
     const auth = await verifyStaffAuth();
     if (!auth.success) return auth.response;
+    if (auth.payload.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden: Admin access required' }, { status: 403 });
+    }
 
     const supabase = getAdminSupabase();
     if (!supabase) throw new Error('Missing Supabase server credentials.');
