@@ -60,6 +60,6 @@ export const CheckoutSchema = z.object({
   bookingId: z.string().min(1, "ID de réservation requis"),
   amount: z.number().nonnegative("Le montant doit être positif").optional(),
   serviceType: z.string().optional(),
-  gateway: z.enum(['paypal', 'cash']).optional(),
+  gateway: z.enum(['paypal', 'cash', 'cmi']).optional(),
   paymentType: z.enum(['full', 'deposit', 'full_discounted']).optional(),
 });
