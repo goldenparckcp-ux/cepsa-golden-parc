@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Lock, LayoutDashboard, Utensils, Bed, Ticket, DollarSign, PlusCircle, LogOut, ExternalLink, Menu, X, Shield, RefreshCw, QrCode, Image as ImageIcon, Phone } from "lucide-react";
+import { Lock, LayoutDashboard, Utensils, Bed, Ticket, DollarSign, PlusCircle, LogOut, ExternalLink, Menu, X, Shield, RefreshCw, QrCode, Image as ImageIcon, Phone, Star } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { adminDb } from "@/lib/admin-api";
@@ -161,19 +161,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         Espace Réservé à l'Administration
                     </p>
 
-                    {/* PIN Display */}
-                    <div className="flex justify-center gap-4 mb-8">
-                        {[0, 1, 2, 3].map(i => (
-                            <div key={i} className={`w-14 h-14 rounded-2xl flex items-center justify-center text-2xl font-black transition-all duration-300 ${
-                                pin.length > i 
-                                    ? 'bg-amber-500 text-black shadow-[0_0_20px_rgba(245,158,11,0.4)] scale-110' 
-                                    : 'bg-[#0B0F19] border border-white/10 text-transparent'
-                            }`}>
-                                {pin.length > i ? "•" : ""}
-                            </div>
-                        ))}
-                    </div>
-
                     {errorMsg && (
                         <div className="text-red-400 text-xs font-bold uppercase tracking-wide mb-6 bg-red-500/10 py-2 px-4 rounded-lg flex items-center gap-2">
                             <Shield className="w-4 h-4" />
@@ -181,40 +168,35 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                         </div>
                     )}
 
-                    {/* Numpad */}
-                    <div className="grid grid-cols-3 gap-4 w-full mb-6">
-                        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map(num => (
-                            <button
-                                key={num}
-                                onClick={() => handlePinInput(num.toString())}
-                                disabled={isChecking}
-                                className="h-16 rounded-2xl bg-white/5 hover:bg-white/10 active:bg-white/20 border border-white/5 flex items-center justify-center text-xl font-black text-white transition-all active:scale-95 disabled:opacity-50"
-                            >
-                                {num}
-                            </button>
-                        ))}
-                        <button
-                            onClick={handlePinClear}
+                    <form 
+                        className="w-full flex flex-col gap-4 mb-6"
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            if (pin.length >= 4) {
+                                verifyPin(pin);
+                            }
+                        }}
+                    >
+                        <input
+                            type="password"
+                            value={pin}
+                            onChange={(e) => {
+                                setPin(e.target.value);
+                                setErrorMsg("");
+                            }}
                             disabled={isChecking}
-                            className="h-16 rounded-2xl bg-red-500/10 hover:bg-red-500/20 text-red-500 border border-red-500/20 flex items-center justify-center text-xs font-black uppercase tracking-wider transition-all active:scale-95 disabled:opacity-50"
-                        >
-                            EFFACER
-                        </button>
+                            placeholder="Mot de passe..."
+                            className="w-full bg-[#0B0F19] border border-white/10 rounded-2xl px-6 py-4 text-white font-medium focus:outline-none focus:border-amber-500 transition-colors placeholder:text-gray-600 text-center text-lg"
+                        />
+                        
                         <button
-                            onClick={() => handlePinInput("0")}
-                            disabled={isChecking}
-                            className="h-16 rounded-2xl bg-white/5 hover:bg-white/10 active:bg-white/20 border border-white/5 flex items-center justify-center text-xl font-black text-white transition-all active:scale-95 disabled:opacity-50"
+                            type="submit"
+                            disabled={isChecking || pin.length < 4}
+                            className="w-full bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black font-black py-4 rounded-2xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(245,158,11,0.3)] active:scale-95"
                         >
-                            0
+                            {isChecking ? "Vérification..." : "Connexion"}
                         </button>
-                        <button
-                            onClick={handlePinDelete}
-                            disabled={isChecking}
-                            className="h-16 rounded-2xl bg-white/5 hover:bg-white/10 active:bg-white/20 border border-white/5 flex items-center justify-center text-white transition-all active:scale-95 disabled:opacity-50"
-                        >
-                            <X className="w-6 h-6" />
-                        </button>
-                    </div>
+                    </form>
 
                     <button
                         onClick={() => router.push("/")}
@@ -278,6 +260,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             href: "/admin/blog",
             label: "Gestion du Blog",
             icon: LayoutDashboard, // reusing an imported icon just to be safe without changing imports
+            roles: ["admin"]
+        },
+        {
+            href: "/admin/reviews",
+            label: "Avis Clients",
+            icon: Star,
             roles: ["admin"]
         }
     ];

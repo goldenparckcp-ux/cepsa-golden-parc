@@ -126,21 +126,7 @@ export default function StaffLoginPage() {
                 </div>
 
                 <h2 className="text-2xl font-black text-white text-center mb-1">Portail Employés (Staff)</h2>
-                <p className="text-xs text-gray-400 text-center mb-8 font-medium">Saisissez votre code PIN pour accéder à votre interface</p>
-
-                {/* PIN Display Indicators */}
-                <div className="flex gap-4 mb-8">
-                    {[0, 1, 2, 3].map(i => (
-                        <div
-                            key={i}
-                            className={`w-4 h-4 rounded-full border transition-all duration-150 ${
-                                pin.length > i
-                                    ? "bg-red-500 border-red-500 scale-110 shadow-lg shadow-red-500/30"
-                                    : "border-white/20 bg-transparent"
-                            }`}
-                        />
-                    ))}
-                </div>
+                <p className="text-xs text-gray-400 text-center mb-8 font-medium">Saisissez votre mot de passe pour accéder à votre interface</p>
 
                 {/* Error display */}
                 {errorMsg && (
@@ -149,40 +135,36 @@ export default function StaffLoginPage() {
                     </div>
                 )}
 
-                {/* Numeric PIN Pad */}
-                <div className="grid grid-cols-3 gap-4 w-full max-w-[280px] mb-8">
-                    {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map(num => (
-                        <button
-                            key={num}
-                            onClick={() => handlePinInput(num)}
-                            disabled={isChecking}
-                            className="aspect-square bg-white/5 hover:bg-white/10 active:scale-95 text-white font-bold text-xl rounded-2xl border border-white/5 transition-all flex items-center justify-center disabled:opacity-50"
-                        >
-                            {num}
-                        </button>
-                    ))}
-                    <button
-                        onClick={handlePinClear}
+                {/* Password Input Form */}
+                <form 
+                    className="w-full max-w-[280px] mb-4 flex flex-col gap-4"
+                    onSubmit={(e) => {
+                        e.preventDefault();
+                        if (pin.length >= 4) {
+                            verifyStaffPin(pin);
+                        }
+                    }}
+                >
+                    <input
+                        type="password"
+                        value={pin}
+                        onChange={(e) => {
+                            setPin(e.target.value);
+                            setErrorMsg("");
+                        }}
                         disabled={isChecking}
-                        className="aspect-square bg-transparent hover:bg-white/5 text-gray-400 font-bold text-xs rounded-2xl transition-all flex items-center justify-center"
-                    >
-                        EFFACER
-                    </button>
+                        placeholder="Mot de passe..."
+                        className="w-full bg-[#0F172A] border border-white/10 rounded-xl px-4 py-4 text-white font-medium focus:outline-none focus:border-red-500 transition-colors placeholder:text-gray-500 text-center text-lg"
+                    />
+                    
                     <button
-                        onClick={() => handlePinInput("0")}
-                        disabled={isChecking}
-                        className="aspect-square bg-white/5 hover:bg-white/10 active:scale-95 text-white font-bold text-xl rounded-2xl border border-white/5 transition-all flex items-center justify-center disabled:opacity-50"
+                        type="submit"
+                        disabled={isChecking || pin.length < 4}
+                        className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-red-600/20 active:scale-95"
                     >
-                        0
+                        {isChecking ? "Vérification..." : "Connexion"}
                     </button>
-                    <button
-                        onClick={handlePinDelete}
-                        disabled={isChecking}
-                        className="aspect-square bg-transparent hover:bg-white/5 text-gray-400 font-bold text-sm rounded-2xl transition-all flex items-center justify-center"
-                    >
-                        RETOUR
-                    </button>
-                </div>
+                </form>
 
             </div>
         </div>

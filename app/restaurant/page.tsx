@@ -2,8 +2,9 @@ import { supabase } from "@/lib/supabase";
 import RestaurantClient from "./RestaurantClient";
 import { COMPLETE_MENU, restaurantCategories, MenuItem } from "@/lib/types/menu";
 
-// Force Next.js to dynamically render this page on every request (no caching)
-export const revalidate = 0;
+// Enable Incremental Static Regeneration (ISR) to cache the page for 30 seconds
+// This makes the page load instantly (kilo bytes plane speed) while keeping data fresh.
+export const revalidate = 30;
 
 export default async function RestaurantPage() {
     let initialCategories = restaurantCategories.map(c => ({ id: c.id, label: c.label }));

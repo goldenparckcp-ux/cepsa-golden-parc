@@ -956,8 +956,8 @@ export default function AdminDashboardPage() {
                     <div className="bg-[#1E293B]/80 border border-white/8 rounded-2xl p-6 space-y-5">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h2 className="text-sm font-black text-white flex items-center gap-2"><Lock className="w-4 h-4 text-amber-400" /> Codes d'Accès PIN</h2>
-                                <p className="text-[10px] text-gray-500 mt-0.5">4 chiffres par rôle — modifiez et sauvegardez</p>
+                                <h2 className="text-sm font-black text-white flex items-center gap-2"><Lock className="w-4 h-4 text-amber-400" /> Mots de passe d'Accès</h2>
+                                <p className="text-[10px] text-gray-500 mt-0.5">Alphanumérique — modifiez et sauvegardez</p>
                             </div>
                             <button onClick={() => setShowPins(!showPins)} className="p-2 rounded-xl bg-white/5 border border-white/8 text-gray-500 hover:text-white transition-all">
                                 {showPins ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -976,10 +976,10 @@ export default function AdminDashboardPage() {
                                     <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">{label}</label>
                                     <input
                                         type={showPins ? "text" : "password"}
-                                        maxLength={4}
+                                        maxLength={50}
                                         value={pins[key as keyof typeof pins]}
-                                        onChange={e => setPins(p => ({ ...p, [key]: e.target.value.replace(/[^0-9]/g, "") }))}
-                                        className={`w-full bg-[#0F172A] border border-white/8 rounded-xl p-3.5 text-white font-mono font-black text-xl outline-none ${color} tracking-[0.6em] text-center transition-colors`}
+                                        onChange={e => setPins(p => ({ ...p, [key]: e.target.value.replace(/\s/g, "") }))}
+                                        className={`w-full bg-[#0F172A] border border-white/8 rounded-xl p-3.5 text-white font-mono font-black text-lg outline-none ${color} tracking-widest transition-colors`}
                                         placeholder={showPins ? placeholder : "••••"}
                                     />
                                 </div>

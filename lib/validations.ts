@@ -3,9 +3,8 @@ import { z } from 'zod';
 // Example Schema for User Login
 export const LoginSchema = z.object({
   pin: z.string()
-    .min(4, "Le code PIN doit comporter au moins 4 caractères")
-    .max(8, "Le code PIN ne peut pas dépasser 8 caractères")
-    .regex(/^\d+$/, "Le code PIN ne doit contenir que des chiffres"),
+    .min(4, "Le mot de passe doit comporter au moins 4 caractères")
+    .max(50, "Le mot de passe est trop long"),
 });
 
 // Example Schema for updating a profile
