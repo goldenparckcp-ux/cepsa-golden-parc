@@ -11,7 +11,7 @@ import { DarkSheet } from "@/components/ui/DarkSheet";
 import { supabase } from "@/lib/supabase";
 import { useTranslation } from "@/lib/state/LanguageContext";
 import { motion, AnimatePresence } from 'framer-motion';
-import PaymentModal from "@/components/PaymentModal";
+
 import dynamic from "next/dynamic";
 
 const Html5QrScanner = dynamic(
@@ -250,12 +250,8 @@ function CartDrawerContent({
             setIsSubmitting(false);
         } else {
             if (requiresPayment) {
-                setPendingPayment({
-                    id: data.id,
-                    amount: paymentAmount,
-                    num: orderNum,
-                    paymentType: isDepositMode ? 'deposit' : 'full_discounted'
-                });
+                const payType = isDepositMode ? 'deposit' : 'full_discounted';
+                router.push(`/checkout?bookingId=${data.id}&type=restaurant&payment=${payType}`);
                 setIsSubmitting(false);
             } else {
                 onSuccess(orderNum);
@@ -605,11 +601,12 @@ function CartDrawerContent({
                     {(paymentMethod === 'card' || isDepositMode) && (
                         <div className="mt-4 p-3 bg-red-500/5 rounded-lg border border-red-500/10 flex flex-col items-center text-center animate-in fade-in duration-300">
                             <p className="text-[10px] text-gray-400 mb-2">
-                                {language === 'ar' ? 'دفع آمن بنسبة 100% عبر PayPal' : 'Paiement 100% sécurisé via PayPal'}
+                                {language === 'ar' ? 'دفع آمن بنسبة 100% عبر الإنترنت' : 'Paiement 100% sécurisé en ligne'}
                             </p>
                             <div className="flex items-center gap-3 opacity-70 grayscale hover:grayscale-0 transition-all">
                                 <div className="h-6 w-10 bg-white/10 rounded flex items-center justify-center text-[8px] font-bold text-white">VISA</div>
                                 <div className="h-6 w-10 bg-white/10 rounded flex items-center justify-center text-[8px] font-bold text-white">MasterCard</div>
+                                <div className="h-6 w-10 bg-white/10 rounded flex items-center justify-center text-[8px] font-bold text-white">CMI</div>
                                 <div className="h-6 w-10 bg-white/10 rounded flex items-center justify-center text-[8px] font-bold text-white">PayPal</div>
                             </div>
                         </div>
@@ -868,22 +865,7 @@ function CartDrawerContent({
                 )}
             </AnimatePresence>
 
-            {pendingPayment && (
-                <PaymentModal
-                    bookingId={pendingPayment.id}
-                    amount={pendingPayment.amount}
-                    serviceType="restaurant"
-                    tableName="restaurant_orders"
-                    paymentType={pendingPayment.paymentType}
-                    onSuccess={() => {
-                        setPendingPayment(null);
-                        clear();
-                        onClose();
-                        onSuccess(pendingPayment.num);
-                    }}
-                    onClose={() => setPendingPayment(null)}
-                />
-            )}
+
         </div>
     );
 }

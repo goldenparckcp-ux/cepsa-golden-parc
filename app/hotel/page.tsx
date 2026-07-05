@@ -5,7 +5,7 @@ import { BedDouble, Calendar, ChevronLeft, CheckCircle2, Moon, Sun, AlertCircle 
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
-const PaymentModal = dynamic(() => import('@/components/PaymentModal'), { ssr: false });
+
 import { supabase } from '@/lib/supabase';
 import { useTranslation } from '@/lib/state/LanguageContext';
 // Force TS index update
@@ -194,12 +194,7 @@ export default function HotelPage() {
 
             if (!error && data) {
                 if (isCard) {
-                    setPendingPayment({
-                        id: data.id,
-                        amount: finalPrice,
-                        num: bookingNum,
-                        paymentType: 'full_discounted'
-                    });
+                    router.push(`/checkout?bookingId=${data.id}&type=hotel&payment=full_discounted`);
                 } else {
                     setShowSuccess(bookingNum);
                 }
@@ -274,12 +269,7 @@ export default function HotelPage() {
             alert("Erreur: " + error?.message);
         } else {
             if (isCard) {
-                setPendingPayment({
-                    id: data.id,
-                    amount: finalPrice,
-                    num: bookingNum,
-                    paymentType: 'full_discounted'
-                });
+                router.push(`/checkout?bookingId=${data.id}&type=hotel&payment=full_discounted`);
             } else {
                 setShowSuccess(bookingNum);
             }
@@ -701,20 +691,7 @@ export default function HotelPage() {
             )}
 
             {/* Payment Modal */}
-            {pendingPayment && (
-                <PaymentModal
-                    bookingId={pendingPayment.id}
-                    amount={pendingPayment.amount}
-                    serviceType="hotel"
-                    tableName="hotel_reservations"
-                    paymentType={pendingPayment.paymentType}
-                    onSuccess={() => {
-                        setPendingPayment(null);
-                        setShowSuccess(pendingPayment.num);
-                    }}
-                    onClose={() => setPendingPayment(null)}
-                />
-            )}
+
         </div>
     );
 }

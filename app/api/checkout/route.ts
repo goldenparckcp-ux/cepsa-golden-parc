@@ -1,13 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createPayPalOrder, calculateArboun } from '@/lib/payment';
 import { supabase } from '@/lib/supabase';
-
+import { generateCmiHash } from '@/lib/cmi';
 import { CheckoutSchema } from '@/lib/validations';
 
 export async function POST(req: Request) {
     try {
-
-
         const body = await req.json();
         
         // 2. Validate input using Zod
@@ -72,6 +70,36 @@ export async function POST(req: Request) {
                 order_id: order.id,
                 amount: finalAmount,
                 links: order.links
+            });
+        }
+        
+        if (gateway === 'cmi') {
+            const cmiClientId = process.env.CMI_CLIENT_ID || 'dummy_client_id';
+            const cmiStoreKey = process.env.CMI_STORE_KEY || 'dummy_store_key';
+            const reqUrl = new URL(req.url);
+            const baseUrl = `${reqUrl.protocol}//${reqUrl.host}`;
+            
+            const cmiParams: Record<string, string> = {
+                clientid: cmiClientId,
+                amount: finalAmount.toFixed(2),
+                oid: bookingId,
+                okUrl: `${baseUrl}/api/checkout/cmi-return`,
+                failUrl: `${baseUrl}/api/checkout/cmi-return`,
+                callbackUrl: `${baseUrl}/api/webhooks/cmi`,
+                TranType: "PreAuth",
+                currency: "504", // 504 is MAD
+                storetype: "3D_PAY_HOSTING",
+                hashAlgorithm: "ver3",
+                lang: "fr",
+            };
+            
+            const hash = generateCmiHash(cmiParams, cmiStoreKey);
+            cmiParams['HASH'] = hash;
+            
+            return NextResponse.json({
+                cmi_params: cmiParams,
+                amount: finalAmount,
+                gateway_url: process.env.CMI_GATEWAY_URL || 'https://testpayment.cmi.co.ma/fim/est3Dgate'
             });
         }
 
