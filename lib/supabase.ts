@@ -13,7 +13,14 @@ if (!supabaseUrl || !supabaseAnonKey) {
     }
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+    auth: {
+        flowType: 'pkce',
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        persistSession: true
+    }
+});
 
 
 // Helper functions for common operations

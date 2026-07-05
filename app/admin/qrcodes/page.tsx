@@ -432,15 +432,17 @@ export default function QRGeneratorPage() {
       </div>
 
       {/* Print */}
-      <div ref={printRef} className="hidden print:block">
-        <div className="grid grid-cols-3 gap-8 p-8">
+      <div ref={printRef} className="hidden print:block w-full bg-white text-black min-h-screen">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-6 p-4">
           {items.filter(i => i.dataUrl).map(item => (
-            <div key={item.id} className="flex flex-col items-center border border-gray-200 rounded-2xl p-4 gap-2">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={item.dataUrl!} alt={item.label} className="w-40 h-40" />
-              <p className="font-black text-lg text-center">{item.label}</p>
-              <p className="text-xs text-gray-500 text-center">{TYPE_META[item.type].label} · Golden Park</p>
-              <p className="text-[8px] text-gray-300 font-mono">{item.token}</p>
+            <div key={item.id} className="flex flex-col items-center justify-center border-2 border-black rounded-3xl p-6 gap-2 break-inside-avoid shadow-sm">
+              <div className="w-full aspect-square max-w-[200px] mb-2">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={item.dataUrl!} alt={item.label} className="w-full h-full object-contain mix-blend-multiply" />
+              </div>
+              <p className="font-black text-2xl text-center text-black uppercase tracking-tight leading-none">{item.label}</p>
+              <p className="text-sm font-bold text-gray-600 text-center uppercase tracking-widest mt-1">{TYPE_META[item.type].label} · Golden Park</p>
+              <p className="text-[10px] text-gray-400 font-mono mt-2 uppercase">ID: {item.token}</p>
             </div>
           ))}
         </div>

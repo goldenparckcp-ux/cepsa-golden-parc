@@ -77,6 +77,14 @@ export default function StaffLoginPage() {
                 return;
             }
 
+            // Block admin from staff portal — admin should use /admin
+            if (resData.role === 'admin') {
+                setErrorMsg("Ce code est réservé à l'administration. Utilisez /admin.");
+                setPin("");
+                setIsChecking(false);
+                return;
+            }
+
             // Role mapping and session preparation
             const resolvedSession: StaffSession = {
                 role: resData.role,
@@ -96,7 +104,6 @@ export default function StaffLoginPage() {
                     router.push("/staff/pool-services");
                 }
             }
-            else if (resolvedSession.role === "admin") router.push("/admin");
             
         } catch (err) {
             console.error(err);
