@@ -13,6 +13,7 @@ import dynamic from "next/dynamic";
 const BottomTabs = dynamic(() => import("@/components/BottomTabs"), { ssr: false });
 const DesktopNav = dynamic(() => import("@/components/DesktopNav"), { ssr: false });
 const MobileHeader = dynamic(() => import("@/components/MobileHeader"), { ssr: false });
+const Footer = dynamic(() => import("@/components/Footer"), { ssr: false });
 const GoogleTranslate = dynamic(
   () => import("@/components/GoogleTranslate").then((m) => ({ default: m.GoogleTranslate })),
   { ssr: false }
@@ -37,6 +38,7 @@ export default function ClientShell() {
       <MobileHeader />
       <FuelPriceWidget />
       <GoogleTranslate />
+      <Footer />
       <BottomTabs />
     </>
   );
