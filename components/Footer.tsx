@@ -66,6 +66,11 @@ export default function Footer() {
           <h3 className="text-white text-lg font-bold">Liens Rapides</h3>
           <ul className="space-y-3">
             <li>
+              <Link href="/about" className="text-gray-400 hover:text-white text-sm flex items-center gap-2 transition-colors">
+                <ChevronRight className="w-4 h-4 text-red-500" /> À Propos de Nous
+              </Link>
+            </li>
+            <li>
               <Link href="/blog" className="text-gray-400 hover:text-white text-sm flex items-center gap-2 transition-colors">
                 <ChevronRight className="w-4 h-4 text-red-500" /> Articles & Actualités
               </Link>
