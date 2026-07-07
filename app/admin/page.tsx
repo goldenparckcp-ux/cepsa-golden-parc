@@ -25,7 +25,6 @@ function getLastNDays(n: number) {
 
 function shortDay(iso: string) {
     return new Date(iso + "T00:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "short" }).replace(".", "");
-}).replace(".", "");
 }
 
 function fmt(n: number) { return n.toLocaleString("fr-FR"); }
