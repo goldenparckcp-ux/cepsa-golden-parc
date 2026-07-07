@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import {
+import { Calendar,
     TrendingUp, Users, RefreshCw, Lock, Key, Award, AlertTriangle,
     CheckCircle, Clock, Utensils, Bed, Waves, Wrench, Bot, Sparkles,
     BarChart3, Activity, ArrowUpRight, ArrowDownRight, Zap, Star,
@@ -197,6 +197,7 @@ export default function AdminDashboardPage() {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<"overview" | "analytics" | "ai" | "pins">("overview");
     const [chartRange, setChartRange] = useState<7 | 14 | 30>(7);
+    const [timeFilter, setTimeFilter] = useState<"today" | "week" | "month" | "all">("all");
     const [showPins, setShowPins] = useState(false);
 
     // Pins
@@ -239,7 +240,7 @@ export default function AdminDashboardPage() {
             caisse: localStorage.getItem("pin_caisse") || "4444",
         });
         fetchData();
-    }, []);
+    }, [fetchData, timeFilter]);
 
     // Chart data computed from raw orders and bookings across all station spaces
     const chartDays = useMemo(() => getLastNDays(chartRange), [chartRange]);
