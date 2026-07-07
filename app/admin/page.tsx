@@ -342,7 +342,7 @@ export default function AdminDashboardPage() {
                         if (!img) { const m = COMPLETE_MENU.find(m => m.name.toLowerCase() === name.toLowerCase()); img = m?.image || ""; }
                         if (!itemMap[name]) {
                             const m = COMPLETE_MENU.find(m => m.name.toLowerCase() === name.toLowerCase() || name.toLowerCase().includes(m.name.split(" ")[0].toLowerCase()));
-                            itemMap[name] = { qty: 0, revenue: 0, image: img || m?.image || "", description: m?.description || "", category: m?.category || "", badge: m?.badge || "", prices: [] };
+                            itemMap[name] = { qty: 0, revenue: 0, image: m?.image || img || "", description: m?.description || "", category: m?.category || "", badge: m?.badge || "", prices: [] };
                         }
                         itemMap[name].qty += qty;
                         itemMap[name].revenue += price * qty;
@@ -723,6 +723,13 @@ export default function AdminDashboardPage() {
                                 </div>
                             </div>
                         </div>
+                                  {chartRange === "custom" && (
+                                      <div className="flex gap-2 items-center justify-end mt-3 mb-2 animate-in fade-in zoom-in-95">
+                                          <input type="date" value={customDate.start} onChange={e => setCustomDate({...customDate, start: e.target.value})} className="bg-[#0F172A] border border-white/10 text-white text-[10px] px-2 py-1.5 rounded-lg" />
+                                          <span className="text-gray-500 text-xs">à</span>
+                                          <input type="date" value={customDate.end} onChange={e => setCustomDate({...customDate, end: e.target.value})} className="bg-[#0F172A] border border-white/10 text-white text-[10px] px-2 py-1.5 rounded-lg" />
+                                      </div>
+                                  )}
                         <div className="h-52">
                             <LineChart
                                 data={chartData.vals}
