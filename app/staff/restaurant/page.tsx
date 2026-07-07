@@ -171,28 +171,43 @@ export default function StaffRestaurantOrdersPage() {
 
     const handlePrintTicket = (order: any, foodItems: any[], meta: any) => {
         const printContent = `
-            <div style="font-family: monospace; padding: 20px; max-width: 300px; margin: auto;">
-                <h2 style="text-align: center; margin: 0 0 10px 0;">GOLDEN PARC CUISINE</h2>
-                <hr style="border-top: 1px dashed black;" />
-                <p><strong>Cmd:</strong> #${order.order_number}</p>
-                <p><strong>Heure:</strong> ${new Date(order.created_at).toLocaleTimeString()}</p>
-                <p><strong>Type:</strong> ${meta.location_type === "on_way" ? "Sur la route" : "Sur place"}</p>
-                ${meta.table_number ? `<p><strong>Table:</strong> ${meta.table_number}</p>` : ""}
-                ${meta.arrival_time ? `<p><strong>Arrivée prévue:</strong> ${meta.arrival_time}</p>` : ""}
-                ${order.customer_name ? `<p><strong>Client:</strong> ${order.customer_name}</p>` : ""}
-                ${order.customer_phone ? `<p><strong>Tel:</strong> ${order.customer_phone}</p>` : ""}
-                <hr style="border-top: 1px dashed black;" />
-                <h3 style="margin: 10px 0;">ARTICLES :</h3>
-                <ul style="list-style: none; padding: 0; margin: 0;">
-                    ${foodItems.map(item => `
-                        <li style="margin-bottom: 8px;">
-                            <strong>${item.quantity}x ${item.name}</strong>
-                            ${item.options ? `<br/><small style="margin-left: 10px;">${item.options.replace(/\|/g, ', ')}</small>` : ""}
-                            ${item.special_instructions ? `<br/><small style="margin-left: 10px;">* ${item.special_instructions}</small>` : ""}
-                        </li>
-                    `).join('')}
-                </ul>
-                <hr style="border-top: 1px dashed black;" />
+            <div style="font-family: 'Courier New', Courier, monospace; max-width: 300px; margin: 0 auto; color: #000; padding: 10px; background: #fff;">
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <h2 style="margin: 0; font-size: 24px; text-transform: uppercase;">GOLDEN PARC</h2>
+                    <p style="margin: 5px 0; font-size: 14px;">Ticket Cuisine</p>
+                    <p style="margin: 5px 0; font-size: 14px; border-bottom: 2px dashed #000; padding-bottom: 10px;">${new Date(order.created_at).toLocaleString('fr-FR')}</p>
+                </div>
+                
+                <div style="margin-bottom: 15px; font-size: 16px;">
+                    <h1 style="text-align: center; margin: 5px 0; font-size: 32px; border: 2px solid #000; padding: 5px;">#${order.order_number}</h1>
+                    <p style="margin: 5px 0;"><strong>Type:</strong> ${meta.location_type === "on_way" ? "EN ROUTE / DRIVE" : "SUR PLACE"}</p>
+                    ${meta.table_number ? `<p style="margin: 5px 0; font-size: 20px; font-weight: bold;"><strong>Emplacement:</strong> ${meta.table_number}</p>` : ""}
+                    ${meta.arrival_time ? `<p style="margin: 5px 0;"><strong>ArrivǸe prǸvue:</strong> ${meta.arrival_time}</p>` : ""}
+                    ${order.customer_name ? `<p style="margin: 5px 0;"><strong>Client:</strong> ${order.customer_name}</p>` : ""}
+                    ${order.customer_phone ? `<p style="margin: 5px 0;"><strong>Tel:</strong> ${order.customer_phone}</p>` : ""}
+                </div>
+
+                <div style="border-top: 2px dashed #000; border-bottom: 2px dashed #000; padding: 10px 0; margin-bottom: 15px;">
+                    <h3 style="margin: 0 0 10px 0; font-size: 18px; text-align: center;">--- COMMANDES ---</h3>
+                    <table style="width: 100%; font-size: 15px; border-collapse: collapse;">
+                        ${foodItems.map(item => `
+                            <tr>
+                                <td style="vertical-align: top; font-weight: bold; padding-right: 5px; width: 30px;">${item.quantity}x</td>
+                                <td>
+                                    <strong>${item.name}</strong>
+                                    ${item.options ? `<br/><span style="font-size: 12px; margin-left: 5px;">- ${item.options.replace(/\|/g, ', ')}</span>` : ""}
+                                    ${item.special_instructions ? `<br/><span style="font-size: 12px; margin-left: 5px; font-weight: bold;">* ${item.special_instructions}</span>` : ""}
+                                </td>
+                            </tr>
+                            <tr><td colspan="2" style="height: 5px;"></td></tr>
+                        `).join('')}
+                    </table>
+                </div>
+                
+                <div style="text-align: center; margin-top: 20px; font-size: 12px;">
+                    <p>MERCI ET BON COURAGE !</p>
+                    <p>Golden Parc Cepsa</p>
+                </div>
             </div>
         `;
         
@@ -200,7 +215,13 @@ export default function StaffRestaurantOrdersPage() {
         if (printWindow) {
             printWindow.document.write(`
                 <html>
-                    <head><title>Ticket Cuisine #${order.order_number}</title></head>
+                    <head>
+                        <title>Ticket Cuisine #${order.order_number}</title>
+                        <style>
+                            @page { margin: 0; size: 80mm 297mm; }
+                            body { margin: 0; padding: 0; background: #fff; }
+                        </style>
+                    </head>
                     <body>${printContent}</body>
                 </html>
             `);
@@ -542,12 +563,9 @@ export default function StaffRestaurantOrdersPage() {
                                             )}
 
                                             {order.status === "ready" && (
-                                                <button
-                                                    onClick={() => updateOrderStatus(order.id, "completed")}
-                                                    className="w-full py-3.5 bg-gradient-to-r from-green-600 to-emerald-500 hover:from-green-500 hover:to-emerald-400 text-white font-black text-xs rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
-                                                >
-                                                    Servi & Encaissé
-                                                </button>
+                                                <div className="w-full bg-[#0F172A] border border-white/5 rounded-xl py-3 text-center text-xs text-amber-500 font-bold animate-pulse">
+                                                    En attente d'encaissement (Caisse)
+                                                </div>
                                             )}
 
                                             {(order.status === "completed" || order.status === "cancelled") && (

@@ -10,6 +10,10 @@ import { useAuth } from '@/lib/state/AuthProvider';
 import { useCart } from '@/lib/state/CartContext';
 
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
+
+const Scanner = dynamic(() => import('@yudiel/react-qr-scanner').then(mod => mod.Scanner), { ssr: false });
+
 
 function ProfileContent() {
     const router = useRouter();
