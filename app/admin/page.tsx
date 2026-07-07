@@ -24,7 +24,8 @@ function getLastNDays(n: number) {
 }
 
 function shortDay(iso: string) {
-    return new Date(iso + "T00:00:00").toLocaleDateString("fr-FR", { weekday: "short", day: "numeric" }).replace(".", "");
+    return new Date(iso + "T00:00:00").toLocaleDateString("fr-FR", { day: "numeric", month: "short" }).replace(".", "");
+}).replace(".", "");
 }
 
 function fmt(n: number) { return n.toLocaleString("fr-FR"); }
@@ -196,7 +197,8 @@ export default function AdminDashboardPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<"overview" | "analytics" | "ai" | "pins">("overview");
-    const [chartRange, setChartRange] = useState<7 | 14 | 30 | 180 | 365>(7);
+    const [chartRange, setChartRange] = useState<7 | 14 | 30 | 180 | 365 | "custom">(7);
+    const [customDate, setCustomDate] = useState({ start: "", end: "" });
     const [timeFilter, setTimeFilter] = useState<"today" | "week" | "month" | "all">("all");
     const [showPins, setShowPins] = useState(false);
 
@@ -244,7 +246,20 @@ export default function AdminDashboardPage() {
     }, [timeFilter]);
 
     // Chart data computed from raw orders and bookings across all station spaces
-    const chartDays = useMemo(() => getLastNDays(chartRange), [chartRange]);
+    const chartDays = useMemo(() => {
+        if (chartRange === "custom" && customDate.start && customDate.end) {
+            const days = [];
+            const d = new Date(customDate.start);
+            const end = new Date(customDate.end);
+            while (d <= end) {
+                days.push(d.toISOString().split("T")[0]);
+                d.setDate(d.getDate() + 1);
+            }
+            return days.slice(-60); // limit to 60 days to prevent chart overflow/lag
+        }
+        const n = typeof chartRange === "number" ? chartRange : 7;
+        return getLastNDays(n);
+    }, [chartRange, customDate]);
     const chartData = useMemo(() => {
         const vals = chartDays.map(() => 0);
         
@@ -698,11 +713,14 @@ export default function AdminDashboardPage() {
 
                                 {/* Range Selector */}
                                 <div className="flex gap-1 bg-[#0F172A] p-1 rounded-xl border border-white/5">
-                                    {([7, 14, 30, 180, 365] as const).map(n => (
-                                        <button key={n} onClick={() => setChartRange(n)}
-                                            className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartRange === n ? "bg-emerald-500 text-black" : "text-gray-500 hover:text-white"}`}
-                                        >{n === 180 ? "6m" : n === 365 ? "1an" : n + "j"}</button>
-                                    ))}
+                                    {([7, 14, 30] as const).map(n => (
+                                          <button key={n} onClick={() => setChartRange(n)}
+                                              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartRange === n ? "bg-emerald-500 text-black" : "text-gray-500 hover:text-white"}`}
+                                          >{n}j</button>
+                                      ))}
+                                      <button onClick={() => setChartRange("custom")}
+                                              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartRange === "custom" ? "bg-emerald-500 text-black" : "text-gray-500 hover:text-white"}`}
+                                      >Période...</button>
                                 </div>
                             </div>
                         </div>
@@ -769,7 +787,7 @@ export default function AdminDashboardPage() {
                                                 <span className="text-base w-6 text-center">{medals[i]}</span>
                                                 {item.image && (
                                                     <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0 bg-[#0F172A] border border-white/5">
-                                                        <Image src={item.image} alt={item.name} width={36} height={36} className="object-cover w-full h-full" unoptimized={item.image?.startsWith("http")} onError={(e) => { e.currentTarget.style.opacity = "0"; }} />
+                                                        <Image src={item.image} alt={item.name} width={36} height={36} className="object-cover w-full h-full" onError={(e) => { e.currentTarget.style.opacity = "0"; }} />
                                                     </div>
                                                 )}
                                                 <div className="flex-1 min-w-0">
@@ -811,7 +829,7 @@ export default function AdminDashboardPage() {
                                         <div key={i} className="bg-[#0F172A] border border-white/5 rounded-xl overflow-hidden hover:border-white/15 transition-all group">
                                             <div className="relative h-28 overflow-hidden bg-[#162032]">
                                                 {item.image ? (
-                                                    <Image src={item.image} alt={item.name} fill className="object-cover group-hover:scale-110 transition-transform duration-500" unoptimized={item.image?.startsWith("http")} onError={(e) => { e.currentTarget.style.opacity = "0"; }} />
+                                                    <Image src={item.image} alt={item.name} fill className="object-cover group-hover:scale-110 transition-transform duration-500" onError={(e) => { e.currentTarget.style.opacity = "0"; }} />
                                                 ) : (
                                                     <div className="w-full h-full flex items-center justify-center"><Utensils className="w-8 h-8 text-white/10" /></div>
                                                 )}
