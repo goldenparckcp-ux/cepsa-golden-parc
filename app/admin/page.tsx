@@ -483,16 +483,28 @@ export default function AdminDashboardPage() {
             {/* ── HEADER ── */}
             <div className="flex flex-col gap-4">
                 <div className="flex items-start justify-between">
-                    <div>
-                        <div className="flex items-center gap-2 mb-1">
-                            <div className="w-1.5 h-5 rounded-full bg-gradient-to-b from-amber-400 to-orange-600" />
-                            <h1 className="text-2xl font-black text-white">Tableau de Bord Admin</h1>
-                        </div>
-                        <p className="text-xs text-gray-500 font-medium pl-3.5">
-                            {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
-                            {" · "}Données en temps réel
-                        </p>
-                    </div>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                      <div>
+                          <div className="flex items-center gap-2 mb-1">
+                              <div className="w-1.5 h-5 rounded-full bg-gradient-to-b from-amber-400 to-orange-600" />
+                              <h1 className="text-2xl font-black text-white">Tableau de Bord Admin</h1>
+                          </div>
+                          <p className="text-xs text-gray-500 font-medium pl-3.5">
+                              {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
+                              {" • "}Données en temps réel
+                          </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                          <button
+                              onClick={exportToCSV}
+                              className="py-2 px-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 font-bold hover:bg-amber-500 hover:text-black transition-all text-xs flex items-center gap-2"
+                              title="Exporter les données du graphique en CSV"
+                          >
+                              <Download className="w-4 h-4" />
+                              Exporter CSV
+                          </button>
+                      </div>
+                  </div>
                     <button onClick={fetchData} className="p-2.5 rounded-xl bg-white/5 border border-white/8 text-gray-500 hover:text-white hover:bg-white/10 transition-all group">
                         <RefreshCw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
                     </button>

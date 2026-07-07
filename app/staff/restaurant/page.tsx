@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Utensils, Clock, Check, Bell, BellOff, Search, Table, Navigation, LogOut } from "lucide-react";
+import { Utensils, Clock, Check, Bell, BellOff, Search, Table, Navigation, LogOut, Printer } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { adminDb } from "@/lib/admin-api";
 import { useRouter } from "next/navigation";
@@ -165,6 +165,51 @@ export default function StaffRestaurantOrdersPage() {
             setOrders(prev => prev.map(o => o.id === orderId ? { ...o, ...updates } : o));
         } catch (err) {
             alert("Erreur lors de la mise à jour de la commande.");
+        }
+    };
+
+
+    const handlePrintTicket = (order: any, foodItems: any[], meta: any) => {
+        const printContent = `
+            <div style="font-family: monospace; padding: 20px; max-width: 300px; margin: auto;">
+                <h2 style="text-align: center; margin: 0 0 10px 0;">GOLDEN PARC CUISINE</h2>
+                <hr style="border-top: 1px dashed black;" />
+                <p><strong>Cmd:</strong> #${order.order_number}</p>
+                <p><strong>Heure:</strong> ${new Date(order.created_at).toLocaleTimeString()}</p>
+                <p><strong>Type:</strong> ${meta.location_type === "on_way" ? "Sur la route" : "Sur place"}</p>
+                ${meta.table_number ? `<p><strong>Table:</strong> ${meta.table_number}</p>` : ""}
+                ${meta.arrival_time ? `<p><strong>Arrivée prévue:</strong> ${meta.arrival_time}</p>` : ""}
+                ${order.customer_name ? `<p><strong>Client:</strong> ${order.customer_name}</p>` : ""}
+                ${order.customer_phone ? `<p><strong>Tel:</strong> ${order.customer_phone}</p>` : ""}
+                <hr style="border-top: 1px dashed black;" />
+                <h3 style="margin: 10px 0;">ARTICLES :</h3>
+                <ul style="list-style: none; padding: 0; margin: 0;">
+                    ${foodItems.map(item => `
+                        <li style="margin-bottom: 8px;">
+                            <strong>${item.quantity}x ${item.name}</strong>
+                            ${item.options ? `<br/><small style="margin-left: 10px;">${item.options.replace(/\|/g, ', ')}</small>` : ""}
+                            ${item.special_instructions ? `<br/><small style="margin-left: 10px;">* ${item.special_instructions}</small>` : ""}
+                        </li>
+                    `).join('')}
+                </ul>
+                <hr style="border-top: 1px dashed black;" />
+            </div>
+        `;
+        
+        const printWindow = window.open('', '', 'width=400,height=600');
+        if (printWindow) {
+            printWindow.document.write(`
+                <html>
+                    <head><title>Ticket Cuisine #${order.order_number}</title></head>
+                    <body>${printContent}</body>
+                </html>
+            `);
+            printWindow.document.close();
+            printWindow.focus();
+            setTimeout(() => {
+                printWindow.print();
+                printWindow.close();
+            }, 250);
         }
     };
 
@@ -459,6 +504,17 @@ export default function StaffRestaurantOrdersPage() {
                                         </div>
 
                                         <div className="flex gap-2">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handlePrintTicket(order, foodItems, meta);
+                                                }}
+                                                className="p-3 bg-gray-500/10 border border-gray-500/20 hover:bg-gray-500/20 text-gray-400 font-bold text-xs rounded-xl transition-all"
+                                                title="Imprimer"
+                                            >
+                                                <Printer className="w-5 h-5" />
+                                            </button>
+
                                             {(order.status === "pending" || order.status === "confirmed") && (
                                                 <>
                                                     <button

@@ -166,6 +166,14 @@ export default function StaffHotelReservationsPage() {
         return activeRes || null;
     };
 
+
+    const getOccupiedRoomsCount = () => {
+        return reservations.filter(r => r.status === "checked_in" && r.room_number).length;
+    };
+    
+    const totalRoomsCount = TOTAL_ROOMS.length;
+    const occupancyRate = totalRoomsCount > 0 ? (getOccupiedRoomsCount() / totalRoomsCount) * 100 : 0;
+
     const filteredReservations = reservations.filter(res => {
         let matchesStatus = false;
         if (activeTab === "pending") matchesStatus = res.status === "pending" || res.status === "confirmed";
