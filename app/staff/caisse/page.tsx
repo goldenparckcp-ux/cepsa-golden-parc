@@ -106,29 +106,48 @@ export default function StaffCaissePage() {
         const isAlreadyPaid = order.deposit_paid && (order.deposit_amount >= total);
 
         try {
-            // If it's already ready or if it's already paid and we are just completing it, we set status to completed
-            const shouldComplete = order.status === "ready" || isAlreadyPaid;
-            
-            const updates: any = {
-                deposit_paid: true,
-                deposit_amount: total,
-                updated_at: new Date().toISOString()
-            };
+            let msgText = "";
 
-            if (shouldComplete) {
-                updates.status = "completed";
-                updates.completed_at = new Date().toISOString();
+            if (order.order_type === "restaurant") {
+                const shouldComplete = order.status === "ready" || isAlreadyPaid;
+                const updates: any = {
+                    deposit_paid: true,
+                    deposit_amount: total,
+                    updated_at: new Date().toISOString()
+                };
+    
+                if (shouldComplete) {
+                    updates.status = "completed";
+                    updates.completed_at = new Date().toISOString();
+                }
+    
+                const { error } = await adminDb("restaurant_orders")
+                    .update(updates)
+                    .eq("id", order.id);
+    
+                if (error) throw error;
+    
+                msgText = shouldComplete
+                    ? `La commande #${order.order_number} a été validée et clôturée avec succès !`
+                    : `Le paiement de la commande #${order.order_number} a été enregistré ! (En cours de préparation en cuisine)`;
+            } else {
+                const updates: any = {
+                    deposit_paid: true,
+                    deposit_amount: total
+                };
+                
+                if (order.status === "pending") {
+                    updates.status = "confirmed";
+                }
+                
+                const { error } = await adminDb("pool_bookings")
+                    .update(updates)
+                    .eq("id", order.id);
+    
+                if (error) throw error;
+                
+                msgText = `Le paiement du ticket #${order.booking_number || order.id.substring(0,6).toUpperCase()} a été enregistré !`;
             }
-
-            const { error } = await adminDb("restaurant_orders")
-                .update(updates)
-                .eq("id", order.id);
-
-            if (error) throw error;
-
-            const msgText = shouldComplete
-                ? `La commande #${order.order_number} a été validée et clôturée avec succès !`
-                : `Le paiement de la commande #${order.order_number} a été enregistré ! (En cours de préparation en cuisine)`;
 
             setMessage({ type: 'success', text: msgText });
             setOrder(null);
@@ -288,8 +307,8 @@ export default function StaffCaissePage() {
                         {/* Header details */}
                         <div className="flex justify-between items-start border-b border-white/5 pb-4">
                             <div>
-                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Commande</span>
-                                <span className="text-xl font-black text-white">#{order.order_number}</span>
+                                <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">{order.order_type === 'pool' ? 'Piscine' : 'Commande'}</span>
+                                <span className="text-xl font-black text-white">#{order.order_number || order.booking_number || order.id?.substring(0,6).toUpperCase()}</span>
                             </div>
                             <div className="text-right">
                                 <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider block">Statut Actuel</span>
@@ -298,23 +317,45 @@ export default function StaffCaissePage() {
                         </div>
 
                         {/* List items */}
-                        <div className="space-y-4">
-                            <h3 className="text-xs font-black text-gray-500 uppercase tracking-widest">Articles Commandés</h3>
-                            <div className="space-y-3 bg-[#0F172A] border border-white/5 p-4 rounded-2xl">
-                                {parseOrder(order.items).foodItems.map((item: any, idx: number) => (
-                                    <div key={idx} className="flex justify-between items-start text-sm">
-                                        <div>
-                                            <span className="text-green-400 font-black mr-2">x{item.quantity}</span>
-                                            <span className="text-white font-bold">{item.name}</span>
-                                            {item.meta && <p className="text-[10px] text-gray-400 mt-0.5">{item.meta}</p>}
+                        {order.order_type === 'restaurant' && (
+                            <div className="space-y-4">
+                                <h3 className="text-xs font-black text-gray-500 uppercase tracking-widest">Articles Commandés</h3>
+                                <div className="space-y-3 bg-[#0F172A] border border-white/5 p-4 rounded-2xl">
+                                    {parseOrder(order.items).foodItems.map((item: any, idx: number) => (
+                                        <div key={idx} className="flex justify-between items-start text-sm">
+                                            <div>
+                                                <span className="text-green-400 font-black mr-2">x{item.quantity}</span>
+                                                <span className="text-white font-bold">{item.name}</span>
+                                                {item.meta && <p className="text-[10px] text-gray-400 mt-0.5">{item.meta}</p>}
+                                            </div>
+                                            <span className="text-gray-300 font-bold">
+                                                {((item.price || item.basePrice || 0) * (item.quantity || 1))} DH
+                                            </span>
                                         </div>
-                                        <span className="text-gray-300 font-bold">
-                                            {((item.price || item.basePrice || 0) * (item.quantity || 1))} DH
-                                        </span>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                        )}
+                        
+                        {order.order_type === 'pool' && (
+                            <div className="space-y-4">
+                                <h3 className="text-xs font-black text-gray-500 uppercase tracking-widest">Détails Billet Piscine</h3>
+                                <div className="space-y-3 bg-[#0F172A] border border-white/5 p-4 rounded-2xl">
+                                    <div className="flex justify-between items-start text-sm">
+                                        <div>
+                                            <span className="text-green-400 font-black mr-2">Formule</span>
+                                            <span className="text-white font-bold">{order.formula === "morning" ? "Matinée" : order.formula === "afternoon" ? "Après-Midi" : "Journée Complète"}</span>
+                                        </div>
+                                    </div>
+                                    <div className="flex justify-between items-start text-sm">
+                                        <div>
+                                            <span className="text-green-400 font-black mr-2">Personnes</span>
+                                            <span className="text-white font-bold">{order.adults} Adulte(s), {order.children} Enfant(s)</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         {/* Pricing details */}
                         <div className="space-y-3 border-t border-white/5 pt-4">
