@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { Calendar,
+import { Calendar, Download,
     TrendingUp, Users, RefreshCw, Lock, Key, Award, AlertTriangle,
     CheckCircle, Clock, Utensils, Bed, Waves, Wrench, Bot, Sparkles,
     BarChart3, Activity, ArrowUpRight, ArrowDownRight, Zap, Star,
@@ -463,6 +463,24 @@ export default function AdminDashboardPage() {
         { id: "ai", label: "IA Advisor", icon: Bot },
         { id: "pins", label: "Codes PIN", icon: Lock },
     ] as const;
+
+    
+    const exportToCSV = () => {
+        let csvContent = "data:text/csv;charset=utf-8,";
+        csvContent += "Date,Chiffre d'Affaires (DH)\n";
+        
+        chartData.labels.forEach((label, i) => {
+            csvContent += `${label},${chartData.vals[i]}\n`;
+        });
+        
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", `Export_Ventes.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
 
     if (loading) return (
         <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
