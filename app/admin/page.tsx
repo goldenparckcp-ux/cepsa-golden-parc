@@ -197,7 +197,7 @@ export default function AdminDashboardPage() {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState<"overview" | "analytics" | "ai" | "pins">("overview");
     const [chartRange, setChartRange] = useState<7 | 14 | 30 | 180 | 365 | "custom">(7);
-    const [customDate, setCustomDate] = useState({ start: "", end: "" });
+    const [customDate, setCustomDate] = useState({ start: new Date(Date.now() - 7 * 86400000).toISOString().split("T")[0], end: new Date().toISOString().split("T")[0] });
     const [timeFilter, setTimeFilter] = useState<"today" | "week" | "month" | "all">("all");
     const [showPins, setShowPins] = useState(false);
 
