@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Ticket, Search, Waves, Check, LogOut, RefreshCw, QrCode } from "lucide-react";
+import { Ticket, Search, Waves, Check, LogOut, RefreshCw, QrCode, Printer } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import { adminDb } from "@/lib/admin-api";
 import { useRouter } from "next/navigation";
@@ -81,6 +81,111 @@ export default function StaffPoolServicesPage() {
             setLoading(false);
         }
     };
+
+    
+    const handlePrintTicket = (booking: any) => {
+        const getFormulaLabel = (f: string) => {
+            if (f === "morning") return "Matinée";
+            if (f === "afternoon") return "Après-Midi";
+            return "Journée Complète";
+        };
+        
+        const formulaLabel = getFormulaLabel(booking.formula);
+        const totalAmount = booking.total_price || 0;
+        
+        const printContent = `
+            <div style="font-family: 'Courier New', Courier, monospace; max-width: 300px; margin: 0 auto; color: #000; padding: 10px; background: #fff;">
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <h2 style="margin: 0; font-size: 24px; text-transform: uppercase;">GOLDEN PARK STATION</h2>
+                    <p style="margin: 5px 0; font-size: 14px;">Ticket Piscine / Services</p>
+                    <p style="margin: 5px 0; font-size: 14px; border-bottom: 2px dashed #000; padding-bottom: 10px;">${new Date(booking.created_at).toLocaleString('fr-FR')}</p>
+                </div>
+                
+                <div style="margin-bottom: 15px; font-size: 16px;">
+                    <h1 style="text-align: center; margin: 5px 0; font-size: 32px; border: 2px solid #000; padding: 5px;">#${booking.booking_number || booking.id.substring(0,6).toUpperCase()}</h1>
+                    <p style="margin: 5px 0;"><strong>Date:</strong> ${new Date(booking.booking_date).toLocaleDateString('fr-FR')}</p>
+                    <p style="margin: 5px 0;"><strong>Formule:</strong> ${formulaLabel}</p>
+                    ${booking.customer_name ? `<p style="margin: 5px 0;"><strong>Client:</strong> ${booking.customer_name}</p>` : ""}
+                    ${booking.customer_phone ? `<p style="margin: 5px 0;"><strong>Tel:</strong> ${booking.customer_phone}</p>` : ""}
+                </div>
+
+                <div style="border-top: 2px dashed #000; border-bottom: 2px dashed #000; padding: 10px 0; margin-bottom: 15px;">
+                    <h3 style="margin: 0 0 10px 0; font-size: 18px; text-align: center;">--- ENTRÉES ---</h3>
+                    <table style="width: 100%; font-size: 16px; border-collapse: collapse;">
+                        <tr>
+                            <td style="padding: 5px 0;">Adultes :</td>
+                            <td style="text-align: right; font-weight: bold;">${booking.adults}</td>
+                        </tr>
+                        <tr>
+                            <td style="padding: 5px 0;">Enfants :</td>
+                            <td style="text-align: right; font-weight: bold;">${booking.children}</td>
+                        </tr>
+                    </table>
+                </div>
+
+                <div style="margin-bottom: 20px; font-size: 16px;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="text-align: left; padding: 3px 0;">TOTAL:</td>
+                            <td style="text-align: right; font-weight: bold; font-size: 20px;">${Number(totalAmount).toFixed(2)} DH</td>
+                        </tr>
+                        <tr>
+                            <td colspan="2" style="text-align: center; padding: 10px 0; font-weight: bold; font-size: 20px; border: 2px dashed #000; margin-top: 10px;">
+                                DÉJÀ PAYÉ
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+                
+                <div style="text-align: center; margin: 20px 0;">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${booking.booking_number || booking.id}" alt="QR Code Piscine" style="width: 120px; height: 120px;" />
+                    <p style="font-size: 12px; margin-top: 5px;">Billet Accès Piscine</p>
+                </div>
+                
+                <div style="text-align: center; margin-top: 20px; font-size: 12px;">
+                    <p>MERCI DE VOTRE VISITE !</p>
+                    <p>Golden Park Station</p>
+                </div>
+            </div>
+        `;
+        
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = 'none';
+        document.body.appendChild(iframe);
+        
+        const doc = iframe.contentWindow?.document;
+        if (doc) {
+            doc.open();
+            doc.write(`
+                <html>
+                    <head>
+                        <title>Ticket Piscine #${booking.booking_number || booking.id}</title>
+                        <style>
+                            @page { margin: 0; size: 80mm 297mm; }
+                            body { margin: 0; padding: 0; background: #fff; }
+                        </style>
+                    </head>
+                    <body>${printContent}</body>
+                </html>
+            `);
+            doc.close();
+            
+            setTimeout(() => {
+                iframe.contentWindow?.focus();
+                iframe.contentWindow?.print();
+                
+                setTimeout(() => {
+                    document.body.removeChild(iframe);
+                }, 1000);
+            }, 500);
+        }
+    };
+
 
     const handleCheckIn = async (bookingId: string) => {
         try {
@@ -261,7 +366,15 @@ export default function StaffPoolServicesPage() {
                                     </div>
                                 </div>
 
-                                <div className="border-t border-white/5 mt-4 pt-4">
+                                <div className="border-t border-white/5 mt-4 pt-4 flex gap-2">
+                                        <button
+                                            onClick={(e) => { e.stopPropagation(); handlePrintTicket(b); }}
+                                            className="px-4 bg-gray-500/10 border border-gray-500/20 hover:bg-gray-500/20 text-gray-400 font-bold rounded-xl transition-all flex items-center justify-center shrink-0"
+                                            title="Imprimer"
+                                        >
+                                            <Printer className="w-5 h-5" />
+                                        </button>
+                                        <div className="flex-1">
                                     {b.status === "pending" && (
                                         <button
                                             onClick={() => handleCheckIn(b.id)}
@@ -283,6 +396,7 @@ export default function StaffPoolServicesPage() {
                                             {b.status === "completed" ? "✅ Ticket Historisé" : "❌ Ticket Annulé"}
                                         </div>
                                     )}
+                                    </div>
                                 </div>
                             </div>
                         ))}

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Ticket, Search, Sun, CheckCircle2, UserCheck, RefreshCw } from "lucide-react";
+import { Ticket, Search, Sun, CheckCircle2, UserCheck, RefreshCw, Printer } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 export default function AdminPoolPage() {
