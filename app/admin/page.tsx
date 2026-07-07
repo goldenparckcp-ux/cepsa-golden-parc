@@ -741,7 +741,7 @@ export default function AdminDashboardPage() {
                         <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-white/5">
                             {[
                                 { label: "Période", value: fmt(chartData.vals.reduce((a, b) => a + b, 0)) + " DH", color: "text-white" },
-                                { label: "Moy/jour", value: fmt(Math.round(chartData.vals.reduce((a, b) => a + b, 0) / (chartRange || 1))) + " DH", color: "text-gray-300" },
+                                { label: "Moy/jour", value: fmt(Math.round(chartData.vals.reduce((a, b) => a + b, 0) / (chartData.vals.length || 1))) + " DH", color: "text-gray-300" },
                                 { label: "Meilleur jour", value: fmt(Math.max(...chartData.vals)) + " DH", color: "text-green-400" },
                             ].map(({ label, value, color }) => (
                                 <div key={label} className="text-center bg-[#0F172A] rounded-xl p-3 border border-white/5">
