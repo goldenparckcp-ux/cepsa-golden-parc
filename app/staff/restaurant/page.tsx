@@ -169,12 +169,18 @@ export default function StaffRestaurantOrdersPage() {
     };
 
 
+    
     const handlePrintTicket = (order: any, foodItems: any[], meta: any) => {
+        // Calcul du total si order.total_amount n'est pas prǸsent
+        const totalAmount = order.total_amount || order.total || order.amount || foodItems.reduce((acc, item) => acc + (item.price * item.quantity || 0), 0);
+        const deposit = order.deposit_amount || 0;
+        const remaining = totalAmount - deposit;
+        
         const printContent = `
             <div style="font-family: 'Courier New', Courier, monospace; max-width: 300px; margin: 0 auto; color: #000; padding: 10px; background: #fff;">
                 <div style="text-align: center; margin-bottom: 15px;">
-                    <h2 style="margin: 0; font-size: 24px; text-transform: uppercase;">GOLDEN PARC</h2>
-                    <p style="margin: 5px 0; font-size: 14px;">Ticket Cuisine</p>
+                    <h2 style="margin: 0; font-size: 24px; text-transform: uppercase;">GOLDEN PARK STATION</h2>
+                    <p style="margin: 5px 0; font-size: 14px;">Ticket Cuisine / Caisse</p>
                     <p style="margin: 5px 0; font-size: 14px; border-bottom: 2px dashed #000; padding-bottom: 10px;">${new Date(order.created_at).toLocaleString('fr-FR')}</p>
                 </div>
                 
@@ -203,17 +209,59 @@ export default function StaffRestaurantOrdersPage() {
                         `).join('')}
                     </table>
                 </div>
+
+                <div style="margin-bottom: 20px; font-size: 16px;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <tr>
+                            <td style="text-align: left; padding: 3px 0;">TOTAL:</td>
+                            <td style="text-align: right; font-weight: bold; font-size: 18px;">${totalAmount.toFixed(2)} DH</td>
+                        </tr>
+                        ${deposit > 0 ? `
+                        <tr>
+                            <td style="text-align: left; padding: 3px 0; color: #555;">AVANCE PAYǸE:</td>
+                            <td style="text-align: right; color: #555;">-${deposit.toFixed(2)} DH</td>
+                        </tr>
+                        <tr>
+                            <td style="text-align: left; padding: 5px 0; font-weight: bold; font-size: 18px;">RESTE  PAYER:</td>
+                            <td style="text-align: right; font-weight: bold; font-size: 20px;">${Math.max(0, remaining).toFixed(2)} DH</td>
+                        </tr>
+                        ` : ''}
+                        ${order.status === "completed" || (deposit >= totalAmount && totalAmount > 0) ? `
+                        <tr>
+                            <td colspan="2" style="text-align: center; padding: 10px 0; font-weight: bold; font-size: 20px; border: 2px dashed #000; margin-top: 10px;">
+                                DǸJ PAYǸ
+                            </td>
+                        </tr>
+                        ` : ''}
+                    </table>
+                </div>
+                
+                <div style="text-align: center; margin: 20px 0;">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${order.id}" alt="QR Code Caisse" style="width: 120px; height: 120px;" />
+                    <p style="font-size: 12px; margin-top: 5px;">Scanner pour valider</p>
+                </div>
                 
                 <div style="text-align: center; margin-top: 20px; font-size: 12px;">
                     <p>MERCI ET BON COURAGE !</p>
-                    <p>Golden Parc Cepsa</p>
+                    <p>Golden Park Station</p>
                 </div>
             </div>
         `;
         
-        const printWindow = window.open('', '', 'width=400,height=600');
-        if (printWindow) {
-            printWindow.document.write(`
+        // Use an invisible iframe for printing to avoid popup windows
+        const iframe = document.createElement('iframe');
+        iframe.style.position = 'fixed';
+        iframe.style.right = '0';
+        iframe.style.bottom = '0';
+        iframe.style.width = '0';
+        iframe.style.height = '0';
+        iframe.style.border = 'none';
+        document.body.appendChild(iframe);
+        
+        const doc = iframe.contentWindow?.document;
+        if (doc) {
+            doc.open();
+            doc.write(`
                 <html>
                     <head>
                         <title>Ticket Cuisine #${order.order_number}</title>
@@ -225,14 +273,21 @@ export default function StaffRestaurantOrdersPage() {
                     <body>${printContent}</body>
                 </html>
             `);
-            printWindow.document.close();
-            printWindow.focus();
+            doc.close();
+            
+            // Wait a moment for images (like QR code) to load before printing
             setTimeout(() => {
-                printWindow.print();
-                printWindow.close();
-            }, 250);
+                iframe.contentWindow?.focus();
+                iframe.contentWindow?.print();
+                
+                // Remove iframe after printing dialog is closed/done
+                setTimeout(() => {
+                    document.body.removeChild(iframe);
+                }, 1000);
+            }, 500);
         }
     };
+
 
     const parseOrder = (orderItems: any[]) => {
         if (!Array.isArray(orderItems)) return { foodItems: [], meta: {} };
