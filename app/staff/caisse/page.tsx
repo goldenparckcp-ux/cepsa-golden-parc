@@ -5,7 +5,18 @@ import { Banknote, Clock, Check, Bell, Search, QrCode, Camera, X, Loader2, LogOu
 import { supabase } from "@/lib/supabase";
 import { adminDb } from "@/lib/admin-api";
 import { useRouter } from "next/navigation";
-import { Scanner } from '@yudiel/react-qr-scanner';
+import dynamic from 'next/dynamic';
+
+const Scanner = dynamic(() => {
+    if (typeof window !== 'undefined') {
+        // Windows Chrome has a broken native BarcodeDetector. 
+        // Deleting it forces the library to use the reliable ZXing polyfill.
+        if (navigator.userAgent.toLowerCase().includes('windows')) {
+            try { delete (window as any).BarcodeDetector; } catch (e) {}
+        }
+    }
+    return import('@yudiel/react-qr-scanner').then(mod => mod.Scanner);
+}, { ssr: false });
 
 export default function StaffCaissePage() {
     const router = useRouter();

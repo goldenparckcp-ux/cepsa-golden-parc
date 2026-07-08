@@ -9,7 +9,14 @@ import {
 import { supabase } from "@/lib/supabase";
 import dynamic from "next/dynamic";
 
-const Scanner = dynamic(() => import('@yudiel/react-qr-scanner').then(mod => mod.Scanner), { ssr: false });
+const Scanner = dynamic(() => {
+  if (typeof window !== 'undefined') {
+    if (navigator.userAgent.toLowerCase().includes('windows')) {
+        try { delete (window as any).BarcodeDetector; } catch (e) {}
+    }
+  }
+  return import('@yudiel/react-qr-scanner').then(mod => mod.Scanner);
+}, { ssr: false });
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 type LocationType = "restaurant" | "pool" | "hotel";
