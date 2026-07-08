@@ -68,9 +68,22 @@ export default function StaffCaissePage() {
     }, [router]);
 
 
-    const handleSearch = async (code?: string) => {
-        const query = code || searchQuery;
-        if (!query.trim()) return;
+    const handleSearch = async (codeValue?: any) => {
+        let query = searchQuery;
+        if (typeof codeValue === 'string') {
+            query = codeValue;
+        }
+        
+        if (!query || !query.trim()) return;
+
+        // Clean up if it's accidentally a URL
+        if (query.includes('?t=')) {
+             query = query.split('?t=')[1].split('&')[0];
+        } else if (query.startsWith('http')) {
+             query = query.split('/').pop() || query;
+        }
+
+        query = query.trim();
 
         setLoading(true);
         setMessage(null);
