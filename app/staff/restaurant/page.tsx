@@ -247,6 +247,7 @@ export default function StaffRestaurantOrdersPage() {
                     <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${order.order_number}" alt="QR Code Caisse" style="width: 120px; height: 120px;" />
                     <p style="font-size: 12px; margin-top: 5px;">Scanner pour valider</p>
                 </div>
+
                 
                 <div style="text-align: center; margin-top: 20px; font-size: 12px;">
                     <p>MERCI ET BON COURAGE !</p>
@@ -287,8 +288,8 @@ export default function StaffRestaurantOrdersPage() {
                 
                 setTimeout(() => {
                     document.body.removeChild(iframe);
-                }, 1000);
-            }, 500);
+                }, 2000);
+            }, 1500);
         }
     };
 

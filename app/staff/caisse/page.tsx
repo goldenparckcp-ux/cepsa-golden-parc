@@ -87,8 +87,9 @@ export default function StaffCaissePage() {
 
             if (error) throw error;
 
-            if (data) {
-                setOrder({ ...data, order_type: "restaurant" });
+            const orderData = Array.isArray(data) ? data[0] : data;
+            if (orderData) {
+                setOrder({ ...orderData, order_type: "restaurant" });
                 return;
             }
             
@@ -107,8 +108,9 @@ export default function StaffCaissePage() {
                 poolData = idData;
             }
 
-            if (poolData) {
-                setOrder({ ...poolData, order_type: "pool" });
+            const poolOrderData = Array.isArray(poolData) ? poolData[0] : poolData;
+            if (poolOrderData) {
+                setOrder({ ...poolOrderData, order_type: "pool" });
                 return;
             }
 
