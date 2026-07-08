@@ -332,15 +332,15 @@ export default function StaffCaissePage() {
                                         }, 2000);
                                     }
                                 }}
-                                onError={(e: unknown) => {
-                                    const errorMsg = e instanceof Error ? e.message : String(e);
+                                onError={(e: any) => {
+                                    const errorMsg = e?.message || e?.name || (typeof e === 'object' ? JSON.stringify(e) : String(e));
                                     console.log('Scanner error:', errorMsg);
                                     if (errorMsg.toLowerCase().includes('permission') || errorMsg.toLowerCase().includes('notallowed')) {
-                                        setMessage({ type: 'error', text: 'Veuillez autoriser l\'accès à la caméra du navigateur.' });
+                                        setMessage({ type: 'error', text: 'Veuillez autoriser l\'accès à la caméra en haut à gauche (cadenas).' });
                                     } else if (errorMsg.toLowerCase().includes('not found') || errorMsg.toLowerCase().includes('devices')) {
-                                        setMessage({ type: 'error', text: 'Aucune caméra trouvée sur cet appareil.' });
+                                        setMessage({ type: 'error', text: 'Aucune caméra trouvée sur cet appareil !' });
                                     } else {
-                                        setMessage({ type: 'error', text: 'Erreur caméra: ' + errorMsg.substring(0, 50) });
+                                        setMessage({ type: 'error', text: 'Erreur: ' + errorMsg.substring(0, 80) });
                                     }
                                     setIsScanning(false);
                                 }}
