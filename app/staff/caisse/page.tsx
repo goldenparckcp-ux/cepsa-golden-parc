@@ -77,19 +77,42 @@ export default function StaffCaissePage() {
         setOrder(null);
 
         try {
-            // Fetch order from restaurant_orders
-            const { data, error } = await adminDb("restaurant_orders")
+            const upQuery = query.trim().toUpperCase();
+            
+            // 1. Try to find in restaurant
+            let { data, error } = await adminDb("restaurant_orders")
                 .select("*")
-                .eq("order_number", query.trim().toUpperCase())
+                .eq("order_number", upQuery)
                 .maybeSingle();
 
             if (error) throw error;
 
             if (data) {
-                setOrder(data);
-            } else {
-                setMessage({ type: 'error', text: "Aucune commande trouvée avec ce numéro." });
+                setOrder({ ...data, order_type: "restaurant" });
+                return;
             }
+            
+            // 2. Try to find in pool_bookings
+            // pool uses booking_number (e.g. POOL-8289) or id (for legacy/fallback)
+            let { data: poolData, error: poolError } = await adminDb("pool_bookings")
+                .select("*")
+                .eq("booking_number", upQuery)
+                .maybeSingle();
+                
+            if (!poolData && query.trim().length > 20) {
+                const { data: idData } = await adminDb("pool_bookings")
+                    .select("*")
+                    .eq("id", query.trim())
+                    .maybeSingle();
+                poolData = idData;
+            }
+
+            if (poolData) {
+                setOrder({ ...poolData, order_type: "pool" });
+                return;
+            }
+
+            setMessage({ type: 'error', text: "Aucune commande ou réservation trouvée avec ce numéro." });
         } catch (err: any) {
             console.error("Error fetching order:", err);
             setMessage({ type: 'error', text: "Erreur lors de la recherche." });
