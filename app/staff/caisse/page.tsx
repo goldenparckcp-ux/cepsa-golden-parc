@@ -12,6 +12,7 @@ export default function StaffCaissePage() {
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState("");
     const [order, setOrder] = useState<any | null>(null);
+    const isProcessingScan = useRef(false);
     const [isScanning, setIsScanning] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
@@ -317,15 +318,32 @@ export default function StaffCaissePage() {
                         </button>
                         <div className="w-72 h-72 rounded-3xl overflow-hidden border-4 border-green-500/50 shadow-2xl relative mb-6">
                             <Scanner
+                                formats={['qr_code']}
+                                components={{ finder: true }}
                                 onScan={(result) => {
-                                    if (result && result.length > 0) {
+                                    if (result && result.length > 0 && !isProcessingScan.current) {
+                                        isProcessingScan.current = true;
                                         const code = result[0].rawValue.trim();
                                         setIsScanning(false);
                                         setSearchQuery(code);
                                         handleSearch(code);
+                                        setTimeout(() => {
+                                            isProcessingScan.current = false;
+                                        }, 2000);
                                     }
                                 }}
-                                onError={(e) => console.log(e?.message)}
+                                onError={(e: unknown) => {
+                                    const errorMsg = e instanceof Error ? e.message : String(e);
+                                    console.log('Scanner error:', errorMsg);
+                                    if (errorMsg.toLowerCase().includes('permission') || errorMsg.toLowerCase().includes('notallowed')) {
+                                        setMessage({ type: 'error', text: 'Veuillez autoriser l\'accès à la caméra du navigateur.' });
+                                    } else if (errorMsg.toLowerCase().includes('not found') || errorMsg.toLowerCase().includes('devices')) {
+                                        setMessage({ type: 'error', text: 'Aucune caméra trouvée sur cet appareil.' });
+                                    } else {
+                                        setMessage({ type: 'error', text: 'Erreur caméra: ' + errorMsg.substring(0, 50) });
+                                    }
+                                    setIsScanning(false);
+                                }}
                             />
                         </div>
                         <p className="text-gray-400 text-sm font-bold">Visez le QR Code sur le téléphone du client</p>
