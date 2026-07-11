@@ -11,7 +11,7 @@ import { useCart } from '@/lib/state/CartContext';
 
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
-import QRScanner from '@/components/QRScanner';
+const QRScanner = dynamic(() => import('@/components/QRScanner'), { ssr: false });
 
 
 function ProfileContent() {
@@ -1060,7 +1060,7 @@ function ProfileContent() {
 
                                             {/* Image (Left) */}
                                             <div className="w-20 h-24 rounded-2xl overflow-hidden shrink-0 bg-black/50 relative shadow-inner">
-                                                <Image src={order.image || 'https://images.unsplash.com/photo-1542204165-65bf26472b9b?w=200&h=200&fit=crop'} alt={order.type || 'Order'} fill className="object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
+                                                <Image src={order.image || 'https://images.unsplash.com/photo-1542204165-65bf26472b9b?w=200&h=200&fit=crop'} alt={order.type || 'Order'} fill sizes="(max-width: 768px) 80px, 80px" priority={idx === 0} className="object-cover opacity-80 group-hover:opacity-100 transition-opacity" />
                                                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
                                                 {/* Type Badge on Image */}
                                                 <div className="absolute bottom-2 left-1/2 -translate-x-1/2">

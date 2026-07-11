@@ -5,7 +5,8 @@ import { Banknote, Clock, Check, Bell, Search, QrCode, Camera, X, Loader2, LogOu
 import { supabase } from "@/lib/supabase";
 import { adminDb } from "@/lib/admin-api";
 import { useRouter } from "next/navigation";
-import QRScanner from "@/components/QRScanner";
+import dynamic from 'next/dynamic';
+const QRScanner = dynamic(() => import('@/components/QRScanner'), { ssr: false });
 
 export default function StaffCaissePage() {
     const router = useRouter();

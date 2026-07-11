@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { ShieldCheck, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import { useRouter } from 'next/navigation';
-import Confetti from 'react-confetti';
+import dynamic from 'next/dynamic';
+const Confetti = dynamic(() => import('react-confetti'), { ssr: false });
 
 interface CheckoutClientProps {
     bookingId: string;
