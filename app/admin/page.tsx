@@ -270,10 +270,10 @@ export default function AdminDashboardPage() {
                 if (idx < 0) return;
                 const total = Number(o.total_price) || Number(o.subtotal) || 0;
                 const dep = Number(o.deposit_amount) || 0;
-                let paid = 0;
-                if (o.deposit_paid) paid = (o.status === "completed" || dep >= total) ? total : dep;
-                else if (o.status === "completed") paid = total;
-                vals[idx] += paid;
+                // Only count money that actually passed through Caisse or online payment
+                if (o.deposit_paid) {
+                    vals[idx] += (dep >= total || o.status === "completed") ? total : dep;
+                }
             });
         }
 
@@ -283,7 +283,8 @@ export default function AdminDashboardPage() {
                 const day = (r.updated_at || r.created_at || "").split("T")[0];
                 const idx = chartDays.indexOf(day);
                 if (idx < 0) return;
-                if (r.status !== "cancelled") {
+                // Hotel usually paid online or at reception. For now, we trust non-cancelled
+                if (r.status !== "cancelled" && r.status !== "pending") {
                     const p = Number(r.price) || Number(r.total_price) || 0;
                     vals[idx] += p;
                 }
@@ -296,9 +297,11 @@ export default function AdminDashboardPage() {
                 const day = (b.updated_at || b.created_at || "").split("T")[0];
                 const idx = chartDays.indexOf(day);
                 if (idx < 0) return;
-                if (b.status !== "cancelled") {
+                // Only count money that actually passed through Caisse or online payment
+                if (b.deposit_paid) {
                     const p = Number(b.total_price) || Number(b.total_amount) || 0;
-                    vals[idx] += p;
+                    const dep = Number(b.deposit_amount) || 0;
+                    vals[idx] += (dep >= p) ? p : dep;
                 }
             });
         }
@@ -327,8 +330,10 @@ export default function AdminDashboardPage() {
                 const total = Number(o.total_price) || Number(o.subtotal) || 0;
                 const dep = Number(o.deposit_amount) || 0;
                 let paid = 0;
-                if (o.deposit_paid) paid = (o.status === "completed" || dep >= total) ? total : dep;
-                else if (o.status === "completed") paid = total;
+                // Only count money that actually passed through Caisse or online payment
+                if (o.deposit_paid) {
+                    paid = (dep >= total || o.status === "completed") ? total : dep;
+                }
 
                 if (paid > 0) {
                     restoRev += paid;
@@ -376,7 +381,11 @@ export default function AdminDashboardPage() {
             const pBook = pb || [];
             let poolRev = 0, activePax = 0;
             pBook.forEach(b => {
-                if (b.status !== "cancelled") poolRev += Number(b.total_price) || Number(b.total_amount) || 0;
+                if (b.deposit_paid) {
+                    const p = Number(b.total_price) || Number(b.total_amount) || 0;
+                    const dep = Number(b.deposit_amount) || 0;
+                    poolRev += (dep >= p) ? p : dep;
+                }
                 if (["checked_in", "active"].includes(b.status)) activePax += (Number(b.adults) || 0) + (Number(b.children) || 0);
             });
 

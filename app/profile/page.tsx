@@ -1094,13 +1094,19 @@ function ProfileContent() {
                                                     {order.amount ? `${order.amount} DH` : 'Payé'}
                                                 </div>
 
-                                                <button
-                                                    onClick={() => setSelectedOrder(order)}
-                                                    className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white hover:bg-white/10 hover:scale-105 transition-all border border-white/5 shadow-lg"
-                                                    aria-label="View QR code"
-                                                >
-                                                    <QrCode className="w-5 h-5" />
-                                                </button>
+                                                {(order.deposit_paid || order.status === 'completed') ? (
+                                                    <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center text-green-500 border border-green-500/20 shadow-lg" title="Paiement Validé">
+                                                        <Check className="w-5 h-5" />
+                                                    </div>
+                                                ) : (
+                                                    <button
+                                                        onClick={() => setSelectedOrder(order)}
+                                                        className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white hover:bg-white/10 hover:scale-105 transition-all border border-white/5 shadow-lg"
+                                                        aria-label="View QR code"
+                                                    >
+                                                        <QrCode className="w-5 h-5" />
+                                                    </button>
+                                                )}
                                             </div>
 
                                             {/* Edit Button (Pencil) */}

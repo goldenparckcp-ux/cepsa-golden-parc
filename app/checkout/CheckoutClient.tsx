@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { ShieldCheck, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { PayPalScriptProvider, PayPalButtons } from '@paypal/react-paypal-js';
 import { useRouter } from 'next/navigation';
+import Confetti from 'react-confetti';
 
 interface CheckoutClientProps {
     bookingId: string;
@@ -204,10 +205,17 @@ export default function CheckoutClient({ bookingId, amount, serviceType, tableNa
 
                 {step === 'success' && (
                     <div className="py-20 flex flex-col items-center justify-center text-center animate-in zoom-in duration-500">
+                        <Confetti 
+                            width={typeof window !== 'undefined' ? window.innerWidth : 300} 
+                            height={typeof window !== 'undefined' ? window.innerHeight : 300}
+                            recycle={false}
+                            numberOfPieces={500}
+                            gravity={0.15}
+                        />
                         <div className="w-32 h-32 rounded-full bg-green-500/10 border border-green-500/20 text-green-500 flex items-center justify-center mb-8 shadow-[0_0_100px_rgba(34,197,94,0.2)]">
                             <CheckCircle2 className="w-16 h-16 animate-pulse" />
                         </div>
-                        <h3 className="text-3xl font-black text-white mb-3">Paiement Réussi !</h3>
+                        <h3 className="text-3xl font-black text-white mb-3">Félicitations ! Paiement Réussi</h3>
                         <p className="text-gray-400 mb-8">
                             Merci pour votre confiance. Vous allez être redirigé vers votre profil.
                         </p>
