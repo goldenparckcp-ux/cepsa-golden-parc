@@ -10,9 +10,10 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 
-const BottomTabs = dynamic(() => import("@/components/BottomTabs"), { ssr: false });
-const DesktopNav = dynamic(() => import("@/components/DesktopNav"), { ssr: false });
-const MobileHeader = dynamic(() => import("@/components/MobileHeader"), { ssr: false });
+import BottomTabs from "@/components/BottomTabs";
+import DesktopNav from "@/components/DesktopNav";
+import MobileHeader from "@/components/MobileHeader";
+
 const GoogleTranslate = dynamic(
   () => import("@/components/GoogleTranslate").then((m) => ({ default: m.GoogleTranslate })),
   { ssr: false }
