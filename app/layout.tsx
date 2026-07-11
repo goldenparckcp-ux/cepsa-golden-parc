@@ -31,7 +31,6 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Golden Park Team" }],
   creator: "Golden Park Cepsa",
-  publicKey: undefined,
   publisher: "Golden Park Cepsa",
   formatDetection: {
     email: false,

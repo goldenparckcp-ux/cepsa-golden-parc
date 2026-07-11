@@ -321,22 +321,56 @@ export default function AdminDashboardPage() {
 
             const rOrders = ro || [];
             setAllRestoOrders(rOrders);
+            setRecentOrders(rOrders.slice(0, 6));
 
-            const today = new Date().toISOString().split("T")[0];
-            const itemMap: Record<string, any> = {};
-            let restoRev = 0, pending = 0, doneToday = 0;
+            const hRes = hr || [];
+            setAllHotelReservations(hRes);
+            setHotelRooms(hRes.slice(0, 5));
 
-            rOrders.forEach(o => {
-                const total = Number(o.total_price) || Number(o.subtotal) || 0;
-                const dep = Number(o.deposit_amount) || 0;
-                let paid = 0;
-                // Only count money that actually passed through Caisse or online payment
-                if (o.deposit_paid) {
-                    paid = (dep >= total || o.status === "completed") ? total : dep;
-                }
+            setAllPoolBookings(pb || []);
+            setAllServiceBookings(sb || []);
+        } catch (err) {
+            console.error("Dashboard fetch error:", err);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
 
+    // Recalculate stats and top items reactively when date range or raw data changes
+    useEffect(() => {
+        if (loading) return;
+
+        const today = new Date().toISOString().split("T")[0];
+        const itemMap: Record<string, any> = {};
+        
+        let restoRev = 0;
+        let pending = 0;
+        let doneToday = 0;
+        let periodPaidCount = 0;
+        let periodRestoOrdersCount = 0;
+
+        allRestoOrders.forEach(o => {
+            const day = (o.updated_at || o.created_at || "").split("T")[0];
+            const inPeriod = chartDays.includes(day);
+
+            const total = Number(o.total_price) || Number(o.subtotal) || 0;
+            const dep = Number(o.deposit_amount) || 0;
+            let paid = 0;
+            if (o.deposit_paid) {
+                paid = (dep >= total || o.status === "completed") ? total : dep;
+            }
+
+            // Global stats
+            if (o.status === "pending" || o.status === "preparing") pending++;
+            if (o.status === "completed" && day === today) doneToday++;
+
+            // Period specific stats
+            if (inPeriod) {
+                periodRestoOrdersCount++;
                 if (paid > 0) {
                     restoRev += paid;
+                    periodPaidCount++;
+
                     let items: any[] = [];
                     try { items = typeof o.items === "string" ? JSON.parse(o.items) : (o.items || []); } catch { }
                     items.filter(it => !it.is_meta).forEach((it: any) => {
@@ -355,70 +389,66 @@ export default function AdminDashboardPage() {
                         if (!itemMap[name].image && img) itemMap[name].image = img;
                     });
                 }
-                if (o.status === "pending" || o.status === "preparing") pending++;
-                if (o.status === "completed" && (o.updated_at || o.created_at || "").split("T")[0] === today) doneToday++;
-            });
+            }
+        });
 
-            const sortedItems = Object.entries(itemMap)
-                .map(([name, d]: any) => ({
-                    name, ...d,
-                    avgPrice: d.prices.length ? Math.round(d.prices.reduce((a: number, b: number) => a + b, 0) / d.prices.length) : 0,
-                    isTest: name.startsWith("Plat Playwright") || name.startsWith("Test")
-                }))
-                .filter(it => !it.isTest)
-                .sort((a, b) => b.revenue - a.revenue)
-                .slice(0, 6);
-            setTopItems(sortedItems);
+        const sortedItems = Object.entries(itemMap)
+            .map(([name, d]: any) => ({
+                name, ...d,
+                avgPrice: d.prices.length ? Math.round(d.prices.reduce((a: number, b: number) => a + b, 0) / d.prices.length) : 0,
+                isTest: name.startsWith("Plat Playwright") || name.startsWith("Test")
+            }))
+            .filter(it => !it.isTest)
+            .sort((a, b) => b.revenue - a.revenue)
+            .slice(0, 6);
+        setTopItems(sortedItems);
 
-            const hRes = hr || [];
-            let hotelRev = 0, occupied = 0;
-            hRes.forEach(r => {
-                const p = Number(r.price) || Number(r.total_price) || 0;
-                if (r.status !== "cancelled") hotelRev += p;
-                if (["checked_in", "active"].includes(r.status)) occupied++;
-            });
+        let hotelRev = 0, occupied = 0;
+        allHotelReservations.forEach(r => {
+            const day = (r.updated_at || r.created_at || "").split("T")[0];
+            const inPeriod = chartDays.includes(day);
 
-            const pBook = pb || [];
-            let poolRev = 0, activePax = 0;
-            pBook.forEach(b => {
-                if (b.deposit_paid) {
-                    const p = Number(b.total_price) || Number(b.total_amount) || 0;
-                    const dep = Number(b.deposit_amount) || 0;
-                    poolRev += (dep >= p) ? p : dep;
-                }
-                if (["checked_in", "active"].includes(b.status)) activePax += (Number(b.adults) || 0) + (Number(b.children) || 0);
-            });
+            const p = Number(r.price) || Number(r.total_price) || 0;
+            
+            if (r.status !== "cancelled" && inPeriod) hotelRev += p;
+            if (["checked_in", "active"].includes(r.status)) occupied++;
+        });
 
-            const sBook = sb || [];
-            let serviceRev = 0, lavages = 0;
-            sBook.forEach(s => {
-                if (s.status === "completed") serviceRev += Number(s.price) || Number(s.total_price) || 0;
-                if (s.service_type === "lavage" && !["completed", "cancelled"].includes(s.status)) lavages++;
-            });
+        let poolRev = 0, activePax = 0;
+        allPoolBookings.forEach(b => {
+            const day = (b.updated_at || b.created_at || "").split("T")[0];
+            const inPeriod = chartDays.includes(day);
 
-            const totalRev = restoRev + hotelRev + poolRev + serviceRev;
-            const paid = rOrders.filter(o => o.status === "completed" || (o.deposit_paid && Number(o.deposit_amount) >= (Number(o.total_price) || Number(o.subtotal)))).length;
+            const p = Number(b.total_price) || Number(b.total_amount) || 0;
+            const dep = Number(b.deposit_amount) || 0;
+            const paid = (dep >= p) ? p : dep;
 
-            setStats({
-                totalRevenue: totalRev, restoRevenue: restoRev, hotelRevenue: hotelRev,
-                poolRevenue: poolRev, servicesRevenue: serviceRev,
-                occupancyRate: Math.min(Math.round((occupied / 10) * 100), 100),
-                activePoolGuests: activePax, pendingOrdersCount: pending, completedOrdersToday: doneToday,
-                lavagesCount: lavages, totalOrdersCount: rOrders.length,
-                avgOrderValue: paid > 0 ? Math.round(restoRev / paid) : 0,
-            });
+            if (b.deposit_paid && inPeriod) {
+                poolRev += paid;
+            }
+            if (["checked_in", "active"].includes(b.status)) activePax += (Number(b.adults) || 0) + (Number(b.children) || 0);
+        });
 
-            setRecentOrders(rOrders.slice(0, 6));
-            setHotelRooms(hRes.slice(0, 5));
-            setAllHotelReservations(hRes);
-            setAllPoolBookings(pBook);
-            setAllServiceBookings(sBook);
-        } catch (err) {
-            console.error("Dashboard fetch error:", err);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
+        let serviceRev = 0, lavages = 0;
+        allServiceBookings.forEach(s => {
+            const day = (s.updated_at || s.created_at || "").split("T")[0];
+            const inPeriod = chartDays.includes(day);
+
+            if (s.status === "completed" && inPeriod) serviceRev += Number(s.price) || Number(s.total_price) || 0;
+            if (s.service_type === "lavage" && !["completed", "cancelled"].includes(s.status)) lavages++;
+        });
+
+        const totalRev = restoRev + hotelRev + poolRev + serviceRev;
+
+        setStats({
+            totalRevenue: totalRev, restoRevenue: restoRev, hotelRevenue: hotelRev,
+            poolRevenue: poolRev, servicesRevenue: serviceRev,
+            occupancyRate: Math.min(Math.round((occupied / 10) * 100), 100),
+            activePoolGuests: activePax, pendingOrdersCount: pending, completedOrdersToday: doneToday,
+            lavagesCount: lavages, totalOrdersCount: periodRestoOrdersCount,
+            avgOrderValue: periodPaidCount > 0 ? Math.round(restoRev / periodPaidCount) : 0,
+        });
+    }, [allRestoOrders, allHotelReservations, allPoolBookings, allServiceBookings, chartDays, loading]);
 
     const fetchAI = useCallback(async () => {
         setAiLoading(true);
