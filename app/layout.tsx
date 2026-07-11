@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   },
   description: "L'escale premium sur la RN15 près de Missour et Tandit. Station-service, Hôtel L'Escale, restaurant gastronomique, piscine et espaces verts pour se détendre en famille.",
   keywords: [
-    "Golden", "Park", "Parc", "Station", "GPC", "GPS", "Golden Parc Station GPS", "Cepsa", "Golden Parc Cepsa",
+    "Golden", "Park", "Station", "GPS", "Golden Park Station GPS", "Cepsa", "Golden Park Cepsa",
     "Escale", "L'Escale", "Hôtel L'Escale", "Hotel Outat El Haj", "Hôtel Outat El Haj", "Hôtel Missour", "Hotel Tandit",
     "Restaurant Outat El Haj", "Restaurant Missour", "Restaurant Tandit", "Manger Outat El Haj",
     "Pool", "Piscine", "Piscine Outat El Haj", "Vidange", "Lubrifiants", "Entretien auto",
@@ -29,9 +29,10 @@ export const metadata: Metadata = {
     "Espace vert", "Repos", "Se reposer", "Détente famille", "Endroit calme", "Meilleur endroit pour se reposer",
     "Maroc", "Fès", "Meknès", "Escale RN15", "Station service Maroc"
   ],
-  authors: [{ name: "Golden Parc Team" }],
-  creator: "Golden Parc Cepsa",
-  publisher: "Golden Parc Cepsa",
+  authors: [{ name: "Golden Park Team" }],
+  creator: "Golden Park Cepsa",
+  publicKey: undefined,
+  publisher: "Golden Park Cepsa",
   formatDetection: {
     email: false,
     address: true,
@@ -89,7 +90,7 @@ const jsonLd = {
       "@type": "GasStation",
       "@id": "https://goldenparkstation.com/#station",
       "name": "Golden Park Station",
-      "alternateName": ["GPC", "GPS", "Golden Parc Station", "Station Cepsa Outat El Haj", "Golden Park Cepsa"],
+      "alternateName": ["GPS", "Golden Park Station", "Station Cepsa Outat El Haj", "Golden Park Cepsa"],
       "description": "Station-service premium Cepsa avec espace détente, espaces verts, restaurant gastronomique, hôtel L'Escale et piscine. L'endroit idéal pour se reposer en famille sur la route de Missour et Tandit.",
       "url": "https://goldenparkstation.com",
       "logo": "https://vktqecgylkjogquhsymz.supabase.co/storage/v1/object/public/images/cepsa-logo.png",
