@@ -11,8 +11,7 @@ import { useCart } from '@/lib/state/CartContext';
 
 import Image from 'next/image';
 import dynamic from 'next/dynamic';
-
-const Scanner = dynamic(() => import('@yudiel/react-qr-scanner').then(mod => mod.Scanner), { ssr: false });
+import QRScanner from '@/components/QRScanner';
 
 
 function ProfileContent() {
