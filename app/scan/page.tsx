@@ -2,21 +2,13 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import {
-  Utensils, Waves, BedDouble, ChevronRight, MapPin,
-  Loader2, XCircle, ShieldAlert, Banknote, CreditCard, CheckCircle2, Camera
+import { 
+  AlertTriangle, MapPin, Search, ArrowRight, Home, CreditCard, Ticket, CheckCircle2, 
+  QrCode, Phone, Check, ShieldAlert, XCircle, Camera, Utensils, Waves, BedDouble, 
+  ChevronRight, Loader2, Banknote
 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import dynamic from "next/dynamic";
-
-const Scanner = dynamic(() => {
-  if (typeof window !== 'undefined') {
-    if (navigator.userAgent.toLowerCase().includes('windows')) {
-        try { delete (window as any).BarcodeDetector; } catch (e) {}
-    }
-  }
-  return import('@yudiel/react-qr-scanner').then(mod => mod.Scanner);
-}, { ssr: false });
+import QRScanner from "@/components/QRScanner";
 
 // ─── Config ───────────────────────────────────────────────────────────────────
 type LocationType = "restaurant" | "pool" | "hotel";
@@ -142,24 +134,22 @@ function ScanContent() {
         </div>
         
         <div className="w-72 h-72 sm:w-80 sm:h-80 rounded-[2rem] overflow-hidden border-4 border-amber-500/50 shadow-2xl relative mb-8">
-            <Scanner
-                onScan={(result) => {
-                    if (result && result.length > 0) {
-                        const code = result[0].rawValue.trim();
-                        // Parse url and extract ?t= if possible, or assume it's the url
-                        if (code.includes('?t=')) {
-                            const urlParams = new URL(code).searchParams;
-                            const t = urlParams.get('t');
-                            if (t) {
-                                router.replace('/scan?t=' + t);
-                                return;
-                            }
+            <QRScanner
+                onScan={(code) => {
+                    code = code.trim();
+                    // Parse url and extract ?t= if possible, or assume it's the url
+                    if (code.includes('?t=')) {
+                        const urlParams = new URL(code).searchParams;
+                        const t = urlParams.get('t');
+                        if (t) {
+                            router.replace('/scan?t=' + t);
+                            return;
                         }
-                        // Fallback
-                        router.replace(code);
                     }
+                    // Fallback
+                    router.replace(code);
                 }}
-                onError={(e) => console.log(e?.message)}
+                onError={(e) => console.log(e)}
             />
         </div>
         

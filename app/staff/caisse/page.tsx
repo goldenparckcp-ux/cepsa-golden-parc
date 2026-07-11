@@ -5,18 +5,7 @@ import { Banknote, Clock, Check, Bell, Search, QrCode, Camera, X, Loader2, LogOu
 import { supabase } from "@/lib/supabase";
 import { adminDb } from "@/lib/admin-api";
 import { useRouter } from "next/navigation";
-import dynamic from 'next/dynamic';
-
-const Scanner = dynamic(() => {
-    if (typeof window !== 'undefined') {
-        // Windows Chrome has a broken native BarcodeDetector. 
-        // Deleting it forces the library to use the reliable ZXing polyfill.
-        if (navigator.userAgent.toLowerCase().includes('windows')) {
-            try { delete (window as any).BarcodeDetector; } catch (e) {}
-        }
-    }
-    return import('@yudiel/react-qr-scanner').then(mod => mod.Scanner);
-}, { ssr: false });
+import QRScanner from "@/components/QRScanner";
 
 export default function StaffCaissePage() {
     const router = useRouter();
@@ -328,23 +317,14 @@ export default function StaffCaissePage() {
                             <X className="w-6 h-6" />
                         </button>
                         <div className="w-72 h-72 rounded-3xl overflow-hidden border-4 border-green-500/50 shadow-2xl relative mb-6">
-                            <Scanner
-                                formats={['qr_code']}
-                                components={{ finder: true }}
-                                onScan={(result) => {
-                                    if (result && result.length > 0 && !isProcessingScan.current) {
-                                        isProcessingScan.current = true;
-                                        const code = result[0].rawValue.trim();
-                                        setIsScanning(false);
-                                        setSearchQuery(code);
-                                        handleSearch(code);
-                                        setTimeout(() => {
-                                            isProcessingScan.current = false;
-                                        }, 2000);
-                                    }
+                            <QRScanner
+                                onScan={(code) => {
+                                    code = code.trim();
+                                    setIsScanning(false);
+                                    setSearchQuery(code);
+                                    handleSearch(code);
                                 }}
-                                onError={(e: any) => {
-                                    const errorMsg = e?.message || e?.name || (typeof e === 'object' ? JSON.stringify(e) : String(e));
+                                onError={(errorMsg) => {
                                     console.log('Scanner error:', errorMsg);
                                     if (errorMsg.toLowerCase().includes('permission') || errorMsg.toLowerCase().includes('notallowed')) {
                                         setMessage({ type: 'error', text: 'Veuillez autoriser l\'accès à la caméra en haut à gauche (cadenas).' });
