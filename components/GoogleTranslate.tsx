@@ -1,18 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Script from "next/script";
 
 export function GoogleTranslate() {
     const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
         setIsMounted(true);
-
-        // Add Google Translate Script
-        const addScript = document.createElement("script");
-        addScript.src = "//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
-        addScript.async = true;
-        document.body.appendChild(addScript);
 
         // Extend Window interface locally
         interface GoogleTranslateWindow extends Window {
@@ -45,5 +40,13 @@ export function GoogleTranslate() {
 
     if (!isMounted) return null;
 
-    return <div id="google_translate_element" className="hidden" suppressHydrationWarning></div>;
+    return (
+        <>
+            <Script
+                src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"
+                strategy="lazyOnload"
+            />
+            <div id="google_translate_element" className="hidden" suppressHydrationWarning></div>
+        </>
+    );
 }

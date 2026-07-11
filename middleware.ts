@@ -39,7 +39,7 @@ export async function middleware(request: NextRequest) {
     try {
       const res = await fetch(`${redisUrl}/get/site_maintenance_config`, {
         headers: { Authorization: `Bearer ${redisToken}` },
-        cache: 'no-store'
+        next: { revalidate: 15 } // Cache maintenance config for 15s to drastically improve TTFB
       });
       if (res.ok) {
         const data = await res.json();
@@ -47,7 +47,10 @@ export async function middleware(request: NextRequest) {
             try { maintenanceConfig = { ...maintenanceConfig, ...JSON.parse(data.result) }; } catch(e){}
         } else {
             // Migration fallback
-            const oldRes = await fetch(`${redisUrl}/get/site_maintenance_mode`, { headers: { Authorization: `Bearer ${redisToken}` }});
+            const oldRes = await fetch(`${redisUrl}/get/site_maintenance_mode`, { 
+              headers: { Authorization: `Bearer ${redisToken}` },
+              next: { revalidate: 15 }
+            });
             if (oldRes.ok) {
                 const oldData = await oldRes.json();
                 if (oldData.result === 'true') maintenanceConfig.global = true;
