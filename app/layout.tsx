@@ -16,10 +16,10 @@ const outfit = Outfit({ subsets: ["latin"], variable: '--font-outfit' });
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://goldenparkstation.com"),
   title: {
-    default: "Golden Parc Station GPS (GPC) — Station-Service, Hôtel & Restaurant Premium (Outat El Haj, Missour, Tandit)",
-    template: "%s | Golden Parc Station GPS"
+    default: "Golden Park Station | Complexe Premium & Hôtel à Outat El Haj",
+    template: "%s | Golden Park Station"
   },
-  description: "L'escale premium par excellence sur la RN15 (idéal pour se reposer près de Missour et Tandit) à Outat El Haj. Station-service Cepsa, Hôtel L'Escale, espaces verts pour se détendre en famille, restaurant gourmand, café haut de gamme, piscine et entretien auto.",
+  description: "L'escale premium sur la RN15 près de Missour et Tandit. Station-service, Hôtel L'Escale, restaurant gastronomique, piscine et espaces verts pour se détendre en famille.",
   keywords: [
     "Golden", "Park", "Parc", "Station", "GPC", "GPS", "Golden Parc Station GPS", "Cepsa", "Golden Parc Cepsa",
     "Escale", "L'Escale", "Hôtel L'Escale", "Hotel Outat El Haj", "Hôtel Outat El Haj", "Hôtel Missour", "Hotel Tandit",
@@ -38,10 +38,10 @@ export const metadata: Metadata = {
     telephone: true,
   },
   openGraph: {
-    title: "Golden Parc Station GPS (GPC) — L'escale idéale près de Missour et Tandit",
+    title: "Golden Park Station | Complexe Premium & Hôtel à Outat El Haj",
     description: "Profitez d'un confort unique sur la RN15 à Outat El Haj (près de Missour et Tandit) : carburants Cepsa, chambres modernes, restaurant de spécialités, espaces verts, piscine et boutique.",
     url: "/",
-    siteName: "Golden Parc Station GPS",
+    siteName: "Golden Park Station",
     locale: "fr_FR",
     type: "website",
     images: [
@@ -49,13 +49,13 @@ export const metadata: Metadata = {
         url: "https://vktqecgylkjogquhsymz.supabase.co/storage/v1/object/public/images/cepsa-hero.jpg",
         width: 1200,
         height: 675,
-        alt: "Golden Parc Cepsa Outat El Haj, Missour, Tandit",
+        alt: "Golden Park Station Outat El Haj",
       }
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Golden Parc Station GPS — Escale Premium & Repos",
+    title: "Golden Park Station | Complexe Premium & Hôtel",
     description: "Station-service, hôtel, espaces verts, restaurant et piscine sur la RN15 à Outat El Haj, à proximité de Missour et Tandit.",
     images: ["https://vktqecgylkjogquhsymz.supabase.co/storage/v1/object/public/images/cepsa-hero.jpg"],
   },
@@ -88,8 +88,8 @@ const jsonLd = {
     {
       "@type": "GasStation",
       "@id": "https://goldenparkstation.com/#station",
-      "name": "Golden Parc Station GPS",
-      "alternateName": ["GPC", "GPS", "Golden Parc Station", "Station Cepsa Outat El Haj", "Station Golden Parc"],
+      "name": "Golden Park Station",
+      "alternateName": ["GPC", "GPS", "Golden Parc Station", "Station Cepsa Outat El Haj", "Golden Park Cepsa"],
       "description": "Station-service premium Cepsa avec espace détente, espaces verts, restaurant gastronomique, hôtel L'Escale et piscine. L'endroit idéal pour se reposer en famille sur la route de Missour et Tandit.",
       "url": "https://goldenparkstation.com",
       "logo": "https://vktqecgylkjogquhsymz.supabase.co/storage/v1/object/public/images/cepsa-logo.png",
