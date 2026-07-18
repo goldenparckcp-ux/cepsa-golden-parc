@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
         .map((o: any) => `- ${o.order_number}: ${o.total_price || o.subtotal}DH [${o.status}]`)
         .join("\n") || "Aucune commande récente";
 
-    const prompt = `Tu es un consultant business expert pour Golden Parc Station GPS, un complexe marocain (restaurant, hôtel, piscine, service de lubrifiants/vidange).
+    const prompt = `Tu es un consultant business expert pour Golden Park Station GPS, un complexe marocain (restaurant, hôtel, piscine, service de lubrifiants/vidange).
 
 DONNÉES ACTUELLES:
 - CA Total: ${stats?.totalRevenue || 0} DH (Restaurant: ${stats?.restoRevenue || 0} DH, Hôtel: ${stats?.hotelRevenue || 0} DH, Piscine: ${stats?.poolRevenue || 0} DH, Services (Lubrifiants): ${stats?.servicesRevenue || 0} DH)

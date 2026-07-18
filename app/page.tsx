@@ -13,7 +13,7 @@ import { supabase } from '@/lib/supabase';
 const Chatbot = dynamic(() => import('@/components/ui/Chatbot').then(m => ({ default: m.Chatbot })), { ssr: false, loading: () => null });
 const HomeBelowFold = dynamic(() => import('@/components/home/HomeBelowFold'), { ssr: true });
 
-// Coordonnées GPS de Cepsa Golden Parc
+// Coordonnées GPS de Cepsa Golden Park
 const STATION_COORDS = {
   lat: 33.5731,
   lng: -7.5898
@@ -29,7 +29,8 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
     Math.sin(dLon / 2) * Math.sin(dLon / 2);
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-  return R * c; 
+  const d = R * c;
+  return d;
 };
 
 export default function Home() {
@@ -230,7 +231,7 @@ export default function Home() {
         <motion.div style={{ y: y1 }} className="absolute inset-0">
           <Image
             src="https://vktqecgylkjogquhsymz.supabase.co/storage/v1/object/public/images/cepsa-hero-premium.png"
-            alt="Golden Parc Station"
+            alt="Golden Park Station"
             fill
             priority
             sizes="100vw"

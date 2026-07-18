@@ -55,7 +55,7 @@ export default async function CheckoutPage({
   let finalAmount = dbTotalPrice;
   if (type !== 'topup') {
       if (payment === 'full_discounted') {
-          finalAmount = Math.round(dbTotalPrice * 0.90);
+          finalAmount = dbTotalPrice; // Already discounted in the booking stage
       } else if (payment === 'deposit') {
           finalAmount = Math.max(Math.round(dbTotalPrice * 0.3), 20); // 30% or 20 MAD min
       }
@@ -109,7 +109,7 @@ export default async function CheckoutPage({
                                 </div>
                                 {payment === 'full_discounted' && (
                                     <div className="bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold px-3 py-1.5 rounded-full animate-pulse">
-                                        -10% Inclus
+                                        -5% Inclus
                                     </div>
                                 )}
                             </div>

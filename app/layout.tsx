@@ -119,7 +119,7 @@ const jsonLd = {
     {
       "@type": "Hotel",
       "@id": "https://goldenparkstation.com/#hotel",
-      "name": "Hôtel L'Escale - Golden Parc",
+      "name": "Hôtel L'Escale - Golden Park",
       "description": "Hôtel de charme moderne sur la RN15 à Outat El Haj avec chambres climatisées de haut standing. Parfait pour se reposer près de Missour et Tandit.",
       "url": "https://goldenparkstation.com/hotel",
       "areaServed": ["Outat El Haj", "Missour", "Tandit", "Boulemane"],
@@ -133,7 +133,7 @@ const jsonLd = {
     {
       "@type": "Restaurant",
       "@id": "https://goldenparkstation.com/#restaurant",
-      "name": "Restaurant Golden Parc",
+      "name": "Restaurant Golden Park",
       "description": "Restaurant gastronomique avec menu varié, boulangerie, et espaces verts pour enfants. Le meilleur endroit pour manger près d'Outat El Haj, Missour et Tandit.",
       "url": "https://goldenparkstation.com/restaurant",
       "servesCuisine": "Marocaine, Internationale",

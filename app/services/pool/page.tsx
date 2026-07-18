@@ -155,7 +155,7 @@ export default function PoolPage() {
         const { data: { user } } = await supabase.auth.getUser();
 
         const isCard = paymentMethod === 'card';
-        const finalPrice = isCard ? Math.round(totalPrice * 0.90) : totalPrice;
+        const finalPrice = isCard ? Math.round(totalPrice * 0.95) : totalPrice;
 
         if (!user) {
             // Only redirect if NOT logged in
@@ -456,14 +456,14 @@ export default function PoolPage() {
                                 }`}
                         >
                             <span className="absolute -top-2.5 -right-2.5 bg-red-600 text-white font-black text-[9px] px-2.5 py-1 rounded-full shadow-lg shadow-red-600/30 animate-pulse z-10">
-                                -10%
+                                -5%
                             </span>
                             <span className="text-2xl">💳</span>
                             <span className="text-xs font-black uppercase tracking-wider">
-                                {language === 'ar' ? 'دفع إلكتروني' : 'En ligne (-10%)'}
+                                {language === 'ar' ? 'دفع إلكتروني' : 'En ligne (-5%)'}
                             </span>
                             <span className="text-[10px] text-gray-500 font-medium">
-                                {language === 'ar' ? 'تخفيض فوري 10%' : '10% de remise incluse'}
+                                {language === 'ar' ? 'تخفيض فوري 5%' : '5% de remise incluse'}
                             </span>
                             {paymentMethod === 'card' && (
                                 <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-red-500 shadow-[0_0_10px_rgba(220,38,38,0.8)]" />

@@ -885,22 +885,6 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
     const [selections, setSelections] = useState<Record<string, unknown>>({});
     const [customizeQty, setCustomizeQty] = useState(1);
 
-    // Auto-scroll logic for Categories carousel
-    useEffect(() => {
-        if (!categoriesCarouselRef.current) return;
-        const interval = setInterval(() => {
-            const container = categoriesCarouselRef.current;
-            if (!container) return;
-            const maxScroll = container.scrollWidth - container.clientWidth;
-            if (container.scrollLeft >= maxScroll - 5) {
-                container.scrollTo({ left: 0, behavior: "smooth" });
-            } else {
-                container.scrollBy({ left: 150, behavior: "smooth" });
-            }
-        }, 3000);
-        return () => clearInterval(interval);
-    }, []);
-
     // Database States (Pre-loaded from Server)
     const [dbItems, setDbItems] = useState<MenuItem[]>(initialItems);
     const [dbCategories, setDbCategories] = useState<{id: string, label: string}[]>(initialCategories);
@@ -932,29 +916,6 @@ export default function RestaurantClient({ initialCategories, initialItems }: Re
     }, []);
 
     useEffect(() => { fetchHero(); }, [fetchHero]);
-
-
-
-    // Auto-scroll logic for Special Offers carousel (like comments)
-    useEffect(() => {
-        if (activeCategory !== "all") return;
-        const featuredItems = dbItems.filter(i => i.isFeatured);
-        if (featuredItems.length <= 1) return;
-
-        const interval = setInterval(() => {
-            const container = document.getElementById("resto-carousel-container");
-            if (!container) return;
-
-            const maxScroll = container.scrollWidth - container.clientWidth;
-            if (container.scrollLeft >= maxScroll - 5) {
-                container.scrollTo({ left: 0, behavior: "smooth" });
-            } else {
-                container.scrollBy({ left: container.clientWidth, behavior: "smooth" });
-            }
-        }, 4500);
-
-        return () => clearInterval(interval);
-    }, [activeCategory, dbItems]);
 
     const displayItems = useMemo(() => {
         if (activeCategory === "all") return dbItems;
