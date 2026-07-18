@@ -582,13 +582,13 @@ function CartDrawerContent({
                                 }`}
                             >
                                 <span className="absolute -top-3 right-2 bg-red-600 text-white font-black text-[9px] px-2 py-0.5 rounded-full shadow animate-pulse z-10 border-2 border-[#0B0F19]">
-                                    -10%
+                                    -5%
                                 </span>
                                 <div className="font-bold text-sm text-white ml-2">
-                                    {language === 'ar' ? 'دفع إلكتروني كامل' : 'En ligne (-10%)'}
+                                    {language === 'ar' ? 'دفع إلكتروني كامل' : 'En ligne (-5%)'}
                                 </div>
                                 <div className="text-[10px] text-gray-400 ml-2">
-                                    {language === 'ar' ? 'تخفيض فوري 10%' : '10% de remise incluse'}
+                                    {language === 'ar' ? 'تخفيض فوري 5%' : '5% de remise incluse'}
                                 </div>
                                 {paymentMethod === 'card' && !isDepositMode && (
                                     <div className="absolute top-3 right-3 w-2 h-2 rounded-full bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]" />
