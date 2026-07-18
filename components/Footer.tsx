@@ -4,6 +4,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslation } from "@/lib/state/LanguageContext";
 import { MapPin, PhoneCall, Mail, ChevronRight, Fuel, Bed, Utensils, Waves } from "lucide-react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 
 const content = {
   fr: {
@@ -92,6 +94,27 @@ export default function Footer() {
   const { language } = useTranslation();
   const pathname = usePathname();
   const isHome = pathname === "/";
+  const [phone, setPhone] = useState("06 00 00 00 00");
+  const [email, setEmail] = useState("contact@goldenparkstation.com");
+
+  useEffect(() => {
+    const fetchContact = async () => {
+      try {
+        const { data } = await supabase
+          .from("home_promos")
+          .select("*")
+          .eq("sort_order", -999)
+          .single();
+        if (data) {
+          if (data.link_path) setPhone(data.link_path);
+          if (data.gradient_class) setEmail(data.gradient_class);
+        }
+      } catch (err) {
+        console.error("Failed to load footer contact settings", err);
+      }
+    };
+    fetchContact();
+  }, []);
 
   const activeLang = (['fr', 'ar', 'en', 'es'].includes(language) ? language : 'fr') as keyof typeof content;
   const tLocal = content[activeLang];
@@ -114,11 +137,11 @@ export default function Footer() {
             </div>
             <div className="flex items-center gap-3 text-gray-400">
               <PhoneCall className="w-5 h-5 text-red-500 shrink-0" />
-              <a href="tel:0661690179" className="text-sm hover:text-white transition-colors">{tLocal.sos}: 06 61 69 01 79</a>
+              <a href={`tel:${phone.replace(/\s+/g, "")}`} className="text-sm hover:text-white transition-colors">{tLocal.sos}: {phone}</a>
             </div>
             <div className="flex items-center gap-3 text-gray-400">
               <Mail className="w-5 h-5 text-red-500 shrink-0" />
-              <a href="mailto:contact@goldenparkstation.com" className="text-sm hover:text-white transition-colors font-sans">contact@goldenparkstation.com</a>
+              <a href={`mailto:${email}`} className="text-sm hover:text-white transition-colors font-sans">{email}</a>
             </div>
           </div>
         </div>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Search, ChevronRight, Home, HelpCircle, Phone, MapPin, Clock, Bed, Utensils, Waves, Wrench } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useTranslation } from "@/lib/state/LanguageContext";
+import { supabase } from "@/lib/supabase";
 
 const content = {
   fr: {

@@ -14,7 +14,8 @@ export default function AdminContactPage() {
         title_ar: "",
         desc_fr: "",
         desc_ar: "",
-        link_path: ""
+        link_path: "",
+        email: ""
     });
 
     const loadContact = async () => {
@@ -32,7 +33,8 @@ export default function AdminContactPage() {
                     title_ar: data.title_ar || "",
                     desc_fr: data.desc_fr || "",
                     desc_ar: data.desc_ar || "",
-                    link_path: data.link_path || ""
+                    link_path: data.link_path || "",
+                    email: data.gradient_class || ""
                 });
             }
         } catch (err) {
@@ -55,7 +57,8 @@ export default function AdminContactPage() {
                     title_ar: contact.title_ar,
                     desc_fr: contact.desc_fr,
                     desc_ar: contact.desc_ar,
-                    link_path: contact.link_path
+                    link_path: contact.link_path,
+                    gradient_class: contact.email
                 })
                 .eq("id", contact.id);
             
@@ -110,6 +113,17 @@ export default function AdminContactPage() {
                             onChange={e => setContact({...contact, link_path: e.target.value})}
                             className="w-full bg-[#0F172A] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary"
                             placeholder="Ex: 06 61 69 01 79"
+                        />
+                    </div>
+
+                    <div>
+                        <label className="block text-gray-400 text-sm font-bold mb-2">Adresse E-mail de support</label>
+                        <input
+                            type="text"
+                            value={contact.email}
+                            onChange={e => setContact({...contact, email: e.target.value})}
+                            className="w-full bg-[#0F172A] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-primary"
+                            placeholder="Ex: contact@goldenparkstation.com"
                         />
                     </div>
 
