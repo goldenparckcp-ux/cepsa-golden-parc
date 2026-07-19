@@ -829,6 +829,81 @@ export default function AdminDashboardPage() {
                             </div>
                         ))}
                     </div>
+
+                    {/* Financial Transactions & Audit Log */}
+                    <div className="bg-[#111827]/40 border border-white/5 rounded-3xl p-6 backdrop-blur-2xl shadow-xl">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+                            <div>
+                                <h3 className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-2">
+                                    <TrendingUp className="w-4 h-4 text-emerald-400" />
+                                    Flux Financier & Audit des Paiements
+                                </h3>
+                                <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest mt-1">Historique des transactions réelles (acompte, remboursement, recharge)</p>
+                            </div>
+                            <span className="text-[9px] font-black text-gray-500 uppercase bg-[#0F172A] px-2.5 py-1 rounded-md border border-white/5 self-start sm:self-center">{allTransactions.length} transactions</span>
+                        </div>
+                        <div className="overflow-x-auto scrollbar-hide">
+                            <table className="w-full text-left border-collapse min-w-[700px]">
+                                <thead>
+                                    <tr className="border-b border-white/5 text-[9px] text-gray-500 font-black uppercase tracking-widest">
+                                        <th className="pb-3 pl-3">Date</th>
+                                        <th className="pb-3">Type</th>
+                                        <th className="pb-3">Activité</th>
+                                        <th className="pb-3">Passerelle</th>
+                                        <th className="pb-3">Référence Transaction</th>
+                                        <th className="pb-3 text-right pr-3">Montant</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/5">
+                                    {allTransactions.length === 0 ? (
+                                        <tr>
+                                            <td colSpan={6} className="text-center py-10 text-xs text-gray-500 bg-[#0F172A]/30 rounded-2xl">Aucune transaction bancaire enregistrée</td>
+                                        </tr>
+                                    ) : allTransactions.slice(0, 10).map((t, idx) => {
+                                        const typeLabels: Record<string, { label: string; class: string }> = {
+                                            deposit: { label: "Acompte", class: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" },
+                                            refund: { label: "Remboursement", class: "bg-red-500/10 text-red-400 border-red-500/20" },
+                                            recharge: { label: "Recharge", class: "bg-blue-500/10 text-blue-400 border-blue-500/20" }
+                                        };
+                                        const tl = typeLabels[t.type] || { label: t.type || "Paiement", class: "bg-white/5 text-gray-400 border-white/10" };
+                                        
+                                        const activityLabels: Record<string, string> = {
+                                            restaurant_orders: "Restaurant 🍕",
+                                            hotel_reservations: "Hôtel 🏨",
+                                            pool_bookings: "Piscine 🏊",
+                                            service_bookings: "Services ⚙️"
+                                        };
+                                        const act = activityLabels[t.booking_table] || "Système";
+                                        
+                                        const isRefund = t.type === "refund";
+                                        const formattedDate = t.created_at ? new Date(t.created_at).toLocaleString("fr-FR", {
+                                            day: "numeric",
+                                            month: "short",
+                                            hour: "2-digit",
+                                            minute: "2-digit"
+                                        }) : "—";
+
+                                        return (
+                                            <tr key={t.id || idx} className="text-[11px] text-gray-300 hover:bg-white/3 transition-colors">
+                                                <td className="py-3 pl-3 font-medium text-gray-400">{formattedDate}</td>
+                                                <td className="py-3">
+                                                    <span className={`text-[8px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wider ${tl.class}`}>
+                                                        {tl.label}
+                                                    </span>
+                                                </td>
+                                                <td className="py-3 font-bold text-white">{act}</td>
+                                                <td className="py-3 font-bold text-gray-400 uppercase tracking-widest">{t.gateway || "cmi"}</td>
+                                                <td className="py-3 font-mono text-[10px] text-gray-500 select-all">{t.gateway_reference || "—"}</td>
+                                                <td className={`py-3 text-right pr-3 font-mono font-black ${isRefund ? "text-red-400" : "text-emerald-400"}`}>
+                                                    {isRefund ? "-" : "+"}{t.amount} DH
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             )}
 

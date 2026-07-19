@@ -36,12 +36,73 @@ function buildUrl(type: LocationType, label: string, token: string) {
   return `${BASE_URL}/scan?type=${type}&loc=${slug}&t=${token}`;
 }
 
-async function renderQR(url: string): Promise<string> {
-  return QRCode.toDataURL(url, {
-    width: 400,
-    margin: 4, // Increased quiet zone for better scanning
-    color: { dark: "#000000", light: "#FFFFFF" }, // Pure black for max contrast
-    errorCorrectionLevel: "M", // Lower density makes dots larger and easier to scan
+async function renderQR(url: string, logoSrc: string = "/icon.png"): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (typeof window === "undefined") {
+      resolve("");
+      return;
+    }
+
+    const canvas = document.createElement("canvas");
+
+    QRCode.toCanvas(canvas, url, {
+      width: 400,
+      margin: 4,
+      color: { dark: "#000000", light: "#FFFFFF" },
+      errorCorrectionLevel: "H", // High correction level to support logo overlay
+    }, (error) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        resolve(canvas.toDataURL());
+        return;
+      }
+
+      const img = new Image();
+      img.src = logoSrc;
+      img.crossOrigin = "anonymous";
+
+      img.onload = () => {
+        const qrSize = canvas.width;
+        const logoSize = qrSize * 0.22;
+        const x = (qrSize - logoSize) / 2;
+        const y = (qrSize - logoSize) / 2;
+
+        // Draw a clean rounded white card background for the logo
+        const bgPadding = logoSize * 0.12;
+        const bgSize = logoSize + bgPadding * 2;
+        const bgX = x - bgPadding;
+        const bgY = y - bgPadding;
+        const radius = bgSize * 0.25;
+
+        ctx.fillStyle = "#FFFFFF";
+        ctx.beginPath();
+        ctx.moveTo(bgX + radius, bgY);
+        ctx.lineTo(bgX + bgSize - radius, bgY);
+        ctx.quadraticCurveTo(bgX + bgSize, bgY, bgX + bgSize, bgY + radius);
+        ctx.lineTo(bgX + bgSize, bgY + bgSize - radius);
+        ctx.quadraticCurveTo(bgX + bgSize, bgY + bgSize, bgX + bgSize - radius, bgY + bgSize);
+        ctx.lineTo(bgX + radius, bgY + bgSize);
+        ctx.quadraticCurveTo(bgX, bgY + bgSize, bgX, bgY + bgSize - radius);
+        ctx.lineTo(bgX, bgY + radius);
+        ctx.quadraticCurveTo(bgX, bgY, bgX + radius, bgY);
+        ctx.closePath();
+        ctx.fill();
+
+        // Draw the logo image
+        ctx.drawImage(img, x, y, logoSize, logoSize);
+        resolve(canvas.toDataURL("image/png"));
+      };
+
+      img.onerror = () => {
+        // Fallback to QR code without logo on image error
+        resolve(canvas.toDataURL());
+      };
+    });
   });
 }
 
@@ -80,6 +141,7 @@ export default function QRGeneratorPage() {
   const [loadError, setLoadError]   = useState<string | null>(null);
   const [largeQRUrl, setLargeQRUrl] = useState<string | null>(null);
   const [largeQRLabel, setLargeQRLabel] = useState<string>("");
+  const [customPrintMessage, setCustomPrintMessage] = useState("");
   const printRef = useRef<HTMLDivElement>(null);
 
   // ── Load existing QRs from DB on mount ───────────────────────────────────
@@ -204,10 +266,10 @@ export default function QRGeneratorPage() {
   };
 
   return (
-    <div className="space-y-8 pb-20 animate-fade-in">
+    <div className="space-y-8 pb-20 animate-fade-in print:space-y-0 print:pb-0">
 
       {/* ── Header ───────────────────────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 print:hidden">
         <div>
           <h1 className="text-3xl font-black text-white flex items-center gap-3">
             <span className="w-10 h-10 bg-amber-500/10 border border-amber-500/20 rounded-xl flex items-center justify-center">
@@ -233,13 +295,23 @@ export default function QRGeneratorPage() {
           </div>
 
           {items.some(i => i.dataUrl) && (
-            <button
-              onClick={() => window.print()}
-              className="flex items-center gap-2 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 text-white font-bold text-sm rounded-xl transition-all"
-            >
-              <Printer className="w-4 h-4" />
-              Imprimer
-            </button>
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 print:hidden">
+              <input
+                type="text"
+                placeholder="Texte (ex: Scan Me 📱)..."
+                value={customPrintMessage}
+                onChange={(e) => setCustomPrintMessage(e.target.value)}
+                className="bg-[#0F172A]/80 border border-white/10 rounded-xl px-4 py-2 text-xs text-white placeholder:text-gray-600 focus:outline-none focus:border-amber-500/50 w-full sm:w-64"
+                title="Saisissez un texte personnalisé à imprimer sous le QR code"
+              />
+              <button
+                onClick={() => window.print()}
+                className="flex items-center justify-center gap-2 px-5 py-2 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-black font-black text-xs uppercase tracking-wider rounded-xl transition-all shadow-[0_0_15px_rgba(245,158,11,0.2)] active:scale-95 shrink-0"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                Imprimer
+              </button>
+            </div>
           )}
         </div>
       </div>
@@ -261,7 +333,7 @@ export default function QRGeneratorPage() {
       )}
 
       {/* ── Type Tabs ────────────────────────────────────────────────── */}
-      <div className="flex gap-3 flex-wrap">
+      <div className="flex gap-3 flex-wrap print:hidden">
         {(Object.keys(TYPE_META) as LocationType[]).map(type => {
           const m = TYPE_META[type];
           const Icon = m.icon;
@@ -289,7 +361,7 @@ export default function QRGeneratorPage() {
       </div>
 
       {/* ── Main Grid ────────────────────────────────────────────────── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 print:hidden">
 
         {/* LEFT: Add new QRs */}
         <div className="bg-[#1E293B] border border-white/10 rounded-3xl p-6 space-y-5">

@@ -267,6 +267,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             label: "Avis Clients",
             icon: Star,
             roles: ["admin"]
+        },
+        {
+            href: "/admin/contact",
+            label: "Coordonnées / FAQ",
+            icon: Phone,
+            roles: ["admin"]
         }
     ];
 
@@ -420,13 +426,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </aside>
 
             {/* MAIN CONTENT AREA */}
-            <main className="flex-1 overflow-x-hidden relative">
+            <main className="flex-1 overflow-x-hidden relative print:p-0 print:m-0 print:bg-white print:overflow-visible">
                 {/* Decorative background elements for main area */}
-                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-amber-500/5 rounded-full blur-[150px] pointer-events-none" />
-                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[150px] pointer-events-none" />
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-amber-500/5 rounded-full blur-[150px] pointer-events-none print:hidden" />
+                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-blue-500/5 rounded-full blur-[150px] pointer-events-none print:hidden" />
                 
-                <div className="relative z-10 h-full p-4 md:p-8">
-                    <div className="max-w-6xl mx-auto">
+                <div className="relative z-10 h-full p-4 md:p-8 print:p-0 print:m-0">
+                    <div className="max-w-6xl mx-auto print:max-w-full print:p-0 print:m-0">
                         {children}
                     </div>
                 </div>

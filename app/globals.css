@@ -166,4 +166,37 @@ iframe.goog-te-banner-frame {
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* Print layout styles for premium clean printing */
+@media print {
+  aside,
+  header,
+  nav,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  html, body, main, #__next {
+    background: white !important;
+    color: black !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  main > div {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+
+  .print\:block {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+  }
 }
