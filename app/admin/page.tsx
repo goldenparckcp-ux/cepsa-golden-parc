@@ -10,6 +10,7 @@ import { Calendar, Download,
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { adminDb } from "@/lib/admin-api";
 import { COMPLETE_MENU } from "@/lib/types/menu";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -209,7 +210,7 @@ export default function AdminDashboardPage() {
     const [stats, setStats] = useState({
         totalRevenue: 0, restoRevenue: 0, hotelRevenue: 0, poolRevenue: 0, servicesRevenue: 0,
         occupancyRate: 0, activePoolGuests: 0, pendingOrdersCount: 0, completedOrdersToday: 0,
-        lavagesCount: 0, totalOrdersCount: 0, avgOrderValue: 0,
+        lavagesCount: 0, totalOrdersCount: 0, avgOrderValue: 0, totalRefunds: 0
     });
     const [topItems, setTopItems] = useState<any[]>([]);
     const [recentOrders, setRecentOrders] = useState<any[]>([]);
@@ -218,6 +219,7 @@ export default function AdminDashboardPage() {
     const [allHotelReservations, setAllHotelReservations] = useState<any[]>([]);
     const [allPoolBookings, setAllPoolBookings] = useState<any[]>([]);
     const [allServiceBookings, setAllServiceBookings] = useState<any[]>([]);
+    const [allTransactions, setAllTransactions] = useState<any[]>([]);
     const [chartCategory, setChartCategory] = useState<"total" | "restaurant" | "hotel" | "pool">("total");
 
     // AI
@@ -318,17 +320,43 @@ export default function AdminDashboardPage() {
             });
         }
 
+        // Subtract Refunds
+        allTransactions.forEach(t => {
+            if (t.type === "refund" && t.status === "completed") {
+                const day = (t.created_at || "").split("T")[0];
+                const idx = chartDays.indexOf(day);
+                if (idx < 0) return;
+                
+                const table = t.booking_table || "";
+                let matchesCategory = false;
+                if (chartCategory === "total") {
+                    matchesCategory = true;
+                } else if (chartCategory === "restaurant" && table === "restaurant_orders") {
+                    matchesCategory = true;
+                } else if (chartCategory === "hotel" && table === "hotel_reservations") {
+                    matchesCategory = true;
+                } else if (chartCategory === "pool" && table === "pool_bookings") {
+                    matchesCategory = true;
+                }
+                
+                if (matchesCategory) {
+                    vals[idx] -= Number(t.amount) || 0;
+                }
+            }
+        });
+
         return { vals, labels: chartDays.map(d => shortDay(d)) };
-    }, [allRestoOrders, allHotelReservations, allPoolBookings, chartDays, chartCategory]);
+    }, [allRestoOrders, allHotelReservations, allPoolBookings, allTransactions, chartDays, chartCategory]);
 
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            const [{ data: ro }, { data: hr }, { data: pb }, { data: sb }] = await Promise.all([
+            const [{ data: ro }, { data: hr }, { data: pb }, { data: sb }, { data: tx }] = await Promise.all([
                 supabase.from("restaurant_orders").select("*").order("created_at", { ascending: false }),
                 supabase.from("hotel_reservations").select("*").order("created_at", { ascending: false }),
                 supabase.from("pool_bookings").select("*").order("created_at", { ascending: false }),
                 supabase.from("service_bookings").select("*").order("created_at", { ascending: false }),
+                adminDb("transactions").select("*").order("created_at", { ascending: false }),
             ]);
 
             const rOrders = ro || [];
@@ -341,6 +369,7 @@ export default function AdminDashboardPage() {
 
             setAllPoolBookings(pb || []);
             setAllServiceBookings(sb || []);
+            setAllTransactions(tx || []);
         } catch (err) {
             console.error("Dashboard fetch error:", err);
         } finally {
@@ -464,17 +493,29 @@ export default function AdminDashboardPage() {
             if (s.service_type === "lavage" && !["completed", "cancelled"].includes(s.status)) lavages++;
         });
 
+        let periodRefunds = 0;
+        allTransactions.forEach(t => {
+            if (t.type === "refund" && t.status === "completed") {
+                const day = (t.created_at || "").split("T")[0];
+                if (chartDays.includes(day)) {
+                    periodRefunds += Number(t.amount) || 0;
+                }
+            }
+        });
+
         const totalRev = restoRev + hotelRev + poolRev + serviceRev;
+        const netRev = totalRev - periodRefunds;
 
         setStats({
-            totalRevenue: totalRev, restoRevenue: restoRev, hotelRevenue: hotelRev,
+            totalRevenue: netRev, restoRevenue: restoRev, hotelRevenue: hotelRev,
             poolRevenue: poolRev, servicesRevenue: serviceRev,
             occupancyRate: Math.min(Math.round((occupied / 10) * 100), 100),
             activePoolGuests: activePax, pendingOrdersCount: pending, completedOrdersToday: doneToday,
             lavagesCount: lavages, totalOrdersCount: periodRestoOrdersCount,
             avgOrderValue: periodPaidCount > 0 ? Math.round(restoRev / periodPaidCount) : 0,
+            totalRefunds: periodRefunds
         });
-    }, [allRestoOrders, allHotelReservations, allPoolBookings, allServiceBookings, chartDays, loading]);
+    }, [allRestoOrders, allHotelReservations, allPoolBookings, allServiceBookings, allTransactions, chartDays, loading]);
 
     const fetchAI = useCallback(async () => {
         setAiLoading(true);
@@ -619,7 +660,7 @@ export default function AdminDashboardPage() {
                     {/* Revenue KPI Cards */}
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                         {[
-                            { label: "Chiffre d'Affaires", value: fmt(stats.totalRevenue) + " DH", sub: "Collecté réel", icon: TrendingUp, color: "#10B981", spark: chartData.vals, trend: "+12%", bgGlow: "from-green-500/10 to-transparent" },
+                            { label: "Chiffre d'Affaires", value: fmt(stats.totalRevenue) + " DH", sub: stats.totalRefunds > 0 ? `Net (Annulés: -${stats.totalRefunds} DH)` : "Collecté net", icon: TrendingUp, color: "#10B981", spark: chartData.vals, trend: "+12%", bgGlow: "from-green-500/10 to-transparent" },
                             { label: "Occupation Hôtel", value: stats.occupancyRate + "%", sub: `${Math.round(stats.occupancyRate / 10)} / 10 chambres`, icon: Bed, color: "#F59E0B", spark: null, trend: null, bgGlow: "from-amber-500/10 to-transparent" },
                             { label: "Piscine Actifs", value: stats.activePoolGuests + " Pax", sub: "Actuellement sur place", icon: Waves, color: "#06B6D4", spark: null, trend: null, bgGlow: "from-cyan-500/10 to-transparent" },
                             { label: "File d'Attente", value: String(stats.pendingOrdersCount), sub: "Commandes cuisine", icon: Clock, color: "#EF4444", spark: null, trend: null, bgGlow: "from-red-500/10 to-transparent" },
@@ -684,6 +725,17 @@ export default function AdminDashboardPage() {
                                 );
                             })}
                         </div>
+
+                        {/* Refunds Alerts Bar */}
+                        {stats.totalRefunds > 0 && (
+                            <div className="mt-5 flex items-center justify-between bg-red-500/10 border border-red-500/20 rounded-2xl px-5 py-4 text-[11px] text-red-400 font-black uppercase tracking-wider animate-in fade-in duration-300">
+                                <div className="flex items-center gap-2.5">
+                                    <AlertTriangle className="w-4 h-4 text-red-400" />
+                                    <span>Annulations & Remboursements Automatiques</span>
+                                </div>
+                                <span className="font-mono text-xs">-{fmt(stats.totalRefunds)} DH</span>
+                            </div>
+                        )}
                     </div>
 
                     {/* Live Queues */}

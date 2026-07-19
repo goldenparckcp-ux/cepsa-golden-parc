@@ -22,7 +22,8 @@ const ALLOWED_TABLES = [
   "service_bookings",
   "profiles",
   "home_promos",
-  "client_reviews"
+  "client_reviews",
+  "transactions"
 ];
 
 export async function POST(request: Request) {
