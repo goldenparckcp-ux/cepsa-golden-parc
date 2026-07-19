@@ -270,10 +270,13 @@ export default function AdminDashboardPage() {
                 if (idx < 0) return;
                 const total = Number(o.total_price) || Number(o.subtotal) || 0;
                 const dep = Number(o.deposit_amount) || 0;
-                // Only count money that actually passed through Caisse or online payment
-                if (o.deposit_paid) {
-                    vals[idx] += (dep >= total || o.status === "completed") ? total : dep;
+                let paid = 0;
+                if (o.status === "completed") {
+                    paid = total;
+                } else if (o.deposit_paid) {
+                    paid = dep;
                 }
+                vals[idx] += paid;
             });
         }
 
@@ -283,10 +286,16 @@ export default function AdminDashboardPage() {
                 const day = (r.updated_at || r.created_at || "").split("T")[0];
                 const idx = chartDays.indexOf(day);
                 if (idx < 0) return;
-                // Hotel usually paid online or at reception. For now, we trust non-cancelled
-                if (r.status !== "cancelled" && r.status !== "pending") {
-                    const p = Number(r.price) || Number(r.total_price) || 0;
-                    vals[idx] += p;
+                const total = Number(r.total_price) || Number(r.price) || 0;
+                const dep = Number(r.deposit_amount) || 0;
+                let paid = 0;
+                if (["checked_in", "completed"].includes(r.status)) {
+                    paid = total;
+                } else if (r.deposit_paid) {
+                    paid = dep;
+                }
+                if (r.status !== "cancelled") {
+                    vals[idx] += paid;
                 }
             });
         }
@@ -297,12 +306,15 @@ export default function AdminDashboardPage() {
                 const day = (b.updated_at || b.created_at || "").split("T")[0];
                 const idx = chartDays.indexOf(day);
                 if (idx < 0) return;
-                // Only count money that actually passed through Caisse or online payment
-                if (b.deposit_paid) {
-                    const p = Number(b.total_price) || Number(b.total_amount) || 0;
-                    const dep = Number(b.deposit_amount) || 0;
-                    vals[idx] += (dep >= p) ? p : dep;
+                const total = Number(b.total_price) || Number(b.total_amount) || 0;
+                const dep = Number(b.deposit_amount) || 0;
+                let paid = 0;
+                if (b.status === "completed") {
+                    paid = total;
+                } else if (b.deposit_paid) {
+                    paid = dep;
                 }
+                vals[idx] += paid;
             });
         }
 
@@ -356,8 +368,10 @@ export default function AdminDashboardPage() {
             const total = Number(o.total_price) || Number(o.subtotal) || 0;
             const dep = Number(o.deposit_amount) || 0;
             let paid = 0;
-            if (o.deposit_paid) {
-                paid = (dep >= total || o.status === "completed") ? total : dep;
+            if (o.status === "completed") {
+                paid = total;
+            } else if (o.deposit_paid) {
+                paid = dep;
             }
 
             // Global stats
@@ -408,9 +422,16 @@ export default function AdminDashboardPage() {
             const day = (r.updated_at || r.created_at || "").split("T")[0];
             const inPeriod = chartDays.includes(day);
 
-            const p = Number(r.price) || Number(r.total_price) || 0;
+            const total = Number(r.total_price) || Number(r.price) || 0;
+            const dep = Number(r.deposit_amount) || 0;
+            let paid = 0;
+            if (["checked_in", "completed"].includes(r.status)) {
+                paid = total;
+            } else if (r.deposit_paid) {
+                paid = dep;
+            }
             
-            if (r.status !== "cancelled" && inPeriod) hotelRev += p;
+            if (r.status !== "cancelled" && inPeriod) hotelRev += paid;
             if (["checked_in", "active"].includes(r.status)) occupied++;
         });
 
@@ -419,11 +440,16 @@ export default function AdminDashboardPage() {
             const day = (b.updated_at || b.created_at || "").split("T")[0];
             const inPeriod = chartDays.includes(day);
 
-            const p = Number(b.total_price) || Number(b.total_amount) || 0;
+            const total = Number(b.total_price) || Number(b.total_amount) || 0;
             const dep = Number(b.deposit_amount) || 0;
-            const paid = (dep >= p) ? p : dep;
+            let paid = 0;
+            if (b.status === "completed") {
+                paid = total;
+            } else if (b.deposit_paid) {
+                paid = dep;
+            }
 
-            if (b.deposit_paid && inPeriod) {
+            if (inPeriod) {
                 poolRev += paid;
             }
             if (["checked_in", "active"].includes(b.status)) activePax += (Number(b.adults) || 0) + (Number(b.children) || 0);
@@ -538,47 +564,50 @@ export default function AdminDashboardPage() {
         <div className="space-y-6 pb-20 animate-in fade-in duration-300">
 
             {/* ── HEADER ── */}
-            <div className="flex flex-col gap-4">
-                <div className="flex items-start justify-between">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-                      <div>
-                          <div className="flex items-center gap-2 mb-1">
-                              <div className="w-1.5 h-5 rounded-full bg-gradient-to-b from-amber-400 to-orange-600" />
-                              <h1 className="text-2xl font-black text-white">Tableau de Bord Admin</h1>
-                          </div>
-                          <p className="text-xs text-gray-500 font-medium pl-3.5">
-                              {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
-                              {" • "}Données en temps réel
-                          </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                          <button
-                              onClick={exportToCSV}
-                              className="py-2 px-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500 font-bold hover:bg-amber-500 hover:text-black transition-all text-xs flex items-center gap-2"
-                              title="Exporter les données du graphique en CSV"
-                          >
-                              <Download className="w-4 h-4" />
-                              Exporter CSV
-                          </button>
-                      </div>
-                  </div>
-                    <button onClick={fetchData} className="p-2.5 rounded-xl bg-white/5 border border-white/8 text-gray-500 hover:text-white hover:bg-white/10 transition-all group">
+            <div className="bg-[#111827]/40 backdrop-blur-2xl border border-white/5 rounded-3xl p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-6 shadow-[0_15px_30px_rgba(0,0,0,0.2)]">
+                <div>
+                    <div className="flex items-center gap-3 mb-1.5">
+                        <div className="w-2 h-6 rounded-full bg-gradient-to-b from-amber-400 via-orange-500 to-red-600 shadow-[0_0_12px_rgba(245,158,11,0.4)]" />
+                        <h1 className="text-2xl font-black text-white uppercase tracking-tight">Tableau de Bord Admin</h1>
+                    </div>
+                    <p className="text-[11px] text-gray-400 font-bold uppercase tracking-wider pl-5 flex items-center gap-2">
+                        <span className="inline-block w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                        {new Date().toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" })}
+                        <span className="text-gray-600">•</span>
+                        Données en temps réel
+                    </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                    <button
+                        onClick={exportToCSV}
+                        className="py-2.5 px-4 rounded-xl bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20 hover:border-amber-500/40 text-amber-400 font-black hover:text-white transition-all text-xs flex items-center gap-2 tracking-wider uppercase active:scale-95"
+                        title="Exporter les données du graphique en CSV"
+                    >
+                        <Download className="w-4 h-4" />
+                        Exporter CSV
+                    </button>
+                    <button onClick={fetchData} className="p-2.5 rounded-xl bg-white/5 border border-white/8 text-gray-400 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all group active:scale-95">
                         <RefreshCw className="w-4 h-4 group-hover:rotate-180 transition-transform duration-500" />
                     </button>
                 </div>
+            </div>
 
-                {/* Tab Nav */}
-                <div className="flex gap-1 bg-[#0F172A] p-1 rounded-2xl border border-white/5 overflow-x-auto scrollbar-hide">
-                    {tabs.map(({ id, label, icon: Icon }) => (
-                        <button key={id} onClick={() => setActiveTab(id)}
-                            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap flex-shrink-0 ${activeTab === id ? "bg-gradient-to-r from-amber-500 to-orange-500 text-black shadow-lg shadow-amber-500/20" : "text-gray-500 hover:text-white hover:bg-white/5"}`}
-                        >
-                            <Icon className="w-3.5 h-3.5" />
-                            {label}
-                            {id === "ai" && <span className="ml-1 text-[8px] px-1 py-0.5 rounded-full bg-purple-500/30 text-purple-300 border border-purple-500/20 uppercase tracking-wide">Gemini</span>}
-                        </button>
-                    ))}
-                </div>
+            {/* Tab Nav */}
+            <div className="flex gap-1.5 bg-[#0F172A]/80 backdrop-blur-2xl p-1.5 rounded-2xl border border-white/5 overflow-x-auto scrollbar-hide shadow-lg">
+                {tabs.map(({ id, label, icon: Icon }) => (
+                    <button key={id} onClick={() => setActiveTab(id)}
+                        className={`flex items-center gap-2.5 px-5 py-3 rounded-xl text-xs font-black transition-all whitespace-nowrap flex-shrink-0 uppercase tracking-wider active:scale-95 ${
+                            activeTab === id 
+                                ? "bg-gradient-to-r from-amber-500 to-orange-500 text-black shadow-lg shadow-amber-500/20 font-black border border-amber-400/20" 
+                                : "text-gray-400 hover:text-white hover:bg-white/5"
+                        }`}
+                    >
+                        <Icon className={`w-4 h-4 ${activeTab === id ? 'text-black' : 'text-gray-400'}`} />
+                        {label}
+                        {id === "ai" && <span className={`ml-1 text-[8px] px-1.5 py-0.5 rounded-full uppercase tracking-widest font-black border ${activeTab === id ? 'bg-black/20 text-black border-black/10' : 'bg-purple-500/20 text-purple-300 border-purple-500/10'}`}>Gemini</span>}
+                    </button>
+                ))}
             </div>
 
             {/* ════════════════════════════════════════════════════════════════
@@ -588,58 +617,69 @@ export default function AdminDashboardPage() {
                 <div className="space-y-5 animate-in fade-in duration-200">
 
                     {/* Revenue KPI Cards */}
-                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                         {[
-                            { label: "Chiffre d'Affaires", value: fmt(stats.totalRevenue) + " DH", sub: "Cumul validé", icon: TrendingUp, color: "#10B981", spark: chartData.vals, trend: "+12%" },
-                            { label: "Occupation Hôtel", value: stats.occupancyRate + "%", sub: `${Math.round(stats.occupancyRate / 10)} / 10 chambres`, icon: Bed, color: "#F59E0B", spark: null, trend: null },
-                            { label: "Piscine Actifs", value: stats.activePoolGuests + " personnes", sub: "Enregistrés actuellement", icon: Waves, color: "#06B6D4", spark: null, trend: null },
-                            { label: "File d'Attente", value: String(stats.pendingOrdersCount), sub: "Cuisine (Resto)", icon: Clock, color: "#EF4444", spark: null, trend: null },
-                        ].map(({ label, value, sub, icon: Icon, color, spark, trend }) => (
-                            <div key={label} className="bg-[#1E293B]/80 border border-white/8 rounded-2xl p-4 relative overflow-hidden group hover:border-white/15 transition-all">
-                                <div className="absolute top-0 right-0 w-20 h-20 rounded-full blur-2xl pointer-events-none transition-opacity opacity-30 group-hover:opacity-60" style={{ background: color }} />
-                                <div className="flex items-center justify-between mb-3 relative z-10">
-                                    <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">{label}</span>
-                                    <div className="p-1.5 rounded-lg" style={{ background: color + "20" }}>
-                                        <Icon className="w-3.5 h-3.5" style={{ color }} />
+                            { label: "Chiffre d'Affaires", value: fmt(stats.totalRevenue) + " DH", sub: "Collecté réel", icon: TrendingUp, color: "#10B981", spark: chartData.vals, trend: "+12%", bgGlow: "from-green-500/10 to-transparent" },
+                            { label: "Occupation Hôtel", value: stats.occupancyRate + "%", sub: `${Math.round(stats.occupancyRate / 10)} / 10 chambres`, icon: Bed, color: "#F59E0B", spark: null, trend: null, bgGlow: "from-amber-500/10 to-transparent" },
+                            { label: "Piscine Actifs", value: stats.activePoolGuests + " Pax", sub: "Actuellement sur place", icon: Waves, color: "#06B6D4", spark: null, trend: null, bgGlow: "from-cyan-500/10 to-transparent" },
+                            { label: "File d'Attente", value: String(stats.pendingOrdersCount), sub: "Commandes cuisine", icon: Clock, color: "#EF4444", spark: null, trend: null, bgGlow: "from-red-500/10 to-transparent" },
+                        ].map(({ label, value, sub, icon: Icon, color, spark, trend, bgGlow }) => (
+                            <div key={label} className="bg-[#111827]/40 border border-white/5 rounded-3xl p-5 relative overflow-hidden group hover:border-white/10 hover:shadow-[0_15px_30px_rgba(0,0,0,0.3)] transition-all duration-300 hover:scale-[1.01]">
+                                {/* Subtle radial hover glow */}
+                                <div className={`absolute -top-12 -right-12 w-32 h-32 bg-gradient-to-br ${bgGlow} rounded-full blur-2xl opacity-40 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none`} />
+                                
+                                <div className="flex items-center justify-between mb-4 relative z-10">
+                                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{label}</span>
+                                    <div className="p-2 rounded-xl transition-transform duration-300 group-hover:scale-110" style={{ background: color + "15", border: `1px solid ${color}20` }}>
+                                        <Icon className="w-4 h-4" style={{ color }} />
                                     </div>
                                 </div>
-                                <div className="text-2xl font-black text-white mb-0.5 relative z-10">{value}</div>
-                                <div className="text-[10px] font-bold relative z-10" style={{ color }}>{sub}</div>
+                                
+                                <div className="text-2xl font-black text-white mb-1 relative z-10 tracking-tight">{value}</div>
+                                <div className="text-[10px] font-bold relative z-10 uppercase tracking-wide opacity-80" style={{ color }}>{sub}</div>
+                                
                                 {spark && spark.some(v => v > 0) && (
-                                    <div className="mt-2 relative z-10 opacity-60">
-                                        <Sparkline data={spark} color={color} height={32} />
+                                    <div className="mt-3 relative z-10 opacity-70 group-hover:opacity-100 transition-opacity duration-300">
+                                        <Sparkline data={spark} color={color} height={36} />
                                     </div>
                                 )}
-                                {trend && <div className="absolute bottom-3 right-3 text-[9px] font-black text-green-400 flex items-center gap-0.5"><ArrowUpRight className="w-2.5 h-2.5" />{trend}</div>}
+                                {trend && (
+                                    <div className="absolute bottom-4 right-4 text-[9px] font-black text-green-400 flex items-center gap-0.5 bg-green-500/10 px-2 py-0.5 rounded-full border border-green-500/20 shadow-inner">
+                                        <ArrowUpRight className="w-3 h-3" />
+                                        {trend}
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>
 
                     {/* Revenue Breakdown */}
-                    <div className="bg-[#1E293B]/80 border border-white/8 rounded-2xl p-5">
-                        <div className="flex items-center justify-between mb-4">
-                            <h2 className="text-sm font-black text-white uppercase tracking-wide">Répartition des Revenus</h2>
-                            <span className="text-[10px] font-bold text-gray-500">{fmt(stats.totalRevenue)} DH total</span>
+                    <div className="bg-[#111827]/40 border border-white/5 rounded-3xl p-6 backdrop-blur-2xl shadow-xl">
+                        <div className="flex items-center justify-between mb-5">
+                            <h2 className="text-xs font-black text-white uppercase tracking-wider">Répartition des Revenus</h2>
+                            <span className="text-[10px] font-black text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20 uppercase tracking-widest">{fmt(stats.totalRevenue)} DH total</span>
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                             {[
-                                { label: "Restaurant", value: stats.restoRevenue, icon: Utensils, color: "#F97316" },
-                                { label: "Hôtel", value: stats.hotelRevenue, icon: Bed, color: "#F59E0B" },
-                                { label: "Piscine", value: stats.poolRevenue, icon: Waves, color: "#06B6D4" },
-                                { label: "Services", value: stats.servicesRevenue, icon: Wrench, color: "#10B981" },
-                            ].map(({ label, value, icon: Icon, color }) => {
+                                { label: "Restaurant", value: stats.restoRevenue, icon: Utensils, color: "#F97316", bgGlow: "rgba(249,115,22,0.05)" },
+                                { label: "Hôtel", value: stats.hotelRevenue, icon: Bed, color: "#F59E0B", bgGlow: "rgba(245,158,11,0.05)" },
+                                { label: "Piscine", value: stats.poolRevenue, icon: Waves, color: "#06B6D4", bgGlow: "rgba(6,182,212,0.05)" },
+                                { label: "Services", value: stats.servicesRevenue, icon: Wrench, color: "#10B981", bgGlow: "rgba(16,185,129,0.05)" },
+                            ].map(({ label, value, icon: Icon, color, bgGlow }) => {
                                 const pct = stats.totalRevenue > 0 ? Math.round((value / stats.totalRevenue) * 100) : 0;
                                 return (
-                                    <div key={label} className="bg-[#0F172A] rounded-xl p-3 border border-white/5">
-                                        <div className="flex items-center gap-2 mb-2">
-                                            <Icon className="w-3.5 h-3.5" style={{ color }} />
-                                            <span className="text-[10px] font-bold text-gray-400">{label}</span>
+                                    <div key={label} className="bg-[#0F172A]/60 rounded-2xl p-4 border border-white/5 hover:border-white/10 hover:shadow-lg transition-all duration-300 relative overflow-hidden group" style={{ background: `linear-gradient(135deg, #0F172A 0%, ${bgGlow} 100%)` }}>
+                                        <div className="flex items-center gap-2 mb-3">
+                                            <div className="p-1.5 rounded-lg" style={{ background: color + "15" }}>
+                                                <Icon className="w-3.5 h-3.5" style={{ color }} />
+                                            </div>
+                                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-wider">{label}</span>
                                         </div>
-                                        <div className="text-lg font-black text-white">{fmt(value)} DH</div>
-                                        <div className="mt-2 h-1 bg-white/5 rounded-full overflow-hidden">
-                                            <div className="h-full rounded-full transition-all duration-1000" style={{ width: `${pct}%`, background: color }} />
+                                        <div className="text-xl font-black text-white tracking-tight">{fmt(value)} DH</div>
+                                        <div className="mt-3 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                                            <div className="h-full rounded-full transition-all duration-1000 group-hover:scale-x-[1.02] origin-left" style={{ width: `${pct}%`, background: color }} />
                                         </div>
-                                        <div className="text-[9px] font-bold mt-1" style={{ color }}>{pct}% du total</div>
+                                        <div className="text-[9px] font-black mt-2 uppercase tracking-widest" style={{ color }}>{pct}% du total</div>
                                     </div>
                                 );
                             })}
@@ -649,35 +689,35 @@ export default function AdminDashboardPage() {
                     {/* Live Queues */}
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                         {/* Restaurant Queue */}
-                        <div className="bg-[#1E293B]/80 border border-white/8 rounded-2xl p-5">
-                            <div className="flex items-center justify-between mb-4">
+                        <div className="bg-[#111827]/40 border border-white/5 rounded-3xl p-6 backdrop-blur-2xl shadow-xl">
+                            <div className="flex items-center justify-between mb-5">
                                 <div className="flex items-center gap-2">
-                                    <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-                                    <h3 className="text-xs font-black text-white uppercase tracking-wide">File Cuisine</h3>
+                                    <span className="w-2.5 h-2.5 rounded-full bg-orange-500 animate-pulse shadow-[0_0_8px_rgba(249,115,22,0.6)]" />
+                                    <h3 className="text-xs font-black text-white uppercase tracking-wider">File Cuisine (Resto)</h3>
                                 </div>
-                                <button onClick={() => router.push("/admin/restaurant")} className="text-[10px] font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1">
-                                    Gérer <ChevronRight className="w-3 h-3" />
+                                <button onClick={() => router.push("/admin/restaurant")} className="text-[10px] font-black uppercase tracking-wider text-amber-400 hover:text-amber-300 flex items-center gap-1">
+                                    Gérer <ChevronRight className="w-3.5 h-3.5" />
                                 </button>
                             </div>
-                            <div className="space-y-2">
+                            <div className="space-y-3">
                                 {recentOrders.length === 0 ? (
-                                    <div className="text-center py-6 text-[11px] text-gray-600 bg-[#0F172A] rounded-xl border border-white/5">Aucune commande</div>
+                                    <div className="text-center py-8 text-xs text-gray-500 bg-[#0F172A]/50 rounded-2xl border border-white/5 font-medium">Aucune commande active</div>
                                 ) : recentOrders.map(o => {
                                     const statusConf: Record<string, { label: string; class: string }> = {
-                                        pending: { label: "Attente", class: "bg-amber-500/15 text-amber-400 border-amber-500/20" },
-                                        preparing: { label: "Cuisine", class: "bg-blue-500/15 text-blue-400 border-blue-500/20" },
-                                        ready: { label: "Prêt ✓", class: "bg-green-500/15 text-green-400 border-green-500/20" },
-                                        completed: { label: "Encaissé", class: "bg-gray-500/15 text-gray-400 border-gray-500/20" },
-                                        pending_payment: { label: "Pmt...", class: "bg-purple-500/15 text-purple-400 border-purple-500/20" },
+                                        pending: { label: "Attente", class: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
+                                        preparing: { label: "Cuisine", class: "bg-blue-500/10 text-blue-400 border-blue-500/20" },
+                                        ready: { label: "Prêt ✓", class: "bg-green-500/10 text-green-400 border-green-500/20" },
+                                        completed: { label: "Encaissé", class: "bg-gray-500/10 text-gray-400 border-gray-500/20" },
+                                        pending_payment: { label: "Pmt...", class: "bg-purple-500/10 text-purple-400 border-purple-500/20" },
                                     };
                                     const sc = statusConf[o.status] || statusConf.pending;
                                     return (
-                                        <div key={o.id} className="flex items-center justify-between bg-[#0F172A] rounded-xl px-3 py-2.5 border border-white/5 hover:border-white/10 transition-all">
+                                        <div key={o.id} className="flex items-center justify-between bg-[#0F172A]/60 rounded-2xl px-4 py-3 border border-white/5 hover:border-white/10 hover:shadow-md transition-all duration-200">
                                             <div>
-                                                <div className="text-xs font-black text-white">{o.order_number}</div>
-                                                <div className="text-[9px] text-gray-600">{o.total_price || o.subtotal} DH</div>
+                                                <div className="text-xs font-black text-white tracking-wider font-mono">{o.order_number}</div>
+                                                <div className="text-[10px] text-gray-500 font-bold mt-0.5">{o.total_price || o.subtotal} DH</div>
                                             </div>
-                                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wide ${sc.class}`}>{sc.label}</span>
+                                            <span className={`text-[9px] font-black px-2.5 py-1 rounded-full border uppercase tracking-wider ${sc.class}`}>{sc.label}</span>
                                         </div>
                                     );
                                 })}
@@ -685,36 +725,36 @@ export default function AdminDashboardPage() {
                         </div>
 
                         {/* Hotel */}
-                        <div className="bg-[#1E293B]/80 border border-white/8 rounded-2xl p-5">
-                            <div className="flex items-center justify-between mb-4">
+                        <div className="bg-[#111827]/40 border border-white/5 rounded-3xl p-6 backdrop-blur-2xl shadow-xl">
+                            <div className="flex items-center justify-between mb-5">
                                 <div className="flex items-center gap-2">
-                                    <Bed className="w-3.5 h-3.5 text-amber-400" />
-                                    <h3 className="text-xs font-black text-white uppercase tracking-wide">Hôtel</h3>
+                                    <span className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.6)]" />
+                                    <h3 className="text-xs font-black text-white uppercase tracking-wider">Hôtel L'Escale</h3>
                                 </div>
-                                <button onClick={() => router.push("/admin/hotel")} className="text-[10px] font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1">
-                                    Gérer <ChevronRight className="w-3 h-3" />
+                                <button onClick={() => router.push("/admin/hotel")} className="text-[10px] font-black uppercase tracking-wider text-amber-400 hover:text-amber-300 flex items-center gap-1">
+                                    Gérer <ChevronRight className="w-3.5 h-3.5" />
                                 </button>
                             </div>
-                            <div className="space-y-2">
+                            <div className="space-y-3">
                                 {hotelRooms.length === 0 ? (
-                                    <div className="text-center py-6 text-[11px] text-gray-600 bg-[#0F172A] rounded-xl border border-white/5">Aucune réservation</div>
+                                    <div className="text-center py-8 text-xs text-gray-500 bg-[#0F172A]/50 rounded-2xl border border-white/5 font-medium">Aucune réservation active</div>
                                 ) : hotelRooms.map(r => {
                                     const hStatusConf: Record<string, { label: string; class: string }> = {
-                                        pending: { label: "Attente", class: "bg-amber-500/15 text-amber-400 border-amber-500/20" },
-                                        reserved: { label: "Attente", class: "bg-amber-500/15 text-amber-400 border-amber-500/20" },
-                                        confirmed: { label: "Confirmée", class: "bg-blue-500/15 text-blue-400 border-blue-500/20" },
-                                        checked_in: { label: "Occupée", class: "bg-green-500/15 text-green-400 border-green-500/20" },
-                                        completed: { label: "Terminée", class: "bg-gray-500/15 text-gray-400 border-gray-500/20" },
-                                        cancelled: { label: "Annulée", class: "bg-red-500/15 text-red-400 border-red-500/20" },
+                                        pending: { label: "Attente", class: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
+                                        reserved: { label: "Attente", class: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
+                                        confirmed: { label: "Confirmée", class: "bg-blue-500/10 text-blue-400 border-blue-500/20" },
+                                        checked_in: { label: "Occupée", class: "bg-green-500/10 text-green-400 border-green-500/20" },
+                                        completed: { label: "Terminée", class: "bg-gray-500/10 text-gray-400 border-gray-500/20" },
+                                        cancelled: { label: "Annulée", class: "bg-red-500/10 text-red-400 border-red-500/20" },
                                     };
                                     const hsc = hStatusConf[r.status] || hStatusConf.pending;
                                     return (
-                                        <div key={r.id} className="flex items-center justify-between bg-[#0F172A] rounded-xl px-3 py-2.5 border border-white/5 hover:border-white/10 transition-all">
+                                        <div key={r.id} className="flex items-center justify-between bg-[#0F172A]/60 rounded-2xl px-4 py-3 border border-white/5 hover:border-white/10 hover:shadow-md transition-all duration-200">
                                             <div>
-                                                <div className="text-xs font-black text-white">Chambre {r.room_number || "?"} <span className="text-[9px] font-normal text-gray-600 uppercase">({r.room_type})</span></div>
-                                                <div className="text-[9px] text-gray-600">{r.customer_phone || "—"}</div>
+                                                <div className="text-xs font-black text-white tracking-wide">Chambre {r.room_number || "?"} <span className="text-[9px] font-bold text-gray-500 uppercase">({r.room_type})</span></div>
+                                                <div className="text-[10px] text-gray-500 font-bold mt-0.5">{r.customer_phone || "—"}</div>
                                             </div>
-                                            <span className={`text-[9px] font-black px-2 py-0.5 rounded-full border uppercase tracking-wide ${hsc.class}`}>
+                                            <span className={`text-[9px] font-black px-2.5 py-1 rounded-full border uppercase tracking-wider ${hsc.class}`}>
                                                 {hsc.label}
                                             </span>
                                         </div>
@@ -725,15 +765,15 @@ export default function AdminDashboardPage() {
                     </div>
 
                     {/* Quick Stats Row */}
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-3 gap-4">
                         {[
-                            { label: "Commandes aujourd'hui ✅", value: stats.completedOrdersToday, color: "text-green-400" },
-                            { label: "Panier moyen 🛒", value: stats.avgOrderValue + " DH", color: "text-amber-400" },
-                            { label: "Total commandes 📦", value: stats.totalOrdersCount, color: "text-blue-400" },
-                        ].map(({ label, value, color }) => (
-                            <div key={label} className="bg-[#1E293B]/60 border border-white/5 rounded-xl p-3 text-center">
-                                <div className={`text-xl font-black ${color}`}>{value}</div>
-                                <div className="text-[9px] text-gray-600 font-bold mt-0.5">{label}</div>
+                            { label: "Commandes aujourd'hui ✅", value: stats.completedOrdersToday, color: "text-green-400", bgGlow: "rgba(34,197,94,0.05)" },
+                            { label: "Panier moyen 🛒", value: stats.avgOrderValue + " DH", color: "text-amber-400", bgGlow: "rgba(245,158,11,0.05)" },
+                            { label: "Total commandes 📦", value: stats.totalOrdersCount, color: "text-blue-400", bgGlow: "rgba(59,130,246,0.05)" },
+                        ].map(({ label, value, color, bgGlow }) => (
+                            <div key={label} className="bg-[#111827]/40 border border-white/5 rounded-2xl p-4 text-center backdrop-blur-2xl hover:border-white/10 hover:shadow-lg transition-all duration-300 relative overflow-hidden group" style={{ background: `linear-gradient(135deg, #111827 0%, ${bgGlow} 100%)` }}>
+                                <div className={`text-xl font-mono font-black ${color} tracking-tight group-hover:scale-105 transition-transform duration-300`}>{value}</div>
+                                <div className="text-[10px] text-gray-400 font-bold mt-1 uppercase tracking-wider">{label}</div>
                             </div>
                         ))}
                     </div>
@@ -747,18 +787,18 @@ export default function AdminDashboardPage() {
                 <div className="space-y-5 animate-in fade-in duration-200">
 
                     {/* Revenue Chart */}
-                    <div className="bg-[#1E293B]/80 border border-white/8 rounded-2xl p-5">
-                        <div className="flex flex-wrap items-center justify-between gap-4 mb-5">
+                    <div className="bg-[#111827]/40 border border-white/5 rounded-3xl p-6 backdrop-blur-2xl shadow-xl">
+                        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
                             <div>
-                                <h2 className="text-sm font-black text-white">Évolution des Encaissements</h2>
-                                <p className="text-[10px] text-gray-500 mt-0.5">
+                                <h2 className="text-xs font-black text-white uppercase tracking-wider">Évolution des Encaissements</h2>
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">
                                     {chartCategory === "total" ? "Activité Globale" : chartCategory === "restaurant" ? "Restaurant" : chartCategory === "hotel" ? "Hôtel" : "Piscine"} — paiements validés par jour
                                 </p>
                             </div>
                             
                             <div className="flex flex-wrap items-center gap-3">
                                 {/* Category Switcher */}
-                                <div className="flex gap-1 bg-[#0F172A] p-1 rounded-xl border border-white/5">
+                                <div className="flex gap-1.5 bg-[#0F172A]/80 p-1.5 rounded-xl border border-white/5">
                                     {[
                                         { id: "total", label: "Global", colorClass: "text-[#3B82F6]" },
                                         { id: "restaurant", label: "Resto", colorClass: "text-[#F97316]" },
@@ -768,7 +808,7 @@ export default function AdminDashboardPage() {
                                         <button
                                             key={cat.id}
                                             onClick={() => setChartCategory(cat.id as any)}
-                                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${
+                                            className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all uppercase tracking-wider ${
                                                 chartCategory === cat.id
                                                     ? "bg-white/10 text-white border border-white/10"
                                                     : "text-gray-500 hover:text-white"
@@ -780,25 +820,25 @@ export default function AdminDashboardPage() {
                                 </div>
 
                                 {/* Range Selector */}
-                                <div className="flex gap-1 bg-[#0F172A] p-1 rounded-xl border border-white/5">
+                                <div className="flex gap-1.5 bg-[#0F172A]/80 p-1.5 rounded-xl border border-white/5">
                                     {([7, 14, 30] as const).map(n => (
                                           <button key={n} onClick={() => setChartRange(n)}
-                                              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartRange === n ? "bg-emerald-500 text-black" : "text-gray-500 hover:text-white"}`}
+                                              className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${chartRange === n ? "bg-emerald-500 text-black shadow-lg shadow-emerald-500/10" : "text-gray-500 hover:text-white"}`}
                                           >{n}j</button>
                                       ))}
                                       <button onClick={() => setChartRange("custom")}
-                                              className={`px-3 py-1.5 rounded-lg text-[10px] font-bold transition-all ${chartRange === "custom" ? "bg-emerald-500 text-black" : "text-gray-500 hover:text-white"}`}
+                                              className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${chartRange === "custom" ? "bg-emerald-500 text-black shadow-lg shadow-emerald-500/10" : "text-gray-500 hover:text-white"}`}
                                       >Période...</button>
                                 </div>
                             </div>
                         </div>
-                                  {chartRange === "custom" && (
-                                      <div className="flex gap-2 items-center justify-end mt-3 mb-2 animate-in fade-in zoom-in-95">
-                                          <input type="date" value={customDate.start} onChange={e => setCustomDate({...customDate, start: e.target.value})} className="bg-[#0F172A] border border-white/10 text-white text-[10px] px-2 py-1.5 rounded-lg" />
-                                          <span className="text-gray-500 text-xs">à</span>
-                                          <input type="date" value={customDate.end} onChange={e => setCustomDate({...customDate, end: e.target.value})} className="bg-[#0F172A] border border-white/10 text-white text-[10px] px-2 py-1.5 rounded-lg" />
-                                      </div>
-                                  )}
+                        {chartRange === "custom" && (
+                            <div className="flex gap-2 items-center justify-end mt-3 mb-4 animate-in fade-in zoom-in-95">
+                                <input type="date" value={customDate.start} onChange={e => setCustomDate({...customDate, start: e.target.value})} className="bg-[#0F172A] border border-white/10 text-white text-[10px] px-3 py-2 rounded-lg outline-none focus:border-amber-500/50" />
+                                <span className="text-gray-500 text-xs font-black uppercase">à</span>
+                                <input type="date" value={customDate.end} onChange={e => setCustomDate({...customDate, end: e.target.value})} className="bg-[#0F172A] border border-white/10 text-white text-[10px] px-3 py-2 rounded-lg outline-none focus:border-amber-500/50" />
+                            </div>
+                        )}
                         <div className="h-52">
                             <LineChart
                                 data={chartData.vals}
@@ -814,15 +854,15 @@ export default function AdminDashboardPage() {
                                 }
                             />
                         </div>
-                        <div className="grid grid-cols-3 gap-3 mt-4 pt-4 border-t border-white/5">
+                        <div className="grid grid-cols-3 gap-4 mt-6 pt-5 border-t border-white/5">
                             {[
                                 { label: "Période", value: fmt(chartData.vals.reduce((a, b) => a + b, 0)) + " DH", color: "text-white" },
                                 { label: "Moy/jour", value: fmt(Math.round(chartData.vals.reduce((a, b) => a + b, 0) / (chartData.vals.length || 1))) + " DH", color: "text-gray-300" },
                                 { label: "Meilleur jour", value: fmt(Math.max(...chartData.vals)) + " DH", color: "text-green-400" },
                             ].map(({ label, value, color }) => (
-                                <div key={label} className="text-center bg-[#0F172A] rounded-xl p-3 border border-white/5">
-                                    <div className={`text-sm font-black ${color}`}>{value}</div>
-                                    <div className="text-[9px] text-gray-600 font-bold mt-0.5">{label}</div>
+                                <div key={label} className="text-center bg-[#0F172A]/50 rounded-2xl p-4 border border-white/5">
+                                    <div className={`text-base font-mono font-black ${color}`}>{value}</div>
+                                    <div className="text-[9px] text-gray-500 font-bold uppercase tracking-wider mt-1">{label}</div>
                                 </div>
                             ))}
                         </div>
@@ -831,49 +871,49 @@ export default function AdminDashboardPage() {
                     {/* Donut + Top items */}
                     <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
                         {/* Donut */}
-                        <div className="lg:col-span-2 bg-[#1E293B]/80 border border-white/8 rounded-2xl p-5">
-                            <h2 className="text-sm font-black text-white mb-4">Parts d'Activité</h2>
+                        <div className="lg:col-span-2 bg-[#111827]/40 border border-white/5 rounded-3xl p-6 backdrop-blur-2xl shadow-xl">
+                            <h2 className="text-xs font-black text-white uppercase tracking-wider mb-5">Parts d'Activité</h2>
                             {donut.length > 0 ? <DonutChart segments={donut} /> : (
-                                <div className="text-center py-8 text-xs text-gray-600">Pas de revenus enregistrés</div>
+                                <div className="text-center py-10 text-xs text-gray-500 bg-[#0F172A]/50 rounded-2xl border border-white/5">Pas de revenus enregistrés</div>
                             )}
                         </div>
 
                         {/* Top Dishes */}
-                        <div className="lg:col-span-3 bg-[#1E293B]/80 border border-white/8 rounded-2xl p-5">
-                            <div className="flex items-center gap-2 mb-4">
+                        <div className="lg:col-span-3 bg-[#111827]/40 border border-white/5 rounded-3xl p-6 backdrop-blur-2xl shadow-xl">
+                            <div className="flex items-center gap-2 mb-5">
                                 <Award className="w-4 h-4 text-amber-400" />
-                                <h2 className="text-sm font-black text-white">Top Plats</h2>
-                                <span className="ml-auto text-[9px] font-bold text-gray-600">{topItems.length} articles</span>
+                                <h2 className="text-xs font-black text-white uppercase tracking-wider">Top Plats</h2>
+                                <span className="ml-auto text-[9px] font-black text-gray-500 uppercase bg-[#0F172A] px-2.5 py-1 rounded-md border border-white/5">{topItems.length} articles</span>
                             </div>
                             {topItems.length === 0 ? (
-                                <div className="text-center py-8 text-xs text-gray-600 flex flex-col items-center gap-2">
+                                <div className="text-center py-10 text-xs text-gray-500 bg-[#0F172A]/50 rounded-2xl border border-white/5 flex flex-col items-center gap-2">
                                     <Utensils className="w-6 h-6 text-gray-700" />
                                     Aucune vente réelle enregistrée
                                 </div>
                             ) : (
-                                <div className="space-y-3">
+                                <div className="space-y-4">
                                     {topItems.slice(0, 5).map((item, i) => {
                                         const medals = ["🥇", "🥈", "🥉", "4️⃣", "5️⃣"];
                                         const max = topItems[0]?.revenue || 1;
                                         const pct = Math.round((item.revenue / max) * 100);
                                         const colors = ["#F59E0B", "#9CA3AF", "#B45309", "#10B981", "#3B82F6"];
                                         return (
-                                            <div key={i} className="flex items-center gap-3">
-                                                <span className="text-base w-6 text-center">{medals[i]}</span>
+                                            <div key={i} className="flex items-center gap-4 bg-[#0F172A]/30 p-2.5 rounded-2xl border border-white/5 hover:border-white/10 transition-all duration-200">
+                                                <span className="text-lg w-6 text-center shrink-0">{medals[i]}</span>
                                                 {item.image && (
-                                                    <div className="w-9 h-9 rounded-lg overflow-hidden shrink-0 bg-[#0F172A] border border-white/5">
-                                                        <Image src={item.image} alt={item.name} width={36} height={36} className="object-cover w-full h-full" onError={(e) => { e.currentTarget.style.opacity = "0"; }} />
+                                                    <div className="w-10 h-10 rounded-xl overflow-hidden shrink-0 bg-[#0F172A] border border-white/5">
+                                                        <Image src={item.image} alt={item.name} width={40} height={40} className="object-cover w-full h-full" onError={(e) => { e.currentTarget.style.opacity = "0"; }} />
                                                     </div>
                                                 )}
                                                 <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center justify-between mb-1 gap-2">
-                                                        <span className="text-[11px] font-bold text-white truncate">{item.name}</span>
-                                                        <span className="text-[10px] font-black text-green-400 shrink-0">{fmt(item.revenue)} DH</span>
+                                                    <div className="flex items-center justify-between mb-1.5 gap-2">
+                                                        <span className="text-xs font-black text-white truncate">{item.name}</span>
+                                                        <span className="text-xs font-mono font-black text-green-400 shrink-0">{fmt(item.revenue)} DH</span>
                                                     </div>
                                                     <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                                                        <div className="h-full rounded-full" style={{ width: `${pct}%`, background: colors[i] || "#10B981", transition: "width 1s" }} />
+                                                        <div className="h-full rounded-full transition-all duration-1000 origin-left" style={{ width: `${pct}%`, background: colors[i] || "#10B981" }} />
                                                     </div>
-                                                    <div className="flex justify-between text-[9px] text-gray-600 font-bold mt-0.5">
+                                                    <div className="flex justify-between text-[9px] text-gray-500 font-bold uppercase tracking-wider mt-1">
                                                         <span>×{item.qty} vendus</span>
                                                         <span>{item.avgPrice} DH moy.</span>
                                                     </div>
@@ -888,12 +928,12 @@ export default function AdminDashboardPage() {
 
                     {/* Dish Cards Grid */}
                     {topItems.length > 0 && (
-                        <div className="bg-[#1E293B]/80 border border-white/8 rounded-2xl p-5">
-                            <h2 className="text-sm font-black text-white mb-4 flex items-center gap-2">
+                        <div className="bg-[#111827]/40 border border-white/5 rounded-3xl p-6 backdrop-blur-2xl shadow-xl">
+                            <h2 className="text-xs font-black text-white mb-5 flex items-center gap-2 uppercase tracking-wider">
                                 <Star className="w-4 h-4 text-amber-400" />
                                 Fiches Détaillées des Plats
                             </h2>
-                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3">
+                            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                                 {topItems.map((item, i) => {
                                     const catColors: Record<string, string> = {
                                         FastFood: "#F97316", Plats: "#F59E0B", Boissons: "#06B6D4",
@@ -901,7 +941,7 @@ export default function AdminDashboardPage() {
                                     };
                                     const cc = catColors[item.category] || "#6B7280";
                                     return (
-                                        <div key={i} className="bg-[#0F172A] border border-white/5 rounded-xl overflow-hidden hover:border-white/15 transition-all group">
+                                        <div key={i} className="bg-[#0F172A]/80 border border-white/5 rounded-2xl overflow-hidden hover:border-white/10 hover:shadow-lg transition-all duration-300 group">
                                             <div className="relative h-28 overflow-hidden bg-[#162032]">
                                                 {item.image ? (
                                                     <Image src={item.image} alt={item.name} fill className="object-cover group-hover:scale-110 transition-transform duration-500" onError={(e) => { e.currentTarget.style.opacity = "0"; }} />
@@ -910,7 +950,7 @@ export default function AdminDashboardPage() {
                                                 )}
                                                 <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] to-transparent" />
                                                 {item.category && (
-                                                    <div className="absolute top-2 right-2 text-[8px] font-black px-1.5 py-0.5 rounded-full" style={{ background: cc + "30", color: cc, border: `1px solid ${cc}40` }}>
+                                                    <div className="absolute top-2 right-2 text-[8px] font-black px-1.5 py-0.5 rounded-full" style={{ background: cc + "20", color: cc, border: `1px solid ${cc}40` }}>
                                                         {item.category}
                                                     </div>
                                                 )}
@@ -918,16 +958,16 @@ export default function AdminDashboardPage() {
                                                     <div className="absolute bottom-2 left-2 text-[8px] font-black px-1.5 py-0.5 rounded-full bg-red-600 text-white">{item.badge}</div>
                                                 )}
                                             </div>
-                                            <div className="p-2.5">
-                                                <h4 className="text-[11px] font-black text-white leading-tight mb-2 line-clamp-2">{item.name}</h4>
-                                                <div className="grid grid-cols-2 gap-1">
-                                                    <div className="bg-white/3 rounded-lg p-1.5 text-center">
-                                                        <div className="text-[11px] font-black text-white">×{item.qty}</div>
-                                                        <div className="text-[7px] text-gray-600 uppercase">vendus</div>
+                                            <div className="p-3">
+                                                <h4 className="text-[11px] font-black text-white leading-tight mb-2 line-clamp-2 h-7">{item.name}</h4>
+                                                <div className="grid grid-cols-2 gap-1.5">
+                                                    <div className="bg-white/5 rounded-xl p-1.5 text-center border border-white/5">
+                                                        <div className="text-[10px] font-black text-white">×{item.qty}</div>
+                                                        <div className="text-[7px] text-gray-500 font-bold uppercase tracking-wider">vendus</div>
                                                     </div>
-                                                    <div className="bg-white/3 rounded-lg p-1.5 text-center">
-                                                        <div className="text-[11px] font-black text-green-400">{item.revenue}</div>
-                                                        <div className="text-[7px] text-gray-600 uppercase">DH</div>
+                                                    <div className="bg-white/5 rounded-xl p-1.5 text-center border border-white/5">
+                                                        <div className="text-[10px] font-mono font-black text-green-400">{item.revenue}</div>
+                                                        <div className="text-[7px] text-gray-500 font-bold uppercase tracking-wider">DH</div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -947,39 +987,41 @@ export default function AdminDashboardPage() {
                 <div className="space-y-5 animate-in fade-in duration-200">
 
                     {/* AI Hero */}
-                    <div className="relative bg-gradient-to-br from-[#1E293B] to-[#0F1829] border border-purple-500/20 rounded-2xl p-6 overflow-hidden">
-                        <div className="absolute top-0 right-0 w-64 h-64 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
-                        <div className="absolute bottom-0 left-0 w-32 h-32 bg-blue-600/10 rounded-full blur-2xl pointer-events-none" />
+                    <div className="relative bg-[#111827]/40 backdrop-blur-2xl border border-purple-500/20 rounded-3xl p-6 overflow-hidden shadow-2xl">
+                        <div className="absolute -top-24 -right-24 w-80 h-80 bg-purple-600/10 rounded-full blur-[100px] pointer-events-none" />
+                        <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-blue-600/10 rounded-full blur-[80px] pointer-events-none" />
                         <div className="relative z-10">
-                            <div className="flex items-center gap-3 mb-3">
-                                <div className="p-3 bg-gradient-to-br from-purple-600 to-blue-600 rounded-xl shadow-lg shadow-purple-500/20">
-                                    <Bot className="w-6 h-6 text-white" />
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-5">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-3 bg-gradient-to-br from-purple-600 via-indigo-600 to-blue-600 rounded-2xl shadow-lg shadow-purple-500/25 transition-transform duration-300 hover:scale-105">
+                                        <Bot className="w-6 h-6 text-white" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-base font-black text-white uppercase tracking-wider">Gemini AI Business Advisor</h2>
+                                        <p className="text-[10px] text-purple-300 font-bold uppercase tracking-widest mt-0.5">Propulsé par Google Gemini 2.0 Flash</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h2 className="text-lg font-black text-white">Gemini AI Business Advisor</h2>
-                                    <p className="text-[10px] text-purple-300 font-medium">Propulsé par Google Gemini 2.0 Flash</p>
-                                </div>
-                                <div className="ml-auto flex items-center gap-1.5 text-[10px] font-bold text-green-400 bg-green-500/10 border border-green-500/20 px-2.5 py-1 rounded-full">
-                                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                                <div className="inline-flex items-center gap-1.5 text-[9px] font-black uppercase tracking-wider text-green-400 bg-green-500/10 border border-green-500/20 px-3 py-1.5 rounded-full shadow-inner w-fit">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse shadow-[0_0_8px_rgba(74,222,128,0.6)]" />
                                     Connecté
                                 </div>
                             </div>
-                            <p className="text-sm text-gray-400 mb-5">
-                                L'IA analyse vos données en temps réel ({fmt(stats.totalRevenue)} DH de CA, {stats.totalOrdersCount} commandes)
-                                et génère des conseils business personnalisés et actionnables.
+                            <p className="text-sm text-gray-300 leading-relaxed mb-6 font-medium">
+                                L'intelligence artificielle analyse vos ventes en temps réel ({fmt(stats.totalRevenue)} DH de CA, {stats.totalOrdersCount} commandes) 
+                                et génère des conseils business personnalisés et actionnables pour optimiser votre rentabilité.
                             </p>
 
                             {/* Context summary */}
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-5">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
                                 {[
-                                    { label: "CA Total", value: fmt(stats.totalRevenue) + " DH" },
-                                    { label: "Commandes", value: String(stats.totalOrdersCount) },
-                                    { label: "En Attente", value: String(stats.pendingOrdersCount) },
-                                    { label: "Top Plat", value: topItems[0]?.name?.split(" ").slice(0, 2).join(" ") || "—" },
-                                ].map(({ label, value }) => (
-                                    <div key={label} className="bg-white/5 border border-white/8 rounded-xl p-2.5 text-center">
-                                        <div className="text-xs font-black text-white truncate">{value}</div>
-                                        <div className="text-[9px] text-gray-500 font-bold">{label}</div>
+                                    { label: "CA Total", value: fmt(stats.totalRevenue) + " DH", color: "text-white" },
+                                    { label: "Commandes", value: String(stats.totalOrdersCount), color: "text-blue-400" },
+                                    { label: "En Attente", value: String(stats.pendingOrdersCount), color: "text-amber-400" },
+                                    { label: "Top Plat", value: topItems[0]?.name?.split(" ").slice(0, 2).join(" ") || "—", color: "text-purple-400" },
+                                ].map(({ label, value, color }) => (
+                                    <div key={label} className="bg-[#0F172A]/70 border border-white/5 rounded-2xl p-3.5 text-center">
+                                        <div className={`text-sm font-mono font-black ${color} truncate`}>{value}</div>
+                                        <div className="text-[9px] text-gray-500 font-bold uppercase tracking-wider mt-1">{label}</div>
                                     </div>
                                 ))}
                             </div>
@@ -987,14 +1029,14 @@ export default function AdminDashboardPage() {
                             <button
                                 onClick={fetchAI}
                                 disabled={aiLoading}
-                                className="w-full py-4 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-black text-sm rounded-xl shadow-lg shadow-purple-500/20 transition-all flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+                                className="w-full py-4 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg shadow-purple-500/20 hover:shadow-purple-500/30 transition-all duration-300 flex items-center justify-center gap-2.5 disabled:opacity-60 disabled:cursor-not-allowed active:scale-[0.99]"
                             >
                                 {aiLoading ? (
                                     <><RefreshCw className="w-5 h-5 animate-spin" /> Analyse en cours par Gemini...</>
                                 ) : aiCalled ? (
                                     <><RotateCcw className="w-5 h-5" /> Régénérer les conseils</>
                                 ) : (
-                                    <><Sparkles className="w-5 h-5" /> Analyser et générer des conseils IA</>
+                                    <><Sparkles className="w-5 h-5 animate-pulse" /> Analyser et générer des conseils IA</>
                                 )}
                             </button>
                         </div>
@@ -1048,18 +1090,21 @@ export default function AdminDashboardPage() {
             ════════════════════════════════════════════════════════════════ */}
             {activeTab === "pins" && (
                 <div className="animate-in fade-in duration-200 max-w-lg mx-auto">
-                    <div className="bg-[#1E293B]/80 border border-white/8 rounded-2xl p-6 space-y-5">
+                    <div className="bg-[#111827]/40 border border-white/5 rounded-3xl p-6 backdrop-blur-2xl shadow-xl space-y-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <h2 className="text-sm font-black text-white flex items-center gap-2"><Lock className="w-4 h-4 text-amber-400" /> Mots de passe d'Accès</h2>
-                                <p className="text-[10px] text-gray-500 mt-0.5">Alphanumérique — modifiez et sauvegardez</p>
+                                <h2 className="text-xs font-black text-white flex items-center gap-2 uppercase tracking-wider">
+                                    <Lock className="w-4 h-4 text-amber-500" /> 
+                                    Mots de passe d'Accès
+                                </h2>
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">Codes PIN d'authentification pour le staff</p>
                             </div>
-                            <button onClick={() => setShowPins(!showPins)} className="p-2 rounded-xl bg-white/5 border border-white/8 text-gray-500 hover:text-white transition-all">
+                            <button onClick={() => setShowPins(!showPins)} className="p-2.5 rounded-xl bg-white/5 border border-white/8 text-gray-400 hover:text-white transition-all active:scale-95">
                                 {showPins ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                             </button>
                         </div>
 
-                        <div className="space-y-3">
+                        <div className="space-y-4">
                             {[
                                 { key: "admin", label: "🔴 Administrateur", placeholder: "7777", color: "focus:border-red-500/50" },
                                 { key: "hotel", label: "🟡 Réception Hôtel", placeholder: "1111", color: "focus:border-amber-500/50" },
@@ -1067,14 +1112,14 @@ export default function AdminDashboardPage() {
                                 { key: "services", label: "🔵 Piscine & Services", placeholder: "3333", color: "focus:border-cyan-500/50" },
                                 { key: "caisse", label: "🟢 Caisse (Scanner)", placeholder: "4444", color: "focus:border-green-500/50" },
                             ].map(({ key, label, placeholder, color }) => (
-                                <div key={key} className="space-y-1">
-                                    <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wide">{label}</label>
+                                <div key={key} className="space-y-1.5">
+                                    <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest pl-1">{label}</label>
                                     <input
                                         type={showPins ? "text" : "password"}
                                         maxLength={50}
                                         value={pins[key as keyof typeof pins]}
                                         onChange={e => setPins(p => ({ ...p, [key]: e.target.value.replace(/\s/g, "") }))}
-                                        className={`w-full bg-[#0F172A] border border-white/8 rounded-xl p-3.5 text-white font-mono font-black text-lg outline-none ${color} tracking-widest transition-colors`}
+                                        className={`w-full bg-[#0F172A]/80 border border-white/8 rounded-2xl p-4 text-white font-mono font-black text-lg outline-none ${color} tracking-widest transition-colors shadow-inner`}
                                         placeholder={showPins ? placeholder : "••••"}
                                     />
                                 </div>
@@ -1083,9 +1128,13 @@ export default function AdminDashboardPage() {
 
                         <button
                             onClick={savePins}
-                            className={`w-full py-4 font-black text-sm rounded-xl transition-all flex items-center justify-center gap-2 ${pinSaved ? "bg-green-500 text-white" : "bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:from-amber-400"}`}
+                            className={`w-full py-4 font-black text-xs uppercase tracking-wider rounded-2xl transition-all duration-300 flex items-center justify-center gap-2 active:scale-[0.99] shadow-lg ${
+                                pinSaved 
+                                    ? "bg-green-500 text-white shadow-green-500/10" 
+                                    : "bg-gradient-to-r from-amber-500 to-orange-500 text-black hover:from-amber-400"
+                            }`}
                         >
-                            {pinSaved ? <><CheckCircle className="w-4 h-4" /> Codes sauvegardés !</> : <><Key className="w-4 h-4" /> Sauvegarder les codes</>}
+                            {pinSaved ? <><CheckCircle className="w-5 h-5" /> Codes sauvegardés !</> : <><Key className="w-5 h-5" /> Sauvegarder les codes</>}
                         </button>
                     </div>
                 </div>
