@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { Bell, X, CheckCheck, Clock, AlertTriangle, Sparkles, Car, RotateCcw, ChevronRight, Check } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -163,6 +164,11 @@ export function NotificationCenter({ className = "" }: { className?: string }) {
         return true;
     });
 
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
     return (
         <div className={`relative ${className}`}>
             {/* Bell Trigger Button */}
@@ -180,266 +186,273 @@ export function NotificationCenter({ className = "" }: { className?: string }) {
                 )}
             </button>
 
-            {/* Slide-over Drawer / Center Modal */}
-            {isOpen && (
-                <div className="fixed inset-0 z-[100] flex justify-end bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="w-full max-w-md bg-[#0F172A] border-l border-white/10 h-full flex flex-col shadow-2xl animate-in slide-in-from-right duration-300">
+            {mounted && typeof document !== 'undefined' && createPortal(
+                <>
+                    {/* Slide-over Drawer / Center Modal */}
+                    {isOpen && (
+                        <div className="fixed inset-0 z-[100] flex justify-end bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+                            <div className="w-full max-w-md bg-[#0F172A] border-l border-white/10 h-full flex flex-col shadow-2xl animate-in slide-in-from-right duration-300">
 
-                        {/* Drawer Header */}
-                        <div className="p-5 border-b border-white/10 flex items-center justify-between bg-[#111827]">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-                                    <Bell className="w-5 h-5 text-amber-400" />
-                                </div>
-                                <div>
-                                    <h3 className="text-sm font-black text-white uppercase tracking-wider">Notifications & Alertes</h3>
-                                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Golden Parc Realtime System</p>
-                                </div>
-                            </div>
-                            <button
-                                onClick={() => setIsOpen(false)}
-                                className="p-2 rounded-xl bg-white/5 text-gray-400 hover:text-white transition-colors"
-                            >
-                                <X className="w-5 h-5" />
-                            </button>
-                        </div>
-
-                        {/* Category Tabs & Actions */}
-                        <div className="p-4 border-b border-white/5 bg-[#0F172A] flex items-center justify-between gap-2">
-                            <div className="flex gap-1.5 bg-[#1E293B] p-1 rounded-xl border border-white/5">
-                                {[
-                                    { id: 'all', label: 'Tous' },
-                                    { id: 'alerts', label: 'Alertes' },
-                                    { id: 'promos', label: 'Promos' }
-                                ].map(tab => (
+                                {/* Drawer Header */}
+                                <div className="p-5 border-b border-white/10 flex items-center justify-between bg-[#111827]">
+                                    <div className="flex items-center gap-3">
+                                        <div className="p-2 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+                                            <Bell className="w-5 h-5 text-amber-400" />
+                                        </div>
+                                        <div>
+                                            <h3 className="text-sm font-black text-white uppercase tracking-wider">Notifications & Alertes</h3>
+                                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Golden Parc Realtime System</p>
+                                        </div>
+                                    </div>
                                     <button
-                                        key={tab.id}
-                                        onClick={() => setActiveTab(tab.id as any)}
-                                        className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
-                                            activeTab === tab.id
-                                                ? 'bg-amber-500 text-black shadow-md'
-                                                : 'text-gray-400 hover:text-white'
-                                        }`}
+                                        onClick={() => setIsOpen(false)}
+                                        className="p-2 rounded-xl bg-white/5 text-gray-400 hover:text-white transition-colors"
                                     >
-                                        {tab.label}
+                                        <X className="w-5 h-5" />
                                     </button>
-                                ))}
-                            </div>
-
-                            {unreadCount > 0 && (
-                                <button
-                                    onClick={markAllRead}
-                                    className="text-[10px] font-black text-amber-400 hover:text-amber-300 flex items-center gap-1 uppercase tracking-wider"
-                                >
-                                    <CheckCheck className="w-3.5 h-3.5" /> Tout lire
-                                </button>
-                            )}
-                        </div>
-
-                        {/* Notifications List */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-hide">
-                            {filteredNotifications.length === 0 ? (
-                                <div className="text-center py-16 text-gray-500 flex flex-col items-center gap-3">
-                                    <Sparkles className="w-8 h-8 text-gray-600 animate-pulse" />
-                                    <p className="text-xs font-bold uppercase tracking-wider">Aucune notification disponible</p>
                                 </div>
-                            ) : (
-                                filteredNotifications.map(notif => {
-                                    const isAlertCancel = notif.type === 'cancellation_warning';
-                                    const isAlertDelay = notif.type === 'arrival_check';
 
-                                    return (
-                                        <div
-                                            key={notif.id}
-                                            onClick={() => markAsRead(notif.id)}
-                                            className={`p-4 rounded-2xl border transition-all duration-200 relative group ${
-                                                !notif.is_read
-                                                    ? 'bg-[#1E293B]/90 border-amber-500/30 shadow-lg shadow-amber-500/5'
-                                                    : 'bg-[#111827]/60 border-white/5 text-gray-400'
+                                {/* Category Tabs & Actions */}
+                                <div className="p-4 border-b border-white/5 bg-[#0F172A] flex items-center justify-between gap-2">
+                                    <div className="flex gap-1.5 bg-[#1E293B] p-1 rounded-xl border border-white/5">
+                                        {[
+                                            { id: 'all', label: 'Tous' },
+                                            { id: 'alerts', label: 'Alertes' },
+                                            { id: 'promos', label: 'Promos' }
+                                        ].map(tab => (
+                                            <button
+                                                key={tab.id}
+                                                onClick={() => setActiveTab(tab.id as any)}
+                                                className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                                                    activeTab === tab.id
+                                                        ? 'bg-amber-500 text-black shadow-md'
+                                                        : 'text-gray-400 hover:text-white'
+                                                }`}
+                                            >
+                                                {tab.label}
+                                            </button>
+                                        ))}
+                                    </div>
+
+                                    {unreadCount > 0 && (
+                                        <button
+                                            onClick={markAllRead}
+                                            className="text-[10px] font-black text-amber-400 hover:text-amber-300 flex items-center gap-1 uppercase tracking-wider"
+                                        >
+                                            <CheckCheck className="w-3.5 h-3.5" /> Tout lire
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Notifications List */}
+                                <div className="flex-1 overflow-y-auto p-4 space-y-3 scrollbar-hide">
+                                    {filteredNotifications.length === 0 ? (
+                                        <div className="text-center py-16 text-gray-500 flex flex-col items-center gap-3">
+                                            <Sparkles className="w-8 h-8 text-gray-600 animate-pulse" />
+                                            <p className="text-xs font-bold uppercase tracking-wider">Aucune notification disponible</p>
+                                        </div>
+                                    ) : (
+                                        filteredNotifications.map(notif => {
+                                            const isAlertCancel = notif.type === 'cancellation_warning';
+                                            const isAlertDelay = notif.type === 'arrival_check';
+
+                                            return (
+                                                <div 
+                                                    key={notif.id}
+                                                    onClick={() => !notif.is_read && markAsRead(notif.id)}
+                                                    className={`p-4 rounded-2xl border transition-all cursor-pointer group ${
+                                                        notif.is_read 
+                                                            ? 'bg-white/5 border-white/5 hover:bg-white/10' 
+                                                            : isAlertCancel || isAlertDelay
+                                                                ? 'bg-red-500/10 border-red-500/30 hover:bg-red-500/20 shadow-[0_0_15px_rgba(239,68,68,0.1)]'
+                                                                : 'bg-amber-500/10 border-amber-500/30 hover:bg-amber-500/20'
+                                                    }`}
+                                                >
+                                                    <div className="flex items-start gap-3">
+                                                        <div className={`mt-0.5 p-2 rounded-full ${
+                                                            notif.is_read 
+                                                                ? 'bg-[#1E293B] text-gray-400' 
+                                                                : isAlertCancel || isAlertDelay
+                                                                    ? 'bg-red-500/20 text-red-400'
+                                                                    : 'bg-amber-500/20 text-amber-400'
+                                                        }`}>
+                                                            {isAlertCancel || isAlertDelay ? <AlertTriangle className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <div className="flex items-start justify-between gap-2">
+                                                                <h4 className={`text-sm font-bold ${notif.is_read ? 'text-gray-300' : 'text-white'}`}>
+                                                                    {notif.title}
+                                                                </h4>
+                                                                {!notif.is_read && (
+                                                                    <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse mt-1.5 shrink-0" />
+                                                                )}
+                                                            </div>
+                                                            <p className="text-xs text-gray-400 mt-1 leading-relaxed">{notif.message}</p>
+                                                            <div className="flex items-center gap-1 text-[10px] text-gray-500 mt-3 font-medium uppercase tracking-wider">
+                                                                <Clock className="w-3 h-3" />
+                                                                {new Date(notif.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                                            </div>
+
+                                                            {/* Action Buttons for Delay Alerts */}
+                                                            {isAlertDelay && (
+                                                                <div className="mt-3 pt-3 border-t border-white/5 flex flex-wrap items-center gap-2">
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleConfirmDelay(notif, 15);
+                                                                        }}
+                                                                        className="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20 rounded-xl text-[10px] font-black uppercase tracking-wider"
+                                                                    >
+                                                                        Retard +15 min
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            handleConfirmDelay(notif, 30);
+                                                                        }}
+                                                                        className="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20 rounded-xl text-[10px] font-black uppercase tracking-wider"
+                                                                    >
+                                                                        Retard +30 min
+                                                                    </button>
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setDelayModalNotif(notif);
+                                                                        }}
+                                                                        className="px-2.5 py-1.5 bg-white/5 border border-white/10 text-gray-300 hover:text-white rounded-xl text-[10px] font-bold uppercase tracking-wider"
+                                                                    >
+                                                                        Autre...
+                                                                    </button>
+                                                                </div>
+                                                            )}
+
+                                                            {isAlertCancel && (
+                                                                <div className="mt-3 pt-3 border-t border-white/5 flex items-center gap-2">
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            setCancelModalNotif(notif);
+                                                                        }}
+                                                                        className="w-full py-2 bg-red-600/20 border border-red-500/30 text-red-400 hover:bg-red-600/30 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5"
+                                                                    >
+                                                                        <AlertTriangle className="w-3.5 h-3.5" /> Annuler maintenant (Remboursement)
+                                                                    </button>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })
+                                    )}
+                                </div>
+
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Delay Selection Modal */}
+                    {delayModalNotif && (
+                        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
+                            <div className="bg-[#111827] border border-amber-500/30 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-5">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl">
+                                        <Car className="w-6 h-6 text-amber-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-black text-white uppercase tracking-wider">Signaler un retard</h3>
+                                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Ajustement en temps réel</p>
+                                    </div>
+                                </div>
+
+                                <p className="text-xs text-gray-300 leading-relaxed font-medium">
+                                    Combien de temps de retard prévoyez-vous pour votre commande ? La cuisine adaptera la préparation.
+                                </p>
+
+                                <div className="grid grid-cols-3 gap-2">
+                                    {[15, 30, 45, 60, 90, 120].map(mins => (
+                                        <button
+                                            key={mins}
+                                            onClick={() => setSelectedDelay(mins)}
+                                            className={`py-2.5 rounded-xl text-xs font-black uppercase tracking-wider border transition-all ${
+                                                selectedDelay === mins
+                                                    ? 'bg-amber-500 text-black border-amber-400 shadow-lg'
+                                                    : 'bg-[#1E293B] text-white border-white/5 hover:border-white/20'
                                             }`}
                                         >
-                                            {!notif.is_read && (
-                                                <span className="absolute top-3 right-3 w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                                            )}
+                                            +{mins} min
+                                        </button>
+                                    ))}
+                                </div>
 
-                                            <div className="flex items-start gap-3 mb-2">
-                                                <div className={`p-2 rounded-xl shrink-0 ${
-                                                    isAlertCancel ? 'bg-red-500/10 text-red-400 border border-red-500/20' :
-                                                    isAlertDelay ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20' :
-                                                    'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                                                }`}>
-                                                    {isAlertCancel ? <AlertTriangle className="w-4 h-4" /> :
-                                                     isAlertDelay ? <Car className="w-4 h-4" /> :
-                                                     <Sparkles className="w-4 h-4" />}
-                                                </div>
-                                                <div className="flex-1 min-w-0 pr-4">
-                                                    <h4 className="text-xs font-black text-white leading-snug truncate">{notif.title}</h4>
-                                                    <span className="text-[9px] text-gray-500 font-bold block mt-0.5">
-                                                        {new Date(notif.created_at).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
-                                                    </span>
-                                                </div>
-                                            </div>
-
-                                            <p className="text-[11px] text-gray-300 leading-relaxed font-medium mb-3 pl-1">
-                                                {notif.message}
-                                            </p>
-
-                                            {/* Interactive Action Triggers */}
-                                            {isAlertDelay && (
-                                                <div className="mt-3 pt-3 border-t border-white/5 flex flex-wrap items-center gap-2">
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleConfirmDelay(notif, 0);
-                                                        }}
-                                                        className="px-3 py-1.5 bg-green-500/10 border border-green-500/20 text-green-400 hover:bg-green-500/20 rounded-xl text-[10px] font-black uppercase tracking-wider"
-                                                    >
-                                                        À l'heure (~30m)
-                                                    </button>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleConfirmDelay(notif, 30);
-                                                        }}
-                                                        className="px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 hover:bg-amber-500/20 rounded-xl text-[10px] font-black uppercase tracking-wider"
-                                                    >
-                                                        Retard +30 min
-                                                    </button>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setDelayModalNotif(notif);
-                                                        }}
-                                                        className="px-2.5 py-1.5 bg-white/5 border border-white/10 text-gray-300 hover:text-white rounded-xl text-[10px] font-bold uppercase tracking-wider"
-                                                    >
-                                                        Autre...
-                                                    </button>
-                                                </div>
-                                            )}
-
-                                            {isAlertCancel && (
-                                                <div className="mt-3 pt-3 border-t border-white/5 flex items-center gap-2">
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setCancelModalNotif(notif);
-                                                        }}
-                                                        className="w-full py-2 bg-red-600/20 border border-red-500/30 text-red-400 hover:bg-red-600/30 rounded-xl text-[10px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5"
-                                                    >
-                                                        <AlertTriangle className="w-3.5 h-3.5" /> Annuler maintenant (Remboursement)
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })
-                            )}
-                        </div>
-
-                    </div>
-                </div>
-            )}
-
-            {/* Delay Selection Modal */}
-            {delayModalNotif && (
-                <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
-                    <div className="bg-[#111827] border border-amber-500/30 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-5">
-                        <div className="flex items-center gap-3">
-                            <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl">
-                                <Car className="w-6 h-6 text-amber-400" />
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-black text-white uppercase tracking-wider">Signaler un retard</h3>
-                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Ajustement en temps réel</p>
+                                {delaySuccessMsg ? (
+                                    <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-xs text-green-400 font-bold text-center">
+                                        {delaySuccessMsg}
+                                    </div>
+                                ) : (
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => setDelayModalNotif(null)}
+                                            className="flex-1 py-3 bg-white/5 border border-white/10 text-gray-400 font-bold text-xs rounded-xl hover:text-white"
+                                        >
+                                            Fermer
+                                        </button>
+                                        <button
+                                            onClick={() => handleConfirmDelay(delayModalNotif, selectedDelay)}
+                                            disabled={isUpdatingDelay}
+                                            className="flex-1 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-black font-black text-xs uppercase tracking-wider rounded-xl shadow-lg hover:from-amber-400 disabled:opacity-50"
+                                        >
+                                            {isUpdatingDelay ? 'Enregistrement...' : 'Confirmer le retard'}
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
+                    )}
 
-                        <p className="text-xs text-gray-300 leading-relaxed font-medium">
-                            Combien de temps de retard prévoyez-vous pour votre commande ? La cuisine adaptera la préparation.
-                        </p>
+                    {/* Cancellation Confirmation Modal */}
+                    {cancelModalNotif && (
+                        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
+                            <div className="bg-[#111827] border border-red-500/30 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-5">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-2xl">
+                                        <AlertTriangle className="w-6 h-6 text-red-400" />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-black text-white uppercase tracking-wider">Confirmer l'annulation</h3>
+                                        <p className="text-[10px] text-red-400 font-bold uppercase tracking-widest mt-0.5">Dernières 5 minutes du délai</p>
+                                    </div>
+                                </div>
 
-                        <div className="grid grid-cols-3 gap-2">
-                            {[15, 30, 45, 60, 90, 120].map(mins => (
-                                <button
-                                    key={mins}
-                                    onClick={() => setSelectedDelay(mins)}
-                                    className={`py-2.5 rounded-xl text-xs font-black uppercase tracking-wider border transition-all ${
-                                        selectedDelay === mins
-                                            ? 'bg-amber-500 text-black border-amber-400 shadow-lg'
-                                            : 'bg-[#1E293B] text-white border-white/5 hover:border-white/20'
-                                    }`}
-                                >
-                                    +{mins} min
-                                </button>
-                            ))}
-                        </div>
+                                <p className="text-xs text-gray-300 leading-relaxed font-medium">
+                                    Êtes-vous sûr de vouloir annuler votre réservation ? Votre paiement sera recrédité automatiquement selon nos conditions.
+                                </p>
 
-                        {delaySuccessMsg ? (
-                            <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-xs text-green-400 font-bold text-center">
-                                {delaySuccessMsg}
-                            </div>
-                        ) : (
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => setDelayModalNotif(null)}
-                                    className="flex-1 py-3 bg-white/5 border border-white/10 text-gray-400 font-bold text-xs rounded-xl hover:text-white"
-                                >
-                                    Fermer
-                                </button>
-                                <button
-                                    onClick={() => handleConfirmDelay(delayModalNotif, selectedDelay)}
-                                    disabled={isUpdatingDelay}
-                                    className="flex-1 py-3 bg-gradient-to-r from-amber-500 to-orange-500 text-black font-black text-xs uppercase tracking-wider rounded-xl shadow-lg hover:from-amber-400 disabled:opacity-50"
-                                >
-                                    {isUpdatingDelay ? 'Enregistrement...' : 'Confirmer le retard'}
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            )}
-
-            {/* Cancellation Confirmation Modal */}
-            {cancelModalNotif && (
-                <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md animate-in fade-in duration-200">
-                    <div className="bg-[#111827] border border-red-500/30 rounded-3xl p-6 max-w-sm w-full shadow-2xl space-y-5">
-                        <div className="flex items-center gap-3">
-                            <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-2xl">
-                                <AlertTriangle className="w-6 h-6 text-red-400" />
-                            </div>
-                            <div>
-                                <h3 className="text-sm font-black text-white uppercase tracking-wider">Confirmer l'annulation</h3>
-                                <p className="text-[10px] text-red-400 font-bold uppercase tracking-widest mt-0.5">Dernières 5 minutes du délai</p>
+                                {cancelMsg ? (
+                                    <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-xs text-green-400 font-bold text-center">
+                                        {cancelMsg}
+                                    </div>
+                                ) : (
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={() => setCancelModalNotif(null)}
+                                            className="flex-1 py-3 bg-white/5 border border-white/10 text-gray-400 font-bold text-xs rounded-xl hover:text-white"
+                                        >
+                                            Conserver
+                                        </button>
+                                        <button
+                                            onClick={() => handleConfirmCancellation(cancelModalNotif)}
+                                            disabled={isCancelling}
+                                            className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg disabled:opacity-50"
+                                        >
+                                            {isCancelling ? 'Traitement...' : 'Oui, Annuler'}
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
-
-                        <p className="text-xs text-gray-300 leading-relaxed font-medium">
-                            Êtes-vous sûr de vouloir annuler votre réservation ? Votre paiement sera recrédité automatiquement selon nos conditions.
-                        </p>
-
-                        {cancelMsg ? (
-                            <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-xs text-green-400 font-bold text-center">
-                                {cancelMsg}
-                            </div>
-                        ) : (
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => setCancelModalNotif(null)}
-                                    className="flex-1 py-3 bg-white/5 border border-white/10 text-gray-400 font-bold text-xs rounded-xl hover:text-white"
-                                >
-                                    Conserver
-                                </button>
-                                <button
-                                    onClick={() => handleConfirmCancellation(cancelModalNotif)}
-                                    disabled={isCancelling}
-                                    className="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-black text-xs uppercase tracking-wider rounded-xl shadow-lg disabled:opacity-50"
-                                >
-                                    {isCancelling ? 'Traitement...' : 'Oui, Annuler'}
-                                </button>
-                            </div>
-                        )}
-                    </div>
-                </div>
+                    )}
+                </>, document.body
             )}
         </div>
     );
