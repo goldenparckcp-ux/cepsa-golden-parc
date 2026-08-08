@@ -13,6 +13,7 @@ import dynamic from "next/dynamic";
 import BottomTabs from "@/components/BottomTabs";
 import DesktopNav from "@/components/DesktopNav";
 import MobileHeader from "@/components/MobileHeader";
+import { NotificationToastProvider } from "@/components/NotificationToastProvider";
 
 const GoogleTranslate = dynamic(
   () => import("@/components/GoogleTranslate").then((m) => ({ default: m.GoogleTranslate })),
@@ -33,12 +34,12 @@ export default function ClientShell() {
   }, [pathname]);
 
   return (
-    <>
+    <NotificationToastProvider>
       <DesktopNav />
       <MobileHeader />
       <FuelPriceWidget />
       <GoogleTranslate />
       <BottomTabs />
-    </>
+    </NotificationToastProvider>
   );
 }

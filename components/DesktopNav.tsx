@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import CepsaLogo from './CepsaLogo';
 import { useTranslation } from '@/lib/state/LanguageContext';
 import LanguageSwitcher from './LanguageSwitcher';
+import { NotificationCenter } from './NotificationCenter';
 
 export default function DesktopNav() {
     const pathname = usePathname();
@@ -65,6 +66,9 @@ export default function DesktopNav() {
                 </nav>
 
                 <div className="flex items-center gap-4">
+                    {/* Notification Bell Center */}
+                    <NotificationCenter />
+
                     {/* Language Switcher */}
                     <div className="flex items-center gap-2">
                         <LanguageSwitcher variant="nav" />

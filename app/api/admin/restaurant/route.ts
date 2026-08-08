@@ -84,6 +84,52 @@ export async function PATCH(request: Request) {
       .eq("id", id);
 
     if (error) throw error;
+
+    // Trigger Type 2 Status Notification for Client
+    if (parsedUpdates.data.status) {
+      try {
+        const { data: order } = await supabase
+          .from("restaurant_orders")
+          .select("*")
+          .eq("id", id)
+          .maybeSingle();
+
+        if (order) {
+          const newStatus = parsedUpdates.data.status;
+          const orderNum = order.order_number || order.id.slice(0, 6);
+          let title = "";
+          let message = "";
+
+          if (newStatus === "preparing") {
+            title = "👩‍🍳 Commande en préparation";
+            message = `La cuisine du Golden Parc a commencé la préparation de votre commande #${orderNum}.`;
+          } else if (newStatus === "ready") {
+            title = "🛎️ Commande prête !";
+            message = `Votre commande #${orderNum} est prête et vous attend !`;
+          } else if (newStatus === "completed") {
+            title = "✅ Commande servie";
+            message = `Merci d'avoir choisi le Golden Parc ! Bon appétit.`;
+          }
+
+          if (title && message) {
+            await supabase.from("notifications").insert({
+              user_id: order.user_id || "global",
+              customer_phone: order.customer_phone,
+              type: "personal",
+              title,
+              message,
+              booking_id: order.id,
+              booking_table: "restaurant_orders",
+              is_read: false,
+              action_type: "none"
+            });
+          }
+        }
+      } catch (notifErr) {
+        console.warn("Status notification trigger error:", notifErr);
+      }
+    }
+
     return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

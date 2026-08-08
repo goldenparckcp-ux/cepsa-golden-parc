@@ -6,6 +6,7 @@ import { useCart } from "@/lib/state/CartContext";
 import { useUI } from "@/lib/state/UIContext";
 
 import { supabase } from "@/lib/supabase";
+import { NotificationCenter } from "./NotificationCenter";
 
 export function Header() {
     const { itemCount } = useCart();
@@ -55,6 +56,8 @@ export function Header() {
                 </div>
 
                 <div className="ml-auto flex items-center gap-2">
+                    <NotificationCenter />
+
                     <button
                         type="button"
                         onClick={toggleLanguage}

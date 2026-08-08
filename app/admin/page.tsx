@@ -5,7 +5,7 @@ import { Calendar, Download,
     TrendingUp, Users, RefreshCw, Lock, Key, Award, AlertTriangle,
     CheckCircle, Clock, Utensils, Bed, Waves, Wrench, Bot, Sparkles,
     BarChart3, Activity, ArrowUpRight, ArrowDownRight, Zap, Star,
-    ChevronRight, Eye, EyeOff, RotateCcw
+    ChevronRight, Eye, EyeOff, RotateCcw, Megaphone, Send, Bell
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -196,7 +196,7 @@ function InsightCard({ insight, delay }: { insight: Insight; delay: number }) {
 export default function AdminDashboardPage() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<"overview" | "analytics" | "ai" | "pins">("overview");
+    const [activeTab, setActiveTab] = useState<"overview" | "analytics" | "promos" | "ai" | "pins">("overview");
     const [chartRange, setChartRange] = useState<7 | 14 | 30 | 180 | 365 | "custom">(7);
     const [customDate, setCustomDate] = useState({ start: new Date(Date.now() - 7 * 86400000).toISOString().split("T")[0], end: new Date().toISOString().split("T")[0] });
     const [timeFilter, setTimeFilter] = useState<"today" | "week" | "month" | "all">("all");
@@ -228,6 +228,45 @@ export default function AdminDashboardPage() {
     const [aiLoading, setAiLoading] = useState(false);
     const [aiError, setAiError] = useState("");
     const [aiCalled, setAiCalled] = useState(false);
+
+    // Promos Broadcast
+    const [promoTitle, setPromoTitle] = useState("");
+    const [promoMessage, setPromoMessage] = useState("");
+    const [targetPhone, setTargetPhone] = useState("");
+    const [promoSending, setPromoSending] = useState(false);
+    const [promoSuccessMsg, setPromoSuccessMsg] = useState("");
+
+    const handleSendPromo = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!promoTitle.trim() || !promoMessage.trim()) return;
+        setPromoSending(true);
+        setPromoSuccessMsg("");
+        try {
+            const res = await fetch("/api/notifications/send-promo", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    title: promoTitle,
+                    message: promoMessage,
+                    targetPhone: targetPhone.trim() || null
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                setPromoSuccessMsg("✅ Notification promotionnelle diffusée en temps réel !");
+                setPromoTitle("");
+                setPromoMessage("");
+                setTargetPhone("");
+                setTimeout(() => setPromoSuccessMsg(""), 5000);
+            } else {
+                alert(data.error || "Erreur lors de la diffusion");
+            }
+        } catch (err: any) {
+            alert("Erreur réseau: " + err.message);
+        } finally {
+            setPromoSending(false);
+        }
+    };
 
     useEffect(() => {
         const stored = localStorage.getItem("staff_session");
@@ -566,6 +605,7 @@ export default function AdminDashboardPage() {
     const tabs = [
         { id: "overview", label: "Vue Générale", icon: BarChart3 },
         { id: "analytics", label: "Analytiques", icon: TrendingUp },
+        { id: "promos", label: "Diffuser Promos", icon: Megaphone },
         { id: "ai", label: "IA Advisor", icon: Bot },
         { id: "pins", label: "Codes PIN", icon: Lock },
     ] as const;
@@ -763,10 +803,17 @@ export default function AdminDashboardPage() {
                                         pending_payment: { label: "Pmt...", class: "bg-purple-500/10 text-purple-400 border-purple-500/20" },
                                     };
                                     const sc = statusConf[o.status] || statusConf.pending;
-                                    return (
+                                     return (
                                         <div key={o.id} className="flex items-center justify-between bg-[#0F172A]/60 rounded-2xl px-4 py-3 border border-white/5 hover:border-white/10 hover:shadow-md transition-all duration-200">
                                             <div>
-                                                <div className="text-xs font-black text-white tracking-wider font-mono">{o.order_number}</div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs font-black text-white tracking-wider font-mono">{o.order_number}</span>
+                                                    {o.delay_minutes > 0 && (
+                                                        <span className="text-[8px] font-black px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                                                            ⚠️ +{o.delay_minutes}m
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <div className="text-[10px] text-gray-500 font-bold mt-0.5">{o.total_price || o.subtotal} DH</div>
                                             </div>
                                             <span className={`text-[9px] font-black px-2.5 py-1 rounded-full border uppercase tracking-wider ${sc.class}`}>{sc.label}</span>
@@ -803,7 +850,14 @@ export default function AdminDashboardPage() {
                                     return (
                                         <div key={r.id} className="flex items-center justify-between bg-[#0F172A]/60 rounded-2xl px-4 py-3 border border-white/5 hover:border-white/10 hover:shadow-md transition-all duration-200">
                                             <div>
-                                                <div className="text-xs font-black text-white tracking-wide">Chambre {r.room_number || "?"} <span className="text-[9px] font-bold text-gray-500 uppercase">({r.room_type})</span></div>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs font-black text-white tracking-wide">Chambre {r.room_number || "?"}</span>
+                                                    {r.delay_minutes > 0 && (
+                                                        <span className="text-[8px] font-black px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">
+                                                            ⚠️ +{r.delay_minutes}m
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <div className="text-[10px] text-gray-500 font-bold mt-0.5">{r.customer_phone || "—"}</div>
                                             </div>
                                             <span className={`text-[9px] font-black px-2.5 py-1 rounded-full border uppercase tracking-wider ${hsc.class}`}>
@@ -1104,6 +1158,80 @@ export default function AdminDashboardPage() {
                             </div>
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* ════════════════════════════════════════════════════════════════
+                TAB: PROMOS BROADCAST
+            ════════════════════════════════════════════════════════════════ */}
+            {activeTab === "promos" && (
+                <div className="animate-in fade-in duration-200 max-w-xl mx-auto space-y-6">
+                    <div className="bg-[#111827]/40 border border-amber-500/20 rounded-3xl p-6 backdrop-blur-2xl shadow-xl space-y-5">
+                        <div className="flex items-center gap-3">
+                            <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl">
+                                <Megaphone className="w-6 h-6 text-amber-400" />
+                            </div>
+                            <div>
+                                <h2 className="text-sm font-black text-white uppercase tracking-wider">Diffuser une Notification Promo</h2>
+                                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">Notification instantanée aux clients (Type 1)</p>
+                            </div>
+                        </div>
+
+                        <form onSubmit={handleSendPromo} className="space-y-4">
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider pl-1">Titre de la notification</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={promoTitle}
+                                    onChange={e => setPromoTitle(e.target.value)}
+                                    placeholder="ex: 🎉 Remise 10% sur les Menus Grillades"
+                                    className="w-full bg-[#0F172A] border border-white/10 rounded-2xl p-4 text-white text-xs font-bold outline-none focus:border-amber-500/50"
+                                />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider pl-1">Message promotionnel</label>
+                                <textarea
+                                    required
+                                    rows={3}
+                                    value={promoMessage}
+                                    onChange={e => setPromoMessage(e.target.value)}
+                                    placeholder="ex: Profitez ce weekend d'une réduction exclusive sur l'ensemble de notre menu au Golden Parc !"
+                                    className="w-full bg-[#0F172A] border border-white/10 rounded-2xl p-4 text-white text-xs font-medium outline-none focus:border-amber-500/50 resize-none"
+                                />
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider pl-1">Destinataire (Optionnel)</label>
+                                <input
+                                    type="text"
+                                    value={targetPhone}
+                                    onChange={e => setTargetPhone(e.target.value)}
+                                    placeholder="Laissez vide pour TOUS les clients (Broadcast) ou entrez N° Tél"
+                                    className="w-full bg-[#0F172A] border border-white/10 rounded-2xl p-4 text-white text-xs font-bold outline-none focus:border-amber-500/50"
+                                />
+                            </div>
+
+                            {promoSuccessMsg && (
+                                <div className="p-3 bg-green-500/10 border border-green-500/20 rounded-xl text-xs text-green-400 font-bold text-center">
+                                    {promoSuccessMsg}
+                                </div>
+                            )}
+
+                            <button
+                                type="submit"
+                                disabled={promoSending}
+                                className="w-full py-4 bg-gradient-to-r from-amber-500 to-orange-500 text-black font-black text-xs uppercase tracking-wider rounded-2xl shadow-lg hover:from-amber-400 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                            >
+                                {promoSending ? (
+                                    <><RefreshCw className="w-4 h-4 animate-spin" /> Envoi en cours...</>
+                                ) : (
+                                    <><Send className="w-4 h-4" /> Envoyer la notification</>
+                                )}
+                            </button>
+                        </form>
+                    </div>
                 </div>
             )}
 

@@ -18,7 +18,7 @@ export default function StaffRestaurantOrdersPage() {
     // Audio reference for notification sound
     const audioRef = useRef<HTMLAudioElement | null>(null);
 
-    const getArrivalMinutes = (createdAtStr: string, arrivalTimeStr: string): number => {
+    const getArrivalMinutes = (createdAtStr: string, arrivalTimeStr: string, delayMins: number = 0): number => {
         const arrivalTime = (arrivalTimeStr || "30 min").toLowerCase().trim();
         const date = new Date(createdAtStr);
         
@@ -42,6 +42,11 @@ export default function StaffRestaurantOrdersPage() {
             date.setMinutes(date.getMinutes() + 30);
         }
         
+        // Add client reported delay
+        if (delayMins > 0) {
+            date.setMinutes(date.getMinutes() + delayMins);
+        }
+
         const diffMs = date.getTime() - Date.now();
         return Math.floor(diffMs / 60000);
     };
@@ -447,7 +452,7 @@ export default function StaffRestaurantOrdersPage() {
                             let routeTimeBadge = null;
 
                             if (isEnRoute && ["pending", "confirmed", "preparing"].includes(order.status)) {
-                                const remainingMins = getArrivalMinutes(order.created_at, meta.arrival_time);
+                                const remainingMins = getArrivalMinutes(order.created_at, meta.arrival_time, Number(order.delay_minutes) || 0);
                                 if (remainingMins < 30) {
                                     cardColorClass = "border-red-500 shadow-red-500/10";
                                     routeTimeBadge = (
@@ -473,6 +478,12 @@ export default function StaffRestaurantOrdersPage() {
                             } else if (order.status === "pending" || order.status === "confirmed") {
                                 cardColorClass = "border-amber-500/40 shadow-amber-500/5";
                             }
+
+                            const clientDelayBadge = order.delay_minutes && Number(order.delay_minutes) > 0 ? (
+                                <span className="px-2 py-0.5 rounded-full text-[9px] uppercase font-black tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30 animate-pulse">
+                                    ⚠️ Retard Client +{order.delay_minutes}m
+                                </span>
+                            ) : null;
 
                             const totalVal = Number(order.total_price) || Number(order.subtotal) || 0;
                             const isPaidFull = order.deposit_paid && (Number(order.deposit_amount) >= totalVal);
@@ -504,6 +515,7 @@ export default function StaffRestaurantOrdersPage() {
                                                 <div className="flex flex-wrap items-center gap-2 mt-1">
                                                     <span className="text-lg font-black text-white">{order.order_number}</span>
                                                     {routeTimeBadge}
+                                                    {clientDelayBadge}
                                                     {paymentBadge}
                                                 </div>
                                             </div>

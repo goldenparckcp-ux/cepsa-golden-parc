@@ -130,6 +130,12 @@ const TYPE_META: Record<LocationType, { label: string; icon: React.ElementType; 
   hotel:      { label: "Hôtel",      icon: BedDouble, color: "text-purple-400", bg: "bg-purple-500/10 border-purple-500/20" },
 };
 
+const DEFAULT_CTA_MESSAGES: Record<LocationType, string> = {
+  restaurant: "🍽️ Menu qui vous sert • Scannez pour commander",
+  pool: "🏊 Espace Piscine • Scannez pour commander",
+  hotel: "🛎️ Service Chambre & Wi-Fi • Scannez ici",
+};
+
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function QRGeneratorPage() {
   const [items, setItems]           = useState<QRItem[]>([]);
@@ -505,18 +511,52 @@ export default function QRGeneratorPage() {
 
       {/* Print */}
       <div ref={printRef} className="hidden print:block w-full bg-white text-black min-h-screen">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-6 p-4">
-          {items.filter(i => i.dataUrl).map(item => (
-            <div key={item.id} className="flex flex-col items-center justify-center border-2 border-black rounded-3xl p-6 gap-2 break-inside-avoid shadow-sm">
-              <div className="w-full aspect-square max-w-[200px] mb-2">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={item.dataUrl!} alt={item.label} className="w-full h-full object-contain mix-blend-multiply" />
+        <div className="grid grid-cols-2 gap-8 p-8">
+          {items.filter(i => i.dataUrl).map(item => {
+            const message = customPrintMessage.trim() || DEFAULT_CTA_MESSAGES[item.type] || "📱 Scannez-moi";
+            return (
+              <div 
+                key={item.id} 
+                className="flex flex-col items-center justify-between border-[3px] border-black rounded-[2.5rem] p-8 gap-4 break-inside-avoid shadow-sm min-h-[420px] bg-white relative overflow-hidden"
+              >
+                {/* Top brand header */}
+                <div className="w-full text-center border-b border-gray-200 pb-3 flex flex-col items-center">
+                  <span className="text-[10px] font-black tracking-[0.25em] text-gray-500 uppercase">
+                    ★ Golden Park Station ★
+                  </span>
+                  <span className="text-[8px] font-bold tracking-[0.1em] text-gray-400 uppercase mt-0.5">
+                    Complexe Touristique Premium
+                  </span>
+                </div>
+
+                {/* QR Code Canvas Render */}
+                <div className="w-full aspect-square max-w-[220px] p-2 bg-white border border-gray-100 rounded-2xl shadow-sm flex items-center justify-center">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={item.dataUrl!} alt={item.label} className="w-full h-full object-contain mix-blend-multiply" />
+                </div>
+
+                {/* Custom CTA Callout */}
+                <div className="text-center space-y-1">
+                  <div className="inline-block bg-black text-white font-black text-[10px] px-3 py-1 rounded-full uppercase tracking-wider">
+                    📱 Scan Me
+                  </div>
+                  <p className="text-xs font-bold text-gray-700 uppercase tracking-wide pt-1 px-2">
+                    {message}
+                  </p>
+                </div>
+
+                {/* Bottom Room/Table label and unique ID */}
+                <div className="w-full text-center border-t border-gray-200 pt-3 mt-1">
+                  <p className="font-black text-3xl text-black uppercase tracking-tight leading-none">
+                    {item.label}
+                  </p>
+                  <p className="text-[9px] text-gray-400 font-mono mt-2 uppercase tracking-widest">
+                    ID: {item.token}
+                  </p>
+                </div>
               </div>
-              <p className="font-black text-2xl text-center text-black uppercase tracking-tight leading-none">{item.label}</p>
-              <p className="text-sm font-bold text-gray-600 text-center uppercase tracking-widest mt-1">{TYPE_META[item.type].label} · Golden Park</p>
-              <p className="text-[10px] text-gray-400 font-mono mt-2 uppercase">ID: {item.token}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
