@@ -6,6 +6,29 @@ import { Phone, MapPin, AlertTriangle } from 'lucide-react';
 export default function SOSButton() {
     const [isOpen, setIsOpen] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [adminPhone, setAdminPhone] = useState("212600000000"); // default
+
+    React.useEffect(() => {
+        const fetchContact = async () => {
+            try {
+                const { supabase } = await import('@/lib/supabase');
+                const { data } = await supabase
+                    .from("home_promos")
+                    .select("link_path")
+                    .eq("sort_order", -999)
+                    .single();
+                if (data && data.link_path) {
+                    // Clean phone number (remove spaces, replace leading 0 with 212)
+                    let cleanPhone = data.link_path.replace(/\s+/g, "");
+                    if (cleanPhone.startsWith('0')) {
+                        cleanPhone = '212' + cleanPhone.slice(1);
+                    }
+                    setAdminPhone(cleanPhone);
+                }
+            } catch (err) {}
+        };
+        fetchContact();
+    }, []);
 
     const handleSOS = () => {
         setLoading(true);
@@ -24,14 +47,12 @@ export default function SOSButton() {
                 // WhatsApp Message
                 const message = `🚨 *SOS DÉPANNAGE URGENT* 🚨%0A%0AJe suis en panne près de la station !%0A📍 *Ma Position :* ${mapsLink}%0A%0AMerci d'envoyer la dépanneuse au plus vite.`;
 
-                // Open WhatsApp (Replace with Station Number)
-                window.open(`https://wa.me/212600000000?text=${message}`, '_blank');
+                // Open WhatsApp
+                window.open(`https://wa.me/${adminPhone}?text=${message}`, '_blank');
                 setLoading(false);
                 setIsOpen(false);
             },
             () => {
-                alert("Impossible de récupérer votre position. Veuillez l'activer.");
-                setLoading(false);
             }
         );
     };

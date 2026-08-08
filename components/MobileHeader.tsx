@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import LanguageSwitcher from "./LanguageSwitcher";
+import { NotificationCenter } from "./NotificationCenter";
 
 export default function MobileHeader() {
     const pathname = usePathname();
@@ -14,7 +15,10 @@ export default function MobileHeader() {
             <div className="text-white font-black text-xl tracking-tight">
                 GOLDEN <span className="text-red-600">PARC</span>
             </div>
-            <LanguageSwitcher variant="nav" />
+            <div className="flex items-center gap-3">
+                <NotificationCenter />
+                <LanguageSwitcher variant="nav" />
+            </div>
         </div>
     );
 }

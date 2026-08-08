@@ -17,6 +17,15 @@ export async function POST(req: Request) {
 
         const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
+        const supabaseModule = await import('@supabase/supabase-js');
+        const supabase = supabaseModule.createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+            process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+        );
+        const { data: contactData } = await supabase.from('home_promos').select('link_path').eq('sort_order', -999).single();
+        
+        const adminPhone = contactData?.link_path || "06 61 69 01 79";
+
         const systemInstruction = `Tu es l'assistant virtuel intelligent de "Golden Park Station GPS", un complexe autoroutier premium situé à Outat El Haj, sur la Route Nationale 15, au Maroc. 
 Ton rôle est d'aider les clients et de répondre à toutes leurs questions concernant la station-service Cepsa, le Restaurant Golden Park, l'Hôtel l'Escale, la piscine et les autres services disponibles.
 
@@ -27,7 +36,7 @@ Informations importantes :
 - Piscine : Ouvert de 09:00 à 19:00 en saison estivale. Ambiance Famille (Lundi), Femmes (Jeudi), Mixte (Autres jours). Adultes: 50 DH, Enfants: 30 DH.
 - Entretien Auto & Vidange (Lubrifiants) : Ouvert de 08:00 à 20:00. Vente de lubrifiants Cepsa originaux de haute performance.
 - Lavage Auto : Le service de lavage de voiture a été DÉFINITIVEMENT ARRÊTÉ. Ne le conseille pas. Indique gentiment qu'il n'est plus proposé si on te le demande.
-- Contact : 06 61 69 01 79 (Assistance et support client 24/7).
+- Contact : ${adminPhone} (Assistance et support client 24/7).
 
 Instructions d'interaction et liens d'action (TRÈS IMPORTANT) :
 Tu dois ABSOLUMENT inclure des liens sous format markdown "[Texte du bouton](lien)" dans tes réponses dès que l'utilisateur exprime une intention d'achat, de réservation, ou de consultation. Ces liens seront automatiquement affichés sous forme de boutons interactifs dans l'application pour lui simplifier la vie :

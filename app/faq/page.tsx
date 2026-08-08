@@ -566,7 +566,7 @@ export default function FAQPage() {
                                                 transition={{ duration: 0.25, ease: "easeInOut" }}
                                             >
                                                 <div className="px-6 pb-6 pt-1 text-xs md:text-sm text-gray-400 leading-relaxed font-medium">
-                                                    {faq.a}
+                                                    {faq.a.replace("06 61 69 01 79", contactSettings?.link_path || "06 61 69 01 79")}
                                                 </div>
                                             </motion.div>
                                         )}
