@@ -61,6 +61,18 @@ const nextConfig: NextConfig = {
             { key: 'Strict-Transport-Security', value: 'max-age=63072000; includeSubDomains; preload' },
           ],
         },
+        {
+          source: '/_next/static/(.*)',
+          headers: [
+            { key: 'Cache-Control', value: 'public, max-age=31536000, immutable' },
+          ],
+        },
+        {
+          source: '/(cepsa_icon.png|cepsa_original.svg)',
+          headers: [
+            { key: 'Cache-Control', value: 'public, max-age=86400, stale-while-revalidate=604800' },
+          ],
+        },
       ];
     })();
     // Add CORS for API routes
