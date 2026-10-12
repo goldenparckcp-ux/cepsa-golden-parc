@@ -7,6 +7,7 @@ import { UIProvider } from "@/lib/state/UIContext";
 import { AuthProvider } from "@/lib/state/AuthProvider";
 import { LanguageProvider } from "@/lib/state/LanguageContext";
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
@@ -155,6 +156,24 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" suppressHydrationWarning>
+      <head>
+        <Script
+          strategy="afterInteractive"
+          src="https://www.googletagmanager.com/gtag/js?id=G-22SKLMZ96J"
+        />
+        <Script
+          id="google-tag-manager"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', 'G-22SKLMZ96J');
+            `,
+          }}
+        />
+      </head>
       <body className={`${inter.className} ${outfit.variable} bg-[#0F172A] overflow-x-hidden w-full relative`}>
         <script
           type="application/ld+json"
